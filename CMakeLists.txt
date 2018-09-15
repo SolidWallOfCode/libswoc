@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.11)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -7,8 +7,10 @@ project(libswoc)
 include_directories(include)
 
 set(public_headers
+    include/swoc/Scalar.h
     include/swoc/TextView.h
     include/swoc/MemSpan.h
+    include/swoc/MemArena.h
     include/swoc/BufferWriter.h
     include/swoc/bwf_base.h
     include/swoc/bwf_std.h
@@ -36,3 +38,6 @@ install(TARGETS libswoc++
     ARCHIVE DESTINATION lib
     PUBLIC_HEADER DESTINATION include/swoc
 )
+
+add_custom_target(clang-format-src COMMAND tools/clang-format.sh src)
+add_custom_target(clang-format-include COMMAND tools/clang-format.sh include/swoc)
