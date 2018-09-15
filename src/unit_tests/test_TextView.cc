@@ -21,14 +21,13 @@
     limitations under the License.
 */
 
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include "swoc/TextView.h"
 #include <catch.hpp>
-
 
 using swoc::TextView;
 using namespace std::literals;
@@ -183,8 +182,9 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   REQUIRE(t.empty());
 
   // Simulate pulling off FQDN pieces in reverse order from a string_view.
-  // Simulates operations in HostLookup.cc, where the use of string_view necessitates this workaround of failures
-  // in the string_view API. With a TextView, it would just be repeated @c take_suffix_at('.')
+  // Simulates operations in HostLookup.cc, where the use of string_view
+  // necessitates this workaround of failures in the string_view API. With a
+  // TextView, it would just be repeated @c take_suffix_at('.')
   std::string_view fqdn{"bob.ne1.corp.ngeo.com"};
   TextView elt{TextView{fqdn}.suffix('.')};
   REQUIRE(elt == "com");

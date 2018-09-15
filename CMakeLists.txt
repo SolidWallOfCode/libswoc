@@ -6,20 +6,33 @@ project(libswoc)
 
 include_directories(include)
 
-add_library(libswoc++ STATIC
+set(public_headers
     include/swoc/TextView.h
+    include/swoc/MemSpan.h
+    include/swoc/BufferWriter.h
+    include/swoc/bwf_base.h
+    include/swoc/bwf_std.h
+)
+
+set(lib_src
     src/TextView.cc
-    )
+    src/BufferWriterFormat.cc
+)
+
+add_library(libswoc++ STATIC "${public_headers}" "${lib_src}")
 
 add_executable(test_libswoc
     src/unit_tests/unit_test_main.cc
     src/unit_tests/test_TextView.cc
-    )
+)
 
 target_link_libraries(test_libswoc libswoc++)
 
-set_target_properties(libswoc++ PROPERTIES PUBLIC_HEADER include/swoc/TextView.h)
+set_target_properties(libswoc++ PROPERTIES
+    PUBLIC_HEADER "${public_headers}"
+)
+
 install(TARGETS libswoc++
     ARCHIVE DESTINATION lib
     PUBLIC_HEADER DESTINATION include/swoc
-    )
+)
