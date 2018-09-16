@@ -20,7 +20,7 @@
 
 #include "swoc/Scalar.h"
 #include "swoc/bwf_swoc.h"
-#include <catch.hpp>
+#include "catch.hpp"
 
 using Bytes      = swoc::Scalar<1, off_t>;
 using Paragraphs = swoc::Scalar<16, off_t>;

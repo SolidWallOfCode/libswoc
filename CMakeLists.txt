@@ -7,17 +7,22 @@ project(libswoc)
 include_directories(include)
 
 set(public_headers
+    include/swoc/swoc_common.h
+    include/swoc/swoc_meta.h
     include/swoc/Scalar.h
     include/swoc/TextView.h
+    include/swoc/IntrusiveDList.h
     include/swoc/MemSpan.h
     include/swoc/MemArena.h
     include/swoc/BufferWriter.h
     include/swoc/bwf_base.h
     include/swoc/bwf_std.h
+    include/swoc/bwf_swoc.h
 )
 
 set(lib_src
     src/TextView.cc
+    src/MemArena.cc
     src/BufferWriterFormat.cc
 )
 
@@ -26,6 +31,12 @@ add_library(libswoc++ STATIC "${public_headers}" "${lib_src}")
 add_executable(test_libswoc
     src/unit_tests/unit_test_main.cc
     src/unit_tests/test_TextView.cc
+    src/unit_tests/test_MemSpan.cc
+    src/unit_tests/test_MemArena.cc
+    src/unit_tests/test_BufferWriter.cc
+    src/unit_tests/test_BufferWriterFormat.cc
+    src/unit_tests/test_IntrusiveDList.cc
+    src/unit_tests/test_Scalar.cc
 )
 
 target_link_libraries(test_libswoc libswoc++)

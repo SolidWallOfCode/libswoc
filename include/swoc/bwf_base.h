@@ -4,20 +4,17 @@
 
     @section license License
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+    agreements.  See the NOTICE file distributed with this work for additional information regarding
+    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with the License.  You may
+    obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
     limitations under the License.
  */
 
@@ -33,7 +30,9 @@
 
 #include "swoc/TextView.h"
 #include "swoc/MemSpan.h"
+#include "swoc/MemArena.h"
 #include "swoc/BufferWriter.h"
+#include "swoc/swoc_meta.h"
 
 /** Overridable formatting for type @a V.
 
@@ -55,186 +54,305 @@
 
 namespace swoc
 {
-namespace bwf {
-/** A parsed version of a format specifier.
- */
-struct Spec {
-  using self_type                    = Spec; ///< Self reference type.
-  static constexpr char DEFAULT_TYPE = 'g';     ///< Default format type.
+namespace bwf
+{
+  /** A parsed version of a format specifier.
+   */
+  struct Spec {
+    using self_type                    = Spec; ///< Self reference type.
+    static constexpr char DEFAULT_TYPE = 'g';  ///< Default format type.
 
-  /// Constructor a default instance.
-  constexpr Spec() {}
+    /// Constructor a default instance.
+    constexpr Spec() {}
 
-  /// Construct by parsing @a fmt.
-  Spec(TextView fmt);
+    /// Construct by parsing @a fmt.
+    Spec(TextView fmt);
 
-  char _fill = ' '; ///< Fill character.
-  char _sign = '-'; ///< Numeric sign style, space + -
-  enum class Align : char {
-    NONE,                            ///< No alignment.
-    LEFT,                            ///< Left alignment '<'.
-    RIGHT,                           ///< Right alignment '>'.
-    CENTER,                          ///< Center alignment '^'.
-    SIGN                             ///< Align plus/minus sign before numeric fill. '='
-  } _align = Align::NONE;  ///< Output field alignment.
-  char _type = DEFAULT_TYPE; ///< Type / radix indicator.
-  bool _radix_lead_p = false;        ///< Print leading radix indication.
-  // @a _min is unsigned because there's no point in an invalid default, 0 works fine.
-  unsigned int _min = 0;                                        ///< Minimum width.
-  int _prec = -1;                                       ///< Precision
-  unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maxium width
-  int _idx = -1;                                       ///< Positional "name" of the specification.
-  std::string_view _name;                                       ///< Name of the specification.
-  std::string_view _ext;                                        ///< Extension if provided.
+    char _fill = ' '; ///< Fill character.
+    char _sign = '-'; ///< Numeric sign style, space + -
+    enum class Align : char {
+      NONE,                            ///< No alignment.
+      LEFT,                            ///< Left alignment '<'.
+      RIGHT,                           ///< Right alignment '>'.
+      CENTER,                          ///< Center alignment '^'.
+      SIGN                             ///< Align plus/minus sign before numeric fill. '='
+    } _align           = Align::NONE;  ///< Output field alignment.
+    char _type         = DEFAULT_TYPE; ///< Type / radix indicator.
+    bool _radix_lead_p = false;        ///< Print leading radix indication.
+    // @a _min is unsigned because there's no point in an invalid default, 0 works fine.
+    unsigned int _min = 0;                                        ///< Minimum width.
+    int _prec         = -1;                                       ///< Precision
+    unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maxium width
+    int _idx          = -1;                                       ///< Positional "name" of the specification.
+    std::string_view _name;                                       ///< Name of the specification.
+    std::string_view _ext;                                        ///< Extension if provided.
 
-  static const self_type DEFAULT;
+    static const self_type DEFAULT;
 
-  /// Validate @a c is a specifier type indicator.
-  static bool is_type(char c);
+    /// Validate @a c is a specifier type indicator.
+    static bool is_type(char c);
 
-  /// Check if the type flag is numeric.
-  static bool is_numeric_type(char c);
+    /// Check if the type flag is numeric.
+    static bool is_numeric_type(char c);
 
-  /// Check if the type is an upper case variant.
-  static bool is_upper_case_type(char c);
+    /// Check if the type is an upper case variant.
+    static bool is_upper_case_type(char c);
 
-  /// Check if the type @a in @a this is numeric.
-  bool has_numeric_type() const;
+    /// Check if the type @a in @a this is numeric.
+    bool has_numeric_type() const;
 
-  /// Check if the type in @a this is an upper case variant.
-  bool has_upper_case_type() const;
+    /// Check if the type in @a this is an upper case variant.
+    bool has_upper_case_type() const;
 
-  /// Check if the type is a raw pointer.
-  bool has_pointer_type() const;
+    /// Check if the type is a raw pointer.
+    bool has_pointer_type() const;
 
-protected:
-  /// Validate character is alignment character and return the appropriate enum value.
-  Align align_of(char c);
+  protected:
+    /// Validate character is alignment character and return the appropriate enum value.
+    Align align_of(char c);
 
-  /// Validate is sign indicator.
-  bool is_sign(char c);
+    /// Validate is sign indicator.
+    bool is_sign(char c);
 
-  /// Handrolled initialization the character syntactic property data.
-  static const struct Property {
-    Property(); ///< Default constructor, creates initialized flag set.
-    /// Flag storage, indexed by character value.
-    uint8_t _data[0x100];
-    /// Flag mask values.
-    static constexpr uint8_t ALIGN_MASK = 0x0F; ///< Alignment type.
-    static constexpr uint8_t TYPE_CHAR = 0x10; ///< A valid type character.
-    static constexpr uint8_t UPPER_TYPE_CHAR = 0x20; ///< Upper case flag.
-    static constexpr uint8_t NUMERIC_TYPE_CHAR = 0x40; ///< Numeric output.
-    static constexpr uint8_t SIGN_CHAR = 0x80; ///< Is sign character.
-  } _prop;
-};
+    /// Handrolled initialization the character syntactic property data.
+    static const struct Property {
+      Property(); ///< Default constructor, creates initialized flag set.
+      /// Flag storage, indexed by character value.
+      uint8_t _data[0x100];
+      /// Flag mask values.
+      static constexpr uint8_t ALIGN_MASK        = 0x0F; ///< Alignment type.
+      static constexpr uint8_t TYPE_CHAR         = 0x10; ///< A valid type character.
+      static constexpr uint8_t UPPER_TYPE_CHAR   = 0x20; ///< Upper case flag.
+      static constexpr uint8_t NUMERIC_TYPE_CHAR = 0x40; ///< Numeric output.
+      static constexpr uint8_t SIGN_CHAR         = 0x80; ///< Is sign character.
+    } _prop;
+  };
 
-} // namespace bwf
+  using BoundGeneratorSignature = BufferWriter & (*)(BufferWriter &, Spec const &);
+
+/** Protocol class for implementation @c Names.
+   *
+   * This represents an instance of @c Names bound to a specific context. When a named specifier
+   * is processed, this is called to generate the output text for that name.
+   */
+  class BoundNames
+  {
+  public:
+    using Generator = std::function<BufferWriter &(BufferWriter &, const Spec &)>;
+
+    /** Generate output text for @a name on the output @a w using the format specifier @a spec.
+     * This must match the @c BoundGeneratorSignature type.
+     *
+     * @param w Output stream.
+     * @param spec Parsed format specifier.
+     *
+     * @note The tag name can be found in @c spec._name.
+     *
+     * @return
+     */
+    virtual BufferWriter &operator()(BufferWriter &w, const Spec &spec) = 0;
+  };
+
+  /** Generators for tag names.
+   *
+   * This enables named format specifications, such as "{tag}". Each supported tag requires
+   * a @a Generator which is a functor of type
+   * @code
+   *   BufferWriter & generator(BufferWriter & w, const Spec & spec, T & context);
+   * @endcode
+   *
+   * This class is not used directly in a @c print call, instead the result of the @c bind
+   * method is used which binds that specific @c print call to a specific instance of @a T.
+   *
+   * @tparam T The context type. This is used directly. If the context needs to be @c const
+   * then this parameter should make that explicit, e.g. @c Names<const Context>. This
+   * paramater is accessible via the @c context_type alias.
+   */
+  template <typename T> class Names
+  {
+  private:
+    using self_type = Names; ///< self reference type.
+  public:
+    using context_type = T; ///< Export for external convenience.
+    /// Functional type for a generator.
+    using Generator = std::function<BufferWriter &(BufferWriter &, const Spec &, context_type &)>;
+
+    /// Construct an empty name set.
+    Names();
+    /// Construct and assign the names and generators in @a list
+    Names(std::initializer_list<std::tuple<std::string_view, const Generator &>> list);
+
+    /** Assign the @a generator to the @a name.
+     *
+     * @param name Name associated with the @a generator.
+     * @param generator The generator function.
+     */
+    self_type &assign(std::string_view name, const Generator &generator);
+
+    /** Bind the names to a specific @a context.
+     *
+     * @param context The instance of @a T to use in the generators.
+     * @return A reference to an internal instance of a subclass of the protocol class @c BoundNames.
+     */
+    const BoundNames &bind(context_type &context);
+
+  protected:
+    /// Copy @a name in to local storage and return a view of it.
+    std::string_view localize(std::string_view name);
+
+    using Map = std::unordered_map<std::string_view, Generator>;
+    Map _map;                    ///< Mapping of name -> generator
+    swoc::MemArena _arena{1024}; ///< Local name storage.
+
+    /// Subclass of @a BoundNames used to bind this set of names to a context.
+    class Binding : public BoundNames
+    {
+    public:
+      BufferWriter &operator()(BufferWriter &w, const Spec &spec) override;
+
+    protected:
+      Binding(const Map &map);
+      void assign(context_type *);
+
+      const Map &_map;
+      context_type *_ctx = nullptr;
+    } _binding;
+  };
+
+}; // namespace bwf
 
 // --------------- Implementation --------------------
-namespace bwf {
-
-inline Spec::Align
-Spec::align_of(char c) {
-  return static_cast<Align>(_prop._data[static_cast<unsigned>(c)] & Property::ALIGN_MASK);
-}
-
-inline bool
-Spec::is_sign(char c) {
-  return _prop._data[static_cast<unsigned>(c)] & Property::SIGN_CHAR;
-}
-
-inline bool
-Spec::is_type(char c) {
-  return _prop._data[static_cast<unsigned>(c)] & Property::TYPE_CHAR;
-}
-
-inline bool
-Spec::is_upper_case_type(char c) {
-  return _prop._data[static_cast<unsigned>(c)] & Property::UPPER_TYPE_CHAR;
-}
-
-inline bool
-Spec::is_numeric_type(char c) {
-  return _prop._data[static_cast<unsigned>(c)] & Property::NUMERIC_TYPE_CHAR;
-}
-
-inline bool
-Spec::has_numeric_type() const {
-  return _prop._data[static_cast<unsigned>(_type)] & Property::NUMERIC_TYPE_CHAR;
-}
-
-inline bool
-Spec::has_upper_case_type() const {
-  return _prop._data[static_cast<unsigned>(_type)] & Property::UPPER_TYPE_CHAR;
-}
-
-inline bool
-Spec::has_pointer_type() const {
-  return _type == 'p' || _type == 'P';
-}
-
-/// Internal signature for template generated formatting.
-/// @a args is a forwarded tuple of arguments to be processed.
-template <typename TUPLE> using ArgFormatterSignature = BufferWriter &(*)(BufferWriter &w, Spec const &, TUPLE const &args);
-
-/// Internal error / reporting message generators
-void Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n);
-
-// MSVC will expand the parameter pack inside a lambda but not gcc, so this indirection is required.
-
-/// This selects the @a I th argument in the @a TUPLE arg pack and calls the formatter on it. This
-/// (or the equivalent lambda) is needed because the array of formatters must have a homogenous
-/// signature, not vary per argument. Effectively this indirection erases the type of the specific
-/// argument being formatted. Instances of this have the signature @c ArgFormatterSignature.
-template <typename TUPLE, size_t I>
-BufferWriter &
-Arg_Formatter(BufferWriter &w, Spec const &spec, TUPLE const &args)
+namespace bwf
 {
-  return bwformat(w, spec, std::get<I>(args));
+  /// --- Spec ---
+
+  inline Spec::Align
+  Spec::align_of(char c)
+  {
+    return static_cast<Align>(_prop._data[static_cast<unsigned>(c)] & Property::ALIGN_MASK);
+  }
+
+  inline bool
+  Spec::is_sign(char c)
+  {
+    return _prop._data[static_cast<unsigned>(c)] & Property::SIGN_CHAR;
+  }
+
+  inline bool
+  Spec::is_type(char c)
+  {
+    return _prop._data[static_cast<unsigned>(c)] & Property::TYPE_CHAR;
+  }
+
+  inline bool
+  Spec::is_upper_case_type(char c)
+  {
+    return _prop._data[static_cast<unsigned>(c)] & Property::UPPER_TYPE_CHAR;
+  }
+
+  inline bool
+  Spec::is_numeric_type(char c)
+  {
+    return _prop._data[static_cast<unsigned>(c)] & Property::NUMERIC_TYPE_CHAR;
+  }
+
+  inline bool
+  Spec::has_numeric_type() const
+  {
+    return _prop._data[static_cast<unsigned>(_type)] & Property::NUMERIC_TYPE_CHAR;
+  }
+
+  inline bool
+  Spec::has_upper_case_type() const
+  {
+    return _prop._data[static_cast<unsigned>(_type)] & Property::UPPER_TYPE_CHAR;
+  }
+
+  inline bool
+  Spec::has_pointer_type() const
+  {
+    return _type == 'p' || _type == 'P';
+  }
+
+  /// --- Names ---
+
+  template <typename T> inline Names<T>::Binding::Binding(const Map &map) : _map(map) {}
+
+template <typename T> Names<T>::Names() { }
+
+template <typename T>
+Names<T>::Names(std::initializer_list<std::tuple<std::string_view, const Generator &>> list) {
+    for ( auto && [name, generator] : list ) {
+      this->assign(name, generator);
+    }
 }
 
-/// This exists only to expand the index sequence into an array of formatters for the tuple type
-/// @a TUPLE.  Due to langauge limitations it cannot be done directly. The formatters can be
-/// accessed via standard array access in constrast to templated tuple access. The actual array is
-/// static and therefore at run time the only operation is loading the address of the array.
-template <typename TUPLE, size_t... N>
-ArgFormatterSignature<TUPLE> *
-Get_Arg_Formatter_Array(std::index_sequence<N...>)
+  template <typename T> std::string_view
+  Names<T>::localize(std::string_view name)
+  {
+    auto span = _arena.alloc(name.size());
+    memcpy(span.data(), name.data(), name.size());
+    return span.view();
+  }
+
+template <typename T> auto
+Names<T>::assign(std::string_view name, const Generator & generator) -> self_type &
 {
-  static ArgFormatterSignature<TUPLE> fa[sizeof...(N)] = {&bw_fmt::Arg_Formatter<TUPLE, N>...};
-  return fa;
+    name = this->localize(name);
+    _map[name] = generator;
+    return *this;
 }
+  /// --- Formatting ---
 
-/// Perform alignment adjustments / fill on @a w of the content in @a lw.
-/// This is the normal mechanism, but a number of the builtin types handle this internally
-/// for performance reasons.
-void Do_Alignment(Spec const &spec, BufferWriter &w, BufferWriter &lw);
+  /// Internal signature for template generated formatting.
+  /// @a args is a forwarded tuple of arguments to be processed.
+  template <typename TUPLE> using ArgFormatterSignature = BufferWriter &(*)(BufferWriter &w, Spec const &, TUPLE const &args);
 
-/// Global named argument table.
-using GlobalSignature = void (*)(BufferWriter &, Spec const &);
-using GlobalTable     = std::map<std::string_view, GlobalSignature>;
-extern GlobalTable BWF_GLOBAL_TABLE;
-extern GlobalSignature Global_Table_Find(std::string_view name);
+  /// Internal error / reporting message generators
+  void Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n);
 
-/// Generic integral conversion.
-BufferWriter &Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t n, bool negative_p);
+  // MSVC will expand the parameter pack inside a lambda but not gcc, so this indirection is required.
 
-/// Generic floating point conversion.
-BufferWriter &Format_Floating(BufferWriter &w, Spec const &spec, double n, bool negative_p);
+  /// This selects the @a I th argument in the @a TUPLE arg pack and calls the formatter on it. This
+  /// (or the equivalent lambda) is needed because the array of formatters must have a homogenous
+  /// signature, not vary per argument. Effectively this indirection erases the type of the specific
+  /// argument being formatted. Instances of this have the signature @c ArgFormatterSignature.
+  template <typename TUPLE, size_t I>
+  BufferWriter &
+  Arg_Formatter(BufferWriter &w, Spec const &spec, TUPLE const &args)
+  {
+    return bwformat(w, spec, std::get<I>(args));
+  }
 
-} // namespace bwf
+  /// This exists only to expand the index sequence into an array of formatters for the tuple type
+  /// @a TUPLE.  Due to langauge limitations it cannot be done directly. The formatters can be
+  /// accessed via standard array access in constrast to templated tuple access. The actual array is
+  /// static and therefore at run time the only operation is loading the address of the array.
+  template <typename TUPLE, size_t... N>
+  ArgFormatterSignature<TUPLE> *
+  Get_Arg_Formatter_Array(std::index_sequence<N...>)
+  {
+    static ArgFormatterSignature<TUPLE> fa[sizeof...(N)] = {&bwf::Arg_Formatter<TUPLE, N>...};
+    return fa;
+  }
 
-using BWGlobalNameSignature = bw_fmt::GlobalSignature;
-/// Add a global @a name to BufferWriter formatting, output generated by @a formatter.
-/// @return @c true if the name was register, @c false if not (name already in use).
-bool bwf_register_global(std::string_view name, BWGlobalNameSignature formatter);
+  /// Perform alignment adjustments / fill on @a w of the content in @a lw.
+  /// This is the normal mechanism, but a number of the builtin types handle this internally
+  /// for performance reasons.
+  void Adjust_Alignment(Spec const &spec, BufferWriter &w, BufferWriter &lw);
+
+  /// Generic integral conversion.
+  BufferWriter &Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t n, bool negative_p);
+
+  /// Generic floating point conversion.
+  BufferWriter &Format_Floating(BufferWriter &w, Spec const &spec, double n, bool negative_p);
 
 /** Compiled BufferWriter format.
 
     @note This is not as useful as hoped, the performance is not much better using this than parsing
     on the fly (about 30% better, which is fine for tight loops but not for general use).
  */
-class BWFormat
+class Format
 {
 public:
   /// Construct from a format string @a fmt.
@@ -276,6 +394,8 @@ protected:
   static void Format_Literal(BufferWriter &w, Spec const &spec);
 };
 
+} // namespace bwf
+
 template <typename... Args>
 BufferWriter &
 BufferWriter::print(TextView fmt, Args &&... args)
@@ -297,19 +417,19 @@ BufferWriter::printv(TextView fmt, std::tuple<Args...> const &args)
     // There will always be a specifier except for the possible trailing literal.
     std::string_view lit_v;
     std::string_view spec_v;
-    bool spec_p = BWFormat::parse(fmt, lit_v, spec_v);
+    bool spec_p = bwf::Format::parse(fmt, lit_v, spec_v);
 
     if (lit_v.size()) {
       this->write(lit_v);
     }
 
     if (spec_p) {
-      Spec spec{spec_v}; // parse the specifier.
+      bwf::Spec spec{spec_v}; // parse the specifier.
       size_t width = this->remaining();
       if (spec._max < width) {
         width = spec._max;
       }
-      FixedBufferWriter lw{this->auxBuffer(), width};
+      FixedBufferWriter lw{this->aux_buffer(), width};
 
       if (spec._name.size() == 0) {
         spec._idx = arg_idx;
@@ -357,7 +477,7 @@ BufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args)
     if (item._spec._max < width) {
       width = item._spec._max;
     }
-    FixedBufferWriter lw{this->auxBuffer(), width};
+    FixedBufferWriter lw{this->aux_buffer(), width};
     if (item._gf) {
       item._gf(lw, item._spec);
     } else {
@@ -553,6 +673,8 @@ FixedBufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args) 
 {
   return static_cast<self_type &>(this->super_type::printv(fmt, args));
 }
+
+
 
 } // end namespace swoc
 

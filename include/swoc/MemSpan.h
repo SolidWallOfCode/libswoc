@@ -608,7 +608,7 @@ inline MemSpan::operator std::string_view() const
 namespace std
 {
 inline ostream &
-operator<<(ostream &os, const ts::MemSpan &b)
+operator<<(ostream &os, const swoc::MemSpan &b)
 {
   if (os.good()) {
     os << b.size() << '@' << hex << b.data();

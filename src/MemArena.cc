@@ -40,8 +40,8 @@ MemArena::make_block(size_t n)
   if (_reserve_hint == 0) {
     if (_active_reserved) {
       _reserve_hint = _active_reserved;
-    } else if (_prev_allocated) {
-      _reserve_hint = _prev_allocated;
+    } else if (_frozen_allocated) {
+      _reserve_hint = _frozen_allocated;
     }
   }
 
@@ -60,7 +60,7 @@ MemArena::make_block(size_t n)
   // Easier to use malloc and override @c delete.
   auto free_space = n - sizeof(Block);
   _active_reserved += free_space;
-  return BlockPtr(new (::malloc(n)) Block(free_space));
+  return new (::malloc(n)) Block(free_space);
 }
 
 MemSpan
@@ -88,7 +88,7 @@ MemArena::alloc(size_t n)
 MemArena &
 MemArena::freeze(size_t n)
 {
-  _frozen.apply([](Block *b) { delete b; }).clear();
+  this->destroy_frozen();
   _frozen = std::move(_active);
   // Update the meta data.
   _frozen_allocated = _active_allocated;
@@ -104,8 +104,8 @@ MemArena::freeze(size_t n)
 MemArena &
 MemArena::thaw()
 {
-  _frozen.apply([](Block *b) { delete b; }).clear();
-  _prev_reserved = _prev_allocated = 0;
+  this->destroy_frozen();
+  _frozen_reserved = _frozen_allocated = 0;
   return *this;
 }
 
@@ -116,14 +116,22 @@ MemArena::contains(const void *ptr) const
                                    std::any_of(_frozen.begin(), _frozen.end(), pred);
 }
 
+void MemArena::destroy_active() {
+  _active.apply([](Block *b) { delete b; }).clear();
+}
+
+void MemArena::destroy_frozen() {
+  _frozen.apply([](Block *b) { delete b; }).clear();
+}
+
 MemArena &
 MemArena::clear(size_t n)
 {
-  _reserve_hint  = n ? n : _prev_allocated + _active_allocated;
-  _prev_reserved = _prev_allocated = 0;
+  _reserve_hint  = n ? n : _frozen_allocated + _active_allocated;
+  _frozen_reserved = _frozen_allocated = 0;
   _active_reserved = _active_allocated = 0;
-  _frozen.apply([](Block *b) { delete b; }).clear();
-  _active.apply([](Block *b) { delete b; }).clear();
+  this->destroy_frozen();
+  this->destroy_active();
 
   return *this;
 }

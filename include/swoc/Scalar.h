@@ -29,8 +29,6 @@
 #include <ostream>
 #include <type_traits>
 
-#include "swoc/BufferWriter.h"
-
 namespace tag
 {
 struct generic;
@@ -38,6 +36,7 @@ struct generic;
 
 namespace swoc
 {
+
 template <intmax_t N, typename C, typename T> class Scalar;
 
 namespace detail
@@ -891,72 +890,14 @@ Scalar<N, C, T>::minus(Counter n) const -> self
   return {_n - n};
 }
 
-namespace detail
-{
-  // These classes exist only to create distinguishable overloads.
-  struct tag_label_A {
-  };
-  struct tag_label_B : public tag_label_A {
-  };
-  // The purpose is to print a label for a tagged type only if the tag class defines a member that
-  // is the label.  This creates a base function that always works and does nothing. The second
-  // function creates an overload if the tag class has a member named 'label' that has an stream IO
-  // output operator. When invoked with a second argument of B then the second overload exists and
-  // is used, otherwise only the first exists and that is used. The critical technology is the use
-  // of 'auto' and 'decltype' which effectively checks if the code inside 'decltype' compiles.
-  template <typename T>
-  inline std::ostream &
-  tag_label(std::ostream &s, tag_label_A const &)
-  {
-    return s;
-  }
-  template <typename T>
-  inline BufferWriter &
-  tag_label(BufferWriter &w, BWFSpec const &, tag_label_A const &)
-  {
-    return w;
-  }
-  template <typename T>
-  inline auto
-  tag_label(std::ostream &s, tag_label_B const &) -> decltype(s << T::label, s)
-  {
-    return s << T::label;
-  }
-  template <typename T>
-  inline auto
-  tag_label(BufferWriter &w, BWFSpec const &spec, tag_label_B const &) -> decltype(bwformat(w, spec, T::label), w)
-  {
-    return bwformat(w, spec, T::label);
-  }
-} // namespace detail
+} // namespace swoc
 
-template <intmax_t N, typename C, typename T>
-BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, Scalar<N, C, T> const &x)
-{
-  static constexpr ts::detail::tag_label_B b{};
-  bwformat(w, spec, x.value());
-  return ts::detail::tag_label<T>(w, spec, b);
-}
-
-} // namespace ts
-
-namespace std
-{
-template <intmax_t N, typename C, typename T>
-ostream &
-operator<<(ostream &s, ts::Scalar<N, C, T> const &x)
-{
-  static ts::detail::tag_label_B b; // Can't be const or the compiler gets upset.
-  s << x.value();
-  return ts::detail::tag_label<T>(s, b);
-}
-
+namespace std {
 /// Compute common type of two scalars.
 /// In `std` to overload the base definition. This yields a type that has the common type of the
 /// counter type and a scale that is the GCF of the input scales.
-template <intmax_t N, typename C, intmax_t S, typename I, typename T> struct common_type<ts::Scalar<N, C, T>, ts::Scalar<S, I, T>> {
-  typedef std::ratio<N, S> R;
-  typedef ts::Scalar<N / R::num, typename common_type<C, I>::type, T> type;
+template <intmax_t N, typename C, intmax_t S, typename I, typename T> struct common_type<swoc::Scalar<N, C, T>, swoc::Scalar<S, I, T>> {
+  using R = std::ratio<N, S>;
+  using type = swoc::Scalar<N / R::num, typename common_type<C, I>::type, T>;
 };
 } // namespace std

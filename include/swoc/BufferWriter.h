@@ -4,20 +4,17 @@
 
     @section license License
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+    agreements.  See the NOTICE file distributed with this work for additional information regarding
+    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with the License.  You may
+    obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
     limitations under the License.
  */
 
@@ -31,17 +28,22 @@
 #include <iosfwd>
 #include <string_view>
 
+#include "swoc/swoc_common.h"
 #include "swoc/TextView.h"
 #include "swoc/MemSpan.h"
-#include "swoc/BufferWriterForward.h"
 
-namespace swoc {
-
-namespace bwf { struct Spec; } // Forward declare.
+namespace swoc
+{
+namespace bwf
+{
+  struct Spec;
+  class Format;
+} // namespace bwf
 
 /** Base (abstract) class for concrete buffer writers.
  */
-class BufferWriter {
+class BufferWriter
+{
 public:
   /** Add the character @a c to the buffer.
 
@@ -148,7 +150,7 @@ public:
   virtual BufferWriter &restore(size_t n) = 0;
 
   // Force virtual destructor.
-  virtual ~BufferWriter() {}
+  virtual ~BufferWriter();
 
   /** BufferWriter print.
 
@@ -162,37 +164,30 @@ public:
 
       @note This must be declared here, but the implementation is in @c bwf_base.h
   */
-  template<typename... Rest>
-  BufferWriter &print(TextView fmt, Rest &&... rest);
+  template <typename... Rest> BufferWriter &print(TextView fmt, Rest &&... rest);
 
   /** Print overload to take arguments as a tuple instead of explicitly.
       This is useful for forwarding variable arguments from other functions / methods.
   */
-  template<typename... Args>
-  BufferWriter &printv(TextView fmt, std::tuple<Args...> const &args);
+  template <typename... Args> BufferWriter &printv(TextView fmt, std::tuple<Args...> const &args);
 
   /// Print using a preparsed @a fmt.
-  template<typename... Args>
-  BufferWriter &print(BWFormat const &fmt, Args &&... args);
+  template <typename... Args> BufferWriter &print(bwf::Format const &fmt, Args &&... args);
 
   /** Print overload to take arguments as a tuple instead of explicitly.
       This is useful for forwarding variable arguments from other functions / methods.
   */
-  template<typename... Args>
-  BufferWriter &printv(BWFormat const &fmt, std::tuple<Args...> const &args);
+  template <typename... Args> BufferWriter &printv(bwf::Format const &fmt, std::tuple<Args...> const &args);
 
   /// Output the buffer contents to the @a stream.
   /// @return The destination stream.
   virtual std::ostream &operator>>(std::ostream &stream) const = 0;
-
-  /// Output the buffer contents to the file for file descriptor @a fd.
-  /// @return The number of bytes written.
-  virtual ssize_t operator>>(int fd) const = 0;
 };
 
 /** A @c BufferWrite concrete subclass to write to a fixed size buffer.
  */
-class FixedBufferWriter : public BufferWriter {
+class FixedBufferWriter : public BufferWriter
+{
   using super_type = BufferWriter;
   using self_type  = FixedBufferWriter;
 
@@ -222,111 +217,45 @@ public:
   /// Move assignment.
   FixedBufferWriter &operator=(FixedBufferWriter &&) = default;
 
-  FixedBufferWriter(MemSpan &span) : _buf(span.begin()),
-                                     _capacity(static_cast<size_t>(span.size())) {}
+  FixedBufferWriter(MemSpan &span) : _buf(span.begin()), _capacity(static_cast<size_t>(span.size())) {}
 
   /// Write a single character @a c to the buffer.
-  FixedBufferWriter &
-  write(char c) override {
-    if (_attempted < _capacity) {
-      _buf[_attempted] = c;
-    }
-    ++_attempted;
-
-    return *this;
-  }
+  FixedBufferWriter &write(char c) override;
 
   /// Write @a data to the buffer, up to @a length bytes.
-  FixedBufferWriter &
-  write(const void *data, size_t length) override {
-    const size_t newSize = _attempted + length;
-
-    if (_buf) {
-      if (newSize <= _capacity) {
-        std::memcpy(_buf + _attempted, data, length);
-      } else if (_attempted < _capacity) {
-        std::memcpy(_buf + _attempted, data, _capacity - _attempted);
-      }
-    }
-    _attempted = newSize;
-
-    return *this;
-  }
+  FixedBufferWriter &write(const void *data, size_t length) override;
 
   // Bring in non-overridden methods.
   using super_type::write;
 
   /// Return the output buffer.
-  const char *
-  data() const override {
-    return _buf;
-  }
+  const char *data() const override;
 
   /// Return whether there has been an error.
-  bool
-  error() const override {
-    return _attempted > _capacity;
-  }
+  bool error() const override;
 
   /// Get the start of the unused output buffer.
-  char *
-  aux_buffer() override {
-    return error() ? nullptr : _buf + _attempted;
-  }
+  char *aux_buffer() override;
 
   /// Advance the used part of the output buffer.
-  FixedBufferWriter &
-  fill(size_t n) override {
-    _attempted += n;
-
-    return *this;
-  }
+  self_type &fill(size_t n) override;
 
   /// Get the total capacity of the output buffer.
-  size_t
-  capacity() const override {
-    return _capacity;
-  }
+  size_t capacity() const override;
 
   /// Get the total output sent to the writer.
-  size_t
-  extent() const override {
-    return _attempted;
-  }
+  size_t extent() const override;
 
   /// Reduce the capacity by @a n.
-  FixedBufferWriter &
-  shrink(size_t n) override {
-    ink_assert(n <= _capacity);
-
-    _capacity -= n;
-
-    return *this;
-  }
+  self_type &shrink(size_t n) override;
 
   /// Extend the capacity by @a n.
-  FixedBufferWriter &
-  restore(size_t n) override {
-    if (error()) {
-      _attempted = _capacity;
-    }
+  self_type &restore(size_t n) override;
 
-    _capacity += n;
-
-    return *this;
-  }
-
-  /// Reduce extent to @a n.
-  /// If @a n is less than the capacity the error condition, if any, is cleared.
-  /// This can be used to clear the output by calling @c reduce(0). In contrast
-  /// to @c clip this reduces the data in the buffer, rather than the capacity.
-  self_type &
-  reduce(size_t n) {
-    ink_assert(n <= _attempted);
-
-    _attempted = n;
-    return *this;
-  }
+  /// Drop @a n characters from the end of the buffer.
+  /// The extent is reduced but the data is not overwritten and can be recovered with
+  /// @c fill.
+  self_type &drop(size_t n);
 
   /// Clear the buffer, reset to empty (no data).
   /// This is a convenience for reusing a buffer. For instance
@@ -334,50 +263,25 @@ public:
   ///   bw.reset().print("....."); // clear old data and print new data.
   /// @endcode
   /// This is equivalent to @c reduce(0) but clearer for that case.
-  self_type &
-  reset() {
-    _attempted = 0;
-    return *this;
-  }
+  self_type &clear();
 
   /// Provide a string_view of all successfully written characters.
-  std::string_view
-  view() const {
-    return std::string_view(_buf, size());
-  }
+  std::string_view view() const;
 
   /// Provide a @c string_view of all successfully written characters as a user conversion.
-  operator std::string_view() const { return view(); }
-
-  /** Get a @c FixedBufferWriter for the unused output buffer.
-
-      If @a reserve is non-zero then the buffer size for the auxillary writer will be @a reserve bytes
-      smaller than the remaining buffer. This "reserves" space for additional output after writing
-      to the auxillary buffer, in a manner similar to @c clip / @c extend.
-   */
-  FixedBufferWriter
-  auxWriter(size_t reserve = 0) {
-    return {this->aux_buffer(), reserve < this->remaining() ? this->remaining() - reserve : 0};
-  }
+  operator std::string_view() const;
 
   /// Output the buffer contents to the @a stream.
   std::ostream &operator>>(std::ostream &stream) const override;
 
-  /// Output the buffer contents to the file for file descriptor @a fd.
-  ssize_t operator>>(int fd) const override;
-
   // Overrides for co-variance
-  template<typename... Rest>
-  self_type &print(TextView fmt, Rest &&... rest);
+  template <typename... Rest> self_type &print(TextView fmt, Rest &&... rest);
 
-  template<typename... Args>
-  self_type &printv(TextView fmt, std::tuple<Args...> const &args);
+  template <typename... Args> self_type &printv(TextView fmt, std::tuple<Args...> const &args);
 
-  template<typename... Args>
-  self_type &print(BWFormat const &fmt, Args &&... args);
+  template <typename... Args> self_type &print(bwf::Format const &fmt, Args &&... args);
 
-  template<typename... Args>
-  self_type &printv(BWFormat const &fmt, std::tuple<Args...> const &args);
+  template <typename... Args> self_type &printv(bwf::Format const &fmt, std::tuple<Args...> const &args);
 
 protected:
   char *const _buf;      ///< Output buffer.
@@ -393,57 +297,20 @@ private:
     It's called 'local' because instances are typically declared as stack-allocated, local function
     variables.
 */
-template<size_t N>
-class LocalBufferWriter : public FixedBufferWriter {
+template <size_t N> class LocalBufferWriter : public FixedBufferWriter
+{
   using self_type  = LocalBufferWriter;
   using super_type = FixedBufferWriter;
 
 public:
   /// Construct an empty writer.
-  LocalBufferWriter() : FixedBufferWriter(_arr, N) {}
+  LocalBufferWriter();
 
-  /// Copy another writer.
-  /// Any data in @a that is copied over.
-  LocalBufferWriter(const LocalBufferWriter &that) : FixedBufferWriter(_arr, N) {
-    std::memcpy(_arr, that._arr, that.size());
-    _attempted = that._attempted;
-  }
+  LocalBufferWriter(const LocalBufferWriter &that) = delete;
+  LocalBufferWriter &operator=(const LocalBufferWriter &that) = delete;
 
-  /// Copy another writer.
-  /// Any data in @a that is copied over.
-  template<size_t K>
-  LocalBufferWriter(const LocalBufferWriter<K> &that) : FixedBufferWriter(_arr, N) {
-    size_t n = std::min(N, that.size());
-    std::memcpy(_arr, that.data(), n);
-    // if a bigger space here, don't leave a gap between size and attempted.
-    _attempted = N > K ? n : that.extent();
-  }
-
-  /// Copy another writer.
-  /// Any data in @a that is copied over.
-  LocalBufferWriter &
-  operator=(const LocalBufferWriter &that) {
-    if (this != &that) {
-      _attempted = that.extent();
-      std::memcpy(_buf, that._buf, that.size());
-    }
-
-    return *this;
-  }
-
-  /// Copy another writer.
-  /// Any data in @a that is copied over.
-  template<size_t K>
-  LocalBufferWriter &
-  operator=(const LocalBufferWriter<K> &that) {
-    size_t n = std::min(N, that.size());
-    // if a bigger space here, don't leave a gap between size and attempted.
-    _attempted = N > K ? n : that.extent();
-    std::memcpy(_arr, that.data(), n);
-    return *this;
-  }
-
-  /// Restoer capacity by @a n.
+  /// Restore capacity by @a n.
+  // Override to co-vary return type.
   LocalBufferWriter &restore(size_t n) override;
 
 protected:
@@ -452,7 +319,11 @@ protected:
 
 // --------------- Implementation --------------------
 
-inline BufferWriter& BufferWriter::write(const void * data, size_t length) {
+inline BufferWriter::~BufferWriter() {}
+
+inline BufferWriter &
+BufferWriter::write(const void *data, size_t length)
+{
   const char *d = static_cast<const char *>(data);
 
   while (length--) {
@@ -461,35 +332,160 @@ inline BufferWriter& BufferWriter::write(const void * data, size_t length) {
   return *this;
 }
 
-inline BufferWriter& BufferWriter::write(const std::string_view & sv) {
+inline BufferWriter &
+BufferWriter::write(const std::string_view &sv)
+{
   return this->write(sv.data(), sv.size());
 }
 
-inline char * BufferWriter::aux_buffer() {
+inline char *
+BufferWriter::aux_buffer()
+{
   return nullptr;
 }
 
 inline size_t
-BufferWriter::size() const {
+BufferWriter::size() const
+{
   return std::min(this->extent(), this->capacity());
 }
 
 inline size_t
-BufferWriter::remaining() const {
+BufferWriter::remaining() const
+{
   return this->capacity() - this->size();
 }
+// --- FixedBufferWriter ---
 
-// --- LocalBufferWriter ---
+inline FixedBufferWriter &
+FixedBufferWriter::write(char c)
+{
+  if (_attempted < _capacity) {
+    _buf[_attempted] = c;
+  }
+  ++_attempted;
 
-template<size_t N>
-BufferWriter &LocalBufferWriter<N>::restore(size_t n) {
+  return *this;
+}
+
+inline FixedBufferWriter &
+FixedBufferWriter::write(const void *data, size_t length)
+{
+  const size_t newSize = _attempted + length;
+
+  if (_buf) {
+    if (newSize <= _capacity) {
+      std::memcpy(_buf + _attempted, data, length);
+    } else if (_attempted < _capacity) {
+      std::memcpy(_buf + _attempted, data, _capacity - _attempted);
+    }
+  }
+  _attempted = newSize;
+
+  return *this;
+}
+
+/// Return the output buffer.
+inline const char *
+FixedBufferWriter::data() const
+{
+  return _buf;
+}
+
+inline bool
+FixedBufferWriter::error() const
+{
+  return _attempted > _capacity;
+}
+
+inline char *
+FixedBufferWriter::aux_buffer()
+{
+  return error() ? nullptr : _buf + _attempted;
+}
+
+inline auto
+FixedBufferWriter::fill(size_t n) -> self_type &
+{
+  _attempted += n;
+
+  return *this;
+}
+
+inline size_t
+FixedBufferWriter::capacity() const
+{
+  return _capacity;
+}
+
+inline size_t
+FixedBufferWriter::extent() const
+{
+  return _attempted;
+}
+
+inline auto
+FixedBufferWriter::shrink(size_t n) -> self_type &
+{
+  WEAK_ASSERT(n <= _capacity);
+  _capacity -= n;
+  return *this;
+}
+
+inline auto
+FixedBufferWriter::restore(size_t n) -> self_type &
+{
   if (error()) {
     _attempted = _capacity;
   }
 
   _capacity += n;
 
-  ink_assert(_capacity <= N);
+  return *this;
+}
+
+inline auto
+FixedBufferWriter::drop(size_t n) -> self_type &
+{
+  WEAK_ASSERT(n <= _attempted);
+
+  _attempted -= std::min(_attempted, n);
+  return *this;
+}
+
+inline auto
+FixedBufferWriter::clear() -> self_type &
+{
+  _attempted = 0;
+  return *this;
+}
+
+std::string_view
+FixedBufferWriter::view() const
+{
+  return std::string_view(_buf, size());
+}
+
+/// Provide a @c string_view of all successfully written characters as a user conversion.
+inline FixedBufferWriter::operator std::string_view() const
+{
+  return this->view();
+}
+
+// --- LocalBufferWriter ---
+template <size_t N> LocalBufferWriter<N>::LocalBufferWriter() : super_type(_arr, N) {}
+
+template <size_t N>
+auto
+LocalBufferWriter<N>::restore(size_t n) -> self_type &
+{
+  if (error()) {
+    _attempted = _capacity;
+  }
+
+  _capacity += n;
+
+  WEAK_ASSERT(_capacity <= N);
 
   return *this;
 }

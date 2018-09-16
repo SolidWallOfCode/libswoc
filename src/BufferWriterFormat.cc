@@ -21,8 +21,6 @@
     limitations under the License.
  */
 
-#include "tscore/BufferWriter.h"
-#include "tscore/bwf_std_format.h"
 #include <array>
 #include <cctype>
 #include <chrono>
@@ -31,16 +29,19 @@
 #include <sys/param.h>
 #include <unistd.h>
 
+#include "swoc/BufferWriter.h"
+#include "swoc/bwf_base.h"
+
 using namespace std::literals;
 
 namespace
 {
-// Customized version of string to int. Using this instead of the general @c
-// svtoi function made @c bwprint performance test run in < 30% of the time,
-// changing it from about 2.5 times slower than snprintf to the same speed. This
-// version handles only positive integers in decimal.
+// Customized version of string to int. Using this instead of the general @c svtoi function made @c
+// bwprint performance test run in < 30% of the time, changing it from about 2.5 times slower than
+// snprintf to a little faster. This version handles only positive integers in decimal.
+
 inline int
-tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
+tv_to_positive_decimal(swoc::TextView src, swoc::TextView *out)
 {
   int zret = 0;
 
@@ -63,156 +64,162 @@ tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
 }
 } // namespace
 
-namespace ts
+namespace swoc
 {
-const BWFSpec BWFSpec::DEFAULT;
+namespace bwf
+{
+  const Spec Spec::DEFAULT;
 
-const BWFSpec::Property BWFSpec::_prop;
+  const Spec::Property Spec::_prop;
 
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
-BWFSpec::Property::Property()
-{
-  memset(_data, 0, sizeof(_data));
-  _data['b'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
-  _data['B'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
-  _data['d'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
-  _data['g'] = TYPE_CHAR;
-  _data['o'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
-  _data['p'] = TYPE_CHAR;
-  _data['P'] = TYPE_CHAR | UPPER_TYPE_CHAR;
-  _data['s'] = TYPE_CHAR;
-  _data['S'] = TYPE_CHAR | UPPER_TYPE_CHAR;
-  _data['x'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
-  _data['X'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
+  Spec::Property::Property()
+  {
+    memset(_data, 0, sizeof(_data));
+    _data['b'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+    _data['B'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
+    _data['d'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+    _data['g'] = TYPE_CHAR;
+    _data['o'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+    _data['p'] = TYPE_CHAR;
+    _data['P'] = TYPE_CHAR | UPPER_TYPE_CHAR;
+    _data['s'] = TYPE_CHAR;
+    _data['S'] = TYPE_CHAR | UPPER_TYPE_CHAR;
+    _data['x'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+    _data['X'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
 
-  _data[' '] = SIGN_CHAR;
-  _data['-'] = SIGN_CHAR;
-  _data['+'] = SIGN_CHAR;
+    _data[' '] = SIGN_CHAR;
+    _data['-'] = SIGN_CHAR;
+    _data['+'] = SIGN_CHAR;
 
-  _data['<'] = static_cast<uint8_t>(BWFSpec::Align::LEFT);
-  _data['>'] = static_cast<uint8_t>(BWFSpec::Align::RIGHT);
-  _data['^'] = static_cast<uint8_t>(BWFSpec::Align::CENTER);
-  _data['='] = static_cast<uint8_t>(BWFSpec::Align::SIGN);
-}
-
-/// Parse a format specification.
-BWFSpec::BWFSpec(TextView fmt)
-{
-  TextView num; // temporary for number parsing.
-  intmax_t n;
-
-  _name = fmt.take_prefix_at(':');
-  // if it's parsable as a number, treat it as an index.
-  n = tv_to_positive_decimal(_name, &num);
-  if (num.size()) {
-    _idx = static_cast<decltype(_idx)>(n);
+    _data['<'] = static_cast<uint8_t>(Spec::Align::LEFT);
+    _data['>'] = static_cast<uint8_t>(Spec::Align::RIGHT);
+    _data['^'] = static_cast<uint8_t>(Spec::Align::CENTER);
+    _data['='] = static_cast<uint8_t>(Spec::Align::SIGN);
   }
 
-  if (fmt.size()) {
-    TextView sz = fmt.take_prefix_at(':'); // the format specifier.
-    _ext        = fmt;                     // anything past the second ':' is the extension.
-    if (sz.size()) {
-      // fill and alignment
-      if ('%' == *sz) { // enable URI encoding of the fill character so
-                        // metasyntactic chars can be used if needed.
-        if (sz.size() < 4) {
-          throw std::invalid_argument("Fill URI encoding without 2 hex characters and align mark");
+  /// Parse a format specification.
+  Spec::Spec(TextView fmt)
+  {
+    TextView num; // temporary for number parsing.
+    intmax_t n;
+
+    _name = fmt.take_prefix_at(':');
+    // if it's parsable as a number, treat it as an index.
+    n = tv_to_positive_decimal(_name, &num);
+    if (num.size()) {
+      _idx = static_cast<decltype(_idx)>(n);
+    }
+
+    if (fmt.size()) {
+      TextView sz = fmt.take_prefix_at(':'); // the format specifier.
+      _ext        = fmt;                     // anything past the second ':' is the extension.
+      if (sz.size()) {
+        // fill and alignment
+        if ('%' == *sz) { // enable URI encoding of the fill character so
+                          // metasyntactic chars can be used if needed.
+          if (sz.size() < 4) {
+            throw std::invalid_argument("Fill URI encoding without 2 hex characters and align mark");
+          }
+          if (Align::NONE == (_align = align_of(sz[3]))) {
+            throw std::invalid_argument("Fill URI without alignment mark");
+          }
+          char d1 = sz[1], d0 = sz[2];
+          if (!isxdigit(d0) || !isxdigit(d1)) {
+            throw std::invalid_argument("URI encoding with non-hex characters");
+          }
+          _fill = isdigit(d0) ? d0 - '0' : tolower(d0) - 'a' + 10;
+          _fill += (isdigit(d1) ? d1 - '0' : tolower(d1) - 'a' + 10) << 4;
+          sz += 4;
+        } else if (sz.size() > 1 && Align::NONE != (_align = align_of(sz[1]))) {
+          _fill = *sz;
+          sz += 2;
+        } else if (Align::NONE != (_align = align_of(*sz))) {
+          ++sz;
         }
-        if (Align::NONE == (_align = align_of(sz[3]))) {
-          throw std::invalid_argument("Fill URI without alignment mark");
-        }
-        char d1 = sz[1], d0 = sz[2];
-        if (!isxdigit(d0) || !isxdigit(d1)) {
-          throw std::invalid_argument("URI encoding with non-hex characters");
-        }
-        _fill = isdigit(d0) ? d0 - '0' : tolower(d0) - 'a' + 10;
-        _fill += (isdigit(d1) ? d1 - '0' : tolower(d1) - 'a' + 10) << 4;
-        sz += 4;
-      } else if (sz.size() > 1 && Align::NONE != (_align = align_of(sz[1]))) {
-        _fill = *sz;
-        sz += 2;
-      } else if (Align::NONE != (_align = align_of(*sz))) {
-        ++sz;
-      }
-      if (!sz.size()) {
-        return;
-      }
-      // sign
-      if (is_sign(*sz)) {
-        _sign = *sz;
-        if (!(++sz).size()) {
-          return;
-        }
-      }
-      // radix prefix
-      if ('#' == *sz) {
-        _radix_lead_p = true;
-        if (!(++sz).size()) {
-          return;
-        }
-      }
-      // 0 fill for integers
-      if ('0' == *sz) {
-        if (Align::NONE == _align) {
-          _align = Align::SIGN;
-        }
-        _fill = '0';
-        ++sz;
-      }
-      n = tv_to_positive_decimal(sz, &num);
-      if (num.size()) {
-        _min = static_cast<decltype(_min)>(n);
-        sz.remove_prefix(num.size());
         if (!sz.size()) {
           return;
         }
-      }
-      // precision
-      if ('.' == *sz) {
-        n = tv_to_positive_decimal(++sz, &num);
+        // sign
+        if (is_sign(*sz)) {
+          _sign = *sz;
+          if (!(++sz).size()) {
+            return;
+          }
+        }
+        // radix prefix
+        if ('#' == *sz) {
+          _radix_lead_p = true;
+          if (!(++sz).size()) {
+            return;
+          }
+        }
+        // 0 fill for integers
+        if ('0' == *sz) {
+          if (Align::NONE == _align) {
+            _align = Align::SIGN;
+          }
+          _fill = '0';
+          ++sz;
+        }
+        n = tv_to_positive_decimal(sz, &num);
         if (num.size()) {
-          _prec = static_cast<decltype(_prec)>(n);
+          _min = static_cast<decltype(_min)>(n);
           sz.remove_prefix(num.size());
           if (!sz.size()) {
             return;
           }
-        } else {
-          throw std::invalid_argument("Precision mark without precision");
         }
-      }
-      // style (type). Hex, octal, etc.
-      if (is_type(*sz)) {
-        _type = *sz;
-        if (!(++sz).size()) {
-          return;
-        }
-      }
-      // maximum width
-      if (',' == *sz) {
-        n = tv_to_positive_decimal(++sz, &num);
-        if (num.size()) {
-          _max = static_cast<decltype(_max)>(n);
-          sz.remove_prefix(num.size());
-          if (!sz.size()) {
-            return;
+        // precision
+        if ('.' == *sz) {
+          n = tv_to_positive_decimal(++sz, &num);
+          if (num.size()) {
+            _prec = static_cast<decltype(_prec)>(n);
+            sz.remove_prefix(num.size());
+            if (!sz.size()) {
+              return;
+            }
+          } else {
+            throw std::invalid_argument("Precision mark without precision");
           }
-        } else {
-          throw std::invalid_argument("Maximum width mark without width");
         }
-        // Can only have a type indicator here if there was a max width.
+        // style (type). Hex, octal, etc.
         if (is_type(*sz)) {
           _type = *sz;
           if (!(++sz).size()) {
             return;
           }
         }
+        // maximum width
+        if (',' == *sz) {
+          n = tv_to_positive_decimal(++sz, &num);
+          if (num.size()) {
+            _max = static_cast<decltype(_max)>(n);
+            sz.remove_prefix(num.size());
+            if (!sz.size()) {
+              return;
+            }
+          } else {
+            throw std::invalid_argument("Maximum width mark without width");
+          }
+          // Can only have a type indicator here if there was a max width.
+          if (is_type(*sz)) {
+            _type = *sz;
+            if (!(++sz).size()) {
+              return;
+            }
+          }
+        }
       }
     }
   }
-}
 
-namespace bw_fmt
-{
+  BufferWriter &
+  Names::Binding::operator()(BufferWriter &w, const Spec &spec)
+  {
+    if (auto spot = _map.find(spec._name)
+  }
+
   GlobalTable BWF_GLOBAL_TABLE;
 
   void
@@ -229,7 +236,7 @@ namespace bw_fmt
      cause this function to make no further adjustments.
    */
   void
-  Do_Alignment(BWFSpec const &spec, BufferWriter &w, BufferWriter &lw)
+  Adjust_Alignment(Spec const &spec, BufferWriter &w, BufferWriter &lw)
   {
     size_t extent = lw.extent();
     size_t min    = spec._min;
@@ -243,7 +250,7 @@ namespace bw_fmt
       char *last;                         // track limit of memory operation.
       size_t d2;
       switch (spec._align) {
-      case BWFSpec::Align::RIGHT:
+      case Spec::Align::RIGHT:
         dst = base + delta; // move existing content to here.
         if (dst < limit) {
           last = dst + size; // amount of data to move.
@@ -261,7 +268,7 @@ namespace bw_fmt
           *dst++ = spec._fill;
         }
         break;
-      case BWFSpec::Align::CENTER:
+      case Spec::Align::CENTER:
         d2 = (delta + 1) / 2; // always > 0 because min > extent
         // Move the original content right to make space to fill on the left.
         dst = base + d2; // move existing content to here.
@@ -347,10 +354,10 @@ namespace bw_fmt
 
   template <typename F>
   void
-  Write_Aligned(BufferWriter &w, F const &f, BWFSpec::Align align, int width, char fill, char neg)
+  Write_Aligned(BufferWriter &w, F const &f, Spec::Align align, int width, char fill, char neg)
   {
     switch (align) {
-    case BWFSpec::Align::LEFT:
+    case Spec::Align::LEFT:
       if (neg) {
         w.write(neg);
       }
@@ -359,7 +366,7 @@ namespace bw_fmt
         w.write(fill);
       }
       break;
-    case BWFSpec::Align::RIGHT:
+    case Spec::Align::RIGHT:
       while (width-- > 0) {
         w.write(fill);
       }
@@ -368,7 +375,7 @@ namespace bw_fmt
       }
       f();
       break;
-    case BWFSpec::Align::CENTER:
+    case Spec::Align::CENTER:
       for (int i = width / 2; i > 0; --i) {
         w.write(fill);
       }
@@ -380,7 +387,7 @@ namespace bw_fmt
         w.write(fill);
       }
       break;
-    case BWFSpec::Align::SIGN:
+    case Spec::Align::SIGN:
       if (neg) {
         w.write(neg);
       }
@@ -399,7 +406,7 @@ namespace bw_fmt
   }
 
   BufferWriter &
-  Format_Integer(BufferWriter &w, BWFSpec const &spec, uintmax_t i, bool neg_p)
+  Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t i, bool neg_p)
   {
     size_t n     = 0;
     int width    = static_cast<int>(spec._min); // amount left to fill.
@@ -452,8 +459,8 @@ namespace bw_fmt
     width -= static_cast<int>(n);
     std::string_view digits{buff + sizeof(buff) - n, n};
 
-    if (spec._align == BWFSpec::Align::SIGN) { // custom for signed case because
-                                               // prefix and digits are seperated.
+    if (spec._align == Spec::Align::SIGN) { // custom for signed case because
+                                            // prefix and digits are seperated.
       if (neg) {
         w.write(neg);
       }
@@ -493,7 +500,7 @@ namespace bw_fmt
   /// format: whole.fraction
   ///     or: left.right
   BufferWriter &
-  Format_Floating(BufferWriter &w, BWFSpec const &spec, double f, bool neg_p)
+  Format_Floating(BufferWriter &w, Spec const &spec, double f, bool neg_p)
   {
     static const std::string_view infinity_bwf{"Inf"};
     static const std::string_view nan_bwf{"NaN"};
@@ -537,8 +544,8 @@ namespace bw_fmt
     char whole[std::numeric_limits<double>::digits10 + 1];
     char fraction[std::numeric_limits<double>::digits10 + 1];
     char neg               = 0;
-    int width              = static_cast<int>(spec._min);                             // amount left to fill.
-    unsigned int precision = (spec._prec == BWFSpec::DEFAULT._prec) ? 2 : spec._prec; // default precision 2
+    int width              = static_cast<int>(spec._min);                          // amount left to fill.
+    unsigned int precision = (spec._prec == Spec::DEFAULT._prec) ? 2 : spec._prec; // default precision 2
 
     frac = f - whole_part; // split the number
 
@@ -599,10 +606,10 @@ namespace bw_fmt
     }
   }
 
-} // namespace bw_fmt
+} // namespace bwf
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv)
+bwformat(BufferWriter &w, Spec const &spec, std::string_view sv)
 {
   int width = static_cast<int>(spec._min); // amount left to fill.
   if (spec._prec > 0) {
@@ -626,7 +633,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv)
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span)
+bwformat(BufferWriter &w, Spec const &spec, MemSpan const &span)
 {
   static const BWFormat default_fmt{"{:#x}@{:p}"};
   if (spec._ext.size() && 'd' == spec._ext.front()) {
@@ -643,9 +650,9 @@ bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span)
 }
 
 /// Preparse format string for later use.
-BWFormat::BWFormat(ts::TextView fmt)
+BWFormat::BWFormat(swoc::TextView fmt)
 {
-  BWFSpec lit_spec{BWFSpec::DEFAULT};
+  Spec lit_spec{Spec::DEFAULT};
   int arg_idx = 0;
 
   while (fmt) {
@@ -659,7 +666,7 @@ BWFormat::BWFormat(ts::TextView fmt)
     }
     if (spec_p) {
       bw_fmt::GlobalSignature gf = nullptr;
-      BWFSpec parsed_spec{spec_str};
+      Spec parsed_spec{spec_str};
       if (parsed_spec._name.size() == 0) { // no name provided, use implicit index.
         parsed_spec._idx = arg_idx;
       }
@@ -679,7 +686,7 @@ BWFormat::~BWFormat() {}
 /// Pass the results back in @a literal and @a specifier as appropriate.
 /// Update @a fmt to strip the parsed text.
 bool
-BWFormat::parse(ts::TextView &fmt, std::string_view &literal, std::string_view &specifier)
+BWFormat::parse(swoc::TextView &fmt, std::string_view &literal, std::string_view &specifier)
 {
   TextView::size_type off;
 
@@ -725,7 +732,7 @@ BWFormat::parse(ts::TextView &fmt, std::string_view &literal, std::string_view &
 }
 
 void
-BWFormat::Format_Literal(BufferWriter &w, BWFSpec const &spec)
+BWFormat::Format_Literal(BufferWriter &w, Spec const &spec)
 {
   w.write(spec._ext);
 }
@@ -757,11 +764,11 @@ FixedBufferWriter::operator>>(int fd) const
 bool
 bwf_register_global(std::string_view name, BWGlobalNameSignature formatter)
 {
-  return ts::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
+  return swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
+bwformat(BufferWriter &w, Spec const &spec, bwf::Errno const &e)
 {
   // Hand rolled, might not be totally compliant everywhere, but probably close
   // enough. The long string will be locally accurate. Clang requires the double
@@ -922,7 +929,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
 bwf::Date::Date(std::string_view fmt) : _epoch(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())), _fmt(fmt) {}
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date)
+bwformat(BufferWriter &w, Spec const &spec, bwf::Date const &date)
 {
   if (spec.has_numeric_type()) {
     bwformat(w, spec, date._epoch);
@@ -958,17 +965,17 @@ bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date)
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, bwf::OptionalAffix const &opts)
+bwformat(BufferWriter &w, Spec const &spec, bwf::OptionalAffix const &opts)
 {
   return w.write(opts._prefix).write(opts._text).write(opts._suffix);
 }
 
-} // namespace ts
+} // namespace swoc
 
 namespace
 {
 void
-BWF_Timestamp(ts::BufferWriter &w, ts::BWFSpec const &spec)
+BWF_Timestamp(swoc::BufferWriter &w, swoc::Spec const &spec)
 {
   // Unfortunately need to write to a temporary buffer or the sizing isn't
   // correct if @a w is clipped because @c strftime returns 0 if the buffer
@@ -980,25 +987,25 @@ BWF_Timestamp(ts::BufferWriter &w, ts::BWFSpec const &spec)
 }
 
 void
-BWF_Now(ts::BufferWriter &w, ts::BWFSpec const &spec)
+BWF_Now(swoc::BufferWriter &w, swoc::Spec const &spec)
 {
   bwformat(w, spec, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
 }
 
 void
-BWF_Tick(ts::BufferWriter &w, ts::BWFSpec const &spec)
+BWF_Tick(swoc::BufferWriter &w, swoc::Spec const &spec)
 {
   bwformat(w, spec, std::chrono::high_resolution_clock::now().time_since_epoch().count());
 }
 
 void
-BWF_ThreadID(ts::BufferWriter &w, ts::BWFSpec const &spec)
+BWF_ThreadID(swoc::BufferWriter &w, swoc::Spec const &spec)
 {
   bwformat(w, spec, pthread_self());
 }
 
 void
-BWF_ThreadName(ts::BufferWriter &w, ts::BWFSpec const &spec)
+BWF_ThreadName(swoc::BufferWriter &w, swoc::Spec const &spec)
 {
 #if defined(__FreeBSD_version)
   bwformat(w, spec, "thread"sv); // no thread names in FreeBSD.
@@ -1010,11 +1017,11 @@ BWF_ThreadName(ts::BufferWriter &w, ts::BWFSpec const &spec)
 }
 
 static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("tick", &BWF_Tick);
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("timestamp", &BWF_Timestamp);
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-id", &BWF_ThreadID);
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-name", &BWF_ThreadName);
+  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
+  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("tick", &BWF_Tick);
+  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("timestamp", &BWF_Timestamp);
+  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-id", &BWF_ThreadID);
+  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-name", &BWF_ThreadName);
   return true;
 }();
 
@@ -1023,7 +1030,7 @@ static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
 namespace std
 {
 ostream &
-operator<<(ostream &s, ts::FixedBufferWriter &w)
+operator<<(ostream &s, swoc::FixedBufferWriter &w)
 {
   return s << w.view();
 }
