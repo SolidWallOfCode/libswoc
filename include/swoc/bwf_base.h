@@ -157,7 +157,60 @@ namespace bwf
      * @return
      */
     virtual BufferWriter &operator()(BufferWriter &w, const Spec &spec) const = 0;
+  protected:
+    /// Write missing name output.
+    BufferWriter & err_invalid_name(BufferWriter & w, const Spec &) const;
   };
+
+/** Generators for tag names.
+ *
+ * This is a base class used by different types of name containers.
+ */
+ template < typename F >
+class Generators
+{
+private:
+  using self_type = Generators; ///< self reference type.
+public:
+  using Generator = std::function<F>;
+
+  /// Construct an empty name set.
+  Generators();
+  /// Construct and assign the names and generators in @a list
+  Generators(std::initializer_list<std::tuple<std::string_view, const Generator &>> list);
+
+  /** Assign the @a generator to the @a name.
+   *
+   * @param name Name associated with the @a generator.
+   * @param generator The generator function.
+   */
+  self_type &assign(std::string_view name, const Generator &generator);
+
+protected:
+  /// Copy @a name in to local storage and return a view of it.
+  std::string_view localize(std::string_view name);
+
+  using Map = std::unordered_map<std::string_view, Generator>;
+  Map _map;                    ///< Mapping of name -> generator
+  swoc::MemArena _arena{1024}; ///< Local name storage.
+};
+
+// Global names have no context, so use the bound form directly.
+class GlobalNames : public Generators<BoundNameSignature> {
+  using self_type = GlobalNames;
+  using super_type = Generators<BoundNameSignature>;
+public:
+  using super_type::super_type;
+  BoundNames & bind();
+protected:
+  class Binding : BoundNames {
+  public:
+    BufferWriter & operator () (BufferWriter & w, const Spec & spec) const override;
+  protected:
+    const super_type::Map & _map;
+    };
+};
+
 
   /** Generators for tag names.
    *
@@ -174,26 +227,28 @@ namespace bwf
    * then this parameter should make that explicit, e.g. @c Names<const Context>. This
    * paramater is accessible via the @c context_type alias.
    */
-  template <typename T> class Names
+  template <typename T> class ContextNames : public Generators<BufferWriter & (BufferWriter &, const Spec &, T &)>
   {
   private:
-    using self_type = Names; ///< self reference type.
+    using self_type = ContextNames; ///< self reference type.
+    using super_type = Generators<BufferWriter & (BufferWriter &, const Spec &, T &)>;
   public:
     using context_type = T; ///< Export for external convenience.
     /// Functional type for a generator.
-    using Generator = std::function<BufferWriter &(BufferWriter &, const Spec &, context_type &)>;
+    using Generator = typename super_type::Generator;
+    using BoundGenerator = std::function<BoundNameSignature>;
 
-    /// Construct an empty name set.
-    Names();
-    /// Construct and assign the names and generators in @a list
-    Names(std::initializer_list<std::tuple<std::string_view, const Generator &>> list);
+    using super_type::super_type;
 
-    /** Assign the @a generator to the @a name.
+    /** Assign the bound generator @a bg to @a name.
      *
-     * @param name Name associated with the @a generator.
-     * @param generator The generator function.
+     * This is used for generators in the namespace that do not require the context.
+     *
+     * @param name Name associated with the generator.
+     * @param bg A bound generator that requires no context.
+     * @return @c *this
      */
-    self_type &assign(std::string_view name, const Generator &generator);
+    self_type &assign(std::string_view name, const BoundGenerator &bg);
 
     /** Bind the names to a specific @a context.
      *
@@ -203,13 +258,7 @@ namespace bwf
     const BoundNames &bind(context_type &context);
 
   protected:
-    /// Copy @a name in to local storage and return a view of it.
-    std::string_view localize(std::string_view name);
-
-    using Map = std::unordered_map<std::string_view, Generator>;
-    Map _map;                    ///< Mapping of name -> generator
-    swoc::MemArena _arena{1024}; ///< Local name storage.
-
+    using Map = typename super_type::Map;
     /// Subclass of @a BoundNames used to bind this set of names to a context.
     class Binding : public BoundNames
     {
@@ -225,7 +274,6 @@ namespace bwf
     } _binding;
   };
 
-using GlobalNames = Names<std::chrono::nanoseconds>;
 extern GlobalNames Global_Names;
 }; // namespace bwf
 
@@ -284,42 +332,59 @@ namespace bwf
 
   inline bool Spec::has_valid_type() const { return _type != INVALID_TYPE; }
 
-  /// --- Names ---
+  /// --- Names / Generators ---
 
-  template <typename T> inline Names<T>::Binding::Binding(const Map &map) : _map(map) {}
+  BufferWriter &
+  BoundNames::err_invalid_name(BufferWriter &w, const Spec & spec) const {
+    return w.print("{{~{}~}}", spec._name);
+  }
+
+BufferWriter &
+GlobalNames::Binding::operator()(BufferWriter &w, const Spec &spec) const
+{
+  if (!spec._name.empty()) {
+    if (auto spot = _map.find(spec._name); spot != _map.end()) {
+      spot->second(w, spec);
+    } else {
+      this->err_invalid_name(w, spec);
+    }
+  }
+  return w;
+}
+  template <typename T> inline ContextNames<T>::Binding::Binding(const Map &map) : _map(map) {}
 
 template < typename T > BufferWriter &
-Names<T>::Binding::operator()(BufferWriter &w, const Spec &spec) const
+ContextNames<T>::Binding::operator()(BufferWriter &w, const Spec &spec) const
 {
   if (!spec._name.empty()) {
     if (auto spot = _map.find(spec._name); spot != _map.end()) {
       spot->second(w, spec, *_ctx);
     } else {
-      w.write('{').write('~').write(spec._name).write('~').write('}');
+      this->err_invalid_name(w, spec);
     }
   }
   return w;
 }
 
-template <typename T> Names<T>::Names() { }
+template <typename F> Generators<F>::Generators() { }
 
-template <typename T>
-Names<T>::Names(std::initializer_list<std::tuple<std::string_view, const Generator &>> list) {
+template <typename F>
+Generators<F>::Generators(std::initializer_list<std::tuple<std::string_view, const Generator &>> list) {
     for ( auto && [name, generator] : list ) {
       this->assign(name, generator);
     }
 }
 
-  template <typename T> std::string_view
-  Names<T>::localize(std::string_view name)
+  template <typename F> std::string_view
+  Generators<F>::localize(std::string_view name)
   {
     auto span = _arena.alloc(name.size());
     memcpy(span.data(), name.data(), name.size());
     return span.view();
   }
 
-template <typename T> auto
-Names<T>::assign(std::string_view name, const Generator & generator) -> self_type &
+template <typename F> auto
+Generators<F>::assign(std::string_view name, const Generator & generator) -> self_type &
 {
     name = this->localize(name);
     _map[name] = generator;

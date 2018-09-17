@@ -131,7 +131,7 @@ public:
    *
    * The buffer content is unchanged, only the extent value is adjusted.
    */
-  virtual BufferWriter &reduce(size_t n) = 0;
+  virtual BufferWriter &discard(size_t n) = 0;
 
   /// Get the total capacity.
   /// @return The total number of bytes that can be written without causing an error condition.
@@ -153,7 +153,7 @@ public:
   /// If the capacity is reduced below the current @c size the instance goes in to an error state.
   /// @see restore
   /// @return @c *this
-  virtual BufferWriter &shrink(size_t n) = 0;
+  virtual BufferWriter &restrict(size_t n) = 0;
 
   /// Restore @a n bytes of capacity.
   /// If there is an error condition, this function clears it and sets the extent to the size.  It
