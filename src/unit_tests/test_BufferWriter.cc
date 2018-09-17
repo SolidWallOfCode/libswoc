@@ -82,7 +82,7 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     }
     X &shrink(size_t) override { return *this; }
     X &restore(size_t) override { return *this; }
-    X &fill(size_t) override { return *this; }
+    X &extend(size_t) override { return *this; }
     std::ostream &
     operator>>(std::ostream &stream) const override
     {
@@ -180,7 +180,7 @@ twice(BWType &bw)
   }
 
   std::strcpy(bw.aux_buffer(), " fox");
-  bw.fill(sizeof(" fox") - 1);
+  bw.extend(sizeof(" fox") - 1);
 
   if (bw.error()) {
     return false;
@@ -208,7 +208,7 @@ twice(BWType &bw)
     return false;
   }
 
-  bw.reduce(sizeof("The quick brown fox") - 1);
+  bw.reduce(0);
 
   if (bw.error()) {
     return false;
@@ -218,7 +218,7 @@ twice(BWType &bw)
     return false;
   }
 
-  bw.reduce(sizeof("The quick brown") - 1);
+  bw.reduce(4);
   bw.shrink(bw.capacity() + 2 - (sizeof("The quick brown fox") - 1)).write(" fox");
 
   if (bw.view() != "The quick brown f") {
@@ -269,12 +269,12 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown") - 1));
 
-  bw.fill(sizeof(" fox") - 1);
+  bw.extend(sizeof(" fox") - 1);
 
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown fox") - 1));
 
-  bw.drop(0);
+  bw.clear();
 
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown fox") - 1));
@@ -302,6 +302,6 @@ TEST_CASE("LocalBufferWriter shrink/restore", "[BWD]")
   REQUIRE(bw.view() == "aaabbb");
 
   bw.restore(4);
-  bw.fill(static_cast<size_t>(snprintf(bw.aux_buffer(), bw.remaining(), "ccc")));
+  bw.extend(static_cast<size_t>(snprintf(bw.aux_buffer(), bw.remaining(), "ccc")));
   REQUIRE(bw.view() == "aaabbbccc");
 }

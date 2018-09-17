@@ -38,6 +38,7 @@ namespace bwf
 {
   struct Spec;
   class Format;
+  class BoundNames;
 } // namespace bwf
 
 /** Base (abstract) class for concrete buffer writers.
@@ -98,27 +99,39 @@ public:
       safest mechanism is to create a @c FixedBufferWriter on the auxillary buffer and write to that.
 
       @code
-      swoc::FixedBufferWriter subw(w.aux_buffer(), w.remaining());
+      swoc::FixedBufferWriter subw(w.aux_data(), w.remaining());
       write_some_stuff(subw); // generate output into the buffer.
       w.fill(subw.extent()); // update main buffer writer.
       @endcode
 
       @return Address of the next output byte, or @c nullptr if there is no remaining capacity.
    */
-  virtual char *aux_buffer();
+  virtual char *aux_data();
 
-  /** Advance the buffer position @a n bytes.
+  /** Increase the extent by @a n bytes.
 
-      This treats the next @a n bytes as being written without changing the content. This is useful
-      only in conjuction with @a aux_buffer to indicate that @a n bytes of the auxillary buffer has
-      been written by some other mechanism.
+      @param n The number of bytes to add to the extent.
+
+      The buffer content is unchanged, only the extent value is adjusted.
+
+      This is useful
+      when doing local buffer filling using @c aux_data. After writing data there, it can be
+      added to the extent using this method.
 
       @internal Concrete subclasses @b must override this to advance in a way consistent with the
       specific buffer type.
 
       @return @c *this
   */
-  virtual BufferWriter &fill(size_t n) = 0;
+  virtual BufferWriter &extend(size_t n) = 0;
+
+  /** Decrease the extent by @a n.
+   *
+   * @param n Number of bytes to remove from the extent.
+   *
+   * The buffer content is unchanged, only the extent value is adjusted.
+   */
+  virtual BufferWriter &reduce(size_t n) = 0;
 
   /// Get the total capacity.
   /// @return The total number of bytes that can be written without causing an error condition.
@@ -149,6 +162,20 @@ public:
   /// @see shrink
   virtual BufferWriter &restore(size_t n) = 0;
 
+  /** Copy data from one part of the buffer to another.
+   *
+   * The copy is guaranteed to be correct even if the @a src and @a dst overlap. The regions are
+   * clipped by the current extent. That is, bytes cannot be copied to nor from unwritten buffer.
+   * If the extent is currently more than the capacity, the copy is performed as if the buffer
+   * existed and then clipped to the actual buffer space.
+   *
+   * @param dst Offset of the first by to copy onto.
+   * @param src Offset of the first byte to copy from.
+   * @param n Number of bytes to copy.
+   * @return @c *this
+   */
+  virtual BufferWriter & copy(size_t dst, size_t src, size_t n) = 0;
+
   // Force virtual destructor.
   virtual ~BufferWriter();
 
@@ -174,10 +201,15 @@ public:
   /// Print using a preparsed @a fmt.
   template <typename... Args> BufferWriter &print(bwf::Format const &fmt, Args &&... args);
 
-  /** Print overload to take arguments as a tuple instead of explicitly.
-      This is useful for forwarding variable arguments from other functions / methods.
+  /** Print the arguments on to the buffer.
+   *
+   * This is the base implementation, all of the other variants are wrappers for this.
+   *
+   * @tparam F Format processor - returns chunks of the format.
+   * @tparam Args Arguments for the format.
+   * @param names Name set for specifier names.
   */
-  template <typename... Args> BufferWriter &printv(bwf::Format const &fmt, std::tuple<Args...> const &args);
+  template <typename F, typename... Args> BufferWriter &print_nv(const bwf::BoundNames & names, F & f, std::tuple<Args...> const &args);
 
   /// Output the buffer contents to the @a stream.
   /// @return The destination stream.
@@ -235,10 +267,15 @@ public:
   bool error() const override;
 
   /// Get the start of the unused output buffer.
-  char *aux_buffer() override;
+  char *aux_data() override;
 
   /// Advance the used part of the output buffer.
-  self_type &fill(size_t n) override;
+  self_type &extend(size_t n) override;
+
+  /// Drop @a n characters from the end of the buffer.
+  /// The extent is reduced but the data is not overwritten and can be recovered with
+  /// @c fill.
+  self_type &reduce(size_t n);
 
   /// Get the total capacity of the output buffer.
   size_t capacity() const override;
@@ -252,10 +289,8 @@ public:
   /// Extend the capacity by @a n.
   self_type &restore(size_t n) override;
 
-  /// Drop @a n characters from the end of the buffer.
-  /// The extent is reduced but the data is not overwritten and can be recovered with
-  /// @c fill.
-  self_type &drop(size_t n);
+  /// Copy data in the buffer.
+  FixedBufferWriter & copy(size_t dst, size_t src, size_t n) override;
 
   /// Clear the buffer, reset to empty (no data).
   /// This is a convenience for reusing a buffer. For instance
@@ -339,7 +374,7 @@ BufferWriter::write(const std::string_view &sv)
 }
 
 inline char *
-BufferWriter::aux_buffer()
+BufferWriter::aux_data()
 {
   return nullptr;
 }
@@ -399,13 +434,13 @@ FixedBufferWriter::error() const
 }
 
 inline char *
-FixedBufferWriter::aux_buffer()
+FixedBufferWriter::aux_data()
 {
   return error() ? nullptr : _buf + _attempted;
 }
 
 inline auto
-FixedBufferWriter::fill(size_t n) -> self_type &
+FixedBufferWriter::extend(size_t n) -> self_type &
 {
   _attempted += n;
 
@@ -445,7 +480,7 @@ FixedBufferWriter::restore(size_t n) -> self_type &
 }
 
 inline auto
-FixedBufferWriter::drop(size_t n) -> self_type &
+FixedBufferWriter::reduce(size_t n) -> self_type &
 {
   WEAK_ASSERT(n <= _attempted);
 
@@ -457,6 +492,15 @@ inline auto
 FixedBufferWriter::clear() -> self_type &
 {
   _attempted = 0;
+  return *this;
+}
+
+inline auto
+FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type & {
+  auto limit = std::min<size_t>(_capacity, _attempted); // max offset of region possible.
+  MemSpan src_span { _buf + src, std::min<ptrdiff_t>(limit, src + n) };
+  MemSpan dst_span { _buf + dst, std::min<ptrdiff_t>(limit, dst + n) };
+  std::memmove(dst_span.data(), src_span.data(), std::min(dst_span.size(), src_span.size()));
   return *this;
 }
 

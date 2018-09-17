@@ -34,6 +34,8 @@
 
 using namespace std::literals;
 
+swoc::bwf::GlobalNames swoc::bwf::Global_Names;
+
 namespace
 {
 // Customized version of string to int. Using this instead of the general @c svtoi function made @c
@@ -103,11 +105,12 @@ namespace bwf
   {
     TextView num; // temporary for number parsing.
     intmax_t n;
+    _type = DEFAULT_TYPE;
 
     _name = fmt.take_prefix_at(':');
     // if it's parsable as a number, treat it as an index.
     n = tv_to_positive_decimal(_name, &num);
-    if (num.size()) {
+    if (num.size() == _name.size()) {
       _idx = static_cast<decltype(_idx)>(n);
     }
 
@@ -214,104 +217,49 @@ namespace bwf
     }
   }
 
-  BufferWriter &
-  Names::Binding::operator()(BufferWriter &w, const Spec &spec)
-  {
-    if (auto spot = _map.find(spec._name)
-  }
-
-  GlobalTable BWF_GLOBAL_TABLE;
-
   void
   Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n)
   {
-    static const BWFormat fmt{"{{BAD_ARG_INDEX:{} of {}}}"sv};
+    static const Format fmt{"{{BAD_ARG_INDEX:{} of {}}}"sv};
     w.print(fmt, i, n);
   }
 
   /** This performs generic alignment operations.
 
-      If a formatter specialization performs this operation instead, that should
+     If a formatter specialization performs this operation instead, that should
      result in output that is at least @a spec._min characters wide, which will
      cause this function to make no further adjustments.
    */
   void
-  Adjust_Alignment(Spec const &spec, BufferWriter &w, BufferWriter &lw)
+  Adjust_Alignment(BufferWriter & aux, Spec const &spec)
   {
-    size_t extent = lw.extent();
+    size_t extent = aux.extent();
     size_t min    = spec._min;
-    size_t size   = lw.size();
+    size_t size   = aux.size();
     if (extent < min) {
       size_t delta = min - extent;
-      char *base   = w.auxBuffer();       // should be first byte of @a lw e.g. lw.data()
-                                          // - avoid const_cast.
-      char *limit = base + lw.capacity(); // first invalid byte.
-      char *dst;                          // used to track memory operation targest;
-      char *last;                         // track limit of memory operation.
-      size_t d2;
-      switch (spec._align) {
-      case Spec::Align::RIGHT:
-        dst = base + delta; // move existing content to here.
-        if (dst < limit) {
-          last = dst + size; // amount of data to move.
-          if (last > limit) {
-            last = limit;
-          }
-          std::memmove(dst, base, last - dst);
-        }
-        dst  = base;
-        last = base + delta;
-        if (last > limit) {
-          last = limit;
-        }
-        while (dst < last) {
-          *dst++ = spec._fill;
-        }
-        break;
-      case Spec::Align::CENTER:
-        d2 = (delta + 1) / 2; // always > 0 because min > extent
-        // Move the original content right to make space to fill on the left.
-        dst = base + d2; // move existing content to here.
-        if (dst < limit) {
-          last = dst + size; // amount of data to move.
-          if (last > limit) {
-            last = limit;
-          }
-          std::memmove(dst, base, last - dst); // move content.
-        }
-        // Left fill.
-        dst  = base;
-        last = base + d2;
-        if (last > limit) {
-          last = limit;
-        }
-        while (dst < last) {
-          *dst++ = spec._fill;
-        }
-        // Right fill.
-        dst += size;
-        last = dst + delta / 2; // round down
-        if (last > limit) {
-          last = limit;
-        }
-        while (dst < last) {
-          *dst++ = spec._fill;
-        }
-        break;
-      default:
-        // Everything else is equivalent to LEFT - distinction is for more
-        // specialized types such as integers.
-        dst  = base + size;
-        last = dst + delta;
-        if (last > limit) {
-          last = limit;
-        }
-        while (dst < last) {
-          *dst++ = spec._fill;
-        }
-        break;
+      size_t left_delta = 0, right_delta = delta; // left justify values
+      if (Spec::Align::RIGHT == spec._align) {
+        left_delta = delta;
+        right_delta = 0;
+      } else if (Spec::Align::LEFT == spec._align) {
+        left_delta = delta / 2;
+        right_delta = (delta + 1) / 2;
       }
-      w.fill(min);
+      if (left_delta > 0) {
+        size_t work_area = extent + left_delta;
+        aux.extend(work_area); // set up the extent needed to do left fill.
+        aux.copy(left_delta, 0, extent); // move to create space for left fill.
+        aux.reduce(work_area); // roll back to write the left fill.
+        for ( int i = left_delta ; i > 0  ; --i ) {
+          aux.write(spec._fill);
+        }
+        aux.extend(extent);
+      }
+      for ( int i = right_delta ; i > 0 ; --i ) {
+        aux.write(spec._fill);
+      }
+
     } else {
       size_t max = spec._max;
       if (max < extent) {
@@ -424,26 +372,26 @@ namespace bwf
     switch (spec._type) {
     case 'x':
       prefix2 = 'x';
-      n       = bw_fmt::To_Radix<16>(i, buff, sizeof(buff), bw_fmt::LOWER_DIGITS);
+      n       = bwf::To_Radix<16>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
       break;
     case 'X':
       prefix2 = 'X';
-      n       = bw_fmt::To_Radix<16>(i, buff, sizeof(buff), bw_fmt::UPPER_DIGITS);
+      n       = bwf::To_Radix<16>(i, buff, sizeof(buff), bwf::UPPER_DIGITS);
       break;
     case 'b':
       prefix2 = 'b';
-      n       = bw_fmt::To_Radix<2>(i, buff, sizeof(buff), bw_fmt::LOWER_DIGITS);
+      n       = bwf::To_Radix<2>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
       break;
     case 'B':
       prefix2 = 'B';
-      n       = bw_fmt::To_Radix<2>(i, buff, sizeof(buff), bw_fmt::UPPER_DIGITS);
+      n       = bwf::To_Radix<2>(i, buff, sizeof(buff), bwf::UPPER_DIGITS);
       break;
     case 'o':
-      n = bw_fmt::To_Radix<8>(i, buff, sizeof(buff), bw_fmt::LOWER_DIGITS);
+      n = bwf::To_Radix<8>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
       break;
     default:
       prefix1 = 0;
-      n       = bw_fmt::To_Radix<10>(i, buff, sizeof(buff), bw_fmt::LOWER_DIGITS);
+      n       = bwf::To_Radix<10>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
       break;
     }
     // Clip fill width by stuff that's already committed to be written.
@@ -569,8 +517,8 @@ namespace bwf
 
     uint64_t frac_part = static_cast<uint64_t>(frac * shift + 0.5 /* rounding */);
 
-    l = bw_fmt::To_Radix<10>(whole_part, whole, sizeof(whole), bw_fmt::LOWER_DIGITS);
-    r = bw_fmt::To_Radix<10>(frac_part, fraction, sizeof(fraction), bw_fmt::LOWER_DIGITS);
+    l = bwf::To_Radix<10>(whole_part, whole, sizeof(whole), bwf::LOWER_DIGITS);
+    r = bwf::To_Radix<10>(frac_part, fraction, sizeof(fraction), bwf::LOWER_DIGITS);
 
     // Clip fill width
     if (neg) {
@@ -617,17 +565,17 @@ bwformat(BufferWriter &w, Spec const &spec, std::string_view sv)
   }
 
   if ('x' == spec._type || 'X' == spec._type) {
-    const char *digits = 'x' == spec._type ? bw_fmt::LOWER_DIGITS : bw_fmt::UPPER_DIGITS;
+    const char *digits = 'x' == spec._type ? bwf::LOWER_DIGITS : bwf::UPPER_DIGITS;
     width -= sv.size() * 2;
     if (spec._radix_lead_p) {
       w.write('0');
       w.write(spec._type);
       width -= 2;
     }
-    bw_fmt::Write_Aligned(w, [&w, &sv, digits]() { bw_fmt::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill, 0);
+    bwf::Write_Aligned(w, [&w, &sv, digits]() { bwf::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill, 0);
   } else {
     width -= sv.size();
-    bw_fmt::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
+    bwf::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
   }
   return w;
 }
@@ -637,12 +585,12 @@ bwformat(BufferWriter &w, Spec const &spec, MemSpan const &span)
 {
   static const BWFormat default_fmt{"{:#x}@{:p}"};
   if (spec._ext.size() && 'd' == spec._ext.front()) {
-    const char *digits = 'X' == spec._type ? bw_fmt::UPPER_DIGITS : bw_fmt::LOWER_DIGITS;
+    const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
     if (spec._radix_lead_p) {
       w.write('0');
       w.write(digits[33]);
     }
-    bw_fmt::Hex_Dump(w, span.view(), digits);
+    bwf::Hex_Dump(w, span.view(), digits);
   } else {
     w.print(default_fmt, span.size(), span.data());
   }
@@ -665,13 +613,13 @@ BWFormat::BWFormat(swoc::TextView fmt)
       _items.emplace_back(lit_spec, &Format_Literal);
     }
     if (spec_p) {
-      bw_fmt::GlobalSignature gf = nullptr;
+      bwf::GlobalSignature gf = nullptr;
       Spec parsed_spec{spec_str};
       if (parsed_spec._name.size() == 0) { // no name provided, use implicit index.
         parsed_spec._idx = arg_idx;
       }
       if (parsed_spec._idx < 0) { // name wasn't missing or a valid index, assume global name.
-        gf = bw_fmt::Global_Table_Find(parsed_spec._name);
+        gf = bwf::Global_Table_Find(parsed_spec._name);
       } else {
         ++arg_idx; // bump this if not a global name.
       }
@@ -737,12 +685,12 @@ BWFormat::Format_Literal(BufferWriter &w, Spec const &spec)
   w.write(spec._ext);
 }
 
-bw_fmt::GlobalSignature
-bw_fmt::Global_Table_Find(std::string_view name)
+bwf::GlobalSignature
+bwf::Global_Table_Find(std::string_view name)
 {
   if (name.size()) {
-    auto spot = bw_fmt::BWF_GLOBAL_TABLE.find(name);
-    if (spot != bw_fmt::BWF_GLOBAL_TABLE.end()) {
+    auto spot = bwf::Global_Names.find(name);
+    if (spot != bwf::Global_Names.end()) {
       return spot->second;
     }
   }
@@ -764,7 +712,7 @@ FixedBufferWriter::operator>>(int fd) const
 bool
 bwf_register_global(std::string_view name, BWGlobalNameSignature formatter)
 {
-  return swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
+  return swoc::bwf::Global_Names.emplace(name, formatter).second;
 }
 
 BufferWriter &
@@ -947,7 +895,7 @@ bwformat(BufferWriter &w, Spec const &spec, bwf::Date const &date)
     }
     // Try a direct write, faster if it works.
     if (r > 0) {
-      n = strftime(w.auxBuffer(), r, date._fmt.data(), &t);
+      n = strftime(w.aux_data(), r, date._fmt.data(), &t);
     }
     if (n > 0) {
       w.fill(n);
@@ -987,9 +935,9 @@ BWF_Timestamp(swoc::BufferWriter &w, swoc::Spec const &spec)
 }
 
 void
-BWF_Now(swoc::BufferWriter &w, swoc::Spec const &spec)
+BWF_Now(swoc::BufferWriter &w, swoc::Spec const &spec, const std::chrono::nanoseconds & tick)
 {
-  bwformat(w, spec, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+  bwformat(w, spec, std::chrono::system_clock::to_time_t(tick));
 }
 
 void
@@ -999,7 +947,7 @@ BWF_Tick(swoc::BufferWriter &w, swoc::Spec const &spec)
 }
 
 void
-BWF_ThreadID(swoc::BufferWriter &w, swoc::Spec const &spec)
+BWF_ThreadID(swoc::BufferWriter &w, swoc::Spec const &spec, const std::chrono::nanoseconds & )
 {
   bwformat(w, spec, pthread_self());
 }
@@ -1017,11 +965,11 @@ BWF_ThreadName(swoc::BufferWriter &w, swoc::Spec const &spec)
 }
 
 static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
-  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
-  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("tick", &BWF_Tick);
-  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("timestamp", &BWF_Timestamp);
-  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-id", &BWF_ThreadID);
-  swoc::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-name", &BWF_ThreadName);
+  swoc::bwf::Global_Names.assign("now", &BWF_Now);
+  swoc::bwf::Global_Names.assign("tick", &BWF_Tick);
+  swoc::bwf::Global_Names.assign("timestamp", &BWF_Timestamp);
+  swoc::bwf::Global_Names.assign("thread-id", &BWF_ThreadID);
+  swoc::bwf::Global_Names.assign("thread-name", &BWF_ThreadName);
   return true;
 }();
 

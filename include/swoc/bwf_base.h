@@ -56,11 +56,13 @@ namespace swoc
 {
 namespace bwf
 {
-  /** A parsed version of a format specifier.
+  /** Parsed version of a format specifier.
    */
   struct Spec {
     using self_type                    = Spec; ///< Self reference type.
     static constexpr char DEFAULT_TYPE = 'g';  ///< Default format type.
+    static constexpr char INVALID_TYPE = 0; ///< Type for missing or invalid specifier.
+    static constexpr char LITERAL_TYPE = '"'; ///< Internal type to mark a literal.
 
     /// Constructor a default instance.
     constexpr Spec() {}
@@ -87,6 +89,7 @@ namespace bwf
     std::string_view _name;                                       ///< Name of the specification.
     std::string_view _ext;                                        ///< Extension if provided.
 
+    /// Global default instance for use in situations where a format specifier isn't available.
     static const self_type DEFAULT;
 
     /// Validate @a c is a specifier type indicator.
@@ -106,6 +109,9 @@ namespace bwf
 
     /// Check if the type is a raw pointer.
     bool has_pointer_type() const;
+
+    /// Check if the type is valid.
+    bool has_valid_type() const;
 
   protected:
     /// Validate character is alignment character and return the appropriate enum value.
@@ -128,7 +134,7 @@ namespace bwf
     } _prop;
   };
 
-  using BoundGeneratorSignature = BufferWriter & (*)(BufferWriter &, Spec const &);
+  using BoundNameSignature = BufferWriter & (*)(BufferWriter &, Spec const &);
 
 /** Protocol class for implementation @c Names.
    *
@@ -138,10 +144,10 @@ namespace bwf
   class BoundNames
   {
   public:
-    using Generator = std::function<BufferWriter &(BufferWriter &, const Spec &)>;
+    using Generator = std::function<BoundNameSignature>;
 
     /** Generate output text for @a name on the output @a w using the format specifier @a spec.
-     * This must match the @c BoundGeneratorSignature type.
+     * This must match the @c BoundNameSignature type.
      *
      * @param w Output stream.
      * @param spec Parsed format specifier.
@@ -150,7 +156,7 @@ namespace bwf
      *
      * @return
      */
-    virtual BufferWriter &operator()(BufferWriter &w, const Spec &spec) = 0;
+    virtual BufferWriter &operator()(BufferWriter &w, const Spec &spec) const = 0;
   };
 
   /** Generators for tag names.
@@ -208,7 +214,7 @@ namespace bwf
     class Binding : public BoundNames
     {
     public:
-      BufferWriter &operator()(BufferWriter &w, const Spec &spec) override;
+      BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
 
     protected:
       Binding(const Map &map);
@@ -219,6 +225,8 @@ namespace bwf
     } _binding;
   };
 
+using GlobalNames = Names<std::chrono::nanoseconds>;
+extern GlobalNames Global_Names;
 }; // namespace bwf
 
 // --------------- Implementation --------------------
@@ -274,9 +282,24 @@ namespace bwf
     return _type == 'p' || _type == 'P';
   }
 
+  inline bool Spec::has_valid_type() const { return _type != INVALID_TYPE; }
+
   /// --- Names ---
 
   template <typename T> inline Names<T>::Binding::Binding(const Map &map) : _map(map) {}
+
+template < typename T > BufferWriter &
+Names<T>::Binding::operator()(BufferWriter &w, const Spec &spec) const
+{
+  if (!spec._name.empty()) {
+    if (auto spot = _map.find(spec._name); spot != _map.end()) {
+      spot->second(w, spec, *_ctx);
+    } else {
+      w.write('{').write('~').write(spec._name).write('~').write('}');
+    }
+  }
+  return w;
+}
 
 template <typename T> Names<T>::Names() { }
 
@@ -337,9 +360,10 @@ Names<T>::assign(std::string_view name, const Generator & generator) -> self_typ
   }
 
   /// Perform alignment adjustments / fill on @a w of the content in @a lw.
-  /// This is the normal mechanism, but a number of the builtin types handle this internally
-  /// for performance reasons.
-  void Adjust_Alignment(Spec const &spec, BufferWriter &w, BufferWriter &lw);
+  /// This is the normal mechanism, in cases where the length can be known or limited before
+  /// conversion, it can be more efficient to work in a temporary local buffer and copy out
+  /// as neeed without moving data in the output buffer.
+  void Adjust_Alignment(BufferWriter & aux, Spec const &spec);
 
   /// Generic integral conversion.
   BufferWriter &Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t n, bool negative_p);
@@ -356,8 +380,8 @@ class Format
 {
 public:
   /// Construct from a format string @a fmt.
-  BWFormat(TextView fmt);
-  ~BWFormat();
+  Format(TextView fmt);
+  ~Format();
 
   /** Parse elements of a format string.
 
@@ -372,21 +396,7 @@ public:
    */
   static bool parse(TextView &fmt, std::string_view &literal, std::string_view &spec);
 
-  /** Parsed items from the format string.
-
-      Literals are handled by putting the literal text in the extension field and setting the
-      global formatter @a _gf to @c LiteralFormatter, which writes out the extension as a literal.
-   */
-  struct Item {
-    Spec _spec; ///< Specification.
-    /// If the spec has a global formatter name, cache it here.
-    mutable bw_fmt::GlobalSignature _gf = nullptr;
-
-    Item() {}
-    Item(Spec const &spec, bw_fmt::GlobalSignature gf) : _spec(spec), _gf(gf) {}
-  };
-
-  using Items = std::vector<Item>;
+  using Items = std::vector<Spec>;
   Items _items; ///< Items from format string.
 
 protected:
@@ -400,36 +410,49 @@ template <typename... Args>
 BufferWriter &
 BufferWriter::print(TextView fmt, Args &&... args)
 {
-  return this->printv(fmt, std::forward_as_tuple(args...));
+  return this->print_nv(fmt, std::forward_as_tuple(args...));
 }
 
-template <typename... Args>
+/* [Need to clip this out and put it in Sphinx
+ *
+ * The format parser :arg:`F` performs parsing of the format specifier, which is presumed to be
+ * bound to this instance of :arg:`F`. The parser is called as a functor and must have a function
+ * method with the signature
+ *
+ * bool (string_view & literal_v, bwf::Spec & spec)
+ *
+ * The parser must parse out to the next specifier in the format, or the end of the format if there
+ * are no more specifiers. If the format is exhausted this should return @c false. A return of @c true
+ * indicates there is either a literal, a specifier, or both.
+ *
+ * When a literal is found, it should be returned in :arg:`literal_v`. If a specifier is found and
+ * parsed, it should be put in :arg:`spec`. Both of these *must* be cleared if the corresponding
+ * data is not found in the incremental parse of the format.
+ */
+
+template <typename F, typename... Args>
 BufferWriter &
-BufferWriter::printv(TextView fmt, std::tuple<Args...> const &args)
+BufferWriter::print_nv(const bwf::BoundNames & names, F & f, std::tuple<Args...> const &args)
 {
   using namespace std::literals;
   static constexpr int N = sizeof...(Args); // used as loop limit
-  static const auto fa   = bw_fmt::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
+  static const auto fa   = bwf:Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
   int arg_idx            = 0; // the next argument index to be processed.
+  std::string_view lit_v;
+  bwf::Spec spec;
 
-  while (fmt.size()) {
-    // Next string piece of interest is an (optional) literal and then an (optinal) format specifier.
-    // There will always be a specifier except for the possible trailing literal.
-    std::string_view lit_v;
-    std::string_view spec_v;
-    bool spec_p = bwf::Format::parse(fmt, lit_v, spec_v);
-
+  // Parser is required to return @c false if there's no more data, @c true if something was parsed.
+  while (f(lit_v, spec)) {
     if (lit_v.size()) {
       this->write(lit_v);
     }
 
-    if (spec_p) {
-      bwf::Spec spec{spec_v}; // parse the specifier.
+    if (spec.has_valid_type()) {
       size_t width = this->remaining();
       if (spec._max < width) {
         width = spec._max;
       }
-      FixedBufferWriter lw{this->aux_buffer(), width};
+      FixedBufferWriter lw{this->aux_data(), width};
 
       if (spec._name.size() == 0) {
         spec._idx = arg_idx;
@@ -438,19 +461,14 @@ BufferWriter::printv(TextView fmt, std::tuple<Args...> const &args)
         if (spec._idx < N) {
           fa[spec._idx](lw, spec, args);
         } else {
-          bw_fmt::Err_Bad_Arg_Index(lw, spec._idx, N);
+          bwf::Err_Bad_Arg_Index(lw, spec._idx, N);
         }
         ++arg_idx;
       } else if (spec._name.size()) {
-        auto gf = bw_fmt::Global_Table_Find(spec._name);
-        if (gf) {
-          gf(lw, spec);
-        } else {
-          lw.write("{~"sv).write(spec._name).write("~}"sv);
-        }
+        names(lw, spec);
       }
       if (lw.extent()) {
-        bw_fmt::Do_Alignment(spec, *this, lw);
+        bwf::Adjust_Alignment(*this, spec, lw);
       }
     }
   }
@@ -470,14 +488,14 @@ BufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args)
 {
   using namespace std::literals;
   static constexpr int N = sizeof...(Args);
-  static const auto fa   = bw_fmt::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
+  static const auto fa   = bwf::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
 
   for (BWFormat::Item const &item : fmt._items) {
     size_t width = this->remaining();
     if (item._spec._max < width) {
       width = item._spec._max;
     }
-    FixedBufferWriter lw{this->aux_buffer(), width};
+    FixedBufferWriter lw{this->aux_data(), width};
     if (item._gf) {
       item._gf(lw, item._spec);
     } else {
@@ -488,7 +506,7 @@ BufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args)
         lw.write("{~"sv).write(item._spec._name).write("~}"sv);
       }
     }
-    bw_fmt::Do_Alignment(item._spec, *this, lw);
+    bwf::Do_Alignment(item._spec, *this, lw);
   }
   return *this;
 }
@@ -504,7 +522,7 @@ bwformat(BufferWriter &w, Spec const &spec, const void *ptr)
   } else if (ptr_spec._type == 'P') {
     ptr_spec._type = 'X'; // P means upper hex, overriding other specializations.
   }
-  return bw_fmt::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
+  return bwf::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
 }
 
 // MemSpan
@@ -549,7 +567,7 @@ auto
 bwformat(BufferWriter &w, Spec const &spec, F &&f) ->
   typename std::enable_if<std::is_floating_point<typename std::remove_reference<F>::type>::value, BufferWriter &>::type
 {
-  return f < 0 ? bw_fmt::Format_Floating(w, spec, -f, true) : bw_fmt::Format_Floating(w, spec, f, false);
+  return f < 0 ? bwf::Format_Floating(w, spec, -f, true) : bwf::Format_Floating(w, spec, f, false);
 }
 
 /* Integer types.
@@ -571,7 +589,7 @@ bwformat(BufferWriter &w, Spec const &spec, I &&i) ->
                             std::is_integral<typename std::remove_reference<I>::type>::value,
                           BufferWriter &>::type
 {
-  return bw_fmt::Format_Integer(w, spec, i, false);
+  return bwf::Format_Integer(w, spec, i, false);
 }
 
 template <typename I>
@@ -581,7 +599,7 @@ bwformat(BufferWriter &w, Spec const &spec, I &&i) ->
                             std::is_integral<typename std::remove_reference<I>::type>::value,
                           BufferWriter &>::type
 {
-  return i < 0 ? bw_fmt::Format_Integer(w, spec, -i, true) : bw_fmt::Format_Integer(w, spec, i, false);
+  return i < 0 ? bwf::Format_Integer(w, spec, -i, true) : bwf::Format_Integer(w, spec, i, false);
 }
 
 inline BufferWriter &
@@ -599,7 +617,7 @@ bwformat(BufferWriter &w, Spec const &spec, bool f)
   } else if ('S' == spec._type) {
     w.write(f ? "TRUE"sv : "FALSE"sv);
   } else {
-    bw_fmt::Format_Integer(w, spec, static_cast<uintmax_t>(f), false);
+    bwf::Format_Integer(w, spec, static_cast<uintmax_t>(f), false);
   }
   return w;
 }
@@ -620,20 +638,20 @@ operator<<(BufferWriter &w, V &&v)
  */
 template <typename... Args>
 std::string &
-bwprintv(std::string &s, ts::TextView fmt, std::tuple<Args...> const &args)
+bwprintv(std::string &s, swoc::TextView fmt, std::tuple<Args...> const &args)
 {
   auto len = s.size(); // remember initial size
-  size_t n = ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, std::move(args)).extent();
+  size_t n = swoc::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, std::move(args)).extent();
   s.resize(n);   // always need to resize - if shorter, must clip pre-existing text.
   if (n > len) { // dropped data, try again.
-    ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, std::move(args));
+    swoc::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, std::move(args));
   }
   return s;
 }
 
 template <typename... Args>
 std::string &
-bwprint(std::string &s, ts::TextView fmt, Args &&... args)
+bwprint(std::string &s, swoc::TextView fmt, Args &&... args)
 {
   return bwprintv(s, fmt, std::forward_as_tuple(args...));
 }
@@ -681,7 +699,7 @@ FixedBufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args) 
 namespace std
 {
 inline ostream &
-operator<<(ostream &s, ts::BufferWriter const &w)
+operator<<(ostream &s, swoc::BufferWriter const &w)
 {
   return w >> s;
 }
