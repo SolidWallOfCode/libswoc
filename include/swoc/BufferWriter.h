@@ -108,6 +108,22 @@ public:
    */
   virtual char *aux_data();
 
+  /// Get the total capacity.
+  /// @return The total number of bytes that can be written without causing an error condition.
+  virtual size_t capacity() const = 0;
+
+  /// Get the extent.
+  /// @return Total number of characters that have been written, including those discarded due to an error condition.
+  virtual size_t extent() const = 0;
+
+  /// Get the output size.
+  /// @return Total number of characters that are in the buffer (successfully written and not discarded)
+  size_t size() const;
+
+  /// Get the remaining buffer space.
+  /// @return Number of additional characters that can be written without causing an error condidtion.
+  size_t remaining() const;
+
   /** Increase the extent by @a n bytes.
 
       @param n The number of bytes to add to the extent.
@@ -132,22 +148,6 @@ public:
    * The buffer content is unchanged, only the extent value is adjusted.
    */
   virtual BufferWriter &discard(size_t n) = 0;
-
-  /// Get the total capacity.
-  /// @return The total number of bytes that can be written without causing an error condition.
-  virtual size_t capacity() const = 0;
-
-  /// Get the extent.
-  /// @return Total number of characters that have been written, including those discarded due to an error condition.
-  virtual size_t extent() const = 0;
-
-  /// Get the output size.
-  /// @return Total number of characters that are in the buffer (successfully written and not discarded)
-  size_t size() const;
-
-  /// Get the remaining buffer space.
-  /// @return Number of additional characters that can be written without causing an error condidtion.
-  size_t remaining() const;
 
   /// Reduce the capacity by @a n bytes
   /// If the capacity is reduced below the current @c size the instance goes in to an error state.
@@ -234,6 +234,11 @@ public:
    */
   FixedBufferWriter(char *buffer, size_t capacity);
 
+  /** Construct from span
+   *
+   */
+  FixedBufferWriter(const MemSpan &span);
+
   /** Construct empty buffer.
    * This is useful for doing sizing before allocating a buffer.
    */
@@ -269,13 +274,8 @@ public:
   /// Get the start of the unused output buffer.
   char *aux_data() override;
 
-  /// Advance the used part of the output buffer.
-  self_type &extend(size_t n) override;
-
-  /// Drop @a n characters from the end of the buffer.
-  /// The extent is reduced but the data is not overwritten and can be recovered with
-  /// @c fill.
-  self_type &reduce(size_t n);
+  /// Get the span of the unused output buffer
+  MemSpan aux_span();
 
   /// Get the total capacity of the output buffer.
   size_t capacity() const override;
@@ -283,8 +283,16 @@ public:
   /// Get the total output sent to the writer.
   size_t extent() const override;
 
+  /// Advance the used part of the output buffer.
+  self_type &extend(size_t n) override;
+
+  /// Drop @a n characters from the end of the buffer.
+  /// The extent is reduced but the data is not overwritten and can be recovered with
+  /// @c fill.
+  self_type &discard(size_t n);
+
   /// Reduce the capacity by @a n.
-  self_type &shrink(size_t n) override;
+  self_type &restrict(size_t n) override;
 
   /// Extend the capacity by @a n.
   self_type &restore(size_t n) override;
@@ -322,9 +330,7 @@ protected:
   char *const _buf;      ///< Output buffer.
   size_t _capacity;      ///< Size of output buffer.
   size_t _attempted = 0; ///< Number of characters written, including those discarded due error condition.
-private:
-  // INTERNAL - Overload removed, make sure it's not used.
-  BufferWriter &write(size_t n);
+  size_t _restriction = 0; ///< Restricted capacity.
 };
 
 /** A buffer writer that writes to an array of char (of fixed size N) that is internal to the writer instance.
@@ -340,13 +346,8 @@ template <size_t N> class LocalBufferWriter : public FixedBufferWriter
 public:
   /// Construct an empty writer.
   LocalBufferWriter();
-
   LocalBufferWriter(const LocalBufferWriter &that) = delete;
   LocalBufferWriter &operator=(const LocalBufferWriter &that) = delete;
-
-  /// Restore capacity by @a n.
-  // Override to co-vary return type.
-  LocalBufferWriter &restore(size_t n) override;
 
 protected:
   char _arr[N]; ///< output buffer.
@@ -390,6 +391,7 @@ BufferWriter::remaining() const
 {
   return this->capacity() - this->size();
 }
+
 // --- FixedBufferWriter ---
 
 inline FixedBufferWriter &
@@ -439,6 +441,11 @@ FixedBufferWriter::aux_data()
   return error() ? nullptr : _buf + _attempted;
 }
 
+inline MemSpan
+FixedBufferWriter::aux_span() {
+  return error() ? MemSpan{} : MemSpan{ _buf + _attempted, static_cast<ptrdiff_t>(this->remaining()) };
+}
+
 inline auto
 FixedBufferWriter::extend(size_t n) -> self_type &
 {
@@ -460,10 +467,13 @@ FixedBufferWriter::extent() const
 }
 
 inline auto
-FixedBufferWriter::shrink(size_t n) -> self_type &
+FixedBufferWriter::restrict(size_t n) -> self_type &
 {
   WEAK_ASSERT(n <= _capacity);
+
   _capacity -= n;
+  _restriction += n;
+
   return *this;
 }
 
@@ -473,14 +483,16 @@ FixedBufferWriter::restore(size_t n) -> self_type &
   if (error()) {
     _attempted = _capacity;
   }
+  n = std::min(n, _restriction);
 
   _capacity += n;
+  _restriction -= n;
 
   return *this;
 }
 
 inline auto
-FixedBufferWriter::reduce(size_t n) -> self_type &
+FixedBufferWriter::discard(size_t n) -> self_type &
 {
   WEAK_ASSERT(n <= _attempted);
 
@@ -518,21 +530,6 @@ inline FixedBufferWriter::operator std::string_view() const
 
 // --- LocalBufferWriter ---
 template <size_t N> LocalBufferWriter<N>::LocalBufferWriter() : super_type(_arr, N) {}
-
-template <size_t N>
-auto
-LocalBufferWriter<N>::restore(size_t n) -> self_type &
-{
-  if (error()) {
-    _attempted = _capacity;
-  }
-
-  _capacity += n;
-
-  WEAK_ASSERT(_capacity <= N);
-
-  return *this;
-}
 
 } // namespace swoc
 

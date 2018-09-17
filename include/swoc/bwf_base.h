@@ -34,24 +34,6 @@
 #include "swoc/BufferWriter.h"
 #include "swoc/swoc_meta.h"
 
-/** Overridable formatting for type @a V.
-
-    This is the output generator for an instance of @a V to a @c BufferWriter. Default stream
-    operators call this with the default format specification (although those operators are
-    sometimes overloaded specifically for performance). User types should overload this function to
-    format output for that type.
-
-    @code
-      BufferWriter &
-      bwformat(BufferWriter &w, const bwf::Spec &, V const &v)
-      {
-        // generate output on @a w
-      }
-    @endcode
-
-    The argument can be passed by value if that would be more efficient.
-  */
-
 namespace swoc
 {
 namespace bwf
@@ -134,18 +116,20 @@ namespace bwf
     } _prop;
   };
 
+  // Name binding - support for having format specifier names.
+
+  /// Generic name generator signature.
   using BoundNameSignature = BufferWriter & (*)(BufferWriter &, Spec const &);
 
-/** Protocol class for implementation @c Names.
+  /** Protocol class for handling bound names.
    *
-   * This represents an instance of @c Names bound to a specific context. When a named specifier
-   * is processed, this is called to generate the output text for that name.
+   * This is an API facade for names that are fully bound and do not need any data / context
+   * beyond that of the @c BufferWriter. It is expected other name collections will subclass
+   * this to pass to the formatting logic.
    */
   class BoundNames
   {
   public:
-    using Generator = std::function<BoundNameSignature>;
-
     /** Generate output text for @a name on the output @a w using the format specifier @a spec.
      * This must match the @c BoundNameSignature type.
      *
@@ -162,22 +146,24 @@ namespace bwf
     BufferWriter & err_invalid_name(BufferWriter & w, const Spec &) const;
   };
 
-/** Generators for tag names.
+/** Binding names to generators.
+ *  @tparam F The function signature for generators in this container.
  *
- * This is a base class used by different types of name containers.
+ * This is a base class used by different types of name containers. It is not expected to be used
+ * directly.
  */
  template < typename F >
-class Generators
+class NameBinding
 {
 private:
-  using self_type = Generators; ///< self reference type.
+  using self_type = NameBinding; ///< self reference type.
 public:
   using Generator = std::function<F>;
 
   /// Construct an empty name set.
-  Generators();
+  NameBinding();
   /// Construct and assign the names and generators in @a list
-  Generators(std::initializer_list<std::tuple<std::string_view, const Generator &>> list);
+  NameBinding(std::initializer_list<std::tuple<std::string_view, const Generator &>> list);
 
   /** Assign the @a generator to the @a name.
    *
@@ -195,12 +181,17 @@ protected:
   swoc::MemArena _arena{1024}; ///< Local name storage.
 };
 
-// Global names have no context, so use the bound form directly.
-class GlobalNames : public Generators<BoundNameSignature> {
+ /** A class to hold global name bindings.
+  *
+  * These names access global data and therefore have no context. An instance of this is used
+  * as the default if no explicit name set is provided.
+  */
+class GlobalNames : public NameBinding<BoundNameSignature> {
   using self_type = GlobalNames;
-  using super_type = Generators<BoundNameSignature>;
+  using super_type = NameBinding<BoundNameSignature>;
 public:
   using super_type::super_type;
+  /// Provide an accessor for formatting.
   BoundNames & bind();
 protected:
   class Binding : BoundNames {
@@ -212,26 +203,24 @@ protected:
 };
 
 
-  /** Generators for tag names.
-   *
-   * This enables named format specifications, such as "{tag}". Each supported tag requires
-   * a @a Generator which is a functor of type
-   * @code
-   *   BufferWriter & generator(BufferWriter & w, const Spec & spec, T & context);
-   * @endcode
-   *
-   * This class is not used directly in a @c print call, instead the result of the @c bind
-   * method is used which binds that specific @c print call to a specific instance of @a T.
+  /** Binding for context based names.
    *
    * @tparam T The context type. This is used directly. If the context needs to be @c const
    * then this parameter should make that explicit, e.g. @c Names<const Context>. This
    * paramater is accessible via the @c context_type alias.
+   *
+   * This enables named format specifications, such as "{tag}", generated from a context of type @a
+   * T. Each supported tag requires a @a Generator which is a functor of type
+   *
+   * @code
+   *   BufferWriter & generator(BufferWriter & w, const Spec & spec, T & context);
+   * @endcode
    */
-  template <typename T> class ContextNames : public Generators<BufferWriter & (BufferWriter &, const Spec &, T &)>
+  template <typename T> class ContextNames : public NameBinding<BufferWriter & (BufferWriter &, const Spec &, T &)>
   {
   private:
     using self_type = ContextNames; ///< self reference type.
-    using super_type = Generators<BufferWriter & (BufferWriter &, const Spec &, T &)>;
+    using super_type = NameBinding<BufferWriter & (BufferWriter &, const Spec &, T &)>;
   public:
     using context_type = T; ///< Export for external convenience.
     /// Functional type for a generator.
@@ -262,16 +251,19 @@ protected:
     /// Subclass of @a BoundNames used to bind this set of names to a context.
     class Binding : public BoundNames
     {
+      using self_type = Binding;
+      using super_type = BoundNames;
     public:
+      /// Invoke the generator for @a name.
       BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
 
     protected:
-      Binding(const Map &map);
-      void assign(context_type *);
+      Binding(const Map &map); ///< Must have a map reference.
+      self_type & assign(context_type *);
 
-      const Map &_map;
-      context_type *_ctx = nullptr;
-    } _binding;
+      const Map &_map; ///< The mapping for name look ups.
+      context_type *_ctx = nullptr; ///< Context for generators.
+    } _binding { super_type::_map} ;
   };
 
 extern GlobalNames Global_Names;
@@ -351,7 +343,12 @@ GlobalNames::Binding::operator()(BufferWriter &w, const Spec &spec) const
   }
   return w;
 }
+
   template <typename T> inline ContextNames<T>::Binding::Binding(const Map &map) : _map(map) {}
+
+template <typename T> inline const BoundNames & ContextNames<T>::bind(context_type & ctx) { return _binding.assign(&ctx); }
+
+template <typename T> inline auto ContextNames<T>::Binding::assign(context_type * ctx) -> self_type & { _ctx = ctx; }
 
 template < typename T > BufferWriter &
 ContextNames<T>::Binding::operator()(BufferWriter &w, const Spec &spec) const
@@ -366,17 +363,17 @@ ContextNames<T>::Binding::operator()(BufferWriter &w, const Spec &spec) const
   return w;
 }
 
-template <typename F> Generators<F>::Generators() { }
+template <typename F> NameBinding<F>::NameBinding() { }
 
 template <typename F>
-Generators<F>::Generators(std::initializer_list<std::tuple<std::string_view, const Generator &>> list) {
+NameBinding<F>::NameBinding(std::initializer_list<std::tuple<std::string_view, const Generator &>> list) {
     for ( auto && [name, generator] : list ) {
       this->assign(name, generator);
     }
 }
 
   template <typename F> std::string_view
-  Generators<F>::localize(std::string_view name)
+  NameBinding<F>::localize(std::string_view name)
   {
     auto span = _arena.alloc(name.size());
     memcpy(span.data(), name.data(), name.size());
@@ -384,12 +381,13 @@ Generators<F>::Generators(std::initializer_list<std::tuple<std::string_view, con
   }
 
 template <typename F> auto
-Generators<F>::assign(std::string_view name, const Generator & generator) -> self_type &
+NameBinding<F>::assign(std::string_view name, const Generator & generator) -> self_type &
 {
     name = this->localize(name);
     _map[name] = generator;
     return *this;
 }
+
   /// --- Formatting ---
 
   /// Internal signature for template generated formatting.
@@ -461,12 +459,21 @@ public:
    */
   static bool parse(TextView &fmt, std::string_view &literal, std::string_view &spec);
 
+  struct TextViewExtractor {
+    swoc::TextView _fmt;
+    bool operator()(std::string_view & literal_v, Spec & spec);
+  };
+  TextViewExtractor bind(TextView fmt);
+
+  struct FormatExtractor {
+    const Format & _fmt;
+    bool operator()(std::string_view & literal_v, Spec & spec);
+  };
+  FormatExtractor bind(const Format & fmt);
+protected:
+
   using Items = std::vector<Spec>;
   Items _items; ///< Items from format string.
-
-protected:
-  /// Handles literals by writing the contents of the extension directly to @a w.
-  static void Format_Literal(BufferWriter &w, Spec const &spec);
 };
 
 } // namespace bwf
@@ -475,7 +482,7 @@ template <typename... Args>
 BufferWriter &
 BufferWriter::print(TextView fmt, Args &&... args)
 {
-  return this->print_nv(fmt, std::forward_as_tuple(args...));
+  return this->print_nv(bwf::Global_Names, fmt, std::forward_as_tuple(args...));
 }
 
 /* [Need to clip this out and put it in Sphinx

@@ -554,51 +554,8 @@ namespace bwf
     }
   }
 
-} // namespace bwf
-
-BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, std::string_view sv)
-{
-  int width = static_cast<int>(spec._min); // amount left to fill.
-  if (spec._prec > 0) {
-    sv.remove_prefix(spec._prec);
-  }
-
-  if ('x' == spec._type || 'X' == spec._type) {
-    const char *digits = 'x' == spec._type ? bwf::LOWER_DIGITS : bwf::UPPER_DIGITS;
-    width -= sv.size() * 2;
-    if (spec._radix_lead_p) {
-      w.write('0');
-      w.write(spec._type);
-      width -= 2;
-    }
-    bwf::Write_Aligned(w, [&w, &sv, digits]() { bwf::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill, 0);
-  } else {
-    width -= sv.size();
-    bwf::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
-  }
-  return w;
-}
-
-BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, MemSpan const &span)
-{
-  static const BWFormat default_fmt{"{:#x}@{:p}"};
-  if (spec._ext.size() && 'd' == spec._ext.front()) {
-    const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
-    if (spec._radix_lead_p) {
-      w.write('0');
-      w.write(digits[33]);
-    }
-    bwf::Hex_Dump(w, span.view(), digits);
-  } else {
-    w.print(default_fmt, span.size(), span.data());
-  }
-  return w;
-}
-
 /// Preparse format string for later use.
-BWFormat::BWFormat(swoc::TextView fmt)
+Format::Format(swoc::TextView fmt)
 {
   Spec lit_spec{Spec::DEFAULT};
   int arg_idx = 0;
@@ -628,13 +585,13 @@ BWFormat::BWFormat(swoc::TextView fmt)
   }
 }
 
-BWFormat::~BWFormat() {}
+Format::~Format() {}
 
 /// Parse out the next literal and/or format specifier from the format string.
 /// Pass the results back in @a literal and @a specifier as appropriate.
 /// Update @a fmt to strip the parsed text.
 bool
-BWFormat::parse(swoc::TextView &fmt, std::string_view &literal, std::string_view &specifier)
+Format::parse(swoc::TextView &fmt, std::string_view &literal, std::string_view &specifier)
 {
   TextView::size_type off;
 
@@ -679,10 +636,52 @@ BWFormat::parse(swoc::TextView &fmt, std::string_view &literal, std::string_view
   return false;
 }
 
-void
-BWFormat::Format_Literal(BufferWriter &w, Spec const &spec)
+bool bool Format::TextViewExtractor::operator()(std::string_view & literal_v, Spec & spec) {
+    std::string_view spec_v;
+    bool z = Format::parse(_fmt, literal_v, spec_v);
+  }
+
+} // namespace bwf
+
+BufferWriter &
+bwformat(BufferWriter &w, Spec const &spec, std::string_view sv)
 {
-  w.write(spec._ext);
+  int width = static_cast<int>(spec._min); // amount left to fill.
+  if (spec._prec > 0) {
+    sv.remove_prefix(spec._prec);
+  }
+
+  if ('x' == spec._type || 'X' == spec._type) {
+    const char *digits = 'x' == spec._type ? bwf::LOWER_DIGITS : bwf::UPPER_DIGITS;
+    width -= sv.size() * 2;
+    if (spec._radix_lead_p) {
+      w.write('0');
+      w.write(spec._type);
+      width -= 2;
+    }
+    bwf::Write_Aligned(w, [&w, &sv, digits]() { bwf::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill, 0);
+  } else {
+    width -= sv.size();
+    bwf::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
+  }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, Spec const &spec, MemSpan const &span)
+{
+  static const BWFormat default_fmt{"{:#x}@{:p}"};
+  if (spec._ext.size() && 'd' == spec._ext.front()) {
+    const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
+    if (spec._radix_lead_p) {
+      w.write('0');
+      w.write(digits[33]);
+    }
+    bwf::Hex_Dump(w, span.view(), digits);
+  } else {
+    w.print(default_fmt, span.size(), span.data());
+  }
+  return w;
 }
 
 bwf::GlobalSignature
