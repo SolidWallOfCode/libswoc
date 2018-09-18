@@ -235,9 +235,17 @@ protected:
 
 // Implementation
 
-inline auto MemArena::Block::Linkage::next_ptr(Block * b) -> Block*&  { return b->_link._next; }
+inline auto
+MemArena::Block::Linkage::next_ptr(Block *b) -> Block *&
+{
+  return b->_link._next;
+}
 
-inline auto MemArena::Block::Linkage::prev_ptr(Block * b) -> Block*&  { return b->_link._prev; }
+inline auto
+MemArena::Block::Linkage::prev_ptr(Block *b) -> Block *&
+{
+  return b->_link._prev;
+}
 
 inline MemArena::Block::Block(size_t n) : size(n) {}
 

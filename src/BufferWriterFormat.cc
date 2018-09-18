@@ -335,7 +335,7 @@ namespace bwf
       }
       if (left_delta > 0) {
         size_t work_area = extent + left_delta;
-        aux.commit(left_delta);           // cover work area.
+        aux.commit(left_delta);          // cover work area.
         aux.copy(left_delta, 0, extent); // move to create space for left fill.
         aux.discard(work_area);          // roll back to write the left fill.
         for (int i = left_delta; i > 0; --i) {
@@ -955,16 +955,24 @@ BWF_ThreadID(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
   return bwformat(w, spec, pthread_self());
 }
 
-namespace {
-  template < size_t N > auto thread_getname(char (&name)[N], swoc::meta::CaseArg_0) -> void {
+namespace
+{
+  template <size_t N>
+  auto
+  thread_getname(char (&name)[N], swoc::meta::CaseArg_0) -> void
+  {
     static constexpr swoc::TextView text("thread");
     static_assert(N > text.size(), "Array too small");
-    memcpy(name, text.data(), text.size()+1);
+    memcpy(name, text.data(), text.size() + 1);
   }
-  template < size_t N > auto thread_getname(char (&name)[N], swoc::meta::CaseArg_1) -> decltype(pthread_getname_np(pthread_t{}, name, N), swoc::meta::CaseVoidFunc()) {
+  template <size_t N>
+  auto
+  thread_getname(char (&name)[N], swoc::meta::CaseArg_1)
+    -> decltype(pthread_getname_np(pthread_t{}, name, N), swoc::meta::CaseVoidFunc())
+  {
     pthread_getname_np(pthread_self(), name, N);
   }
-}
+} // namespace
 
 swoc::BufferWriter &
 BWF_ThreadName(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
