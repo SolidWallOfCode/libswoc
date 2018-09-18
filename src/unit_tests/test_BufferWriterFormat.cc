@@ -125,7 +125,7 @@ TEST_CASE("bwprint basics", "[bwprint]")
   bw.clear().print("{leif}");
   REQUIRE(bw.view() == "{~leif~}"); // expected to be missing.
 
-  bw.clear().print("Thread: {thread-name} [{thread-id:#x}] - Tick: {tick} - Epoch: {now} - timestamp: {timestamp} !{0}\n", 31267);
+  bw.clear().print("Thread: {thread-name} [{thread-id:#x}] - Tick: {tick} - Epoch: {now} - timestamp: {timestamp} !{0}", 31267);
   REQUIRE(swoc::TextView(bw.view()).take_suffix_at('!') == "31267");
 }
 

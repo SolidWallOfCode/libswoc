@@ -230,14 +230,14 @@ struct KBytes_tag {
 TEST_CASE("Scalar Formatting", "[libts][Scalar][bwf]")
 {
   using KBytes  = swoc::Scalar<1024, long int, KBytes_tag>;
-  using KiBytes = swoc::Scalar<1024, int>;
+  using KiBytes = swoc::Scalar<1000, int>;
 
   KBytes x(12);
-  KiBytes y(17);
+  KiBytes y(12);
   swoc::LocalBufferWriter<128> w;
 
   w.print("x is {}", x);
-  REQUIRE(w.view() == "x is 12 bytes");
+  REQUIRE(w.view() == "x is 12288 bytes");
   w.clear().print("y is {}", y);
-  REQUIRE(w.view() == "y is 17");
+  REQUIRE(w.view() == "y is 12000");
 }

@@ -244,17 +244,17 @@ namespace bwf
       char c1 = fmt[off];
       char c2 = fmt[off + 1];
       if (c1 == c2) {
-        // double braces count as literals, but must tweak to out only 1 brace.
+        // double braces count as literals, but must tweak to output only 1 brace.
         literal = fmt.take_prefix_at(off + 1);
         return false;
       } else if ('}' == c1) {
-        throw std::invalid_argument("BWFormat:: Unopened } in format string.");
+        throw std::invalid_argument("Unopened } in format string.");
       } else {
         literal = std::string_view{fmt.data(), off};
         fmt.remove_prefix(off + 1);
       }
     } else {
-      throw std::invalid_argument("BWFormat: Invalid trailing character in format string.");
+      throw std::invalid_argument("Invalid trailing character in format string.");
     }
 
     if (fmt.size()) {
@@ -278,6 +278,7 @@ namespace bwf
       std::string_view spec_v;
       spec._type = Spec::INVALID_TYPE;
       if (parse(_fmt, literal_v, spec_v)) {
+        spec._type = Spec::DEFAULT_TYPE; // note parse() found a spec.
         spec.parse(spec_v);
       }
       return true;
@@ -295,7 +296,7 @@ namespace bwf
         literal_v = _fmt[_idx]._ext;
         ++_idx;
       }
-      if (_idx < _fmt.size()) { // never two literals in a row - if this exists, it's a non-literal.
+      if (_idx < _fmt.size() && _fmt[_idx]._type != Spec::LITERAL_TYPE) {
         spec = _fmt[_idx++];
       }
       return true;
@@ -328,13 +329,13 @@ namespace bwf
       if (Spec::Align::RIGHT == spec._align) {
         left_delta  = delta;
         right_delta = 0;
-      } else if (Spec::Align::LEFT == spec._align) {
+      } else if (Spec::Align::CENTER == spec._align) {
         left_delta  = delta / 2;
         right_delta = (delta + 1) / 2;
       }
       if (left_delta > 0) {
         size_t work_area = extent + left_delta;
-        aux.commit(work_area);           // set up the extent needed to do left fill.
+        aux.commit(left_delta);           // cover work area.
         aux.copy(left_delta, 0, extent); // move to create space for left fill.
         aux.discard(work_area);          // roll back to write the left fill.
         for (int i = left_delta; i > 0; --i) {
@@ -349,9 +350,8 @@ namespace bwf
     } else {
       size_t max = spec._max;
       if (max < extent) {
-        extent = max;
+        aux.discard(extent - max);
       }
-      aux.commit(extent);
     }
   }
 

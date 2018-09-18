@@ -591,6 +591,7 @@ BufferWriter::print_nv(const bwf::BoundNames &names, F &&f, const std::tuple<Arg
       }
       if (lw.extent()) {
         bwf::Adjust_Alignment(lw, spec);
+        this->commit(lw.extent());
       }
     }
     memcpy(&spec, &bwf::Spec::DEFAULT, sizeof(spec)); // reset to default state.

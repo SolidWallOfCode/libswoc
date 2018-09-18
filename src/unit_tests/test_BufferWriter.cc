@@ -276,7 +276,7 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown fox") - 1));
 
-  bw.clear();
+  bw.discard(0);
 
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown fox") - 1));
@@ -295,7 +295,7 @@ TEST_CASE("LocalBufferWriter discard/restore", "[BWD]")
 {
   swoc::LocalBufferWriter<10> bw;
 
-  bw.discard(7);
+  bw.restrict(7);
   bw.write("aaaaaa");
   REQUIRE(bw.view() == "aaa");
 
