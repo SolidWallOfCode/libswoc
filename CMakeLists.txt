@@ -19,12 +19,14 @@ set(public_headers
     include/swoc/bwf_std.h
     include/swoc/bwf_ex.h
     include/swoc/bwf_swoc.h
+    include/swoc/Errata.h
 )
 
 set(lib_src
     src/TextView.cc
     src/MemArena.cc
     src/BufferWriterFormat.cc
+    src/Errata.cc
 )
 
 add_library(libswoc++ STATIC "${public_headers}" "${lib_src}")
