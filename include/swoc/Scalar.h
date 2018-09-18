@@ -29,6 +29,8 @@
 #include <ostream>
 #include <type_traits>
 
+#include "swoc/swoc_meta.h"
+
 namespace tag
 {
 struct generic;
@@ -889,6 +891,29 @@ Scalar<N, C, T>::minus(Counter n) const -> self
   return {_n - n};
 }
 
+namespace detail
+{
+  template <typename T>
+  auto
+  tag_label(std::ostream &, const meta::CaseArg_0 &) -> void
+  {
+  }
+
+  template <typename T>
+  auto
+  tag_label(std::ostream &w, const meta::CaseArg_1 &) -> decltype(T::label, meta::CaseVoidFunc())
+  {
+    w << T::label;
+  }
+
+  template <typename T>
+  inline std::ostream &
+  tag_label(std::ostream &w)
+  {
+    tag_label<T>(w, meta::CaseArg);
+    return w;
+  }
+} // namespace detail
 } // namespace swoc
 
 namespace std
@@ -901,4 +926,13 @@ struct common_type<swoc::Scalar<N, C, T>, swoc::Scalar<S, I, T>> {
   using R    = std::ratio<N, S>;
   using type = swoc::Scalar<N / R::num, typename common_type<C, I>::type, T>;
 };
+
+template <intmax_t N, typename C, typename T>
+ostream &
+operator<<(ostream &s, swoc::Scalar<N, C, T> const &x)
+{
+  s << x.value();
+  return swoc::detail::tag_label<T>(s);
+}
+
 } // namespace std

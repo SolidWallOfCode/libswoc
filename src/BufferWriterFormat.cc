@@ -28,10 +28,12 @@
 #include <ctime>
 #include <sys/param.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_base.h"
 #include "swoc/bwf_ex.h"
+#include "swoc/swoc_meta.h"
 
 using namespace std::literals;
 
@@ -218,6 +220,87 @@ namespace bwf
       }
     }
     return true;
+  }
+
+  /// Parse out the next literal and/or format specifier from the format string.
+  /// Pass the results back in @a literal and @a specifier as appropriate.
+  /// Update @a fmt to strip the parsed text.
+  bool
+  Format::parse(TextView &fmt, std::string_view &literal, std::string_view &specifier)
+  {
+    TextView::size_type off;
+
+    // Check for brace delimiters.
+    off = fmt.find_if([](char c) { return '{' == c || '}' == c; });
+    if (off == TextView::npos) {
+      // not found, it's a literal, ship it.
+      literal = fmt;
+      fmt.remove_prefix(literal.size());
+      return false;
+    }
+
+    // Processing for braces that don't enclose specifiers.
+    if (fmt.size() > off + 1) {
+      char c1 = fmt[off];
+      char c2 = fmt[off + 1];
+      if (c1 == c2) {
+        // double braces count as literals, but must tweak to out only 1 brace.
+        literal = fmt.take_prefix_at(off + 1);
+        return false;
+      } else if ('}' == c1) {
+        throw std::invalid_argument("BWFormat:: Unopened } in format string.");
+      } else {
+        literal = std::string_view{fmt.data(), off};
+        fmt.remove_prefix(off + 1);
+      }
+    } else {
+      throw std::invalid_argument("BWFormat: Invalid trailing character in format string.");
+    }
+
+    if (fmt.size()) {
+      // Need to be careful, because an empty format is OK and it's hard to tell
+      // if take_prefix_at failed to find the delimiter or found it as the first
+      // byte.
+      off = fmt.find('}');
+      if (off == TextView::npos) {
+        throw std::invalid_argument("BWFormat: Unclosed { in format string");
+      }
+      specifier = fmt.take_prefix_at(off);
+      return true;
+    }
+    return false;
+  }
+
+  bool
+  Format::TextViewExtractor::operator()(std::string_view &literal_v, Spec &spec)
+  {
+    if (!_fmt.empty()) {
+      std::string_view spec_v;
+      spec._type = Spec::INVALID_TYPE;
+      if (parse(_fmt, literal_v, spec_v)) {
+        spec.parse(spec_v);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  bool
+  Format::FormatExtractor::operator()(std::string_view &literal_v, swoc::bwf::Spec &spec)
+  {
+    if (_idx < _fmt.size()) {
+      literal_v  = {};
+      spec._type = Spec::INVALID_TYPE;
+      if (_fmt[_idx]._type == Spec::LITERAL_TYPE) {
+        literal_v = _fmt[_idx]._ext;
+        ++_idx;
+      }
+      if (_idx < _fmt.size()) { // never two literals in a row - if this exists, it's a non-literal.
+        spec = _fmt[_idx++];
+      }
+      return true;
+    }
+    return false;
   }
 
   void
@@ -586,69 +669,6 @@ namespace bwf
     }
   }
 
-  /// Parse out the next literal and/or format specifier from the format string.
-  /// Pass the results back in @a literal and @a specifier as appropriate.
-  /// Update @a fmt to strip the parsed text.
-  bool
-  Format::parse(TextView &fmt, std::string_view &literal, std::string_view &specifier)
-  {
-    TextView::size_type off;
-
-    // Check for brace delimiters.
-    off = fmt.find_if([](char c) { return '{' == c || '}' == c; });
-    if (off == TextView::npos) {
-      // not found, it's a literal, ship it.
-      literal = fmt;
-      fmt.remove_prefix(literal.size());
-      return false;
-    }
-
-    // Processing for braces that don't enclose specifiers.
-    if (fmt.size() > off + 1) {
-      char c1 = fmt[off];
-      char c2 = fmt[off + 1];
-      if (c1 == c2) {
-        // double braces count as literals, but must tweak to out only 1 brace.
-        literal = fmt.take_prefix_at(off + 1);
-        return false;
-      } else if ('}' == c1) {
-        throw std::invalid_argument("BWFormat:: Unopened } in format string.");
-      } else {
-        literal = std::string_view{fmt.data(), off};
-        fmt.remove_prefix(off + 1);
-      }
-    } else {
-      throw std::invalid_argument("BWFormat: Invalid trailing character in format string.");
-    }
-
-    if (fmt.size()) {
-      // Need to be careful, because an empty format is OK and it's hard to tell
-      // if take_prefix_at failed to find the delimiter or found it as the first
-      // byte.
-      off = fmt.find('}');
-      if (off == TextView::npos) {
-        throw std::invalid_argument("BWFormat: Unclosed { in format string");
-      }
-      specifier = fmt.take_prefix_at(off);
-      return true;
-    }
-    return false;
-  }
-
-  bool
-  Format::TextViewExtractor::operator()(std::string_view &literal_v, Spec &spec)
-  {
-    if (!_fmt.empty()) {
-      std::string_view spec_v;
-      spec._type = Spec::INVALID_TYPE;
-      if (parse(_fmt, literal_v, spec_v)) {
-        spec.parse(spec_v);
-      }
-      return true;
-    }
-    return false;
-  }
-
 } // namespace bwf
 
 BufferWriter &
@@ -843,8 +863,8 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e)
   // This provides convenient safe access to the errno short name array.
   auto short_name = [](int n) { return n < static_cast<int>(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
   static const bwf::Format number_fmt{"[{}]"sv}; // numeric value format.
-  if (spec.has_numeric_type()) {              // if numeric type, print just the numeric
-                                              // part.
+  if (spec.has_numeric_type()) {                 // if numeric type, print just the numeric
+                                                 // part.
     w.print(number_fmt, e._e);
   } else {
     w.write(short_name(e._e));
@@ -917,34 +937,41 @@ BWF_Timestamp(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
   return w.write(buff, n);
 }
 
-swoc::BufferWriter&
+swoc::BufferWriter &
 BWF_Now(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
 {
   return bwformat(w, spec, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
 }
 
-swoc::BufferWriter&
+swoc::BufferWriter &
 BWF_Tick(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
 {
   return bwformat(w, spec, std::chrono::high_resolution_clock::now().time_since_epoch().count());
 }
 
-swoc::BufferWriter&
+swoc::BufferWriter &
 BWF_ThreadID(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
 {
   return bwformat(w, spec, pthread_self());
 }
 
-swoc::BufferWriter&
+namespace {
+  template < size_t N > auto thread_getname(char (&name)[N], swoc::meta::CaseArg_0) -> void {
+    static constexpr swoc::TextView text("thread");
+    static_assert(N > text.size(), "Array too small");
+    memcpy(name, text.data(), text.size()+1);
+  }
+  template < size_t N > auto thread_getname(char (&name)[N], swoc::meta::CaseArg_1) -> decltype(pthread_getname_np(pthread_t{}, name, N), swoc::meta::CaseVoidFunc()) {
+    pthread_getname_np(pthread_self(), name, N);
+  }
+}
+
+swoc::BufferWriter &
 BWF_ThreadName(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
 {
-#if defined(__FreeBSD_version)
-  return bwformat(w, spec, "thread"sv); // no thread names in FreeBSD.
-#else
   char name[32]; // manual says at least 16, bump that up a bit.
-  pthread_getname_np(pthread_self(), name, sizeof(name));
+  thread_getname(name, swoc::meta::CaseArg);
   return bwformat(w, spec, std::string_view{name});
-#endif
 }
 
 static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {

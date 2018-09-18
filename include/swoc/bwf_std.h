@@ -35,4 +35,3 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, atomic<T> const &v)
   return swoc::bwformat(w, spec, v.load());
 }
 } // end namespace std
-

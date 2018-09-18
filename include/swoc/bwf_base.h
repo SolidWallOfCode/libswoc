@@ -68,7 +68,7 @@ namespace bwf
     // @a _min is unsigned because there's no point in an invalid default, 0 works fine.
     unsigned int _min = 0;                                        ///< Minimum width.
     int _prec         = -1;                                       ///< Precision
-    unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maxium width
+    unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maximum width
     int _idx          = -1;                                       ///< Positional "name" of the specification.
     std::string_view _name;                                       ///< Name of the specification.
     std::string_view _ext;                                        ///< Extension if provided.
@@ -157,7 +157,8 @@ namespace bwf
 
     /// Extraction support for pre-parsed format strings.
     struct FormatExtractor {
-      const Format &_fmt;
+      const std::vector<Spec> &_fmt; ///< Parsed format string.
+      int _idx = 0;                  ///< Element index.
       bool operator()(std::string_view &literal_v, Spec &spec);
     };
     /// Wrap the format instance in an extractor.
@@ -228,7 +229,7 @@ namespace bwf
     std::string_view localize(std::string_view name);
 
     using Map = std::unordered_map<std::string_view, Generator>;
-    Map _map;                    ///< Mapping of name -> generator
+    Map _map;              ///< Mapping of name -> generator
     MemArena _arena{1024}; ///< Local name storage.
   };
 
@@ -249,14 +250,15 @@ namespace bwf
     BoundNames &bind();
 
   protected:
-    class Binding : BoundNames
+    class Binding : public BoundNames
     {
     public:
+      Binding(const super_type::Map &map);
       BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
 
     protected:
       const Map &_map;
-    };
+    } _binding{super_type::_map};
   };
 
   /** Binding for context based names.
@@ -430,25 +432,24 @@ namespace bwf
     return _type != INVALID_TYPE;
   }
 
+  inline auto
+  Format::bind(swoc::TextView fmt) -> TextViewExtractor
+  {
+    return {fmt};
+  }
+
+  inline auto
+  Format::bind() const -> FormatExtractor
+  {
+    return {_items};
+  }
+
   /// --- Names / Generators ---
 
-  BufferWriter &
+  inline BufferWriter &
   BoundNames::err_invalid_name(BufferWriter &w, const Spec &spec) const
   {
     return w.print("{{~{}~}}", spec._name);
-  }
-
-  BufferWriter &
-  GlobalNames::Binding::operator()(BufferWriter &w, const Spec &spec) const
-  {
-    if (!spec._name.empty()) {
-      if (auto spot = _map.find(spec._name); spot != _map.end()) {
-        spot->second(w, spec);
-      } else {
-        this->err_invalid_name(w, spec);
-      }
-    }
-    return w;
   }
 
   template <typename T> inline ContextNames<T>::Binding::Binding(const Map &map) : _map(map) {}
@@ -506,6 +507,27 @@ namespace bwf
     name       = this->localize(name);
     _map[name] = generator;
     return *this;
+  }
+
+  inline GlobalNames::Binding::Binding(const super_type::Map &map) : _map(map) {}
+
+  inline BufferWriter &
+  GlobalNames::Binding::operator()(BufferWriter &w, const Spec &spec) const
+  {
+    if (!spec._name.empty()) {
+      if (auto spot = _map.find(spec._name); spot != _map.end()) {
+        spot->second(w, spec);
+      } else {
+        this->err_invalid_name(w, spec);
+      }
+    }
+    return w;
+  }
+
+  inline BoundNames &
+  GlobalNames::bind()
+  {
+    return _binding;
   }
 
 } // namespace bwf
@@ -594,14 +616,14 @@ template <typename... Args>
 BufferWriter &
 BufferWriter::printv(const TextView &fmt, const std::tuple<Args...> &args)
 {
-  return this->print_nv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), std::forward_as_tuple(args));
+  return this->print_nv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), args);
 }
 
 template <typename... Args>
 BufferWriter &
 BufferWriter::printv(const bwf::Format &fmt, const std::tuple<Args...> &args)
 {
-  return this->print_nv(bwf::Global_Names.bind(), fmt.bind(), std::forward_as_tuple(args));
+  return this->print_nv(bwf::Global_Names.bind(), fmt.bind(), args);
 }
 
 // ---- Formatting for specific types.
@@ -694,7 +716,13 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, I &&i) ->
                             std::is_integral<typename std::remove_reference<I>::type>::value,
                           BufferWriter &>::type
 {
-  return i < 0 ? bwf::Format_Integer(w, spec, -i, true) : bwf::Format_Integer(w, spec, i, false);
+  bool neg_p  = false;
+  uintmax_t n = static_cast<uintmax_t>(i);
+  if (i < 0) {
+    n     = static_cast<uintmax_t>(-i);
+    neg_p = true;
+  }
+  return bwf::Format_Integer(w, spec, n, neg_p);
 }
 
 inline BufferWriter &
@@ -787,4 +815,38 @@ FixedBufferWriter::printv(bwf::Format const &fmt, std::tuple<Args...> const &arg
   return static_cast<self_type &>(this->super_type::printv(fmt, args));
 }
 
-} // end namespace swoc
+// Because BufferWriter & formatting depend on other utilities, those can't provide formatting support
+// directly. Therefore it's done here.
+namespace detail
+{
+  template <typename T>
+  auto
+  tag_label(BufferWriter &w, const bwf::Spec &, const meta::CaseArg_0 &) -> void
+  {
+  }
+
+  template <typename T>
+  auto
+  tag_label(BufferWriter &w, const bwf::Spec &, const meta::CaseArg_1 &) -> decltype(T::label, meta::CaseVoidFunc())
+  {
+    w.print("{}", T::label);
+  }
+  template <typename T>
+  inline BufferWriter &
+  tag_label(BufferWriter &w, bwf::Spec const &spec)
+  {
+    tag_label<T>(w, spec, meta::CaseArg);
+    return w;
+  }
+
+} // namespace detail
+
+template <intmax_t N, typename C, typename T>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, Scalar<N, C, T> const &x)
+{
+  bwformat(w, spec, x.value());
+  return spec.has_numeric_type() ? w : detail::tag_label<T>(w, spec);
+}
+
+} // namespace swoc

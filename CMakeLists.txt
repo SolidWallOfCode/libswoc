@@ -40,7 +40,8 @@ add_executable(test_libswoc
     src/unit_tests/test_Scalar.cc
 )
 
-target_link_libraries(test_libswoc libswoc++)
+find_library(POSIX_THREAD_LIB pthread)
+target_link_libraries(test_libswoc libswoc++ ${POSIX_THREAD_LIB})
 
 set_target_properties(libswoc++ PROPERTIES
     PUBLIC_HEADER "${public_headers}"

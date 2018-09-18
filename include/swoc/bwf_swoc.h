@@ -30,7 +30,11 @@ namespace swoc
 {
 namespace detail
 {
-  template <typename T> auto tag_label(BufferWriter &w, const bwf::Spec &, const meta::CaseArg_0 &) -> void {}
+  template <typename T>
+  auto
+  tag_label(BufferWriter &w, const bwf::Spec &, const meta::CaseArg_0 &) -> void
+  {
+  }
 
   template <typename T>
   auto
@@ -46,7 +50,11 @@ namespace detail
     return w;
   }
 
-  template <typename T> auto tag_label(std::ostream &, const meta::CaseArg_0 &) -> void {}
+  template <typename T>
+  auto
+  tag_label(std::ostream &, const meta::CaseArg_0 &) -> void
+  {
+  }
 
   template <typename T>
   auto
@@ -73,13 +81,3 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, Scalar<N, C, T> const &x)
 }
 
 } // namespace swoc
-
-namespace std {
-template<intmax_t N, typename C, typename T>
-ostream &
-operator<<(ostream &s, swoc::Scalar<N, C, T> const &x) {
-  s << x.value();
-  return swoc::detail::tag_label<T>(s);
-}
-
-} // namespace std

@@ -200,7 +200,7 @@ public:
 
   /// Print using a preparsed @a fmt.
   template <typename... Args> BufferWriter &print(const bwf::Format &fmt, Args &&... args);
-  template <typename... Args> BufferWriter &printv(const bwf::Format &fmt, const std::tuple<Args...> & args);
+  template <typename... Args> BufferWriter &printv(const bwf::Format &fmt, const std::tuple<Args...> &args);
 
   /** Print the arguments on to the buffer.
    *
@@ -520,7 +520,7 @@ FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type &
   return *this;
 }
 
-std::string_view
+inline std::string_view
 FixedBufferWriter::view() const
 {
   return std::string_view(_buf, size());
