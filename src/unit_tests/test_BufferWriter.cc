@@ -80,9 +80,11 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     {
       return 0;
     }
-    X &shrink(size_t) override { return *this; }
+    X &restrict(size_t) override { return *this; }
     X &restore(size_t) override { return *this; }
-    X &extend(size_t) override { return *this; }
+    X &commit(size_t) override { return *this; }
+    X &discard(size_t) override { return *this; }
+    X &copy(size_t, size_t, size_t) { return *this; }
     std::ostream &
     operator>>(std::ostream &stream) const override
     {
@@ -118,7 +120,7 @@ TEST_CASE("Minimal Local Buffer Writer", "[BWLM]")
 
   REQUIRE(bw.error());
 
-  bw.drop(1);
+  bw.discard(1);
 
   REQUIRE(!((bw.capacity() != 1) or (bw.size() != 1) or bw.error() or (bw.remaining() != 0)));
 
@@ -180,7 +182,7 @@ twice(BWType &bw)
   }
 
   std::strcpy(bw.aux_buffer(), " fox");
-  bw.extend(sizeof(" fox") - 1);
+  bw.commit(sizeof(" fox") - 1);
 
   if (bw.error()) {
     return false;
@@ -219,7 +221,7 @@ twice(BWType &bw)
   }
 
   bw.reduce(4);
-  bw.shrink(bw.capacity() + 2 - (sizeof("The quick brown fox") - 1)).write(" fox");
+  bw.discard(bw.capacity() + 2 - (sizeof("The quick brown fox") - 1)).write(" fox");
 
   if (bw.view() != "The quick brown f") {
     return false;
@@ -269,7 +271,7 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown") - 1));
 
-  bw.extend(sizeof(" fox") - 1);
+  bw.commit(sizeof(" fox") - 1);
 
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown fox") - 1));
@@ -279,7 +281,7 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown fox") - 1));
 
-  bw.drop(4);
+  bw.discard(4);
 
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown") - 1));
@@ -289,11 +291,11 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
   REQUIRE(scratch[0] == '!');
 }
 
-TEST_CASE("LocalBufferWriter shrink/restore", "[BWD]")
+TEST_CASE("LocalBufferWriter discard/restore", "[BWD]")
 {
   swoc::LocalBufferWriter<10> bw;
 
-  bw.shrink(7);
+  bw.discard(7);
   bw.write("aaaaaa");
   REQUIRE(bw.view() == "aaa");
 
@@ -302,6 +304,6 @@ TEST_CASE("LocalBufferWriter shrink/restore", "[BWD]")
   REQUIRE(bw.view() == "aaabbb");
 
   bw.restore(4);
-  bw.extend(static_cast<size_t>(snprintf(bw.aux_buffer(), bw.remaining(), "ccc")));
+  bw.commit(static_cast<size_t>(snprintf(bw.aux_data(), bw.remaining(), "ccc")));
   REQUIRE(bw.view() == "aaabbbccc");
 }

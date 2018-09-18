@@ -1020,7 +1020,7 @@ TextView::isNoCasePrefixOf(super_type const &that) const
 inline int
 strcmp(TextView const &lhs, TextView const &rhs)
 {
-  return swoc::memcmp(lhs, rhs);
+  return memcmp(lhs, rhs);
 }
 
 template <typename Stream>

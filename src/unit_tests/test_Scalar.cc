@@ -19,7 +19,7 @@
 */
 
 #include "swoc/Scalar.h"
-#include "swoc/bwf_swoc.h"
+#include "swoc/bwf_ex.h"
 #include "catch.hpp"
 
 using Bytes      = swoc::Scalar<1, off_t>;
@@ -224,12 +224,12 @@ TEST_CASE("Scalar Arithmetic", "[libts][Scalar][arithmetic]")
 }
 
 struct KBytes_tag {
-  static std::string const label{" bytes"};
+  static constexpr std::string_view label{" bytes"};
 };
 
 TEST_CASE("Scalar Formatting", "[libts][Scalar][bwf]")
 {
-  using KBytes = swoc::Scalar<1024, long int, KBytes_tag>;
+  using KBytes  = swoc::Scalar<1024, long int, KBytes_tag>;
   using KiBytes = swoc::Scalar<1024, int>;
 
   KBytes x(12);

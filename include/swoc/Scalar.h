@@ -36,7 +36,6 @@ struct generic;
 
 namespace swoc
 {
-
 template <intmax_t N, typename C, typename T> class Scalar;
 
 namespace detail
@@ -892,12 +891,14 @@ Scalar<N, C, T>::minus(Counter n) const -> self
 
 } // namespace swoc
 
-namespace std {
+namespace std
+{
 /// Compute common type of two scalars.
 /// In `std` to overload the base definition. This yields a type that has the common type of the
 /// counter type and a scale that is the GCF of the input scales.
-template <intmax_t N, typename C, intmax_t S, typename I, typename T> struct common_type<swoc::Scalar<N, C, T>, swoc::Scalar<S, I, T>> {
-  using R = std::ratio<N, S>;
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
+struct common_type<swoc::Scalar<N, C, T>, swoc::Scalar<S, I, T>> {
+  using R    = std::ratio<N, S>;
   using type = swoc::Scalar<N / R::num, typename common_type<C, I>::type, T>;
 };
 } // namespace std

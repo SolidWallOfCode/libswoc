@@ -220,6 +220,8 @@ public:
     iterator(list_type *list, value_type *v);
   };
 
+  /// Copy list.
+  self_type &operator =(const self_type &that) = default;
   /// Move @a that to @a this.
   self_type &operator=(self_type &&that);
 
@@ -312,11 +314,11 @@ public:
 
   /// Get the first element.
   value_type *head();
-  const value_type * head() const;
+  const value_type *head() const;
 
   /// Get the last element.
   value_type *tail();
-  const value_type * tail() const;
+  const value_type *tail() const;
 
   /** Apply a functor to every element in the list.
    * This iterates over the list correctly even if the functor destroys or removes elements.
@@ -329,8 +331,6 @@ protected:
   size_t _count{0};           ///< # of elements in list.
 };
 
-namespace ts
-{
   /** Utility cast to change the underlying type of a pointer reference.
    *
    * This changes a reference to a pointer to @a P to a reference to a pointer to @a T. This is useful
@@ -344,7 +344,7 @@ namespace ts
    * To make @c BetterThing work with an intrusive container without making new link members,
    *
    * @code
-   * static BetterThing*& next_ptr(BetterThing* bt) { return ts::ptr_ref_cast<BetterThing>(_next); }
+   * static BetterThing*& next_ptr(BetterThing* bt) { return swoc::ptr_ref_cast<BetterThing>(_next); }
    * @endcode
    *
    * This is both convenient and gets around aliasing warnings from the compiler that can arise from
@@ -365,8 +365,6 @@ namespace ts
     } u{&p};
     return *(u._t);
   };
-
-} // namespace ts
 
 // --- Implementation ---
 
@@ -700,6 +698,7 @@ IntrusiveDList<L>::operator=(self_type &&that) -> self_type &
 {
   *this = that;
   that.clear();
+  return *this;
 }
 
 template <typename L>

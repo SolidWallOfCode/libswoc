@@ -211,8 +211,8 @@ protected:
   /// Clean up the active list
   void destroy_active();
 
-  using Page      = swoc::Scalar<4096>; ///< Size for rounding block sizes.
-  using Paragraph = swoc::Scalar<16>;   ///< Minimum unit of memory allocation.
+  using Page      = Scalar<4096>; ///< Size for rounding block sizes.
+  using Paragraph = Scalar<16>;   ///< Minimum unit of memory allocation.
 
   static constexpr size_t ALLOC_HEADER_SIZE = 16; ///< Guess of overhead of @c malloc
   /// Initial block size to allocate if not specified via API.

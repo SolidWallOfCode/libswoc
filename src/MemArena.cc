@@ -75,7 +75,7 @@ MemArena::alloc(size_t n)
     block = this->make_block(n);
     // For the resulting active allocation block, pick the block which will have the most free space
     // after taking the request space out of the new block.
-    if (block->remaining() - n > _active->head()->remaining()) {
+    if (block->remaining() - n > _active.head()->remaining()) {
       _active.prepend(block);
     } else {
       _active.insert_after(_active.head(), block);
@@ -112,22 +112,27 @@ MemArena::thaw()
 bool
 MemArena::contains(const void *ptr) const
 {
-  auto pred = [ptr](Block &b) -> bool { return b.contains(ptr); } return std::any_of(_active.begin(), _active.end(), pred) ||
-                                   std::any_of(_frozen.begin(), _frozen.end(), pred);
+  auto pred = [ptr](const Block &b) -> bool { return b.contains(ptr); };
+
+  return std::any_of(_active.begin(), _active.end(), pred) || std::any_of(_frozen.begin(), _frozen.end(), pred);
 }
 
-void MemArena::destroy_active() {
+void
+MemArena::destroy_active()
+{
   _active.apply([](Block *b) { delete b; }).clear();
 }
 
-void MemArena::destroy_frozen() {
+void
+MemArena::destroy_frozen()
+{
   _frozen.apply([](Block *b) { delete b; }).clear();
 }
 
 MemArena &
 MemArena::clear(size_t n)
 {
-  _reserve_hint  = n ? n : _frozen_allocated + _active_allocated;
+  _reserve_hint    = n ? n : _frozen_allocated + _active_allocated;
   _frozen_reserved = _frozen_allocated = 0;
   _active_reserved = _active_allocated = 0;
   this->destroy_frozen();

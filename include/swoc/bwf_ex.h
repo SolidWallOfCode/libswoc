@@ -23,23 +23,12 @@
 
 #pragma once
 
-#include <atomic>
 #include <array>
 #include <string_view>
-#include "tscpp/util/TextView.h"
-#include "tscore/BufferWriterForward.h"
 
-namespace std
-{
-template <typename T>
-ts::BufferWriter &
-bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, atomic<T> const &v)
-{
-  return ts::bwformat(w, spec, v.load());
-}
-} // end namespace std
+#include "swoc/bwf_base.h"
 
-namespace ts
+namespace swoc
 {
 namespace bwf
 {
@@ -123,8 +112,8 @@ namespace bwf
   };
 } // namespace bwf
 
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e);
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date);
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::OptionalAffix const &opts);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::OptionalAffix const &opts);
 
-} // namespace ts
+} // namespace swoc

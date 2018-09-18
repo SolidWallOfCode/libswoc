@@ -139,7 +139,7 @@ public:
 
       @return @c *this
   */
-  virtual BufferWriter &extend(size_t n) = 0;
+  virtual BufferWriter &commit(size_t n) = 0;
 
   /** Decrease the extent by @a n.
    *
@@ -174,7 +174,7 @@ public:
    * @param n Number of bytes to copy.
    * @return @c *this
    */
-  virtual BufferWriter & copy(size_t dst, size_t src, size_t n) = 0;
+  virtual BufferWriter &copy(size_t dst, size_t src, size_t n) = 0;
 
   // Force virtual destructor.
   virtual ~BufferWriter();
@@ -191,15 +191,16 @@ public:
 
       @note This must be declared here, but the implementation is in @c bwf_base.h
   */
-  template <typename... Rest> BufferWriter &print(TextView fmt, Rest &&... rest);
+  template <typename... Rest> BufferWriter &print(const TextView &fmt, Rest &&... rest);
 
   /** Print overload to take arguments as a tuple instead of explicitly.
       This is useful for forwarding variable arguments from other functions / methods.
   */
-  template <typename... Args> BufferWriter &printv(TextView fmt, std::tuple<Args...> const &args);
+  template <typename... Args> BufferWriter &printv(const TextView &fmt, const std::tuple<Args...> &args);
 
   /// Print using a preparsed @a fmt.
-  template <typename... Args> BufferWriter &print(bwf::Format const &fmt, Args &&... args);
+  template <typename... Args> BufferWriter &print(const bwf::Format &fmt, Args &&... args);
+  template <typename... Args> BufferWriter &printv(const bwf::Format &fmt, const std::tuple<Args...> & args);
 
   /** Print the arguments on to the buffer.
    *
@@ -208,8 +209,9 @@ public:
    * @tparam F Format processor - returns chunks of the format.
    * @tparam Args Arguments for the format.
    * @param names Name set for specifier names.
-  */
-  template <typename F, typename... Args> BufferWriter &print_nv(const bwf::BoundNames & names, F & f, std::tuple<Args...> const &args);
+   */
+  template <typename F, typename... Args>
+  BufferWriter &print_nv(const bwf::BoundNames &names, F &&f, const std::tuple<Args...> &args);
 
   /// Output the buffer contents to the @a stream.
   /// @return The destination stream.
@@ -284,7 +286,7 @@ public:
   size_t extent() const override;
 
   /// Advance the used part of the output buffer.
-  self_type &extend(size_t n) override;
+  self_type &commit(size_t n) override;
 
   /// Drop @a n characters from the end of the buffer.
   /// The extent is reduced but the data is not overwritten and can be recovered with
@@ -298,7 +300,7 @@ public:
   self_type &restore(size_t n) override;
 
   /// Copy data in the buffer.
-  FixedBufferWriter & copy(size_t dst, size_t src, size_t n) override;
+  FixedBufferWriter &copy(size_t dst, size_t src, size_t n) override;
 
   /// Clear the buffer, reset to empty (no data).
   /// This is a convenience for reusing a buffer. For instance
@@ -327,9 +329,9 @@ public:
   template <typename... Args> self_type &printv(bwf::Format const &fmt, std::tuple<Args...> const &args);
 
 protected:
-  char *const _buf;      ///< Output buffer.
-  size_t _capacity;      ///< Size of output buffer.
-  size_t _attempted = 0; ///< Number of characters written, including those discarded due error condition.
+  char *const _buf;        ///< Output buffer.
+  size_t _capacity;        ///< Size of output buffer.
+  size_t _attempted   = 0; ///< Number of characters written, including those discarded due error condition.
   size_t _restriction = 0; ///< Restricted capacity.
 };
 
@@ -442,12 +444,13 @@ FixedBufferWriter::aux_data()
 }
 
 inline MemSpan
-FixedBufferWriter::aux_span() {
-  return error() ? MemSpan{} : MemSpan{ _buf + _attempted, static_cast<ptrdiff_t>(this->remaining()) };
+FixedBufferWriter::aux_span()
+{
+  return error() ? MemSpan{} : MemSpan{_buf + _attempted, static_cast<ptrdiff_t>(this->remaining())};
 }
 
 inline auto
-FixedBufferWriter::extend(size_t n) -> self_type &
+FixedBufferWriter::commit(size_t n) -> self_type &
 {
   _attempted += n;
 
@@ -508,10 +511,11 @@ FixedBufferWriter::clear() -> self_type &
 }
 
 inline auto
-FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type & {
+FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type &
+{
   auto limit = std::min<size_t>(_capacity, _attempted); // max offset of region possible.
-  MemSpan src_span { _buf + src, std::min<ptrdiff_t>(limit, src + n) };
-  MemSpan dst_span { _buf + dst, std::min<ptrdiff_t>(limit, dst + n) };
+  MemSpan src_span{_buf + src, std::min<ptrdiff_t>(limit, src + n)};
+  MemSpan dst_span{_buf + dst, std::min<ptrdiff_t>(limit, dst + n)};
   std::memmove(dst_span.data(), src_span.data(), std::min(dst_span.size(), src_span.size()));
   return *this;
 }

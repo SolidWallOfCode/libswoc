@@ -18,7 +18,6 @@
     limitations under the License.
 */
 
-
 #include <string_view>
 #include "swoc/MemArena.h"
 #include <catch.hpp>
@@ -140,7 +139,7 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   REQUIRE(arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr + 100));
   swoc::MemSpan s2 = arena.alloc(10);
-  void *ptr2     = s2.begin();
+  void *ptr2       = s2.begin();
   REQUIRE(arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr2));
   REQUIRE(arena.allocated_size() == 56 + 10);

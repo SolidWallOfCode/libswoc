@@ -28,49 +28,40 @@
 
 namespace swoc
 {
-
 namespace detail
 {
-template <typename T>
-auto
-tag_label(BufferWriter &w, const bwf::Spec &, const swoc::meta::CaseArg_0 &) -> BufferWriter &
-{
-  return w;
-}
+  template <typename T> auto tag_label(BufferWriter &w, const bwf::Spec &, const meta::CaseArg_0 &) -> void {}
 
-template <typename T>
-auto
-tag_label(BufferWriter &w, const bwf::Spec &, const swoc::meta::CaseArg_1 &) -> decltype(T::label, []() -> BufferWriter & {})
-{
-  return w.print("{}", T::label);
-}
-template <typename T>
-inline BufferWriter &
-tag_label(BufferWriter &w, BWFSpec const &spec)
-{
-  return tag_label<T>(w, spec, swoc::meta::CaseArg_Final);
-}
+  template <typename T>
+  auto
+  tag_label(BufferWriter &w, const bwf::Spec &, const meta::CaseArg_1 &) -> decltype(T::label, meta::CaseVoidFunc())
+  {
+    w.print("{}", T::label);
+  }
+  template <typename T>
+  inline BufferWriter &
+  tag_label(BufferWriter &w, bwf::Spec const &spec)
+  {
+    tag_label<T>(w, spec, meta::CaseArg);
+    return w;
+  }
 
-template <typename T>
-auto
-tag_label(std::ostream &, const swoc::meta::CaseArg_0 &) -> std::ostream &
-{
-  return w;
-}
+  template <typename T> auto tag_label(std::ostream &, const meta::CaseArg_0 &) -> void {}
 
-template <typename T>
-auto
-tag_label(std::ostream &w, const swoc::meta::CaseArg_1 &) -> decltype(T::label, []() -> std::ostream & {})
-{
-  return w << T::label;
-}
+  template <typename T>
+  auto
+  tag_label(std::ostream &w, const meta::CaseArg_1 &) -> decltype(T::label, meta::CaseVoidFunc())
+  {
+    w << T::label;
+  }
 
-template <typename T>
-inline std::ostream &
-tag_label(std::ostream &w)
-{
-  return tag_label<T>(w, swoc::meta::CaseArg_Final);
-}
+  template <typename T>
+  inline std::ostream &
+  tag_label(std::ostream &w)
+  {
+    tag_label<T>(w, meta::CaseArg);
+    return w;
+  }
 } // namespace detail
 
 template <intmax_t N, typename C, typename T>
@@ -78,18 +69,17 @@ BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, Scalar<N, C, T> const &x)
 {
   bwformat(w, spec, x.value());
-  return spec.has_numeric_type() ? w : ts::detail::tag_label<T>(w, spec);
+  return spec.has_numeric_type() ? w : detail::tag_label<T>(w, spec);
 }
 
 } // namespace swoc
 
-namespace std
-{
-template <intmax_t N, typename C, typename T>
+namespace std {
+template<intmax_t N, typename C, typename T>
 ostream &
-operator<<(ostream &s, ts::Scalar<N, C, T> const &x)
-{
+operator<<(ostream &s, swoc::Scalar<N, C, T> const &x) {
   s << x.value();
-  return ts::detail::tag_label<T>(s, b);
+  return swoc::detail::tag_label<T>(s);
 }
 
+} // namespace std

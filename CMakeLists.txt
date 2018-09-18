@@ -17,6 +17,7 @@ set(public_headers
     include/swoc/BufferWriter.h
     include/swoc/bwf_base.h
     include/swoc/bwf_std.h
+    include/swoc/bwf_ex.h
     include/swoc/bwf_swoc.h
 )
 
@@ -50,5 +51,5 @@ install(TARGETS libswoc++
     PUBLIC_HEADER DESTINATION include/swoc
 )
 
-add_custom_target(clang-format-src COMMAND tools/clang-format.sh src)
-add_custom_target(clang-format-include COMMAND tools/clang-format.sh include/swoc)
+add_custom_target(clang-format-src COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/src)
+add_custom_target(clang-format-include COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/include/swoc)
