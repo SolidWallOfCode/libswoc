@@ -19,7 +19,7 @@ set(public_headers
     include/swoc/bwf_std.h
     include/swoc/bwf_ex.h
     include/swoc/bwf_swoc.h
-    ${CMAKE_HOME_DIRECTORY}/include/swoc/Errata.h
+    include/swoc/Errata.h
 )
 
 set(lib_src
