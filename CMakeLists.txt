@@ -29,7 +29,7 @@ set(lib_src
     src/Errata.cc
 )
 
-add_library(libswoc++ STATIC "${public_headers}" "${lib_src}")
+add_library(swoc++ STATIC "${public_headers}" "${lib_src}")
 
 add_executable(test_libswoc
     src/unit_tests/unit_test_main.cc
@@ -43,13 +43,13 @@ add_executable(test_libswoc
 )
 
 find_library(POSIX_THREAD_LIB pthread)
-target_link_libraries(test_libswoc libswoc++ ${POSIX_THREAD_LIB})
+target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
 
-set_target_properties(libswoc++ PROPERTIES
+set_target_properties(swoc++ PROPERTIES
     PUBLIC_HEADER "${public_headers}"
 )
 
-install(TARGETS libswoc++
+install(TARGETS swoc++
     ARCHIVE DESTINATION lib
     PUBLIC_HEADER DESTINATION include/swoc
 )
