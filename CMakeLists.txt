@@ -20,14 +20,14 @@ set(public_headers
     include/swoc/bwf_ex.h
     include/swoc/bwf_swoc.h
     include/swoc/Errata.h
-)
+    include/swoc/swoc_file.h)
 
 set(lib_src
     src/TextView.cc
     src/MemArena.cc
     src/BufferWriterFormat.cc
     src/Errata.cc
-)
+    src/swoc_file.cc)
 
 add_library(swoc++ STATIC "${public_headers}" "${lib_src}")
 
@@ -40,7 +40,7 @@ add_executable(test_libswoc
     src/unit_tests/test_BufferWriterFormat.cc
     src/unit_tests/test_IntrusiveDList.cc
     src/unit_tests/test_Scalar.cc
-)
+    src/unit_tests/test_swoc_file.cc)
 
 find_library(POSIX_THREAD_LIB pthread)
 target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
