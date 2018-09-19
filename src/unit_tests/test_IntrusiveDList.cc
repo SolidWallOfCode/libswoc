@@ -149,7 +149,7 @@ Container::print() const
   }
 }
 
-TEST_CASE("IntrusiveDList Example", "[libts][IntrusiveDList]")
+TEST_CASE("IntrusiveDList Example", "[libswoc][IntrusiveDList]")
 {
   Container container;
 
@@ -215,7 +215,7 @@ public:
 using ThingList        = IntrusiveDList<Thing::Linkage>;
 using PrivateThingList = IntrusiveDList<PrivateThing::Linkage>;
 
-TEST_CASE("IntrusiveDList", "[libts][IntrusiveDList]")
+TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
 {
   ThingList list;
   int n;

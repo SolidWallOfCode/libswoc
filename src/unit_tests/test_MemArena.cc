@@ -26,7 +26,7 @@ using swoc::MemSpan;
 using swoc::MemArena;
 using namespace std::literals;
 
-TEST_CASE("MemArena generic", "[libts][MemArena]")
+TEST_CASE("MemArena generic", "[libswoc][MemArena]")
 {
   swoc::MemArena arena{64};
   REQUIRE(arena.size() == 0);
@@ -49,7 +49,7 @@ TEST_CASE("MemArena generic", "[libts][MemArena]")
   REQUIRE(extent < arena.reserved_size());
 }
 
-TEST_CASE("MemArena freeze and thaw", "[libts][MemArena]")
+TEST_CASE("MemArena freeze and thaw", "[libswoc][MemArena]")
 {
   MemArena arena;
   MemSpan span1{arena.alloc(1024)};
@@ -111,7 +111,7 @@ TEST_CASE("MemArena freeze and thaw", "[libts][MemArena]")
   REQUIRE(arena.reserved_size() < 2 * 32000);
 }
 
-TEST_CASE("MemArena helper", "[libts][MemArena]")
+TEST_CASE("MemArena helper", "[libswoc][MemArena]")
 {
   struct Thing {
     int ten{10};
@@ -174,7 +174,7 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   REQUIRE(thing_one->name == "Persia");
 }
 
-TEST_CASE("MemArena large alloc", "[libts][MemArena]")
+TEST_CASE("MemArena large alloc", "[libswoc][MemArena]")
 {
   swoc::MemArena arena;
   swoc::MemSpan s = arena.alloc(4000);
@@ -201,7 +201,7 @@ TEST_CASE("MemArena large alloc", "[libts][MemArena]")
   }
 }
 
-TEST_CASE("MemArena block allocation", "[libts][MemArena]")
+TEST_CASE("MemArena block allocation", "[libswoc][MemArena]")
 {
   swoc::MemArena arena{64};
   swoc::MemSpan s  = arena.alloc(32);
@@ -224,7 +224,7 @@ TEST_CASE("MemArena block allocation", "[libts][MemArena]")
   REQUIRE((char *)s.begin() + 64 == s3.end());
 }
 
-TEST_CASE("MemArena full blocks", "[libts][MemArena]")
+TEST_CASE("MemArena full blocks", "[libswoc][MemArena]")
 {
   // couple of large allocations - should be exactly sized in the generation.
   size_t init_size = 32000;

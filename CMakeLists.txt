@@ -43,7 +43,7 @@ add_executable(test_libswoc
     src/unit_tests/test_BufferWriterFormat.cc
     src/unit_tests/test_IntrusiveDList.cc
     src/unit_tests/test_Scalar.cc
-    src/unit_tests/test_swoc_file.cc)
+    src/unit_tests/test_swoc_file.cc src/unit_tests/test_Errata.cc)
 
 find_library(POSIX_THREAD_LIB pthread)
 target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})

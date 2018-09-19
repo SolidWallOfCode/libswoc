@@ -489,7 +489,7 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   bw.clear();
 }
 
-TEST_CASE("bwstring std formats", "[libts][bwprint]")
+TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
 {
   swoc::LocalBufferWriter<120> w;
 

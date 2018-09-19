@@ -62,6 +62,8 @@ Errata::~Errata()
       (*f)(*this);
     }
   }
+  swoc::MemArena tmp;
+  tmp = std::move(_data->_arena);
 }
 
 const Errata::Data *
