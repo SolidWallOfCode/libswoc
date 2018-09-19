@@ -28,39 +28,39 @@ using swoc::file::path;
 // --------------------
 TEST_CASE("swoc_file", "[libts][swoc_file]")
 {
-path p1("/home");
-REQUIRE(p1.string() == "/home");
-auto p2 = p1 / "bob";
-REQUIRE(p2.string() == "/home/bob");
-p2 = p2 / "git/ats/";
-REQUIRE(p2.string() == "/home/bob/git/ats/");
-p2 /= "lib/ts";
-REQUIRE(p2.string() == "/home/bob/git/ats/lib/ts");
-p2 /= "/home/dave";
-REQUIRE(p2.string() == "/home/dave");
-path p3 = path("/home/dave") / "git/tools";
-REQUIRE(p3.string() == "/home/dave/git/tools");
+  path p1("/home");
+  REQUIRE(p1.string() == "/home");
+  auto p2 = p1 / "bob";
+  REQUIRE(p2.string() == "/home/bob");
+  p2 = p2 / "git/ats/";
+  REQUIRE(p2.string() == "/home/bob/git/ats/");
+  p2 /= "lib/ts";
+  REQUIRE(p2.string() == "/home/bob/git/ats/lib/ts");
+  p2 /= "/home/dave";
+  REQUIRE(p2.string() == "/home/dave");
+  path p3 = path("/home/dave") / "git/tools";
+  REQUIRE(p3.string() == "/home/dave/git/tools");
 }
 
 TEST_CASE("swoc_file_io", "[libts][swoc_file_io]")
 {
-path file("src/unit_tests/test_swoc_file.cc");
-std::error_code ec;
-std::string content = swoc::file::load(file, ec);
-REQUIRE(ec.value() == 0);
-REQUIRE(content.size() > 0);
-REQUIRE(content.find("swoc::file::path") != content.npos);
+  path file("src/unit_tests/test_swoc_file.cc");
+  std::error_code ec;
+  std::string content = swoc::file::load(file, ec);
+  REQUIRE(ec.value() == 0);
+  REQUIRE(content.size() > 0);
+  REQUIRE(content.find("swoc::file::path") != content.npos);
 
-// Check some file properties.
-REQUIRE(swoc::file::is_readable(file) == true);
-auto fs = swoc::file::status(file, ec);
-REQUIRE(ec.value() == 0);
-REQUIRE(swoc::file::is_dir(fs) == false);
-REQUIRE(swoc::file::is_regular_file(fs) == true);
+  // Check some file properties.
+  REQUIRE(swoc::file::is_readable(file) == true);
+  auto fs = swoc::file::status(file, ec);
+  REQUIRE(ec.value() == 0);
+  REQUIRE(swoc::file::is_dir(fs) == false);
+  REQUIRE(swoc::file::is_regular_file(fs) == true);
 
-// Failure case.
-file    = "unit-tests/no_such_file.txt";
-content = swoc::file::load(file, ec);
-REQUIRE(ec.value() == 2);
-REQUIRE(swoc::file::is_readable(file) == false);
+  // Failure case.
+  file    = "unit-tests/no_such_file.txt";
+  content = swoc::file::load(file, ec);
+  REQUIRE(ec.value() == 2);
+  REQUIRE(swoc::file::is_readable(file) == false);
 }
