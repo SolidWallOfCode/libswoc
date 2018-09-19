@@ -20,14 +20,17 @@ set(public_headers
     include/swoc/bwf_ex.h
     include/swoc/bwf_swoc.h
     include/swoc/Errata.h
-    include/swoc/swoc_file.h)
+    include/swoc/swoc_file.h
+    include/swoc/IntrusivePtr.h
+)
 
 set(lib_src
     src/TextView.cc
     src/MemArena.cc
     src/BufferWriterFormat.cc
     src/Errata.cc
-    src/swoc_file.cc)
+    src/swoc_file.cc
+)
 
 add_library(swoc++ STATIC "${public_headers}" "${lib_src}")
 

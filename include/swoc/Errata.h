@@ -57,6 +57,7 @@
 #include "swoc/MemArena.h"
 #include "swoc/bwf_base.h"
 #include "swoc/IntrusiveDList.h"
+#include "swoc/IntrusivePtr.h"
 
 namespace swoc
 {
@@ -133,7 +134,7 @@ protected:
   using Container = IntrusiveDList<Annotation::Linkage>;
 
   /// Implementation class.
-  struct Data {
+  struct Data : public swoc::IntrusivePtrCounter {
     using self_type = Data; ///< Self reference type.
 
     /// Construct into @c MemArena.
@@ -167,10 +168,10 @@ public:
   /// Default constructor - empty errata, very fast.
   Errata();
   Errata(self_type const &that) = default;
-  Errata(self_type &&that)      = default;              ///< Move constructor.
-  self_type &operator=(self_type const &that) = delete; // no copy assignemnt.
-  self_type &operator=(self_type &&that) = default;     ///< Move assignment.
-  ~Errata();                                            ///< Destructor.
+  Errata(self_type &&that);                                        ///< Move constructor.
+  self_type &operator=(self_type const &that) = delete;            // no copy assignemnt.
+  self_type &operator                         =(self_type &&that); ///< Move assignment.
+  ~Errata();                                                       ///< Destructor.
 
   /** Add a new message to the top of stack with default severity and @a text.
    * @param level Severity of the message.
@@ -328,7 +329,7 @@ protected:
   // is that code wants to work with an instance. It is rarely the case that an instance is constructed
   // just as it is returned (e.g. std::string). Code would therefore have to call std::move for
   // every return, which is not feasible.
-  std::shared_ptr<Data> _data;
+  swoc::IntrusivePtr<Data> _data;
 
   /// Force data existence.
   /// @return A pointer to the data.
@@ -626,6 +627,18 @@ Errata::Data::empty() const
 // Inline methods for Errata
 
 inline Errata::Errata() {}
+
+inline Errata::Errata(self_type &&that)
+{
+  _data = that._data;
+}
+
+inline auto
+Errata::operator=(self_type &&that) -> self_type &
+{
+  _data = that._data;
+  return *this;
+}
 
 inline Errata::operator bool() const
 {
