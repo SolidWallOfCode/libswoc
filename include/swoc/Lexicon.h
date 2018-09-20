@@ -27,8 +27,8 @@
 #include <array>
 #include "swoc/IntrusiveHashMap.h"
 #include "swoc/MemArena.h"
-#include "swoc/BufferWriter.h"
-#include "swoc/HashFNV.h"
+#include "swoc/bwf_base.h"
+#include "ext/HashFNV.h"
 
 namespace swoc
 {
@@ -296,7 +296,7 @@ template <typename E>
 uint32_t
 Lexicon<E>::Item::NameLinkage::hash_of(std::string_view s)
 {
-  return ATSHash32FNV1a().hash_immediate(s.data(), s.size(), ATSHash::nocase());
+  return Hash32_FNV().hash_immediate(s.data(), s.size(), [](uint8_t c) { return islower(c) ? toupper(c) : c; });
 }
 
 template <typename E>
@@ -372,7 +372,7 @@ Lexicon<E>::NameDefault::operator()(E value)
     break;
   default:
     throw std::domain_error(
-      ts::LocalBufferWriter<128>().print("Lexicon: unknown enumeration '{}'\0", static_cast<uintmax_t>(value)).data());
+      swoc::LocalBufferWriter<128>().print("Lexicon: unknown enumeration '{}'\0", static_cast<uintmax_t>(value)).data());
     break;
   }
 }
@@ -427,7 +427,7 @@ Lexicon<E>::ValueDefault::operator()(std::string_view name)
     return (*(reinterpret_cast<UnknownNameHandler *>(_store)))(name);
     break;
   default:
-    throw std::domain_error(ts::LocalBufferWriter<128>().print("Lexicon: unknown name '{}'\0", name).data());
+    throw std::domain_error(swoc::LocalBufferWriter<128>().print("Lexicon: unknown name '{}'\0", name).data());
     break;
   }
 }
@@ -572,4 +572,4 @@ Lexicon<E>::Lexicon::count() const
   return _by_value.count();
 }
 
-} // namespace ts
+} // namespace swoc

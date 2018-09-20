@@ -25,39 +25,42 @@
 #pragma once
 
 #include <cstdint>
+static constexpr uint32_t FNV_INIT_32 = 0x811c9dc5u;
+static constexpr uint64_t FNV_INIT_64 = 0xcbf29ce484222325ull;
 
-struct ATSHash32FNV1a : ATSHash32 {
-protected:
-  using super_type = ATSHash32;
-  using nullxfrm   = ATSHash::nullxfrm;
+struct Hash32_FNV {
+  using self_type = Hash32_FNV;
 
-public:
-  ATSHash32FNV1a(void);
+  Hash32_FNV();
 
-  template <typename Transform> void update(const void *data, size_t len, const Transform &xf);
+  template <typename XF> self_type & update(const void *data, size_t len, const XF &xf);
+  self_type & update(const void *data, size_t len);
+  
+  self_type & final();
+  self_type & clear();
 
-  void update(const void *data, size_t len) override;
-
-  void final(void) override;
-  uint32_t get(void) const override;
-  void clear(void) override;
-
-  template <typename Transform> uint32_t hash_immediate(const void *data, size_t len, const Transform &xf);
+  template <typename XF> uint32_t hash_immediate(const void *data, size_t len, const XF &xf);
+  
+  operator uint32_t () const;
 
 private:
   uint32_t hval;
 };
 
-struct Hash_FNV1a {
-  Hash_FNV1a();
+struct Hash64_FNV {
+  using self_type = Hash64_FNV;
+  
+  Hash64_FNV();
 
-  template <typename XF> void update(const void *data, size_t len, const Transform & xf);
-  void update(const void *data, size_t len);
+  template <typename XF> self_type & update(const void *data, size_t len, const XF & xf);
+  self_type & update(const void *data, size_t len);
 
-  void final(void);
-  void clear(void);
+  self_type & final();
+  self_type & clear();
 
-  template <typename XF> uint64_t hash_immediate(const void *data, size_t len, const Transform &xf);
+  template <typename XF> uint64_t hash_immediate(const void *data, size_t len, const XF &xf);
+  
+  operator uint64_t () const;
 
 private:
   uint64_t hval;
@@ -66,29 +69,32 @@ private:
 // ----------
 // Implementation
 
-inline void
-ATSHash32FNV1a::update(const void *data, size_t len)
+inline Hash32_FNV::Hash32_FNV()
 {
-  return this->update(data, len, ATSHash::nullxfrm());
-}
-inline void
-ATSHash64FNV1a::update(const void *data, size_t len)
-{
-  return this->update(data, len, ATSHash::nullxfrm());
+  this->clear();
 }
 
-template <typename Transform>
-uint32_t
-ATSHash32FNV1a::hash_immediate(const void *data, size_t len, const Transform &xf)
+inline Hash32_FNV::operator uint32_t () const
 {
-  this->update(data, len, xf);
-  this->final();
-  return this->get();
+  return hval;
 }
 
-template <typename Transform>
-void
-ATSHash32FNV1a::update(const void *data, size_t len, const Transform &xf)
+inline auto
+Hash32_FNV::final() -> self_type &
+{
+  return *this;
+}
+
+inline auto
+Hash32_FNV::clear() -> self_type &
+{
+  hval = FNV_INIT_32;
+  return *this;
+}
+
+template <typename XF>
+auto
+Hash32_FNV::update(const void *data, size_t len, const XF &xf) -> self_type &
 {
   const uint8_t *bp = static_cast<const uint8_t *>(data);
   const uint8_t *be = bp + len;
@@ -97,11 +103,47 @@ ATSHash32FNV1a::update(const void *data, size_t len, const Transform &xf)
     hval ^= static_cast<uint32_t>(xf(*bp));
     hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
   }
+  return *this;
 }
 
-template <typename Transform>
-void
-ATSHash64FNV1a::update(const void *data, size_t len, Transform xf)
+inline auto
+Hash32_FNV::update(const void *data, size_t len) -> self_type &
+{
+  return this->update(data, len, [](uint8_t c) { return c; });
+}
+
+template <typename XF>
+uint32_t
+Hash32_FNV::hash_immediate(const void *data, size_t len, const XF &xf)
+{
+  return this->update(data, len, xf).final();
+}
+
+// ---
+
+inline Hash64_FNV::Hash64_FNV()
+{
+  this->clear();
+}
+
+inline Hash64_FNV::operator uint64_t () const { return hval; }
+
+inline auto
+Hash64_FNV::clear() -> self_type &
+{
+  hval = FNV_INIT_64;
+  return *this;
+}
+
+inline auto
+Hash64_FNV::final() -> self_type &
+{
+  return *this;
+}
+
+template <typename XF>
+auto
+Hash64_FNV::update(const void *data, size_t len, const XF & xf) -> self_type &
 {
   const uint8_t *bp = static_cast<const uint8_t *>(data);
   const uint8_t *be = bp + len;
@@ -110,62 +152,19 @@ ATSHash64FNV1a::update(const void *data, size_t len, Transform xf)
     hval ^= static_cast<uint64_t>(xf(*bp));
     hval += (hval << 1) + (hval << 4) + (hval << 5) + (hval << 7) + (hval << 8) + (hval << 40);
   }
+  return *this;
 }
-/*
-  This algorithm is in the public domain. This code was
-  derived from code in the public domain.
 
-  http://www.isthe.com/chongo/tech/comp/fnv/
-
-  Currently implemented FNV-1a 32bit and FNV-1a 64bit
- */
-
-#include "tscore/HashFNV.h"
-
-static const uint32_t FNV_INIT_32 = 0x811c9dc5u;
-static const uint64_t FNV_INIT_64 = 0xcbf29ce484222325ull;
-
-// FNV-1a 64bit
-ATSHash32FNV1a::ATSHash32FNV1a()
+inline auto
+Hash64_FNV::update(const void *data, size_t len) -> self_type &
 {
-  this->clear();
+  return this->update(data, len, [](uint8_t c) { return c; });
 }
 
-void
-ATSHash32FNV1a::final()
-{
-}
-
-uint32_t
-ATSHash32FNV1a::get() const
-{
-  return hval;
-}
-
-void
-ATSHash32FNV1a::clear()
-{
-  hval = FNV_INIT_32;
-}
-
-// FNV-1a 64bit
-ATSHash64FNV1a::ATSHash64FNV1a()
-{
-  this->clear();
-}
-void
-ATSHash64FNV1a::final()
-{
-}
-
+template <typename XF>
 uint64_t
-ATSHash64FNV1a::get() const
+Hash64_FNV::hash_immediate(const void *data, size_t len, const XF &xf)
 {
-  return hval;
+  return this->update(data, len, xf).final();
 }
 
-void
-ATSHash64FNV1a::clear()
-{
-  hval = FNV_INIT_64;
-}

@@ -4,21 +4,18 @@
 
   @section license License
 
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
+  Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
+  See the NOTICE file distributed with this work for additional information regarding copyright
+  ownership.  The ASF licenses this file to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance with the License.  You may obtain a
+  copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+  Unless required by applicable law or agreed to in writing, software distributed under the License
+  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+  or implied. See the License for the specific language governing permissions and limitations under
+  the License.
 */
 
 #pragma once
@@ -26,8 +23,10 @@
 #include <vector>
 #include <array>
 #include <algorithm>
-#include "tscore/IntrusiveDList.h"
+#include "swoc/IntrusiveDList.h"
 
+namespace swoc
+{
 /** Intrusive Hash Table.
 
     Values stored in this container are not destroyed when the container is destroyed or removed from the container.
@@ -626,32 +625,32 @@ IntrusiveHashMap<H>::erase(range const &r) -> iterator
 
 namespace detail
 {
-// Make @c apply more convenient by allowing the function to take a reference type or pointer type to the container
-// elements. The pointer type is the base, plus a shim to convert from a reference type functor to a pointer pointer
-// type. The complex return type definition forces only one, but not both, to be valid for a particular functor. This
-// also must be done via free functions and not method overloads because the compiler forces a match up of method
-// definitions and declarations before any template instantiation.
+  // Make @c apply more convenient by allowing the function to take a reference type or pointer type to the container
+  // elements. The pointer type is the base, plus a shim to convert from a reference type functor to a pointer pointer
+  // type. The complex return type definition forces only one, but not both, to be valid for a particular functor. This
+  // also must be done via free functions and not method overloads because the compiler forces a match up of method
+  // definitions and declarations before any template instantiation.
 
-template <typename H, typename F>
-auto
-IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
-  -> decltype(f(*static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map)
-{
-  return map.apply([&f](typename IntrusiveHashMap<H>::value_type *v) { return f(*v); });
-}
-
-template <typename H, typename F>
-auto
-IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
-  -> decltype(f(static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map)
-{
-  auto spot{map.begin()};
-  auto limit{map.end()};
-  while (spot != limit) {
-    f(spot++); // post increment means @a spot is updated before @a f is applied.
+  template <typename H, typename F>
+  auto
+  IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
+    -> decltype(f(*static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map)
+  {
+    return map.apply([&f](typename IntrusiveHashMap<H>::value_type *v) { return f(*v); });
   }
-  return map;
-}
+
+  template <typename H, typename F>
+  auto
+  IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
+    -> decltype(f(static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map)
+  {
+    auto spot{map.begin()};
+    auto limit{map.end()};
+    while (spot != limit) {
+      f(spot++); // post increment means @a spot is updated before @a f is applied.
+    }
+    return map;
+  }
 } // namespace detail
 
 template <typename H>
@@ -727,4 +726,5 @@ IntrusiveHashMap<H>::get_expansion_limit() const
 {
   return _expansion_limit;
 }
-/* ---------------------------------------------------------------------------------------------- */
+
+} // namespace swoc

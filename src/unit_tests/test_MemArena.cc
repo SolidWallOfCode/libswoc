@@ -20,7 +20,7 @@
 
 #include <string_view>
 #include "swoc/MemArena.h"
-#include <catch.hpp>
+#include "ext/catch.hpp"
 
 using swoc::MemSpan;
 using swoc::MemArena;

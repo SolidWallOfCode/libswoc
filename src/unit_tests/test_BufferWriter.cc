@@ -20,7 +20,7 @@
 
 #include <cstring>
 #include "swoc/BufferWriter.h"
-#include "catch.hpp"
+#include "ext/catch.hpp"
 
 namespace
 {

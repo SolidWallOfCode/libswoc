@@ -25,7 +25,7 @@
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
 
-#include "catch.hpp"
+#include "ext/catch.hpp"
 
 using namespace std::literals;
 

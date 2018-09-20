@@ -12,6 +12,7 @@ set(public_headers
     include/swoc/Scalar.h
     include/swoc/TextView.h
     include/swoc/IntrusiveDList.h
+    include/swoc/IntrusiveHashMap.h
     include/swoc/MemSpan.h
     include/swoc/MemArena.h
     include/swoc/BufferWriter.h
@@ -44,8 +45,12 @@ add_executable(test_libswoc
     src/unit_tests/test_BufferWriter.cc
     src/unit_tests/test_BufferWriterFormat.cc
     src/unit_tests/test_IntrusiveDList.cc
+    src/unit_tests/test_IntrusiveHashMap.cc
     src/unit_tests/test_Scalar.cc
-    src/unit_tests/test_swoc_file.cc src/unit_tests/test_Errata.cc)
+    src/unit_tests/test_swoc_file.cc
+    src/unit_tests/test_Errata.cc
+    src/unit_tests/test_Lexicon.cpp
+    )
 
 find_library(POSIX_THREAD_LIB pthread)
 target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
