@@ -140,3 +140,22 @@ MemArena::clear(size_t n)
 
   return *this;
 }
+
+MemArena::~MemArena()
+{
+  // Destruct in a way that makes it safe for the instance to be in one of its own memory blocks.
+  Block *ba = _active.head();
+  Block *bf = _frozen.head();
+  _active.clear();
+  _frozen.clear();
+  while (bf) {
+    Block *b = bf;
+    bf       = bf->_link._next;
+    delete b;
+  }
+  while (ba) {
+    Block *b = ba;
+    ba       = ba->_link._next;
+    delete b;
+  }
+}

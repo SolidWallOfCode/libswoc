@@ -54,10 +54,10 @@
 #include <vector>
 #include <string_view>
 #include <functional>
+#include <atomic>
 #include "swoc/MemArena.h"
 #include "swoc/bwf_base.h"
 #include "swoc/IntrusiveDList.h"
-#include "swoc/IntrusivePtr.h"
 
 namespace swoc
 {
@@ -134,7 +134,7 @@ protected:
   using Container = IntrusiveDList<Annotation::Linkage>;
 
   /// Implementation class.
-  struct Data : public swoc::IntrusivePtrCounter {
+  struct Data {
     using self_type = Data; ///< Self reference type.
 
     /// Construct into @c MemArena.
@@ -156,6 +156,9 @@ protected:
     /// Allocate from the arena.
     swoc::MemSpan alloc(size_t n);
 
+    /// Reference count.
+    std::atomic<int> _ref_count{0};
+
     /// The message stack.
     Container _notes;
     /// Annotation text storage.
@@ -167,18 +170,11 @@ protected:
 public:
   /// Default constructor - empty errata, very fast.
   Errata();
-  Errata(self_type const &that) = default;
+  Errata(self_type const &that);                                   ///< Reference counting copy constructor.
   Errata(self_type &&that);                                        ///< Move constructor.
   self_type &operator=(self_type const &that) = delete;            // no copy assignemnt.
   self_type &operator                         =(self_type &&that); ///< Move assignment.
   ~Errata();                                                       ///< Destructor.
-
-  /** Add a new message to the top of stack with default severity and @a text.
-   * @param level Severity of the message.
-   * @param text Text of the message.
-   * @return *this
-   */
-  self_type &note(std::string_view text);
 
   /** Add a new message to the top of stack with severity @a level and @a text.
    * @param level Severity of the message.
@@ -324,19 +320,22 @@ public:
   std::ostream &write(std::ostream &out) const;
 
 protected:
+  /// Release internal memory.
+  void release();
+
   /// Implementation instance.
-  // Although it may seem like move semantics make this unnecessary, that's not the case. The problem
-  // is that code wants to work with an instance. It is rarely the case that an instance is constructed
-  // just as it is returned (e.g. std::string). Code would therefore have to call std::move for
-  // every return, which is not feasible.
-  swoc::IntrusivePtr<Data> _data;
+  // Although it may seem like move semantics make reference counting unnecessary, that's not the
+  // case. The problem is code that wants to work with an instance, which is common. In such cases
+  // the instance is constructed just as it is returned (e.g. std::string). Code would therefore
+  // have to call std::move for every return, which is not going to be done reliably.
+  Data *_data{nullptr};
 
   /// Force data existence.
   /// @return A pointer to the data.
   const Data *data();
 
   /// Get a writeable data pointer.
-  /// @c Data is cloned if there are other references.
+  /// @internal It is a fatal error to ask for writeable data if there are shared references.
   Data *writeable_data();
 
   /** Allocate a span of memory.
@@ -630,13 +629,21 @@ inline Errata::Errata() {}
 
 inline Errata::Errata(self_type &&that)
 {
-  _data = that._data;
+  std::swap(_data, that._data);
+}
+
+inline Errata::Errata(const self_type &that)
+{
+  if (nullptr != (_data = that._data)) {
+    ++(_data->_ref_count);
+  }
 }
 
 inline auto
 Errata::operator=(self_type &&that) -> self_type &
 {
-  _data = that._data;
+  this->release();
+  std::swap(_data, that._data);
   return *this;
 }
 
@@ -649,13 +656,6 @@ inline const Errata::Annotation &
 Errata::front() const
 {
   return *(_data->_notes.head());
-}
-
-inline Errata &
-Errata::note(std::string_view text)
-{
-  this->note(DEFAULT_SEVERITY, text);
-  return *this;
 }
 
 template <typename... Args>

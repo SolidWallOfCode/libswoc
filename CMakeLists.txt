@@ -59,3 +59,5 @@ install(TARGETS swoc++
 
 add_custom_target(clang-format-src COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/src)
 add_custom_target(clang-format-include COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/include/swoc)
+add_custom_target(clang-format)
+add_dependencies(clang-format clang-format-src clang-format-include)

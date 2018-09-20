@@ -57,13 +57,23 @@ Errata::Data::localize(string_view src)
 
 Errata::~Errata()
 {
-  if (_data.use_count() == 1 && !_data->empty()) {
-    for (auto &f : Sink_List) {
-      (*f)(*this);
+  this->release();
+}
+
+void
+Errata::release()
+{
+  if (_data) {
+    if (--(_data->_ref_count) == 0) {
+      if (!_data->empty()) {
+        for (auto &f : Sink_List) {
+          (*f)(*this);
+        }
+      }
+      _data->~Data();
     }
+    _data = nullptr;
   }
-  swoc::MemArena tmp;
-  tmp = std::move(_data->_arena);
 }
 
 const Errata::Data *
@@ -71,9 +81,10 @@ Errata::data()
 {
   if (!_data) {
     MemArena arena{512};
-    _data.reset(arena.make<Data>(std::move(arena)));
+    _data = arena.make<Data>(std::move(arena));
+    ++(_data->_ref_count);
   }
-  return _data.get();
+  return _data;
 }
 
 Errata::Data *
@@ -81,13 +92,13 @@ Errata::writeable_data()
 {
   if (!_data) {
     this->data(); // force data existence, must be unique.
-  } else if (_data.use_count() != 1) {
+  } else if (_data->_ref_count > 1) {
     // Pondering this, there's really no good use case for shared write access to an Errata.
     // The shared_ptr is used only to make function returns efficient. Explicit copying is
     // easy using @c note.
     throw std::runtime_error("Shared write to Errata");
   };
-  return _data.get();
+  return _data;
 }
 
 Errata::iterator
@@ -170,7 +181,8 @@ Errata::note(const self_type &that)
 Errata &
 Errata::clear()
 {
-  _data.reset();
+  _data->_notes.clear(); // Prevent sink processing.
+  this->release();
   return *this;
 }
 

@@ -119,6 +119,9 @@ public:
    */
   explicit MemArena(size_t n = DEFAULT_BLOCK_SIZE);
 
+  /// Destructor.
+  ~MemArena();
+
   /** Allocate @a n bytes of storage.
 
       Returns a span of memory within the arena. alloc() is self expanding but DOES NOT self

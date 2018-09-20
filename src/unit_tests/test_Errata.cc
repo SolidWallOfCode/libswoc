@@ -24,13 +24,16 @@
 using swoc::Errata;
 using namespace std::literals;
 
-Errata Noteworthy(std::string_view text) {
+Errata
+Noteworthy(std::string_view text)
+{
   Errata notes;
   notes.info(text);
   return notes;
 }
 
-TEST_CASE("Errata copy", "[libswoc][Errata]") {
+TEST_CASE("Errata copy", "[libswoc][Errata]")
+{
   auto notes = Noteworthy("Evil Dave Rulz.");
   REQUIRE(notes.count() == 1);
 }
