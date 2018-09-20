@@ -21,7 +21,9 @@ set(public_headers
     include/swoc/bwf_swoc.h
     include/swoc/Errata.h
     include/swoc/swoc_file.h
+    include/swoc/Lexicon.h
     include/swoc/IntrusivePtr.h
+    include/ext/HashFNV.h
 )
 
 set(lib_src

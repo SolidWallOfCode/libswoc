@@ -25,12 +25,12 @@
 #include <tuple>
 #include <functional>
 #include <array>
-#include <tscore/IntrusiveHashMap.h>
-#include <tscore/MemArena.h>
-#include <tscore/BufferWriter.h>
-#include <tscore/HashFNV.h>
+#include "swoc/IntrusiveHashMap.h"
+#include "swoc/MemArena.h"
+#include "swoc/BufferWriter.h"
+#include "swoc/HashFNV.h"
 
-namespace ts
+namespace swoc
 {
 /** A bidirectional mapping between names and enumeration values.
 
