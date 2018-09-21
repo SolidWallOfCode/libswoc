@@ -119,8 +119,15 @@ public:
    */
   explicit MemArena(size_t n = DEFAULT_BLOCK_SIZE);
 
+  /// no copying
+  MemArena(self_type const &that) = delete;
+  MemArena(self_type &&that)      = default;
+
   /// Destructor.
   ~MemArena();
+
+  self_type &operator=(self_type const &that) = delete;
+  self_type &operator=(self_type &&that) = default;
 
   /** Allocate @a n bytes of storage.
 

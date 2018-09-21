@@ -34,9 +34,11 @@ TEST_CASE("MemArena generic", "[libswoc][MemArena]")
   arena.alloc(0);
   REQUIRE(arena.size() == 0);
   REQUIRE(arena.reserved_size() >= 64);
+  REQUIRE(arena.remaining() >= 64);
 
   swoc::MemSpan span1 = arena.alloc(32);
   REQUIRE(span1.size() == 32);
+  REQUIRE(arena.remaining() >= 32);
 
   swoc::MemSpan span2 = arena.alloc(32);
   REQUIRE(span2.size() == 32);
@@ -128,6 +130,7 @@ TEST_CASE("MemArena helper", "[libswoc][MemArena]")
   REQUIRE(arena.size() == 0);
   swoc::MemSpan s = arena.alloc(56);
   REQUIRE(arena.size() == 56);
+  REQUIRE(arena.remaining() >= 200);
   void *ptr = s.begin();
 
   REQUIRE(arena.contains((char *)ptr));
@@ -246,4 +249,18 @@ TEST_CASE("MemArena full blocks", "[libswoc][MemArena]")
   REQUIRE(std::all_of(m1.begin(), m1.end(), [](uint8_t c) { return 0xa5 == c; }));
   REQUIRE(std::all_of(m2.begin(), m2.end(), [](uint8_t c) { return 0xc2 == c; }));
   REQUIRE(std::all_of(m3.begin(), m3.end(), [](uint8_t c) { return 0x56 == c; }));
+}
+
+TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
+{
+  MemArena a1;
+  MemSpan span;
+  {
+    MemArena a2{512};
+    span = a2.alloc(128);
+    REQUIRE(a2.contains(span.data()));
+    a1 = std::move(a2);
+  }
+  REQUIRE(a1.contains(span.data()));
+  REQUIRE(a1.remaining() >= 384);
 }

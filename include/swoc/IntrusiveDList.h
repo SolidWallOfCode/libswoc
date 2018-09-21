@@ -220,6 +220,9 @@ public:
     iterator(list_type *list, value_type *v);
   };
 
+  IntrusiveDList() = default;
+  IntrusiveDList(self_type &&that);
+
   /// Copy list.
   self_type &operator=(const self_type &that) = default;
   /// Move @a that to @a this.
@@ -480,6 +483,14 @@ template <typename L> auto IntrusiveDList<L>::iterator::operator*() const -> val
 template <typename L> IntrusiveDList<L>::iterator::operator value_type *() const
 {
   return super_type::_v;
+}
+
+/// --- Main class
+
+template <typename L>
+IntrusiveDList<L>::IntrusiveDList(self_type &&that) : _head(that._head), _tail(that._tail), _count(that._count)
+{
+  that.clear();
 }
 
 template <typename L>
