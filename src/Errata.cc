@@ -154,10 +154,10 @@ Errata::note(Severity level, std::string_view text)
 }
 
 Errata &
-Errata::note_localized(Severity level, MemSpan span)
+Errata::note_localized(Severity level, std::string_view const &text)
 {
   auto d        = this->writeable_data();
-  Annotation *n = d->_arena.make<Annotation>(level, span);
+  Annotation *n = d->_arena.make<Annotation>(level, text);
   d->_notes.prepend(n);
   _data->_level = std::max(_data->_level, level);
   return *this;

@@ -346,7 +346,7 @@ protected:
   MemSpan alloc(size_t n);
 
   /// Add a note which is already localized.
-  self_type &note_localized(Severity, MemSpan span);
+  self_type &note_localized(Severity, std::string_view const &text);
 
   /// Used for returns when no data is present.
   static Annotation const NIL_NOTE;
@@ -715,7 +715,7 @@ Errata::note_v(Severity level, std::string_view fmt, std::tuple<Args...> const &
   } else {
     data->alloc(bw.extent()); // reserve the part of the remnant actually used.
   }
-  this->note_localized(level, span);
+  this->note_localized(level, bw.view());
   return *this;
 }
 

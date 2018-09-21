@@ -36,4 +36,5 @@ TEST_CASE("Errata copy", "[libswoc][Errata]")
 {
   auto notes = Noteworthy("Evil Dave Rulz.");
   REQUIRE(notes.count() == 1);
+  REQUIRE(notes.begin()->text() == "Evil Dave Rulz.");
 }
