@@ -6,7 +6,7 @@ project(libswoc)
 
 include_directories(include)
 
-set(public_headers
+set(core_headers
     include/swoc/swoc_common.h
     include/swoc/swoc_meta.h
     include/swoc/Scalar.h
@@ -27,7 +27,7 @@ set(public_headers
 )
 
 # These are external but required.
-set(ext_public_headers
+set(ext_headers
     include/swoc/ext/HashFNV.h
 )
 
@@ -39,7 +39,7 @@ set(lib_src
     src/swoc_file.cc
 )
 
-add_library(swoc++ STATIC "${public_headers}" "${ext_public_headers}" "${lib_src}")
+add_library(swoc++ STATIC "${core_headers}" "${ext_headers}" "${lib_src}")
 
 add_executable(test_libswoc
     include/swoc/ext/catch.hpp
@@ -60,8 +60,9 @@ add_executable(test_libswoc
 find_library(POSIX_THREAD_LIB pthread)
 target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
 
+set(public_headers ${core_headers} ${ext_headers})
 set_target_properties(swoc++ PROPERTIES
-    PUBLIC_HEADER "${public_headers} ${ext_public_headers}"
+    PUBLIC_HEADER "${public_headers}"
 )
 
 install(TARGETS swoc++
