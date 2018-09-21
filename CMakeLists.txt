@@ -24,6 +24,10 @@ set(public_headers
     include/swoc/swoc_file.h
     include/swoc/Lexicon.h
     include/swoc/IntrusivePtr.h
+)
+
+# These are external but required.
+set(ext_public_headers
     include/swoc/ext/HashFNV.h
 )
 
@@ -35,9 +39,10 @@ set(lib_src
     src/swoc_file.cc
 )
 
-add_library(swoc++ STATIC "${public_headers}" "${lib_src}")
+add_library(swoc++ STATIC "${public_headers}" "${ext_public_headers}" "${lib_src}")
 
 add_executable(test_libswoc
+    include/swoc/ext/catch.hpp
     src/unit_tests/unit_test_main.cc
     src/unit_tests/test_TextView.cc
     src/unit_tests/test_MemSpan.cc
@@ -56,7 +61,7 @@ find_library(POSIX_THREAD_LIB pthread)
 target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
 
 set_target_properties(swoc++ PROPERTIES
-    PUBLIC_HEADER "${public_headers}"
+    PUBLIC_HEADER "${public_headers} ${ext_public_headers}"
 )
 
 install(TARGETS swoc++
@@ -66,5 +71,6 @@ install(TARGETS swoc++
 
 add_custom_target(clang-format-src COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/src)
 add_custom_target(clang-format-include COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/include/swoc)
+add_custom_target(clang-format-ext COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/include/swoc/ext)
 add_custom_target(clang-format)
-add_dependencies(clang-format clang-format-src clang-format-include)
+add_dependencies(clang-format clang-format-src clang-format-include clang-format-ext)

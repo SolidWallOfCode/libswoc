@@ -33,15 +33,15 @@ struct Hash32_FNV {
 
   Hash32_FNV();
 
-  template <typename XF> self_type & update(const void *data, size_t len, const XF &xf);
-  self_type & update(const void *data, size_t len);
-  
+  template <typename XF> self_type &update(const void *data, size_t len, const XF &xf);
+  self_type &update(const void *data, size_t len);
+
   self_type & final();
-  self_type & clear();
+  self_type &clear();
 
   template <typename XF> uint32_t hash_immediate(const void *data, size_t len, const XF &xf);
-  
-  operator uint32_t () const;
+
+  operator uint32_t() const;
 
 private:
   uint32_t hval;
@@ -49,18 +49,18 @@ private:
 
 struct Hash64_FNV {
   using self_type = Hash64_FNV;
-  
+
   Hash64_FNV();
 
-  template <typename XF> self_type & update(const void *data, size_t len, const XF & xf);
-  self_type & update(const void *data, size_t len);
+  template <typename XF> self_type &update(const void *data, size_t len, const XF &xf);
+  self_type &update(const void *data, size_t len);
 
   self_type & final();
-  self_type & clear();
+  self_type &clear();
 
   template <typename XF> uint64_t hash_immediate(const void *data, size_t len, const XF &xf);
-  
-  operator uint64_t () const;
+
+  operator uint64_t() const;
 
 private:
   uint64_t hval;
@@ -74,7 +74,7 @@ inline Hash32_FNV::Hash32_FNV()
   this->clear();
 }
 
-inline Hash32_FNV::operator uint32_t () const
+inline Hash32_FNV::operator uint32_t() const
 {
   return hval;
 }
@@ -126,7 +126,10 @@ inline Hash64_FNV::Hash64_FNV()
   this->clear();
 }
 
-inline Hash64_FNV::operator uint64_t () const { return hval; }
+inline Hash64_FNV::operator uint64_t() const
+{
+  return hval;
+}
 
 inline auto
 Hash64_FNV::clear() -> self_type &
@@ -143,7 +146,7 @@ Hash64_FNV::final() -> self_type &
 
 template <typename XF>
 auto
-Hash64_FNV::update(const void *data, size_t len, const XF & xf) -> self_type &
+Hash64_FNV::update(const void *data, size_t len, const XF &xf) -> self_type &
 {
   const uint8_t *bp = static_cast<const uint8_t *>(data);
   const uint8_t *be = bp + len;
@@ -167,4 +170,3 @@ Hash64_FNV::hash_immediate(const void *data, size_t len, const XF &xf)
 {
   return this->update(data, len, xf).final();
 }
-
