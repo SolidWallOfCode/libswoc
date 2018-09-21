@@ -19,7 +19,7 @@
 */
 
 #include "swoc/Errata.h"
-#include "ext/catch.hpp"
+#include "swoc/ext/catch.hpp"
 
 using swoc::Errata;
 using namespace std::literals;

@@ -21,7 +21,7 @@
 #include <iostream>
 
 #include "swoc/swoc_file.h"
-#include "ext/catch.hpp"
+#include "swoc/ext/catch.hpp"
 
 using swoc::file::path;
 

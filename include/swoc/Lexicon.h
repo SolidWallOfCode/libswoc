@@ -28,7 +28,7 @@
 #include "swoc/IntrusiveHashMap.h"
 #include "swoc/MemArena.h"
 #include "swoc/bwf_base.h"
-#include "ext/HashFNV.h"
+#include "swoc/ext/HashFNV.h"
 
 namespace swoc
 {

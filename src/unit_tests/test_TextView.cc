@@ -27,7 +27,7 @@
 #include <string>
 
 #include "swoc/TextView.h"
-#include "ext/catch.hpp"
+#include "swoc/ext/catch.hpp"
 
 using swoc::TextView;
 using namespace std::literals;

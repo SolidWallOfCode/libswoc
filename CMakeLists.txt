@@ -24,7 +24,7 @@ set(public_headers
     include/swoc/swoc_file.h
     include/swoc/Lexicon.h
     include/swoc/IntrusivePtr.h
-    include/ext/HashFNV.h
+    include/swoc/ext/HashFNV.h
 )
 
 set(lib_src

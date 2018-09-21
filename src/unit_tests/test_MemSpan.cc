@@ -23,7 +23,7 @@
 
 #include <iostream>
 #include "swoc/MemSpan.h"
-#include "ext/catch.hpp"
+#include "swoc/ext/catch.hpp"
 
 using swoc::MemSpan;
 
