@@ -51,6 +51,9 @@ namespace swoc
 template <typename E> class Lexicon
 {
   using self_type = Lexicon; ///< Self reference type.
+protected:
+  struct Item;
+
 public:
   /// Used for initializer lists that have just a primary value.
   using Pair = std::tuple<E, std::string_view>;
@@ -137,6 +140,45 @@ public:
 
   /// Get the number of values with definitions.
   size_t count() const;
+
+  /// Iterator over pairs of values and primary name pairs.
+  class const_iterator
+  {
+    using self_type = const_iterator;
+
+  public:
+    using value_type        = const Pair;
+    using pointer           = value_type *;
+    using reference         = value_type &;
+    using difference_type   = ptrdiff_t;
+    using iterator_category = std::bidirectional_iterator_tag;
+
+    const_iterator()                      = default;
+    const_iterator(self_type const &that) = default;
+    const_iterator(self_type &&that)      = default;
+
+    reference operator*() const;
+    pointer operator->() const;
+
+    self_type operator=(self_type const &that) = default;
+    bool operator==(self_type const &that) const;
+
+    self_type &operator++();
+    self_type operator++(int);
+
+    self_type &operator--();
+    self_type operator--(int);
+
+    const_iterator begin() const;
+    const_iterator end() const;
+
+  protected:
+    Item *_item{nullptr};
+    value_type _v;
+  };
+
+  // There is no modifying elements in the Lexicon so only constant iteration.
+  using iterator = const_iterator;
 
 protected:
   // Because std::variant is broken up through clang 6, we have to do something uglier.
@@ -570,6 +612,62 @@ size_t
 Lexicon<E>::Lexicon::count() const
 {
   return _by_value.count();
+}
+
+// Iterators
+
+template <typename E> auto Lexicon<E>::const_iterator::operator*() const -> reference
+{
+  return _v;
+}
+template <typename E> auto Lexicon<E>::const_iterator::operator-> () const -> pointer
+{
+  return &_v;
+}
+
+template <typename E>
+bool
+Lexicon<E>::const_iterator::operator==(self_type const &that) const
+{
+  return _item == that._item;
+}
+
+template <typename E>
+auto
+Lexicon<E>::const_iterator::operator++() -> self_type &
+{
+  if (nullptr != (_item = _item->_value_link._next)) {
+    _v = {{_item->_value, _item->_name}};
+  }
+  return *this;
+}
+
+template <typename E>
+auto
+Lexicon<E>::const_iterator::operator++(int) -> self_type
+{
+  self_type tmp{*this};
+  ++*this;
+  return tmp;
+}
+
+template <typename E>
+auto
+Lexicon<E>::const_iterator::operator--() -> self_type &
+{
+  if (nullptr != (_item = _item->_value_link->_prev)) {
+    _v = {{_item->_value, _item->_name}};
+  }
+  return *this;
+}
+
+template <typename E>
+auto
+Lexicon<E>::const_iterator::operator--(int) -> self_type
+{
+  self_type tmp;
+  ++*this;
+  return tmp;
 }
 
 } // namespace swoc
