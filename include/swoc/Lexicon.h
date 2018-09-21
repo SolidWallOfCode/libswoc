@@ -32,6 +32,18 @@
 
 namespace swoc
 {
+namespace detail
+{
+  template <typename... Args>
+  std::string
+  what(std::string_view const &fmt, Args &&... args)
+  {
+    std::string zret;
+    swoc::bwprintv(zret, fmt, std::forward_as_tuple(args...));
+    return std::move(zret);
+  }
+} // namespace detail
+
 /** A bidirectional mapping between names and enumeration values.
 
     This is intended to be a support class to make interacting with enumerations easier for
@@ -51,6 +63,7 @@ namespace swoc
 template <typename E> class Lexicon
 {
   using self_type = Lexicon; ///< Self reference type.
+
 protected:
   struct Item;
 
@@ -160,8 +173,9 @@ public:
     reference operator*() const;
     pointer operator->() const;
 
-    self_type operator=(self_type const &that) = default;
+    self_type &operator=(self_type const &that) = default;
     bool operator==(self_type const &that) const;
+    bool operator!=(self_type const &that) const;
 
     self_type &operator++();
     self_type operator++(int);
@@ -169,16 +183,20 @@ public:
     self_type &operator--();
     self_type operator--(int);
 
-    const_iterator begin() const;
-    const_iterator end() const;
-
   protected:
-    Item *_item{nullptr};
-    value_type _v;
+    const_iterator(const Item *item);
+    void update();
+    const Item *_item{nullptr};
+    typename std::remove_const<value_type>::type _v;
+
+    friend Lexicon;
   };
 
   // There is no modifying elements in the Lexicon so only constant iteration.
   using iterator = const_iterator;
+
+  const_iterator begin() const;
+  const_iterator end() const;
 
 protected:
   // Because std::variant is broken up through clang 6, we have to do something uglier.
@@ -413,8 +431,7 @@ Lexicon<E>::NameDefault::operator()(E value)
     return (*(reinterpret_cast<UnknownValueHandler *>(_store)))(value);
     break;
   default:
-    throw std::domain_error(
-      swoc::LocalBufferWriter<128>().print("Lexicon: unknown enumeration '{}'\0", static_cast<uintmax_t>(value)).data());
+    throw std::domain_error(detail::what("Lexicon: unknown enumeration '{}'", static_cast<uintmax_t>(value)));
     break;
   }
 }
@@ -538,15 +555,6 @@ template <typename E> E Lexicon<E>::Lexicon::operator[](std::string_view name)
 }
 
 template <typename E>
-template <typename... Args>
-auto
-Lexicon<E>::Lexicon::define(E value, Args &&... names) -> self_type &
-{
-  static_assert(sizeof...(Args) > 0, "A defined value must have at least a priamry name");
-  return this->define(value, {std::forward<Args>(names)...});
-}
-
-template <typename E>
 auto
 Lexicon<E>::Lexicon::define(E value, const std::initializer_list<std::string_view> &names) -> self_type &
 {
@@ -554,11 +562,26 @@ Lexicon<E>::Lexicon::define(E value, const std::initializer_list<std::string_vie
     throw std::invalid_argument("A defined value must have at least a primary name");
   }
   for (auto name : names) {
+    if (_by_name.find(name) != _by_name.end()) {
+      throw std::invalid_argument(detail::what("Duplicate name '{}' in Lexicon", name));
+    }
     auto i = new Item(value, this->localize(name));
     _by_name.insert(i);
-    _by_value.insert(i);
+    // Only put primary names in the value table.
+    if (_by_value.find(value) == _by_value.end()) {
+      _by_value.insert(i);
+    }
   }
   return *this;
+}
+
+template <typename E>
+template <typename... Args>
+auto
+Lexicon<E>::Lexicon::define(E value, Args &&... names) -> self_type &
+{
+  static_assert(sizeof...(Args) > 0, "A defined value must have at least a priamry name");
+  return this->define(value, {std::forward<Args>(names)...});
 }
 
 template <typename E>
@@ -614,12 +637,42 @@ Lexicon<E>::Lexicon::count() const
   return _by_value.count();
 }
 
+template <typename E>
+auto
+Lexicon<E>::Lexicon::begin() const -> const_iterator
+{
+  return const_iterator{static_cast<const Item *>(_by_value.begin())};
+}
+
+template <typename E>
+auto
+Lexicon<E>::Lexicon::end() const -> const_iterator
+{
+  return {};
+}
+
 // Iterators
+
+template <typename E>
+void
+Lexicon<E>::const_iterator::update()
+{
+  std::get<0>(_v) = _item->_value;
+  std::get<1>(_v) = _item->_name;
+}
+
+template <typename E> Lexicon<E>::const_iterator::const_iterator(const Item *item) : _item(item)
+{
+  if (_item) {
+    this->update();
+  };
+}
 
 template <typename E> auto Lexicon<E>::const_iterator::operator*() const -> reference
 {
   return _v;
 }
+
 template <typename E> auto Lexicon<E>::const_iterator::operator-> () const -> pointer
 {
   return &_v;
@@ -633,11 +686,18 @@ Lexicon<E>::const_iterator::operator==(self_type const &that) const
 }
 
 template <typename E>
+bool
+Lexicon<E>::const_iterator::operator!=(self_type const &that) const
+{
+  return _item != that._item;
+}
+
+template <typename E>
 auto
 Lexicon<E>::const_iterator::operator++() -> self_type &
 {
   if (nullptr != (_item = _item->_value_link._next)) {
-    _v = {{_item->_value, _item->_name}};
+    this->update();
   }
   return *this;
 }
@@ -656,7 +716,7 @@ auto
 Lexicon<E>::const_iterator::operator--() -> self_type &
 {
   if (nullptr != (_item = _item->_value_link->_prev)) {
-    _v = {{_item->_value, _item->_name}};
+    this->update();
   }
   return *this;
 }

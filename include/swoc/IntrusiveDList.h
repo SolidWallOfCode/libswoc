@@ -211,7 +211,7 @@ public:
     value_type *operator->() const;
 
     /// Convenience conversion to pointer type
-    /// Because of how this list is normally used, being able to pass an iterator as a pointer is quite convienent.
+    /// Because of how this list is normally used, being able to pass an iterator as a pointer is quite convenient.
     /// If the iterator isn't valid, it converts to @c nullptr.
     operator value_type *() const;
 

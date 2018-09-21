@@ -49,7 +49,7 @@ add_executable(test_libswoc
     src/unit_tests/test_Scalar.cc
     src/unit_tests/test_swoc_file.cc
     src/unit_tests/test_Errata.cc
-    src/unit_tests/test_Lexicon.cpp
+    src/unit_tests/test_Lexicon.cc
     )
 
 find_library(POSIX_THREAD_LIB pthread)
