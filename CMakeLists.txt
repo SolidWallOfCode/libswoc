@@ -60,15 +60,9 @@ add_executable(test_libswoc
 find_library(POSIX_THREAD_LIB pthread)
 target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
 
-set(public_headers ${core_headers} ${ext_headers})
-set_target_properties(swoc++ PROPERTIES
-    PUBLIC_HEADER "${public_headers}"
-)
-
-install(TARGETS swoc++
-    ARCHIVE DESTINATION lib
-    PUBLIC_HEADER DESTINATION include/swoc
-)
+install(TARGETS swoc++ ARCHIVE DESTINATION lib)
+install(FILES ${core_headers} DESTINATION include/swoc)
+install(FILES ${ext_headers} DESTINATION include/swoc/ext)
 
 add_custom_target(clang-format-src COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/src)
 add_custom_target(clang-format-include COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/include/swoc)
