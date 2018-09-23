@@ -707,8 +707,10 @@ template <typename L>
 auto
 IntrusiveDList<L>::operator=(self_type &&that) -> self_type &
 {
-  *this = that;
-  that.clear();
+  if (this != &that) {
+    *this = that;
+    that.clear();
+  }
   return *this;
 }
 

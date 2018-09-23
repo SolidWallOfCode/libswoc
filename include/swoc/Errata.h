@@ -642,8 +642,10 @@ inline Errata::Errata(const self_type &that)
 inline auto
 Errata::operator=(self_type &&that) -> self_type &
 {
-  this->release();
-  std::swap(_data, that._data);
+  if (this != &that) {
+    this->release();
+    std::swap(_data, that._data);
+  }
   return *this;
 }
 

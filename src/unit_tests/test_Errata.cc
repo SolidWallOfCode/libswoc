@@ -32,9 +32,19 @@ Noteworthy(std::string_view text)
   return notes;
 }
 
+Errata
+cycle(Errata &erratum)
+{
+  erratum.info("Note well, young one!");
+  return erratum;
+}
+
 TEST_CASE("Errata copy", "[libswoc][Errata]")
 {
   auto notes = Noteworthy("Evil Dave Rulz.");
   REQUIRE(notes.count() == 1);
   REQUIRE(notes.begin()->text() == "Evil Dave Rulz.");
+
+  notes = cycle(notes);
+  REQUIRE(notes.count() == 2);
 }
