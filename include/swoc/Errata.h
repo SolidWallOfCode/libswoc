@@ -708,16 +708,17 @@ Errata &
 Errata::note_v(Severity level, std::string_view fmt, std::tuple<Args...> const &args)
 {
   Data *data = this->writeable_data();
-  MemSpan span{data->remnant()};
+  auto span  = data->remnant();
   FixedBufferWriter bw{span};
-  if (bw.printv(fmt, args).error()) {
+  if (!bw.printv(fmt, args).error()) {
+    data->alloc(bw.extent()); // reserve the part of the remnant actually used.
+    span.remove_suffix(bw.aux_data());
+  } else {
     // Not enough space, get a big enough chunk and do it again.
     span = this->alloc(bw.extent());
     FixedBufferWriter{span}.printv(fmt, args);
-  } else {
-    data->alloc(bw.extent()); // reserve the part of the remnant actually used.
   }
-  this->note_localized(level, bw.view());
+  this->note_localized(level, span.view());
   return *this;
 }
 

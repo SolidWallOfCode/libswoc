@@ -50,4 +50,30 @@ TEST_CASE("Errata copy", "[libswoc][Errata]")
 
   Errata erratum;
   erratum.clear();
-}
+  REQUIRE(erratum.count() == 0);
+  erratum.diag("Diagnostics");
+  REQUIRE(erratum.count() == 1);
+  erratum.info("Information");
+  REQUIRE(erratum.count() == 2);
+  erratum.warn("Warning");
+  REQUIRE(erratum.count() == 3);
+  erratum.error("Error");
+  REQUIRE(erratum.count() == 4);
+
+  // Test internal allocation boundaries.
+  notes.clear();
+  std::string_view text{"0123456789012345678901234567890123456789"};
+  for (int i = 0; i < 50; ++i) {
+    notes.info(text);
+  }
+  REQUIRE(notes.count() == 50);
+  REQUIRE(notes.begin()->text() == text);
+  bool match_p = true;
+  for (auto &&note : notes) {
+    if (note.text() != text) {
+      match_p = false;
+      break;
+    }
+  }
+  REQUIRE(match_p);
+};
