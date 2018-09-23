@@ -181,8 +181,10 @@ Errata::note(const self_type &that)
 Errata &
 Errata::clear()
 {
-  _data->_notes.clear(); // Prevent sink processing.
-  this->release();
+  if (_data) {
+    _data->_notes.clear(); // Prevent sink processing.
+    this->release();
+  }
   return *this;
 }
 

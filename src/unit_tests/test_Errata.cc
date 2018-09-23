@@ -47,4 +47,7 @@ TEST_CASE("Errata copy", "[libswoc][Errata]")
 
   notes = cycle(notes);
   REQUIRE(notes.count() == 2);
+
+  Errata erratum;
+  erratum.clear();
 }
