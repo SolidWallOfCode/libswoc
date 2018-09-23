@@ -225,8 +225,9 @@ namespace bwf
   /// Parse out the next literal and/or format specifier from the format string.
   /// Pass the results back in @a literal and @a specifier as appropriate.
   /// Update @a fmt to strip the parsed text.
+  /// @return @c true if a specifier was parsed, @c false if not.
   bool
-  Format::parse(TextView &fmt, std::string_view &literal, std::string_view &specifier)
+  Format::TextViewExtractor::parse(TextView &fmt, std::string_view &literal, std::string_view &specifier)
   {
     TextView::size_type off;
 
@@ -276,12 +277,9 @@ namespace bwf
   {
     if (!_fmt.empty()) {
       std::string_view spec_v;
-      spec._type = Spec::INVALID_TYPE;
       if (parse(_fmt, literal_v, spec_v)) {
-        spec._type = Spec::DEFAULT_TYPE; // note parse() found a spec.
-        spec.parse(spec_v);
+        return spec.parse(spec_v);
       }
-      return true;
     }
     return false;
   }
@@ -289,16 +287,12 @@ namespace bwf
   bool
   Format::FormatExtractor::operator()(std::string_view &literal_v, swoc::bwf::Spec &spec)
   {
-    if (_idx < _fmt.size()) {
-      literal_v  = {};
-      spec._type = Spec::INVALID_TYPE;
-      if (_fmt[_idx]._type == Spec::LITERAL_TYPE) {
-        literal_v = _fmt[_idx]._ext;
-        ++_idx;
-      }
-      if (_idx < _fmt.size() && _fmt[_idx]._type != Spec::LITERAL_TYPE) {
-        spec = _fmt[_idx++];
-      }
+    literal_v = {};
+    if (_idx < _fmt.size() && _fmt[_idx]._type == Spec::LITERAL_TYPE) {
+      literal_v = _fmt[_idx++]._ext;
+    }
+    if (_idx < _fmt.size() && _fmt[_idx]._type != Spec::LITERAL_TYPE) {
+      spec = _fmt[_idx++];
       return true;
     }
     return false;
@@ -643,28 +637,30 @@ namespace bwf
   /// Preparse format string for later use.
   Format::Format(TextView fmt)
   {
-    Spec lit_spec{Spec::DEFAULT};
+    Spec lit_spec;
     int arg_idx = 0;
+    auto ex{bind(fmt)};
+    std::string_view literal_v;
 
-    while (fmt) {
-      std::string_view lit_str;
-      std::string_view spec_str;
-      bool spec_p = this->parse(fmt, lit_str, spec_str);
+    lit_spec._type = Spec::LITERAL_TYPE;
 
-      if (lit_str.size()) {
-        lit_spec._ext  = lit_str;
-        lit_spec._type = Spec::LITERAL_TYPE;
+    while (ex) {
+      Spec spec;
+      bool spec_p = ex(literal_v, spec);
+
+      if (literal_v.size()) {
+        lit_spec._ext = literal_v;
         _items.emplace_back(lit_spec);
       }
+
       if (spec_p) {
-        Spec parsed_spec{spec_str};
-        if (parsed_spec._name.size() == 0) { // no name provided, use implicit index.
-          parsed_spec._idx = arg_idx;
+        if (spec._name.size() == 0) { // no name provided, use implicit index.
+          spec._idx = arg_idx++;
         }
-        if (parsed_spec._idx >= 0) { // name wasn't missing or a valid index, assume global name.
-          ++arg_idx;                 // bump this if not a global name.
+        if (spec._idx >= 0) {
+          ++arg_idx;
         }
-        _items.emplace_back(parsed_spec);
+        _items.emplace_back(spec);
       }
     }
   }

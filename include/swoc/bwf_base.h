@@ -134,23 +134,24 @@ namespace bwf
     /// Construct from a format string @a fmt.
     Format(TextView fmt);
 
-    /** Parse elements of a format string.
-
-        @param fmt The format string [in|out]
-        @param literal A literal if found
-        @param spec A specifier if found (less enclosing braces)
-        @return @c true if a specifier was found, @c false if not.
-
-        Pull off the next literal and/or specifier from @a fmt. The return value distinguishes
-        the case of no specifier found (@c false) or an empty specifier (@c true).
-
-     */
-    static bool parse(TextView &fmt, std::string_view &literal, std::string_view &spec);
-
     /// Extraction support for TextView.
     struct TextViewExtractor {
       TextView _fmt;
+      explicit operator bool() const;
       bool operator()(std::string_view &literal_v, Spec &spec);
+
+      /** Parse elements of a format string.
+
+          @param fmt The format string [in|out]
+          @param literal A literal if found
+          @param spec A specifier if found (less enclosing braces)
+          @return @c true if a specifier was found, @c false if not.
+
+          Pull off the next literal and/or specifier from @a fmt. The return value distinguishes
+          the case of no specifier found (@c false) or an empty specifier (@c true).
+
+       */
+      static bool parse(TextView &fmt, std::string_view &literal, std::string_view &spec);
     };
     /// Wrap the format string in an extractor.
     static TextViewExtractor bind(TextView fmt);
@@ -159,12 +160,16 @@ namespace bwf
     struct FormatExtractor {
       const std::vector<Spec> &_fmt; ///< Parsed format string.
       int _idx = 0;                  ///< Element index.
+      explicit operator bool() const;
       bool operator()(std::string_view &literal_v, Spec &spec);
     };
     /// Wrap the format instance in an extractor.
     FormatExtractor bind() const;
 
   protected:
+    /// Default constructor for use by subclasses with alternate formatting.
+    Format() = default;
+
     std::vector<Spec> _items; ///< Items from format string.
   };
 
@@ -286,7 +291,7 @@ namespace bwf
     using Generator      = typename super_type::Generator;
     using BoundGenerator = std::function<BoundNameSignature>;
 
-    using super_type::super_type;
+    using super_type::super_type; // inherit @c super_type constructors.
 
     /** Assign the bound generator @a bg to @a name.
      *
@@ -297,6 +302,8 @@ namespace bwf
      * @return @c *this
      */
     self_type &assign(std::string_view name, const BoundGenerator &bg);
+
+    /// Inherit unbound generator assignment from the @c super_type.
     using super_type::assign;
 
     /** Bind the names to a specific @a context.
@@ -319,11 +326,13 @@ namespace bwf
       BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
 
     protected:
-      Binding(const Map &map); ///< Must have a map reference.
+      Binding(Map const &map); ///< Must have a map reference.
       self_type &assign(context_type *);
 
-      const Map &_map;              ///< The mapping for name look ups.
+      Map const &_map;              ///< The mapping for name look ups.
       context_type *_ctx = nullptr; ///< Context for generators.
+
+      friend ContextNames;
     } _binding{super_type::_map};
   };
 
@@ -444,6 +453,9 @@ namespace bwf
     return {_items};
   }
 
+  inline Format::TextViewExtractor::operator bool() const { return !_fmt.empty(); }
+  inline Format::FormatExtractor::operator bool() const { return _idx < _fmt.size(); }
+
   /// --- Names / Generators ---
 
   inline BufferWriter &
@@ -452,7 +464,7 @@ namespace bwf
     return w.print("{{~{}~}}", spec._name);
   }
 
-  template <typename T> inline ContextNames<T>::Binding::Binding(const Map &map) : _map(map) {}
+  template <typename T> inline ContextNames<T>::Binding::Binding(Map const &map) : _map(map) {}
 
   template <typename T>
   inline const BoundNames &
@@ -466,6 +478,7 @@ namespace bwf
   ContextNames<T>::Binding::assign(context_type *ctx) -> self_type &
   {
     _ctx = ctx;
+    return *this;
   }
 
   template <typename T>
@@ -560,16 +573,17 @@ BufferWriter::print_nv(const bwf::BoundNames &names, F &&f, const std::tuple<Arg
   static constexpr int N = sizeof...(Args); // used as loop limit
   static const auto fa   = bwf::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
   int arg_idx            = 0; // the next argument index to be processed.
-  std::string_view lit_v;
-  bwf::Spec spec;
 
   // Parser is required to return @c false if there's no more data, @c true if something was parsed.
-  while (f(lit_v, spec)) {
+  while (f) {
+    std::string_view lit_v;
+    bwf::Spec spec;
+    bool spec_p = f(lit_v, spec);
     if (lit_v.size()) {
       this->write(lit_v);
     }
 
-    if (spec.has_valid_type()) {
+    if (spec_p) {
       size_t width = this->remaining();
       if (spec._max < width) {
         width = spec._max;
@@ -594,7 +608,6 @@ BufferWriter::print_nv(const bwf::BoundNames &names, F &&f, const std::tuple<Arg
         this->commit(lw.extent());
       }
     }
-    memcpy(&spec, &bwf::Spec::DEFAULT, sizeof(spec)); // reset to default state.
   }
   return *this;
 }
@@ -625,6 +638,13 @@ BufferWriter &
 BufferWriter::printv(const bwf::Format &fmt, const std::tuple<Args...> &args)
 {
   return this->print_nv(bwf::Global_Names.bind(), fmt.bind(), args);
+}
+
+template <typename F>
+BufferWriter &
+BufferWriter::print_nv(const bwf::BoundNames &names, F &&f)
+{
+  return print_nv(names, f, std::make_tuple());
 }
 
 // ---- Formatting for specific types.

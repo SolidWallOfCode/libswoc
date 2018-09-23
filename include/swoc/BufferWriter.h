@@ -212,6 +212,7 @@ public:
    */
   template <typename F, typename... Args>
   BufferWriter &print_nv(const bwf::BoundNames &names, F &&f, const std::tuple<Args...> &args);
+  template <typename F> BufferWriter &print_nv(const bwf::BoundNames &names, F &&f);
 
   /// Output the buffer contents to the @a stream.
   /// @return The destination stream.

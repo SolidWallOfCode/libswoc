@@ -20,6 +20,8 @@
 
 #include <chrono>
 #include <iostream>
+#include <variant>
+
 #include "swoc/MemSpan.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_std.h"
@@ -28,6 +30,7 @@
 #include "swoc/ext/catch.hpp"
 
 using namespace std::literals;
+using swoc::TextView;
 
 TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
 {
@@ -549,6 +552,95 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   REQUIRE(w.view() == "name = Evil Dave");
   w.clear().print("name = {}", swoc::bwf::FirstOf(empty, empty, s3, empty, s2, s1));
   REQUIRE(w.view() == "name = Leif");
+}
+
+// Test alternate format parsing.
+struct AltFormatEx {
+  AltFormatEx(TextView fmt);
+
+  explicit operator bool() const;
+  bool operator()(std::string_view &literal, swoc::bwf::Spec &spec);
+  TextView _fmt;
+};
+
+AltFormatEx::AltFormatEx(TextView fmt) : _fmt{fmt} {}
+
+AltFormatEx::operator bool() const
+{
+  return !_fmt.empty();
+}
+
+bool
+AltFormatEx::operator()(std::string_view &literal, swoc::bwf::Spec &spec)
+{
+  if (_fmt.size()) {
+    literal = _fmt.split_prefix_at('%');
+    if (literal.empty()) {
+      literal = _fmt;
+      _fmt.clear();
+      return false;
+    }
+
+    if (_fmt.size() >= 1) {
+      char c = _fmt[0];
+      if (c == '%') {
+        literal = {literal.data(), literal.size() + 1};
+        ++_fmt;
+      } else if (c == '<') {
+        size_t off = 0;
+        do {
+          off = _fmt.find('>', off + 1);
+          if (off == TextView::npos) {
+            throw std::invalid_argument("Unclosed leading angle bracket");
+          }
+        } while (':' == _fmt[off - 1]);
+        spec.parse(_fmt.substr(1, off - 1));
+        if (spec._name.empty()) {
+          throw std::invalid_argument("No name in specifier");
+        }
+        _fmt.remove_prefix(off + 1);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+struct Header {
+  TextView
+  proto() const
+  {
+    return "ipv4";
+  }
+  TextView
+  chi() const
+  {
+    return "10.56.128.96";
+  }
+};
+
+using AltNames = swoc::bwf::ContextNames<Header>;
+
+TEST_CASE("bwf alternate", "[libswoc][bwf]")
+{
+  using BW   = swoc::BufferWriter;
+  using Spec = swoc::bwf::Spec;
+  AltNames names;
+  Header hdr;
+  names.assign("proto", [](BW &w, Spec const &spec, Header &hdr) -> BW & { return swoc::bwformat(w, spec, hdr.proto()); });
+  names.assign("chi", [](BW &w, Spec const &spec, Header &hdr) -> BW & { return swoc::bwformat(w, spec, hdr.chi()); });
+
+  swoc::LocalBufferWriter<256> w;
+  w.print_nv(names.bind(hdr), AltFormatEx("This is chi - %<chi>"));
+  REQUIRE(w.view() == "This is chi - 10.56.128.96");
+  w.clear().print_nv(names.bind(hdr), AltFormatEx("Use %% for a single"));
+  REQUIRE(w.view() == "Use % for a single");
+  w.clear().print_nv(names.bind(hdr), AltFormatEx("Use %%<proto> for %<proto>, dig?"));
+  REQUIRE(w.view() == "Use %<proto> for ipv4, dig?");
+  w.clear().print_nv(names.bind(hdr), AltFormatEx("Width |%<proto:10>| dig?"));
+  REQUIRE(w.view() == "Width |ipv4      | dig?");
+  w.clear().print_nv(names.bind(hdr), AltFormatEx("Width |%<proto:>10>| dig?"));
+  REQUIRE(w.view() == "Width |      ipv4| dig?");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code
