@@ -225,6 +225,33 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   token = s.take_prefix_at('.');
   REQUIRE(token.size() == 0);
   REQUIRE(token.empty());
+
+  auto is_not_alnum = [](char c) { return !isalnum(c); };
+
+  s = "file.cc";
+  REQUIRE(s.suffix('.') == "cc");
+  REQUIRE(s.suffix_if(is_not_alnum) == "cc");
+  REQUIRE(s.prefix('.') == "file");
+  REQUIRE(s.prefix_if(is_not_alnum) == "file");
+  s.remove_suffix_at('.');
+  REQUIRE(s == "file");
+  s = "file.cc.org.123";
+  REQUIRE(s.suffix('.') == "123");
+  REQUIRE(s.prefix('.') == "file");
+  s.remove_suffix_if(is_not_alnum);
+  REQUIRE(s == "file.cc.org");
+  s.remove_suffix_at('.');
+  REQUIRE(s == "file.cc");
+  s.remove_prefix_at('.');
+  REQUIRE(s == "cc");
+  s = "file.cc.org.123";
+  s.remove_prefix_if(is_not_alnum);
+  REQUIRE(s == "cc.org.123");
+  s.remove_suffix_at('!');
+  REQUIRE(s.empty());
+  s = "file.cc.org";
+  s.remove_prefix('!');
+  REQUIRE(s.empty());
 };
 
 TEST_CASE("TextView Formatting", "[libts][TextView]")

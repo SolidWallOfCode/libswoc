@@ -297,6 +297,12 @@ public:
   /// Overload to provide better return type.
   self_type &remove_prefix(size_t n);
 
+  /// Remove the prefix delimited by the first occurence of @a c.
+  self_type &remove_prefix_at(char c);
+
+  /// Remove the prefix delimited by the first occurence of a character for which @a pred is @c true.
+  template <typename F> self_type &remove_prefix_if(F const &pred);
+
   /** Split a prefix from the view on the character at offset @a n.
 
       The view is split in to two parts and the byte at offset @a n is discarded. @a this retains
@@ -390,6 +396,12 @@ public:
 
   /// Overload to provide better return type.
   self_type &remove_suffix(size_t n);
+
+  /// Remove a suffix, delimited by the last occurence of @c c.
+  self_type &remove_suffix_at(char c);
+
+  /// Remove a suffix, delimited by the last occurence of a character for which @a pred is @c true.
+  template <typename F> self_type &remove_suffix_if(F const &f);
 
   /** Split the view to get a suffix of size @a n.
 
@@ -664,16 +676,41 @@ template <typename F>
 inline TextView
 TextView::prefix_if(F const &pred) const
 {
-  return this->prefix(this->find(pred));
+  return this->prefix(this->find_if(pred));
 }
 
-inline auto
-TextView::remove_prefix(size_t n) -> self_type &
+inline TextView &
+TextView::remove_prefix(size_t n)
 {
   if (n > this->size()) {
     this->clear();
   } else {
     this->super_type::remove_prefix(n);
+  }
+  return *this;
+}
+
+inline TextView &
+TextView::remove_prefix_at(char c)
+{
+  auto n = this->find(c);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->super_type::remove_prefix(n + 1);
+  }
+  return *this;
+}
+
+template <typename F>
+TextView &
+TextView::remove_prefix_if(F const &pred)
+{
+  auto n = this->find_if(pred);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->super_type::remove_prefix(n + 1);
   }
   return *this;
 }
@@ -772,6 +809,31 @@ inline TextView
 TextView::suffix_if(F const &pred) const
 {
   return this->suffix((this->size() - std::min(this->size(), this->rfind_if(pred))) - 1);
+}
+
+inline TextView &
+TextView::remove_suffix_at(char c)
+{
+  auto n = this->rfind(c);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->remove_suffix(this->size() - n);
+  }
+  return *this;
+}
+
+template <typename F>
+TextView &
+TextView::remove_suffix_if(F const &pred)
+{
+  auto n = this->rfind_if(pred);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->remove_suffix(this->size() - n);
+  }
+  return *this;
 }
 
 inline auto
