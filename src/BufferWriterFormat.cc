@@ -33,6 +33,7 @@
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_base.h"
 #include "swoc/bwf_ex.h"
+#include "swoc/bwf_printf.h"
 #include "swoc/swoc_meta.h"
 
 using namespace std::literals;
@@ -45,10 +46,10 @@ namespace
 // bwprint performance test run in < 30% of the time, changing it from about 2.5 times slower than
 // snprintf to a little faster. This version handles only positive integers in decimal.
 
-inline int
+inline unsigned
 radix10(swoc::TextView src, swoc::TextView &out)
 {
-  int zret = 0;
+  unsigned zret = 0;
 
   out.clear();
   src.ltrim_if(&isspace);
@@ -87,9 +88,9 @@ namespace bwf
     _data['x'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
     _data['X'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
 
-    _data[' '] = SIGN_CHAR;
-    _data['-'] = SIGN_CHAR;
-    _data['+'] = SIGN_CHAR;
+    _data[SIGN_NEVER]  = SIGN_CHAR;
+    _data[SIGN_NEG]    = SIGN_CHAR;
+    _data[SIGN_ALWAYS] = SIGN_CHAR;
 
     _data['<'] = static_cast<uint8_t>(Spec::Align::LEFT);
     _data['>'] = static_cast<uint8_t>(Spec::Align::RIGHT);
@@ -437,10 +438,12 @@ namespace bwf
     char prefix2 = 0;
     char buff[std::numeric_limits<uintmax_t>::digits + 1];
 
-    if (neg_p) {
-      neg = '-';
-    } else if (spec._sign != '-') {
-      neg = spec._sign;
+    if (spec._sign != Spec::SIGN_NEVER) {
+      if (neg_p) {
+        neg = '-';
+      } else if (spec._sign == Spec::SIGN_ALWAYS) {
+        neg = spec._sign;
+      }
     }
 
     switch (spec._type) {
@@ -991,3 +994,100 @@ operator<<(ostream &s, swoc::FixedBufferWriter &w)
   return s << w.view();
 }
 } // namespace std
+
+// --- C_Format / printf support ----
+
+namespace swoc
+{
+namespace bwf
+{
+  bool
+  C_Format::operator()(std::string_view &literal, Spec &spec)
+  {
+    if (!_fmt.empty()) {
+      auto size = _fmt.size();
+      literal   = _fmt.take_prefix_at('%');
+      if (_fmt.empty()) {
+        return false;
+      }
+      if (!_fmt.empty()) {
+        if ('%' == *_fmt) {
+          literal = {literal.data(), literal.size() + 1};
+          ++_fmt;
+          return false;
+        }
+
+        spec._align = Spec::Align::RIGHT; // default unless overridden.
+        // Keep track of the data consumed - if anything goes wrong, treat it all as a literal.
+        size_t n = 0;
+        do {
+          char c = *_fmt;
+          if ('-' == c) {
+            spec._align = Spec::Align::LEFT;
+          } else if ('+' == c) {
+            spec._sign = Spec::SIGN_ALWAYS;
+          } else if (' ' == c) {
+            spec._sign = Spec::SIGN_NEVER;
+          } else if ('#' == c) {
+            spec._radix_lead_p = true;
+          } else if ('0' == c) {
+            spec._fill = '0';
+          } else {
+            break;
+          }
+          ++_fmt, ++n;
+        } while (!_fmt.empty());
+
+        if (_fmt.empty()) {
+          literal = {literal.data(), literal.size() + n};
+          return false;
+        }
+
+        TextView parsed;
+        size_t width = radix10(_fmt, parsed);
+        if (!parsed.empty()) {
+          spec._min = width;
+          n += parsed.size();
+        }
+
+        if ('.' == *_fmt) {
+          ++_fmt, ++n;
+          auto x = radix10(_fmt, parsed);
+          if (!parsed.empty()) {
+            spec._prec = x;
+            n += parsed.size();
+          } else {
+            spec._prec = 0;
+          }
+        }
+
+        if (_fmt.empty()) {
+          literal = {literal.data(), literal.size() + n};
+          return false;
+        }
+
+        char c = *_fmt++;
+        ++n;
+        switch (c) {
+        case 'i':
+        case 'd':
+          spec._type = 'd';
+          break;
+        case 'f':
+          spec._type = 'f';
+          break;
+        case 's':
+          spec._type = 's';
+          break;
+        default:
+          literal = {literal.data(), literal.size() + n};
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+} // namespace bwf
+} // namespace swoc

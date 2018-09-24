@@ -168,6 +168,10 @@ public:
   */
   self_type &operator++();
 
+  /// Shift the view to discard the first byte.
+  /// @return A pre-increment copy of the view.
+  self_type operator++(int);
+
   /** Shift the view to discard the leading @a n bytes.
       Equivalent to @c std::string_view::remove_prefix
       @return @a this
@@ -608,6 +612,14 @@ TextView::operator++()
 {
   this->remove_prefix(1);
   return *this;
+}
+
+inline TextView
+TextView::operator++(int)
+{
+  self_type zret{*this};
+  this->remove_prefix(1);
+  return zret;
 }
 
 inline TextView &

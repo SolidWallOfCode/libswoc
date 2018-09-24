@@ -26,6 +26,7 @@
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
+#include "swoc/bwf_printf.h"
 
 #include "swoc/ext/catch.hpp"
 
@@ -641,6 +642,10 @@ TEST_CASE("bwf alternate", "[libswoc][bwf]")
   REQUIRE(w.view() == "Width |ipv4      | dig?");
   w.clear().print_nv(names.bind(hdr), AltFormatEx("Width |%<proto:>10>| dig?"));
   REQUIRE(w.view() == "Width |      ipv4| dig?");
+
+  w.clear();
+  swoc::bwprintf(w, "Fifty Six = %d", 56);
+  REQUIRE(w.view() == "Fifty Six = 56");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

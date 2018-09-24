@@ -37,7 +37,7 @@ set(lib_src
     src/BufferWriterFormat.cc
     src/Errata.cc
     src/swoc_file.cc
-)
+        include/swoc/bwf_printf.h)
 
 add_library(swoc++ STATIC "${core_headers}" "${ext_headers}" "${lib_src}")
 

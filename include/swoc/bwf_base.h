@@ -46,6 +46,10 @@ namespace bwf
     static constexpr char INVALID_TYPE = 0;    ///< Type for missing or invalid specifier.
     static constexpr char LITERAL_TYPE = '"';  ///< Internal type to mark a literal.
 
+    static constexpr char SIGN_ALWAYS = '+'; ///< Always print a sign character.
+    static constexpr char SIGN_NEVER  = ' '; ///< Never print a sign character.
+    static constexpr char SIGN_NEG    = '-'; ///< Print a sign only for negative values (default).
+
     /// Constructor a default instance.
     constexpr Spec() {}
 
@@ -54,8 +58,8 @@ namespace bwf
     /// Parse a specifier
     bool parse(TextView fmt);
 
-    char _fill = ' '; ///< Fill character.
-    char _sign = '-'; ///< Numeric sign style, space + -
+    char _fill = ' ';      ///< Fill character.
+    char _sign = SIGN_NEG; ///< Numeric sign style, space + -
     enum class Align : char {
       NONE,                            ///< No alignment.
       LEFT,                            ///< Left alignment '<'.
@@ -197,11 +201,19 @@ namespace bwf
      *
      * @return
      */
-    virtual BufferWriter &operator()(BufferWriter &w, const Spec &spec) const = 0;
+    virtual BufferWriter &operator()(BufferWriter &w, Spec const &spec) const = 0;
 
   protected:
     /// Write missing name output.
-    BufferWriter &err_invalid_name(BufferWriter &w, const Spec &) const;
+    BufferWriter &err_invalid_name(BufferWriter &w, Spec const &) const;
+  };
+
+  /// Empty bound names - used for where no name binding is available or desired.
+  /// Throws if any name is used.
+  class NilBoundNames : public BoundNames
+  {
+  public:
+    BufferWriter &operator()(BufferWriter &, Spec const &) const override;
   };
 
   /** Binding names to generators.
@@ -464,6 +476,12 @@ namespace bwf
     return w.print("{{~{}~}}", spec._name);
   }
 
+  inline BufferWriter &
+  NilBoundNames::operator()(BufferWriter &, bwf::Spec const &) const
+  {
+    throw std::runtime_error("Use of nil bound names in BW formating");
+  }
+
   template <typename T> inline ContextNames<T>::Binding::Binding(Map const &map) : _map(map) {}
 
   template <typename T>
@@ -567,7 +585,7 @@ namespace bwf
 // This is the real printing logic, all other cases pack up their arguments and send them here.
 template <typename F, typename... Args>
 BufferWriter &
-BufferWriter::print_nv(const bwf::BoundNames &names, F &&f, const std::tuple<Args...> &args)
+BufferWriter::print_nv(bwf::BoundNames const &names, F &&f, std::tuple<Args...> const &args)
 {
   using namespace std::literals;
   static constexpr int N = sizeof...(Args); // used as loop limit
