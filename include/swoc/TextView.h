@@ -65,16 +65,6 @@ using ::memcmp; // Make this an overload, not an override.
 int strcmp(TextView const &lhs, TextView const &rhs);
 using ::strcmp; // Make this an overload, not an override.
 
-/** Convert the text in @c TextView @a src to a numeric value.
-
-    If @a parsed is non-null then the part of the string actually parsed is placed there.
-    @a base sets the conversion base. This defaults to 10 with two special cases:
-
-    - If the number starts with a literal '0' then it is treated as base 8.
-    - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
-*/
-intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
-
 /** A read only view of contiguous piece of memory.
 
     A @c TextView does not own the memory to which it refers, it is simply a view of part of some
@@ -519,6 +509,51 @@ protected:
   /// Initialize a bit mask to mark which characters are in this view.
   static void init_delimiter_set(super_type const &delimiters, std::bitset<256> &set);
 };
+
+// Internal character conversion table.
+// Converts a character to the numeric digit value, or negative if the character is not a valid digit.
+extern const int8_t svtoi_convert[256];
+;
+
+/** Convert the text in @c TextView @a src to a numeric value.
+
+    If @a parsed is non-null then the part of the string actually parsed is placed there.
+    @a base sets the conversion base. This defaults to 10 with two special cases:
+
+    - If the number starts with a literal '0' then it is treated as base 8.
+    - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
+*/
+intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
+
+/** Convert the text in @c src to an unsigned numeric value.
+ *
+ * @tparam N The radix (must be  1..36)
+ * @param src The source text. Updated during parsing.
+ * @return The converted numeric value.
+ *
+ * This is a specialized function useful only where conversion performance is critical. It is used
+ * inside @c svtoi for the common cases of 8, 10, and 16, therefore normally this isn't much more
+ * performant in those cases than just @c svtoi. Because of this only positive values are parsed.
+ * If determining the radix from the text or signed value parsing is needed, used @c svtoi.
+ *
+ * @a src is updated in place to indicate what characters were parsed. Parsing stops on the first
+ * invalid digit, so any leading non-digit characters (e.g. whitespace) must already be removed.
+ */
+template <uintmax_t N>
+uintmax_t
+svto_radix(swoc::TextView &src)
+{
+  static_assert(0 < N && N <= 36, "Radix must be in the range 1..36");
+  uintmax_t zret{0};
+  uintmax_t v;
+  while (src.size() && (0 <= (v = swoc::svtoi_convert[static_cast<unsigned char>(*src)])) && v < N) {
+    zret *= N;
+    zret += v;
+    ++src;
+  }
+  return zret;
+};
+
 // ----------------------------------------------------------
 // Inline implementations.
 

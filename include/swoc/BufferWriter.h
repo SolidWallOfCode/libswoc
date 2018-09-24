@@ -396,6 +396,12 @@ BufferWriter::remaining() const
 }
 
 // --- FixedBufferWriter ---
+inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buf(buffer), _capacity(capacity)
+{
+  WEAK_ASSERT(_capacity == 0 || buffer != nullptr);
+}
+
+inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buf(nullptr), _capacity(0) {}
 
 inline FixedBufferWriter &
 FixedBufferWriter::write(char c)

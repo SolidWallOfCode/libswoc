@@ -800,14 +800,6 @@ bwprint(std::string &s, TextView fmt, Args &&... args)
   return bwprintv(s, fmt, std::forward_as_tuple(args...));
 }
 
-// -- FixedBufferWriter --
-inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buf(nullptr), _capacity(0) {}
-
-inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buf(buffer), _capacity(capacity)
-{
-  WEAK_ASSERT(_capacity == 0 || buffer != nullptr);
-}
-
 template <typename... Args>
 inline auto
 FixedBufferWriter::print(TextView fmt, Args &&... args) -> self_type &

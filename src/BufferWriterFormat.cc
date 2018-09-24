@@ -46,23 +46,17 @@ namespace
 // snprintf to a little faster. This version handles only positive integers in decimal.
 
 inline int
-tv_to_positive_decimal(swoc::TextView src, swoc::TextView *out)
+radix10(swoc::TextView src, swoc::TextView &out)
 {
   int zret = 0;
 
-  if (out) {
-    out->clear();
-  }
+  out.clear();
   src.ltrim_if(&isspace);
   if (src.size()) {
-    const char *start = src.data();
-    const char *limit = start + src.size();
-    while (start < limit && ('0' <= *start && *start <= '9')) {
-      zret = zret * 10 + *start - '0';
-      ++start;
-    }
-    if (out && (start > src.data())) {
-      out->assign(src.data(), start);
+    auto start = src.data();
+    zret       = swoc::svto_radix<10>(src);
+    if (start != src.data()) {
+      out.assign(start, src.data());
     }
   }
   return zret;
@@ -113,7 +107,7 @@ namespace bwf
 
     _name = fmt.take_prefix_at(':');
     // if it's parsable as a number, treat it as an index.
-    n = tv_to_positive_decimal(_name, &num);
+    n = radix10(_name, num);
     if (num.size() == _name.size()) {
       _idx = static_cast<decltype(_idx)>(n);
     }
@@ -169,7 +163,7 @@ namespace bwf
           _fill = '0';
           ++sz;
         }
-        n = tv_to_positive_decimal(sz, &num);
+        n = radix10(sz, num);
         if (num.size()) {
           _min = static_cast<decltype(_min)>(n);
           sz.remove_prefix(num.size());
@@ -179,7 +173,7 @@ namespace bwf
         }
         // precision
         if ('.' == *sz) {
-          n = tv_to_positive_decimal(++sz, &num);
+          n = radix10(++sz, num);
           if (num.size()) {
             _prec = static_cast<decltype(_prec)>(n);
             sz.remove_prefix(num.size());
@@ -199,7 +193,7 @@ namespace bwf
         }
         // maximum width
         if (',' == *sz) {
-          n = tv_to_positive_decimal(++sz, &num);
+          n = radix10(++sz, num);
           if (num.size()) {
             _max = static_cast<decltype(_max)>(n);
             sz.remove_prefix(num.size());
