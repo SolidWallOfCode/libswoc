@@ -27,6 +27,8 @@
 #include <string>
 #include <iosfwd>
 #include <string_view>
+#include <tuple>
+#include <any>
 
 #include "swoc/TextView.h"
 #include "swoc/MemSpan.h"
@@ -39,16 +41,21 @@ namespace swoc
 namespace bwf
 {
   /** Parsed version of a format specifier.
+   *
+   * Literals are represented as an instance of this class, with the type set to
+   * @c LITERAL_TYPE and the literal text in the @a _ext field.
    */
   struct Spec {
-    using self_type                    = Spec; ///< Self reference type.
-    static constexpr char DEFAULT_TYPE = 'g';  ///< Default format type.
-    static constexpr char INVALID_TYPE = 0;    ///< Type for missing or invalid specifier.
-    static constexpr char LITERAL_TYPE = '"';  ///< Internal type to mark a literal.
+    using self_type = Spec; ///< Self reference type.
+
+    static constexpr char DEFAULT_TYPE = 'g'; ///< Default format type.
+    static constexpr char INVALID_TYPE = 0;   ///< Type for missing or invalid specifier.
+    static constexpr char LITERAL_TYPE = '"'; ///< Internal type to mark a literal.
+    static constexpr char CAPTURE_TYPE = 1;   ///< Internal type to mark a capture.
 
     static constexpr char SIGN_ALWAYS = '+'; ///< Always print a sign character.
     static constexpr char SIGN_NEVER  = ' '; ///< Never print a sign character.
-    static constexpr char SIGN_NEG    = '-'; ///< Print a sign only for negative values (default).
+    static constexpr char SIGN_NEG    = '-'; ///< Print a sign character only for negative values (default).
 
     /// Constructor a default instance.
     constexpr Spec() {}
@@ -59,7 +66,7 @@ namespace bwf
     bool parse(TextView fmt);
 
     char _fill = ' ';      ///< Fill character.
-    char _sign = SIGN_NEG; ///< Numeric sign style, space + -
+    char _sign = SIGN_NEG; ///< Numeric sign style.
     enum class Align : char {
       NONE,                            ///< No alignment.
       LEFT,                            ///< Left alignment '<'.
@@ -202,6 +209,16 @@ namespace bwf
      * @return
      */
     virtual BufferWriter &operator()(BufferWriter &w, Spec const &spec) const = 0;
+
+    /** Capture an argument.
+     *
+     * @param spec Capturing specifier.
+     * @param arg The captured argument.
+     *
+     * @note This is really for C / printf support where some specifiers are dependent on values
+     * passed in other arguments.
+     */
+    virtual void capture(Spec const &spec, std::any const &arg) const;
 
   protected:
     /// Write missing name output.
@@ -350,52 +367,6 @@ namespace bwf
 
   extern GlobalNames Global_Names;
 
-  /// --- Formatting ---
-
-  /// Internal signature for template generated formatting.
-  /// @a args is a forwarded tuple of arguments to be processed.
-  template <typename TUPLE> using ArgFormatterSignature = BufferWriter &(*)(BufferWriter &w, Spec const &, TUPLE const &args);
-
-  /// Internal error / reporting message generators
-  void Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n);
-
-  // MSVC will expand the parameter pack inside a lambda but not gcc, so this indirection is required.
-
-  /// This selects the @a I th argument in the @a TUPLE arg pack and calls the formatter on it. This
-  /// (or the equivalent lambda) is needed because the array of formatters must have a homogenous
-  /// signature, not vary per argument. Effectively this indirection erases the type of the specific
-  /// argument being formatted. Instances of this have the signature @c ArgFormatterSignature.
-  template <typename TUPLE, size_t I>
-  BufferWriter &
-  Arg_Formatter(BufferWriter &w, Spec const &spec, TUPLE const &args)
-  {
-    return bwformat(w, spec, std::get<I>(args));
-  }
-
-  /// This exists only to expand the index sequence into an array of formatters for the tuple type
-  /// @a TUPLE.  Due to langauge limitations it cannot be done directly. The formatters can be
-  /// accessed via standard array access in constrast to templated tuple access. The actual array is
-  /// static and therefore at run time the only operation is loading the address of the array.
-  template <typename TUPLE, size_t... N>
-  ArgFormatterSignature<TUPLE> *
-  Get_Arg_Formatter_Array(std::index_sequence<N...>)
-  {
-    static ArgFormatterSignature<TUPLE> fa[sizeof...(N)] = {&bwf::Arg_Formatter<TUPLE, N>...};
-    return fa;
-  }
-
-  /// Perform alignment adjustments / fill on @a w of the content in @a lw.
-  /// This is the normal mechanism, in cases where the length can be known or limited before
-  /// conversion, it can be more efficient to work in a temporary local buffer and copy out
-  /// as neeed without moving data in the output buffer.
-  void Adjust_Alignment(BufferWriter &aux, Spec const &spec);
-
-  /// Generic integral conversion.
-  BufferWriter &Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t n, bool negative_p);
-
-  /// Generic floating point conversion.
-  BufferWriter &Format_Floating(BufferWriter &w, Spec const &spec, double n, bool negative_p);
-
   // --------------- Implementation --------------------
   /// --- Spec ---
 
@@ -469,6 +440,12 @@ namespace bwf
   inline Format::FormatExtractor::operator bool() const { return _idx < _fmt.size(); }
 
   /// --- Names / Generators ---
+
+  // Base implementation does nothing as this is rarely used.
+  inline void
+  BoundNames::capture(swoc::bwf::Spec const &, std::any const &) const
+  {
+  }
 
   inline BufferWriter &
   BoundNames::err_invalid_name(BufferWriter &w, const Spec &spec) const
@@ -561,9 +538,75 @@ namespace bwf
     return _binding;
   }
 
-} // namespace bwf
+  /// --- Formatting ---
 
-// ---- The print method variants.
+  /// Internal signature for template generated formatting.
+  /// @a args is a forwarded tuple of arguments to be processed.
+  template <typename TUPLE> using ArgFormatterSignature = BufferWriter &(*)(BufferWriter &w, Spec const &, TUPLE const &args);
+
+  /// Internal error / reporting message generators
+  void Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n);
+
+  // MSVC will expand the parameter pack inside a lambda but not gcc, so this indirection is required.
+
+  /// This selects the @a I th argument in the @a TUPLE arg pack and calls the formatter on it. This
+  /// (or the equivalent lambda) is needed because the array of formatters must have a homogenous
+  /// signature, not vary per argument. Effectively this indirection erases the type of the specific
+  /// argument being formatted. Instances of this have the signature @c ArgFormatterSignature.
+  template <typename TUPLE, size_t I>
+  BufferWriter &
+  Arg_Formatter(BufferWriter &w, Spec const &spec, TUPLE const &args)
+  {
+    return bwformat(w, spec, std::get<I>(args));
+  }
+
+  /// This exists only to expand the index sequence into an array of formatters for the tuple type
+  /// @a TUPLE.  Due to langauge limitations it cannot be done directly. The formatters can be
+  /// accessed via standard array access in contrast to templated tuple access. The actual array is
+  /// static and therefore at run time the only operation is loading the address of the array.
+  template <typename TUPLE, size_t... N>
+  ArgFormatterSignature<TUPLE> *
+  Get_Arg_Formatter_Array(std::index_sequence<N...>)
+  {
+    static ArgFormatterSignature<TUPLE> fa[sizeof...(N)] = {&bwf::Arg_Formatter<TUPLE, N>...};
+    return fa;
+  }
+
+  /// Perform alignment adjustments / fill on @a w of the content in @a lw.
+  /// This is the normal mechanism, in cases where the length can be known or limited before
+  /// conversion, it can be more efficient to work in a temporary local buffer and copy out
+  /// as neeed without moving data in the output buffer.
+  void Adjust_Alignment(BufferWriter &aux, Spec const &spec);
+
+  /// Generic integral conversion.
+  BufferWriter &Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t n, bool negative_p);
+
+  /// Generic floating point conversion.
+  BufferWriter &Format_Float(BufferWriter &w, Spec const &spec, double n, bool negative_p);
+
+  // Capture support.
+  template <typename T> using TupleAccessorSignature = std::any (*)(T const &t);
+  template <size_t IDX, typename T>
+  std::any
+  TupleAccessor(T const &t)
+  {
+    return std::any(&std::get<IDX>(t));
+  }
+  template <typename T, size_t... N>
+  std::array<TupleAccessorSignature<T>, sizeof...(N)> &
+  Tuple_Accessor_Array(std::index_sequence<N...>)
+  {
+    static std::array<TupleAccessorSignature<T>, sizeof...(N)> accessors = {&TupleAccessor<N>...};
+    return accessors;
+  }
+  template <typename T>
+  std::any
+  Tuple_Nth(T const &t, size_t idx)
+  {
+    return Tuple_Accessor_Array<T>(std::make_index_sequence<std::tuple_size<T>::value>())[idx](t);
+  }
+
+} // namespace bwf
 
 /* [Need to clip this out and put it in Sphinx
  *
@@ -582,7 +625,7 @@ namespace bwf
  * data is not found in the incremental parse of the format.
  */
 
-// This is the real printing logic, all other cases pack up their arguments and send them here.
+// This is the real printing logic, all other variants pack up their arguments and send them here.
 template <typename F, typename... Args>
 BufferWriter &
 BufferWriter::print_nv(bwf::BoundNames const &names, F &&f, std::tuple<Args...> const &args)
@@ -613,7 +656,11 @@ BufferWriter::print_nv(bwf::BoundNames const &names, F &&f, std::tuple<Args...> 
       }
       if (0 <= spec._idx) {
         if (spec._idx < N) {
-          fa[spec._idx](lw, spec, args);
+          if (spec._type == bwf::Spec::CAPTURE_TYPE) {
+            names.capture(spec, bwf::Tuple_Nth(args, spec._idx));
+          } else {
+            fa[spec._idx](lw, spec, args);
+          }
         } else {
           bwf::Err_Bad_Arg_Index(lw, spec._idx, N);
         }
@@ -723,7 +770,7 @@ auto
 bwformat(BufferWriter &w, bwf::Spec const &spec, F &&f) ->
   typename std::enable_if<std::is_floating_point<typename std::remove_reference<F>::type>::value, BufferWriter &>::type
 {
-  return f < 0 ? bwf::Format_Floating(w, spec, -f, true) : bwf::Format_Floating(w, spec, f, false);
+  return f < 0 ? bwf::Format_Float(w, spec, -f, true) : bwf::Format_Float(w, spec, f, false);
 }
 
 /* Integer types.

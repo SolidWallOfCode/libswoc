@@ -19,7 +19,7 @@
 */
 
 #include "swoc/Scalar.h"
-#include "swoc/bwf_ex.h"
+#include "swoc/bwf_base.h"
 #include "swoc/ext/catch.hpp"
 
 using Bytes      = swoc::Scalar<1, off_t>;

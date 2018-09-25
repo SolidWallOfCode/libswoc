@@ -88,6 +88,5 @@ namespace meta
   CaseVoidFunc()
   {
   }
-
 } // namespace meta
 } // namespace swoc

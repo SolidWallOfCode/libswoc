@@ -525,7 +525,7 @@ namespace bwf
   /// format: whole.fraction
   ///     or: left.right
   BufferWriter &
-  Format_Floating(BufferWriter &w, Spec const &spec, double f, bool neg_p)
+  Format_Float(BufferWriter &w, Spec const &spec, double f, bool neg_p)
   {
     static const std::string_view infinity_bwf{"Inf"};
     static const std::string_view nan_bwf{"NaN"};
