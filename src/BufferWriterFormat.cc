@@ -1001,12 +1001,52 @@ namespace swoc
 {
 namespace bwf
 {
+  void
+  C_Format::capture(BufferWriter &w, Spec const &spec, std::any const &value)
+  {
+    unsigned v;
+    if (typeid(int *) == value.type())
+      v = static_cast<unsigned>(*std::any_cast<int *>(value));
+    else if (typeid(unsigned *) == value.type())
+      v = *std::any_cast<unsigned *>(value);
+    else if (typeid(size_t *) == value.type())
+      v = static_cast<unsigned>(*std::any_cast<size_t *>(value));
+    else
+      return;
+
+    if (spec._ext == "w")
+      _saved._min = v;
+    if (spec._ext == "p") {
+      switch (_saved._type) {
+      case 's':
+        _saved._max = v;
+        break;
+      default:
+        _saved._prec = v;
+        break;
+      }
+    }
+  }
+
   bool
   C_Format::operator()(std::string_view &literal, Spec &spec)
   {
+    // clean up any old business from a previous specifier.
+    if (_prec_p) {
+      spec._type = Spec::CAPTURE_TYPE;
+      spec._ext  = "p";
+      _prec_p    = false;
+      return true;
+    } else if (_saved_p) {
+      spec     = _saved;
+      _saved_p = false;
+      return true;
+    }
+
     if (!_fmt.empty()) {
-      auto size = _fmt.size();
-      literal   = _fmt.take_prefix_at('%');
+      bool width_p = false;
+      auto size    = _fmt.size();
+      literal      = _fmt.take_prefix_at('%');
       if (_fmt.empty()) {
         return false;
       }
@@ -1016,72 +1056,89 @@ namespace bwf
           ++_fmt;
           return false;
         }
+      }
 
-        spec._align = Spec::Align::RIGHT; // default unless overridden.
-        // Keep track of the data consumed - if anything goes wrong, treat it all as a literal.
-        size_t n = 0;
-        do {
-          char c = *_fmt;
-          if ('-' == c) {
-            spec._align = Spec::Align::LEFT;
-          } else if ('+' == c) {
-            spec._sign = Spec::SIGN_ALWAYS;
-          } else if (' ' == c) {
-            spec._sign = Spec::SIGN_NEVER;
-          } else if ('#' == c) {
-            spec._radix_lead_p = true;
-          } else if ('0' == c) {
-            spec._fill = '0';
-          } else {
-            break;
-          }
-          ++_fmt, ++n;
-        } while (!_fmt.empty());
-
-        if (_fmt.empty()) {
-          literal = {literal.data(), literal.size() + n};
-          return false;
+      spec._align = Spec::Align::RIGHT; // default unless overridden.
+      do {
+        char c = *_fmt;
+        if ('-' == c) {
+          spec._align = Spec::Align::LEFT;
+        } else if ('+' == c) {
+          spec._sign = Spec::SIGN_ALWAYS;
+        } else if (' ' == c) {
+          spec._sign = Spec::SIGN_NEVER;
+        } else if ('#' == c) {
+          spec._radix_lead_p = true;
+        } else if ('0' == c) {
+          spec._fill = '0';
+        } else {
+          break;
         }
+        ++_fmt;
+      } while (!_fmt.empty());
 
+      if (_fmt.empty()) {
+        literal = TextView{literal.data(), _fmt.data()};
+        return false;
+      }
+      if ('*' == *_fmt) {
+        width_p = true; // signal need to capture width.
+        ++_fmt;
+      } else {
         TextView parsed;
-        size_t width = radix10(_fmt, parsed);
+        auto width = radix10(_fmt, parsed);
         if (!parsed.empty()) {
           spec._min = width;
-          n += parsed.size();
         }
 
         if ('.' == *_fmt) {
-          ++_fmt, ++n;
-          auto x = radix10(_fmt, parsed);
-          if (!parsed.empty()) {
-            spec._prec = x;
-            n += parsed.size();
+          ++_fmt;
+          if ('*' == *_fmt) {
+            _prec_p = true;
+            ++_fmt;
           } else {
-            spec._prec = 0;
+            auto x = radix10(_fmt, parsed);
+            if (!parsed.empty()) {
+              spec._prec = x;
+            } else {
+              spec._prec = 0;
+            }
           }
         }
+      }
 
-        if (_fmt.empty()) {
-          literal = {literal.data(), literal.size() + n};
-          return false;
-        }
+      if (_fmt.empty()) {
+        literal = TextView{literal.data(), _fmt.data()};
+        return false;
+      }
 
-        char c = *_fmt++;
-        ++n;
-        switch (c) {
-        case 'i':
-        case 'd':
-          spec._type = 'd';
-          break;
-        case 'f':
-          spec._type = 'f';
-          break;
-        case 's':
-          spec._type = 's';
-          break;
-        default:
-          literal = {literal.data(), literal.size() + n};
-          return false;
+      char c = *_fmt++;
+      switch (c) {
+      case 'i':
+      case 'd':
+        spec._type = 'd';
+        break;
+      case 'f':
+        spec._type = 'f';
+        break;
+      case 's':
+        spec._type = 's';
+        break;
+      default:
+        literal = TextView{literal.data(), _fmt.data()};
+        return false;
+      }
+      if (width_p || _prec_p) {
+        _saved_p = true;
+        _saved   = spec;
+        spec     = Spec::DEFAULT;
+        if (width_p) {
+          spec._type = Spec::CAPTURE_TYPE;
+          spec._ext  = "w";
+        } else if (_prec_p) {
+          _prec_p    = false;
+          spec._type = Spec::CAPTURE_TYPE;
+          spec._ext  = "p";
         }
       }
       return true;

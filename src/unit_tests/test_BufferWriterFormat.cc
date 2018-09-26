@@ -102,27 +102,29 @@ TEST_CASE("bwprint basics", "[bwprint]")
   REQUIRE(bw.view() == "{BAD_ARG_INDEX:17 of 23}");
 
   bw.clear();
-  bw.print("Arg {0} Arg {3}", 1, 2);
-  REQUIRE(bw.view() == "Arg 1 Arg {BAD_ARG_INDEX:3 of 2}");
+  bw.print("Arg {0} Arg {3}", 0, 1);
+  REQUIRE(bw.view() == "Arg 0 Arg {BAD_ARG_INDEX:3 of 2}");
 
-  bw.clear();
-  bw.print("{{stuff}} Arg {0} Arg {}", 1, 2);
-  REQUIRE(bw.view() == "{stuff} Arg 1 Arg 2");
+  bw.clear().print("{{stuff}} Arg {0} Arg {}", 0, 1, 2);
+  REQUIRE(bw.view() == "{stuff} Arg 0 Arg 0");
+  bw.clear().print("{{stuff}} Arg {0} Arg {} {}", 0, 1, 2);
+  REQUIRE(bw.view() == "{stuff} Arg 0 Arg 0 1");
   bw.clear();
   bw.print("Arg {0} Arg {} and {{stuff}}", 3, 4);
-  REQUIRE(bw.view() == "Arg 3 Arg 4 and {stuff}");
+  REQUIRE(bw.view() == "Arg 3 Arg 3 and {stuff}");
+  bw.clear().print("Arg {{{0}}} Arg {} and {{stuff}}", 5, 6);
+  REQUIRE(bw.view() == "Arg {5} Arg 5 and {stuff}");
+  bw.clear().print("Arg {{{0}}} Arg {} {1} {} {0} and {{stuff}}", 5, 6);
+  REQUIRE(bw.view() == "Arg {5} Arg 5 6 6 5 and {stuff}");
   bw.clear();
-  bw.print("Arg {{{0}}} Arg {} and {{stuff}}", 5, 6);
-  REQUIRE(bw.view() == "Arg {5} Arg 6 and {stuff}");
+  bw.print("Arg {0} Arg {{}}{{}} {} and {} {{stuff}}", 7, 8);
+  REQUIRE(bw.view() == "Arg 7 Arg {}{} 7 and 8 {stuff}");
   bw.clear();
-  bw.print("Arg {0} Arg {{}}{{}} {} and {{stuff}}", 7, 8);
-  REQUIRE(bw.view() == "Arg 7 Arg {}{} 8 and {stuff}");
-  bw.clear();
-  bw.print("Arg {0} Arg {{{{}}}} {}", 9, 10);
-  REQUIRE(bw.view() == "Arg 9 Arg {{}} 10");
+  bw.print("Arg {} Arg {{{{}}}} {} {1} {0}", 9, 10);
+  REQUIRE(bw.view() == "Arg 9 Arg {{}} 10 10 9");
 
   bw.clear();
-  bw.print("Arg {0} Arg {{{{}}}} {}", 9, 10);
+  bw.print("Arg {} Arg {{{{}}}} {}", 9, 10);
   REQUIRE(bw.view() == "Arg 9 Arg {{}} 10");
   bw.clear();
 
@@ -643,9 +645,14 @@ TEST_CASE("bwf alternate", "[libswoc][bwf]")
   w.clear().print_nv(names.bind(hdr), AltFormatEx("Width |%<proto:>10>| dig?"));
   REQUIRE(w.view() == "Width |      ipv4| dig?");
 
-  w.clear();
-  swoc::bwprintf(w, "Fifty Six = %d", 56);
+  swoc::bwprintf(w.clear(), "Fifty Six = %d", 56);
   REQUIRE(w.view() == "Fifty Six = 56");
+
+  TextView digits{"0123456789"};
+  swoc::bwprintf(w.clear(), "Chars |%*s|", 12, digits);
+  REQUIRE(w.view() == "Chars |  0123456789|");
+  swoc::bwprintf(w.clear(), "Chars %.*s", 4, digits);
+  REQUIRE(w.view() == "Chars 0123");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

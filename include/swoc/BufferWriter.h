@@ -211,7 +211,7 @@ public:
    * @param names Name set for specifier names.
    */
   template <typename F, typename... Args>
-  BufferWriter &print_nv(const bwf::BoundNames &names, F &&f, const std::tuple<Args...> &args);
+  BufferWriter &print_nv(bwf::BoundNames const &names, F &&f, std::tuple<Args...> const &args);
   /// Convenience for no format argument style invocation.
   template <typename F> BufferWriter &print_nv(const bwf::BoundNames &names, F &&f);
 

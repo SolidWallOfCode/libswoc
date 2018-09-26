@@ -212,13 +212,14 @@ namespace bwf
 
     /** Capture an argument.
      *
+     * @param w Output.
      * @param spec Capturing specifier.
      * @param arg The captured argument.
      *
      * @note This is really for C / printf support where some specifiers are dependent on values
      * passed in other arguments.
      */
-    virtual void capture(Spec const &spec, std::any const &arg) const;
+    virtual void capture(BufferWriter &w, Spec const &spec, std::any const &arg) const;
 
   protected:
     /// Write missing name output.
@@ -443,7 +444,7 @@ namespace bwf
 
   // Base implementation does nothing as this is rarely used.
   inline void
-  BoundNames::capture(swoc::bwf::Spec const &, std::any const &) const
+  BoundNames::capture(BufferWriter &, swoc::bwf::Spec const &, std::any const &) const
   {
   }
 
@@ -606,6 +607,22 @@ namespace bwf
     return Tuple_Accessor_Array<T>(std::make_index_sequence<std::tuple_size<T>::value>())[idx](t);
   }
 
+  // Make the capture method optional
+  template <typename F>
+  auto
+  arg_capture(F &&f, BufferWriter &, Spec const &, std::any &&, swoc::meta::CaseArg_0) -> void
+  {
+    throw std::runtime_error("Capture specification used in format extractor that does not support capture");
+  }
+
+  template <typename F>
+  auto
+  arg_capture(F &&f, BufferWriter &w, Spec const &spec, std::any &&value, swoc::meta::CaseArg_1)
+    -> decltype(f.capture(w, spec, value))
+  {
+    return f.capture(w, spec, value);
+  }
+
 } // namespace bwf
 
 /* [Need to clip this out and put it in Sphinx
@@ -652,19 +669,18 @@ BufferWriter::print_nv(bwf::BoundNames const &names, F &&f, std::tuple<Args...> 
       FixedBufferWriter lw{this->aux_data(), width};
 
       if (spec._name.size() == 0) {
-        spec._idx = arg_idx;
+        spec._idx = arg_idx++;
       }
       if (0 <= spec._idx) {
         if (spec._idx < N) {
           if (spec._type == bwf::Spec::CAPTURE_TYPE) {
-            names.capture(spec, bwf::Tuple_Nth(args, spec._idx));
+            bwf::arg_capture(f, lw, spec, bwf::Tuple_Nth(args, static_cast<size_t>(spec._idx)), swoc::meta::CaseArg);
           } else {
             fa[spec._idx](lw, spec, args);
           }
         } else {
           bwf::Err_Bad_Arg_Index(lw, spec._idx, N);
         }
-        ++arg_idx;
       } else if (spec._name.size()) {
         names(lw, spec);
       }
@@ -693,7 +709,7 @@ BufferWriter::print(bwf::Format const &fmt, Args &&... args)
 
 template <typename... Args>
 BufferWriter &
-BufferWriter::printv(const TextView &fmt, const std::tuple<Args...> &args)
+BufferWriter::printv(TextView const &fmt, std::tuple<Args...> const &args)
 {
   return this->print_nv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), args);
 }

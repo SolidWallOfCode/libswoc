@@ -51,14 +51,19 @@ namespace bwf
     /// Get the next pieces of the format.
     bool operator()(std::string_view &literal, Spec &spec);
 
+    void capture(BufferWriter &w, Spec const &spec, std::any const &value);
+
   protected:
     TextView _fmt;
+    Spec _saved;          // spec for which the width and/or prec is needed.
+    bool _saved_p{false}; // flag for having a saved _spec.
+    bool _prec_p{false};  // need the precision captured?
   };
 
   // ---- Implementation ----
   inline C_Format::C_Format(TextView const &fmt) : _fmt(fmt) {}
 
-  inline C_Format::operator bool() const { return !_fmt.empty(); }
+  inline C_Format::operator bool() const { return _saved_p || !_fmt.empty(); }
 
 } // namespace bwf
 
