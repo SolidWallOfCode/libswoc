@@ -647,12 +647,22 @@ TEST_CASE("bwf alternate", "[libswoc][bwf]")
 
   swoc::bwprintf(w.clear(), "Fifty Six = %d", 56);
   REQUIRE(w.view() == "Fifty Six = 56");
+  swoc::bwprintf(w.clear(), "int is %i", 101);
+  REQUIRE(w.view() == "int is 101");
+  swoc::bwprintf(w.clear(), "int is %zd", 102);
+  REQUIRE(w.view() == "int is 102");
+  swoc::bwprintf(w.clear(), "int is %ld", 103);
+  REQUIRE(w.view() == "int is 103");
+  swoc::bwprintf(w.clear(), "int is %s", 104);
+  REQUIRE(w.view() == "int is 104");
 
   TextView digits{"0123456789"};
   swoc::bwprintf(w.clear(), "Chars |%*s|", 12, digits);
   REQUIRE(w.view() == "Chars |  0123456789|");
   swoc::bwprintf(w.clear(), "Chars %.*s", 4, digits);
   REQUIRE(w.view() == "Chars 0123");
+  swoc::bwprintf(w.clear(), "Chars |%*.*s|", 12, 5, digits);
+  REQUIRE(w.view() == "Chars |       01234|");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

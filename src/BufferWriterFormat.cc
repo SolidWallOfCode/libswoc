@@ -669,7 +669,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv)
 {
   int width = static_cast<int>(spec._min); // amount left to fill.
   if (spec._prec > 0) {
-    sv.remove_prefix(spec._prec);
+    sv = sv.substr(0, spec._prec);
   }
 
   if ('x' == spec._type || 'X' == spec._type) {
@@ -1031,6 +1031,8 @@ namespace bwf
   bool
   C_Format::operator()(std::string_view &literal, Spec &spec)
   {
+    TextView parsed;
+
     // clean up any old business from a previous specifier.
     if (_prec_p) {
       spec._type = Spec::CAPTURE_TYPE;
@@ -1081,28 +1083,28 @@ namespace bwf
         literal = TextView{literal.data(), _fmt.data()};
         return false;
       }
+
       if ('*' == *_fmt) {
         width_p = true; // signal need to capture width.
         ++_fmt;
       } else {
-        TextView parsed;
         auto width = radix10(_fmt, parsed);
         if (!parsed.empty()) {
           spec._min = width;
         }
+      }
 
-        if ('.' == *_fmt) {
+      if ('.' == *_fmt) {
+        ++_fmt;
+        if ('*' == *_fmt) {
+          _prec_p = true;
           ++_fmt;
-          if ('*' == *_fmt) {
-            _prec_p = true;
-            ++_fmt;
+        } else {
+          auto x = radix10(_fmt, parsed);
+          if (!parsed.empty()) {
+            spec._prec = x;
           } else {
-            auto x = radix10(_fmt, parsed);
-            if (!parsed.empty()) {
-              spec._prec = x;
-            } else {
-              spec._prec = 0;
-            }
+            spec._prec = 0;
           }
         }
       }
@@ -1113,16 +1115,34 @@ namespace bwf
       }
 
       char c = *_fmt++;
+      // strip length modifiers.
+      if ('l' == c || 'h' == c)
+        c = *_fmt++;
+      if ('l' == c || 'z' == c || 'j' == c || 't' == c || 'h' == c)
+        c = *_fmt++;
+
       switch (c) {
+      case 'c':
+        spec._type = c;
+        break;
       case 'i':
       case 'd':
+      case 'j':
+      case 'z':
         spec._type = 'd';
+        break;
+      case 'x':
+      case 'X':
+        spec._type = c;
         break;
       case 'f':
         spec._type = 'f';
         break;
       case 's':
         spec._type = 's';
+        break;
+      case 'p':
+        spec._type = c;
         break;
       default:
         literal = TextView{literal.data(), _fmt.data()};

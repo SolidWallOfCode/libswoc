@@ -585,14 +585,27 @@ namespace bwf
   /// Generic floating point conversion.
   BufferWriter &Format_Float(BufferWriter &w, Spec const &spec, double n, bool negative_p);
 
-  // Capture support.
+  /* Capture support, which allows format extractors to capture arguments and consume them.
+   * This was built in order to support C style formatting, which needs to capture arguments
+   * to set the minimum width and/or the precision of other arguments.
+   *
+   * The key component is the ability to dynamically access an element of a tuple using
+   * @c std::any.
+   *
+   * Note: Much of this was originally in the meta support but it caused problems in use if
+   * the tuple header wasn't also included. I was unable to determine why, as this code doesn't
+   * depend on tuple explicitly.
+   */
+  /// The signature for accessing an element of a tuple.
   template <typename T> using TupleAccessorSignature = std::any (*)(T const &t);
+  /// Template access method.
   template <size_t IDX, typename T>
   std::any
   TupleAccessor(T const &t)
   {
     return std::any(&std::get<IDX>(t));
   }
+  /// Create and return an array of specialized accessors, indexed by tuple index.
   template <typename T, size_t... N>
   std::array<TupleAccessorSignature<T>, sizeof...(N)> &
   Tuple_Accessor_Array(std::index_sequence<N...>)
@@ -600,21 +613,22 @@ namespace bwf
     static std::array<TupleAccessorSignature<T>, sizeof...(N)> accessors = {&TupleAccessor<N>...};
     return accessors;
   }
+  /// Get the Nth element of the tuple as @c std::any.
   template <typename T>
   std::any
   Tuple_Nth(T const &t, size_t idx)
   {
     return Tuple_Accessor_Array<T>(std::make_index_sequence<std::tuple_size<T>::value>())[idx](t);
   }
-
-  // Make the capture method optional
+  /// If capture is used, the format extractor must provide a @c capture method. This isn't required
+  /// so make it compile time optional, but throw if the extractor sets up for capture and didn't
+  /// provide one.
   template <typename F>
   auto
   arg_capture(F &&f, BufferWriter &, Spec const &, std::any &&, swoc::meta::CaseArg_0) -> void
   {
     throw std::runtime_error("Capture specification used in format extractor that does not support capture");
   }
-
   template <typename F>
   auto
   arg_capture(F &&f, BufferWriter &w, Spec const &spec, std::any &&value, swoc::meta::CaseArg_1)
