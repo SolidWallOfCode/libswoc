@@ -150,11 +150,11 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw.print(fmt, 956);
   REQUIRE(bw.view() == "left >956      < right >      956< center >   956   <");
 
-  bw.clear();
-  bw.print("Text: _{0:.10,20}_", text);
-  REQUIRE(bw.view() == "Text: _abcdefghijklmnopqrst_");
-  bw.clear();
-  bw.print("Text: _{0:-<20.52,20}_", text);
+  bw.clear().print("Text: _{0:20.10}_", text);
+  REQUIRE(bw.view() == "Text: _0123456789          _");
+  bw.clear().print("Text: _{0:>20.10}_", text);
+  REQUIRE(bw.view() == "Text: _          0123456789_");
+  bw.clear().print("Text: _{0:-<20.10,20}_", text.substr(52));
   REQUIRE(bw.view() == "Text: _QRSTUVWXYZ----------_");
 
   void *ptr = reinterpret_cast<void *>(0XBADD0956);
@@ -209,12 +209,15 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "|  616263313233  |");
   bw.clear();
   bw.print("|{:>16.2x}|", sv);
-  REQUIRE(bw.view() == "|        63313233|");
-  bw.clear();
-  bw.print("|{:<0.2,5x}|", sv);
-  REQUIRE(bw.view() == "|63313|");
-  bw.clear().print("|{:<.2,5x}|", sv);
-  REQUIRE(bw.view() == "|63313|");
+  REQUIRE(bw.view() == "|            6162|");
+  bw.clear().print("|{:<0.4,7x}|", sv);
+  REQUIRE(bw.view() == "|6162633|");
+  bw.clear().print("|{:<5.2,7x}|", sv);
+  REQUIRE(bw.view() == "|6162 |");
+  bw.clear().print("|{:<5.3,7x}|", sv);
+  REQUIRE(bw.view() == "|616263|");
+  bw.clear().print("|{:<7.3x}|", sv);
+  REQUIRE(bw.view() == "|616263 |");
 
   bw.clear();
   bw.print("|{}|", true);
@@ -655,6 +658,8 @@ TEST_CASE("bwf alternate", "[libswoc][bwf]")
   REQUIRE(w.view() == "int is 103");
   swoc::bwprintf(w.clear(), "int is %s", 104);
   REQUIRE(w.view() == "int is 104");
+  swoc::bwprintf(w.clear(), "int is %ld", -105);
+  REQUIRE(w.view() == "int is -105");
 
   TextView digits{"0123456789"};
   swoc::bwprintf(w.clear(), "Chars |%*s|", 12, digits);

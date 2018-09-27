@@ -1017,14 +1017,7 @@ namespace bwf
     if (spec._ext == "w")
       _saved._min = v;
     if (spec._ext == "p") {
-      switch (_saved._type) {
-      case 's':
-        _saved._max = v;
-        break;
-      default:
-        _saved._prec = v;
-        break;
-      }
+      _saved._prec = v;
     }
   }
 
