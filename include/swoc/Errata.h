@@ -113,16 +113,13 @@ public:
     self_type &assign(Severity level);
 
   protected:
-    Severity _level{Errata::DEFAULT_SEVERITY}; ///< Annotation code.
-    std::string_view _text;                    ///< Annotation text.
+    Severity _severity{Errata::DEFAULT_SEVERITY}; ///< Annotation code.
+    std::string_view _text;                       ///< Annotation text.
 
     /// Policy and links for intrusive list.
-    struct Linkage {
-      self_type *_next; ///< Next link.
-      self_type *_prev; ///< Previous link.
-      static self_type *&next_ptr(self_type *);
-      static self_type *&prev_ptr(self_type *);
-    } _link;
+    self_type *_next{nullptr};
+    self_type *_prev{nullptr};
+    using Linkage = swoc::IntrusiveLinkage<self_type>;
 
     friend class Errata;
   };
@@ -548,13 +545,13 @@ MakeRv(R &&r,           ///< The function result
 
 inline Errata::Annotation::Annotation() {}
 
-inline Errata::Annotation::Annotation(Severity level, std::string_view text) : _level(level), _text(text) {}
+inline Errata::Annotation::Annotation(Severity level, std::string_view text) : _severity(level), _text(text) {}
 
 inline Errata::Annotation &
 Errata::Annotation::clear()
 {
-  _level = Errata::DEFAULT_SEVERITY;
-  _text  = std::string_view{};
+  _severity = Errata::DEFAULT_SEVERITY;
+  _text     = std::string_view{};
   return *this;
 }
 
@@ -567,7 +564,7 @@ Errata::Annotation::text() const
 inline Errata::Severity
 Errata::Annotation::severity() const
 {
-  return _level;
+  return _severity;
 }
 
 inline Errata::Annotation &
@@ -580,22 +577,9 @@ Errata::Annotation::assign(std::string_view text)
 inline Errata::Annotation &
 Errata::Annotation::assign(Severity level)
 {
-  _level = level;
+  _severity = level;
   return *this;
 }
-
-inline auto
-Errata::Annotation::Linkage::next_ptr(self_type *note) -> self_type *&
-{
-  return note->_link._next;
-}
-
-inline auto
-Errata::Annotation::Linkage::prev_ptr(self_type *note) -> self_type *&
-{
-  return note->_link._prev;
-}
-
 /* ----------------------------------------------------------------------- */
 // Inline methods for Errata::Data
 

@@ -173,7 +173,7 @@ Errata &
 Errata::note(const self_type &that)
 {
   for (auto const &m : that) {
-    this->note(m._level, m._text);
+    this->note(m._severity, m._text);
   }
   return *this;
 }
@@ -199,7 +199,7 @@ Errata::write(std::ostream &out) const
 {
   string_view lead;
   for (auto &m : *this) {
-    out << lead << " [" << static_cast<int>(m._level) << "]: " << m._text << std::endl;
+    out << lead << " [" << static_cast<int>(m._severity) << "]: " << m._text << std::endl;
     if (0 == lead.size()) {
       lead = "  "_sv;
     }

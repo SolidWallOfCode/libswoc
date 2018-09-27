@@ -334,6 +334,44 @@ protected:
   size_t _count{0};           ///< # of elements in list.
 };
 
+/** Utility class to provide intrusive links.
+ *
+ * @tparam T Class to link.
+ *
+ * The normal use is to declare this as a member to provide the links and the linkage functions.
+ * @code
+ * class Thing {
+ *   // blah blah
+ *   Thing* _next{nullptr};
+ *   Thing* _prev{nullptr};
+ *   using Linkage = swoc::IntrusiveLinkage<Thing, &Thing::_next, &Thing::_prev>;
+ * };
+ * using ThingList = swoc::IntrusiveDList<Thing::Linkage>;
+ * @endcode
+ * The template will default to the names '_next' and '_prev' therefore in the example it could
+ * have been done as
+ * @code
+ *   using Linkage = swoc::IntrusiveLinkage<Thing>;
+ * @endcode
+ */
+template <typename T, T *(T::*NEXT) = &T::_next, T *(T::*PREV) = &T::_prev> struct IntrusiveLinkage {
+  static T *&next_ptr(T *thing); ///< Retrieve reference to next pointer.
+  static T *&prev_ptr(T *thing); ///< Retrive reference to previous pointer.
+};
+
+template <typename T, T *(T::*NEXT), T *(T::*PREV)>
+T *&
+IntrusiveLinkage<T, NEXT, PREV>::next_ptr(T *thing)
+{
+  return thing->*NEXT;
+}
+template <typename T, T *(T::*NEXT), T *(T::*PREV)>
+T *&
+IntrusiveLinkage<T, NEXT, PREV>::prev_ptr(T *thing)
+{
+  return thing->*PREV;
+}
+
 /** Utility cast to change the underlying type of a pointer reference.
  *
  * This changes a reference to a pointer to @a P to a reference to a pointer to @a T. This is useful
