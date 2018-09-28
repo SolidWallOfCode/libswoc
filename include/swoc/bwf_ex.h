@@ -34,6 +34,13 @@ namespace bwf
 {
   using namespace std::literals; // enable ""sv
 
+  /** Output @a text @a n times.
+   *
+   */
+  struct Pattern {
+    int _n; ///< # of instances of @a pattern.
+    std::string_view _text; ///< output text.
+  };
   /** Format wrapper for @c errno.
    * This stores a copy of the argument or @c errno if an argument isn't provided. The output
    * is then formatted with the short, long, and numeric value of @c errno. If the format specifier
@@ -112,6 +119,7 @@ namespace bwf
   };
 } // namespace bwf
 
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const& pattern);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::OptionalAffix const &opts);

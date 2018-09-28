@@ -914,6 +914,17 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::OptionalAffix const &opts)
   return w.write(opts._prefix).write(opts._text).write(opts._suffix);
 }
 
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const& spec, bwf::Pattern const& pattern) {
+  auto limit = std::min<size_t>(spec._max, pattern._text.size() * pattern._n);
+  decltype(limit) n = 0;
+  while (n < limit) {
+    w.write(pattern._text);
+    n += pattern._text.size();
+  }
+  return w;
+}
+
 } // namespace swoc
 
 namespace
