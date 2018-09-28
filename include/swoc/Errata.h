@@ -106,6 +106,9 @@ public:
     /// Get the text of the message.
     std::string_view text() const;
 
+    // Get the nesting level.
+    unsigned level() const;
+
     /// Set the text of the message.
     self_type &assign(std::string_view text);
 
@@ -114,6 +117,7 @@ public:
 
   protected:
     Severity _severity{Errata::DEFAULT_SEVERITY}; ///< Annotation code.
+    unsigned level {0}; ///< Nesting level.
     std::string_view _text;                       ///< Annotation text.
 
     /// Policy and links for intrusive list.
@@ -160,8 +164,10 @@ protected:
     Container _notes;
     /// Annotation text storage.
     swoc::MemArena _arena;
+    /// Nesting level.
+    unsigned _level { 0 };
     /// The effective severity of the message stack.
-    Severity _level{Errata::DEFAULT_SEVERITY};
+    Severity _severity{Errata::DEFAULT_SEVERITY};
   };
 
 public:
@@ -559,6 +565,12 @@ inline std::string_view
 Errata::Annotation::text() const
 {
   return _text;
+}
+
+inline unsigned
+Errata::Annotation::level() const
+{
+  return _level;
 }
 
 inline Errata::Severity

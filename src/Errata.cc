@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <memory.h>
 #include "swoc/Errata.h"
+#include "swoc/bwf_ex.h"
 
 using swoc::MemArena;
 using std::string_view;
@@ -134,13 +135,13 @@ Errata::count() const
 bool
 Errata::is_ok() const
 {
-  return 0 == _data || 0 == _data->_notes.count() || _data->_level < FAILURE_SEVERITY;
+  return 0 == _data || 0 == _data->_notes.count() || _data->_severity < FAILURE_SEVERITY;
 }
 
 Severity
 Errata::severity() const
 {
-  return _data ? _data->_level : DEFAULT_SEVERITY;
+  return _data ? _data->_severity : DEFAULT_SEVERITY;
 }
 
 Errata &
@@ -149,7 +150,7 @@ Errata::note(Severity level, std::string_view text)
   auto d        = this->writeable_data();
   Annotation *n = d->_arena.make<Annotation>(level, d->localize(text));
   d->_notes.prepend(n);
-  _data->_level = std::max(_data->_level, level);
+  _data->_severity = std::max(_data->_severity, level);
   return *this;
 }
 
@@ -158,8 +159,9 @@ Errata::note_localized(Severity level, std::string_view const &text)
 {
   auto d        = this->writeable_data();
   Annotation *n = d->_arena.make<Annotation>(level, text);
+  n->_level = _level;
   d->_notes.prepend(n);
-  _data->_level = std::max(_data->_level, level);
+  _data->_severity = std::max(_data->_severity, level);
   return *this;
 }
 
@@ -217,12 +219,8 @@ bwformat(BufferWriter &bw, bwf::Spec const &spec, Errata::Severity level)
 BufferWriter &
 bwformat(BufferWriter &bw, bwf::Spec const &spec, Errata const &errata)
 {
-  std::string_view lead;
   for (auto &m : errata) {
-    bw.print("{}[{}] {}\n", lead, m.severity(), m.text());
-    if (0 == lead.size()) {
-      lead = "  "_sv;
-    }
+    bw.print("{}[{}] {}\n", swoc::bwf::Pattern{m.level(), "  "}, m.severity(), m.text());
   }
   return bw;
 }
