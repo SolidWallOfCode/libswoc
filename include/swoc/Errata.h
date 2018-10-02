@@ -117,7 +117,7 @@ public:
 
   protected:
     Severity _severity{Errata::DEFAULT_SEVERITY}; ///< Annotation code.
-    unsigned level {0}; ///< Nesting level.
+    unsigned _level {0}; ///< Nesting level.
     std::string_view _text;                       ///< Annotation text.
 
     /// Policy and links for intrusive list.

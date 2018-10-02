@@ -159,7 +159,7 @@ Errata::note_localized(Severity level, std::string_view const &text)
 {
   auto d        = this->writeable_data();
   Annotation *n = d->_arena.make<Annotation>(level, text);
-  n->_level = _level;
+  n->_level = _data->_level;
   d->_notes.prepend(n);
   _data->_severity = std::max(_data->_severity, level);
   return *this;
@@ -220,7 +220,7 @@ BufferWriter &
 bwformat(BufferWriter &bw, bwf::Spec const &spec, Errata const &errata)
 {
   for (auto &m : errata) {
-    bw.print("{}[{}] {}\n", swoc::bwf::Pattern{m.level(), "  "}, m.severity(), m.text());
+    bw.print("{}[{}] {}\n", swoc::bwf::Pattern{int(m.level()), "  "}, m.severity(), m.text());
   }
   return bw;
 }
