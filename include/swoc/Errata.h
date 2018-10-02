@@ -259,6 +259,9 @@ public:
 
   /// Number of messages in the errata.
   size_t count() const;
+  /// Check for no messages
+  /// @return @c true if there is one or messages.
+  bool empty() const;
 
   using iterator       = Container::iterator;
   using const_iterator = Container::const_iterator;
@@ -648,6 +651,20 @@ Errata::operator=(self_type &&that) -> self_type &
 inline Errata::operator bool() const
 {
   return this->is_ok();
+}
+
+inline bool Errata::empty() const { return _data == nullptr || _data->_notes.count() == 0; }
+
+inline size_t
+Errata::count() const
+{
+  return _data ? _data->_notes.count() : 0;
+}
+
+inline bool
+Errata::is_ok() const
+{
+  return 0 == _data || 0 == _data->_notes.count() || _data->_severity < FAILURE_SEVERITY;
 }
 
 inline const Errata::Annotation &

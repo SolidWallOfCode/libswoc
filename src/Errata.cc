@@ -126,18 +126,6 @@ Errata::end() const
   return _data ? _data->_notes.end() : const_iterator();
 }
 
-size_t
-Errata::count() const
-{
-  return _data ? _data->_notes.count() : 0;
-}
-
-bool
-Errata::is_ok() const
-{
-  return 0 == _data || 0 == _data->_notes.count() || _data->_severity < FAILURE_SEVERITY;
-}
-
 Severity
 Errata::severity() const
 {
