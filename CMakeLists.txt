@@ -55,7 +55,7 @@ add_executable(test_libswoc
     src/unit_tests/test_swoc_file.cc
     src/unit_tests/test_Errata.cc
     src/unit_tests/test_Lexicon.cc
-    )
+    src/unit_tests/test_meta.cc)
 
 find_library(POSIX_THREAD_LIB pthread)
 target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})

@@ -147,7 +147,7 @@ Errata::note_localized(Severity level, std::string_view const &text)
 {
   auto d        = this->writeable_data();
   Annotation *n = d->_arena.make<Annotation>(level, text);
-  n->_level = _data->_level;
+  n->_level = d->_level;
   d->_notes.prepend(n);
   _data->_severity = std::max(_data->_severity, level);
   return *this;
