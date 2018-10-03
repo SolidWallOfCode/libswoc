@@ -2,18 +2,10 @@
 
     Intrusive double linked list container.
 
-    This provide support for a doubly linked list container for an arbitrary class that uses the
-    class directly and not wrapped. It requires the class to provide the list pointers.
+    This provides support for a doubly linked list container. Items in the list must provide links
+    inside the class and accessor functions for those links.
 
     @note This is a header only library.
-
-    @note Due to bugs in either the C++ standard or gcc (or both), the link members @b must be
-    declared in the class used for the list. If they are declared in a super class you will get
-    "could not convert template argument" errors, even though it should work. This is because @c
-    &T::m is of type @c S::* if @c S is a super class of @c T and @c m is declared in @c S. My view
-    is that if I write "&T::m" I want a "T::*" and the compiler shouldn't go rummaging through the
-    class hierarchy for some other type. For MSVC you can @c static_cast the template arguments as a
-    workaround, but not in gcc.
 
     @section license License
 
@@ -34,7 +26,7 @@
 
 #pragma once
 
-/// FreeBSD doesn't like just declaring the tag struct we need so we have to include the file.
+/// Clang doesn't like just declaring the tag struct we need so we have to include the file.
 #include <iterator>
 #include <type_traits>
 
@@ -60,13 +52,16 @@ namespace swoc
     instance. This type is deduced from the methods and is not explicitly specified. It must be
     cheaply copyable and stateless.
 
+    It is the resopnsbility of the item class to initialize the link pointers. When an item is
+    removed from the list the link pointers are set to @c nullptr.
+
     An example declaration woudl be
 
     @code
       // Item in the list.
       struct Thing {
-        Thing* _next;
-        Thing* _prev;
+        Thing* _next {nullptr};
+        Thing* _prev {nullptr};
         Data _payload;
 
         // Linkage descriptor.
@@ -79,10 +74,11 @@ namespace swoc
       using ThingList = IntrusiveDList<Thing::Linkage>;
     @endcode
 
-    Element access is done by using either STL style iteration, or direct access to the member
+    Item access is done by using either STL style iteration, or direct access to the member
     pointers. A client can have its own mechanism for getting an element to start, or use the @c
     head and/or @c tail methods to get the first and last elements in the list respectively. Note if
-    the list is empty then @c Linkage::NIL will be returned.
+    the list is empty then @c nullptr will be returned. There are simple and fast conversions
+    between item pointers and iterators.
 
   */
 template <typename L> class IntrusiveDList
@@ -94,8 +90,7 @@ public:
   /// The list item type.
   using value_type = typename std::remove_pointer<typename std::remove_reference<decltype(L::next_ptr(nullptr))>::type>::type;
 
-  /** Const iterator for the list.
-   */
+  /// Const iterator.
   class const_iterator
   {
     using self_type = const_iterator; ///< Self reference type.
@@ -162,8 +157,7 @@ public:
     const_iterator(const list_type *list, value_type *v);
   };
 
-  /** Iterator for the list.
-   */
+  /// Iterator for the list.
   class iterator : public const_iterator
   {
     using self_type  = iterator;       ///< Self reference type.
@@ -220,11 +214,14 @@ public:
     iterator(list_type *list, value_type *v);
   };
 
+  /// Construct to empty list.
   IntrusiveDList() = default;
+
+  /// Move list to @a this and leave @a that empty.
   IntrusiveDList(self_type &&that);
 
-  /// Copy list.
-  self_type &operator=(const self_type &that) = default;
+  /// No copy assignment because items can't be in two lists and can't copy items.
+  self_type &operator=(const self_type &that) = delete;
   /// Move @a that to @a this.
   self_type &operator=(self_type &&that);
 
@@ -307,8 +304,9 @@ public:
 
   /** Get an iterator for the item @a v.
    *
-   * It is the responsibility of the caller that @a v is in the list. The purpose is to make iteration starting
-   * at a specific element easier (i.e. all of the link manipulation and checking is done by the iterator).
+   * It is the responsibility of the caller that @a v is in the list. The purpose is to make
+   * iteration starting at a specific element easier (i.e. all of the link manipulation and checking
+   * is done by the iterator).
    *
    * @return An @c iterator that refers to @a v.
    */
@@ -374,6 +372,11 @@ IntrusiveLinkage<T, NEXT, PREV>::prev_ptr(T *thing)
 
 /** Utility cast to change the underlying type of a pointer reference.
  *
+ * @tparam T The resulting pointer reference type.
+ * @tparam P The starting pointer reference type.
+ * @param p A reference to pointer to @a P.
+ * @return A reference to the same pointer memory of type @c T*&.
+ *
  * This changes a reference to a pointer to @a P to a reference to a pointer to @a T. This is useful
  * for intrusive links that are inherited. For instance
  *
@@ -385,16 +388,13 @@ IntrusiveLinkage<T, NEXT, PREV>::prev_ptr(T *thing)
  * To make @c BetterThing work with an intrusive container without making new link members,
  *
  * @code
- * static BetterThing*& next_ptr(BetterThing* bt) { return swoc::ptr_ref_cast<BetterThing>(_next); }
+ * static BetterThing*& next_ptr(BetterThing* bt) {
+ *   return swoc::ptr_ref_cast<BetterThing>(_next);
+ * }
  * @endcode
  *
  * This is both convenient and gets around aliasing warnings from the compiler that can arise from
  * using @c reinterpret_cast.
- *
- * @tparam T The resulting pointer reference type.
- * @tparam P The starting pointer reference type.
- * @param p A reference to pointer to @a P.
- * @return A reference to the same pointer memory of type @c T*&.
  */
 template <typename T, typename P>
 T *&
@@ -746,7 +746,9 @@ auto
 IntrusiveDList<L>::operator=(self_type &&that) -> self_type &
 {
   if (this != &that) {
-    *this = that;
+    this->_head = that._head;
+    this->_tail = that._tail;
+    this->_count = that._count;
     that.clear();
   }
   return *this;
