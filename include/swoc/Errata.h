@@ -117,7 +117,7 @@ public:
 
   protected:
     Severity _severity{Errata::DEFAULT_SEVERITY}; ///< Annotation code.
-    unsigned _level {0}; ///< Nesting level.
+    unsigned _level{0};                           ///< Nesting level.
     std::string_view _text;                       ///< Annotation text.
 
     /// Policy and links for intrusive list.
@@ -165,7 +165,7 @@ protected:
     /// Annotation text storage.
     swoc::MemArena _arena;
     /// Nesting level.
-    unsigned _level { 0 };
+    unsigned _level{0};
     /// The effective severity of the message stack.
     Severity _severity{Errata::DEFAULT_SEVERITY};
   };
@@ -653,7 +653,11 @@ inline Errata::operator bool() const
   return this->is_ok();
 }
 
-inline bool Errata::empty() const { return _data == nullptr || _data->_notes.count() == 0; }
+inline bool
+Errata::empty() const
+{
+  return _data == nullptr || _data->_notes.count() == 0;
+}
 
 inline size_t
 Errata::count() const

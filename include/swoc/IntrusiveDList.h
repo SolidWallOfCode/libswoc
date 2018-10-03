@@ -52,7 +52,7 @@ namespace swoc
     instance. This type is deduced from the methods and is not explicitly specified. It must be
     cheaply copyable and stateless.
 
-    It is the resopnsbility of the item class to initialize the link pointers. When an item is
+    It is the responsibility of the item class to initialize the link pointers. When an item is
     removed from the list the link pointers are set to @c nullptr.
 
     An example declaration woudl be
@@ -746,8 +746,8 @@ auto
 IntrusiveDList<L>::operator=(self_type &&that) -> self_type &
 {
   if (this != &that) {
-    this->_head = that._head;
-    this->_tail = that._tail;
+    this->_head  = that._head;
+    this->_tail  = that._tail;
     this->_count = that._count;
     that.clear();
   }

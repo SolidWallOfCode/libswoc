@@ -24,38 +24,44 @@
 
 #include "swoc/ext/catch.hpp"
 
-template < typename ... > struct is_any_of_1 { static constexpr bool value = false; };
-template < typename T, typename T0> struct is_any_of_1<T, T0> { static constexpr bool value = std::is_same<T, T0>::value; };
-template < typename T, typename T0, typename ... Rest> struct is_any_of_1<T, T0, Rest...> {
-  static constexpr bool value = std::is_same<T, T0>::value ||
-                                (sizeof...(Rest) > 0 && is_any_of_1<T, Rest...>::value);
+template <typename...> struct is_any_of_1 {
+  static constexpr bool value = false;
+};
+template <typename T, typename T0> struct is_any_of_1<T, T0> {
+  static constexpr bool value = std::is_same<T, T0>::value;
+};
+template <typename T, typename T0, typename... Rest> struct is_any_of_1<T, T0, Rest...> {
+  static constexpr bool value = std::is_same<T, T0>::value || (sizeof...(Rest) > 0 && is_any_of_1<T, Rest...>::value);
 };
 
 // Requires C++17
-template < typename T, typename ... Rest >
-struct is_any_of_2 {
+template <typename T, typename... Rest> struct is_any_of_2 {
   static constexpr bool value = std::disjunction<std::is_same<T, Rest>...>::value;
 };
 
-struct A {};
+struct A {
+};
 
-struct B {};
+struct B {
+};
 
-struct C {};
+struct C {
+};
 
-struct D {};
+struct D {
+};
 
-TEST_CASE("Meta", "[meta]") {
-
+TEST_CASE("Meta", "[meta]")
+{
   REQUIRE(is_any_of_1<A, A, B, C>::value);
-  REQUIRE(! is_any_of_1<D, A, B, C>::value);
+  REQUIRE(!is_any_of_1<D, A, B, C>::value);
   REQUIRE(is_any_of_1<A, A>::value);
-  REQUIRE(! is_any_of_1<A, D>::value);
-  REQUIRE(! is_any_of_1<A>::value);
+  REQUIRE(!is_any_of_1<A, D>::value);
+  REQUIRE(!is_any_of_1<A>::value);
 
   REQUIRE(is_any_of_2<A, A, B, C>::value);
-  REQUIRE(! is_any_of_2<D, A, B, C>::value);
+  REQUIRE(!is_any_of_2<D, A, B, C>::value);
   REQUIRE(is_any_of_2<A, A>::value);
-  REQUIRE(! is_any_of_2<A, D>::value);
-  REQUIRE(! is_any_of_2<A>::value);
+  REQUIRE(!is_any_of_2<A, D>::value);
+  REQUIRE(!is_any_of_2<A>::value);
 }
