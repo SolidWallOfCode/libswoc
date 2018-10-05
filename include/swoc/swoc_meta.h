@@ -24,16 +24,16 @@ namespace swoc
 {
 namespace meta
 {
-  /** This creates an order series of meta template cases that can be used to select one of a set of
-   * functions in a priority ordering. A set of templated overloads take an (extra) argument of the
-   * case structures, each a different one. Calling the function invokes the highest case that is
-   * valid. Because of SFINAE the templates can have errors, as long as at least one doesn't. The
-   * root technique is to use @c decltype to check an expression for the overload to be valid.
-   * Because the compiler will evaluate everything it can while parsing the template this expression
-   * must be delayed until the template is instantiated. This is done by making the return type @c
-   * auto and making the @c decltype dependent on the template parameter. In addition, the comma
-   * operator can be used to force a specific return type while also checking the expression for
-   * validity. E.g.
+  /** This creates an ordered series of meta template cases that can be used to select one of a set
+   * of functions in a priority ordering. A set of templated overloads take an (extra) argument of
+   * the case structures, each a different one. Calling the function invokes the highest case that
+   * is valid. Because of SFINAE the templates can have errors, as long as at least one doesn't.
+   * The root technique is to use @c decltype to check an expression for the overload to be valid.
+   * Because the compiler will evaluate everything it can while parsing the template this
+   * expression must be delayed until the template is instantiated. This is done by making the
+   * return type @c auto and making the @c decltype dependent on the template parameter. In
+   * addition, the comma operator can be used to force a specific return type while also checking
+   * the expression for validity. E.g.
    *
    * @code
    * template <typename T> auto func(T& t, CaseArg_0 const&) -> decltype(T::item, int()) { }
@@ -47,14 +47,19 @@ namespace meta
    *
    * @code
    * template <typename T> auto Get_Count(T& t, CaseArg_0 const&) -> int { return 0; }
-   * template <typename T> auto Get_Count(T& t, CaseArg_1 const&) -> decltype(T::count, int()) { return t.count; }
+   * template <typename T> auto Get_Count(T& t, CaseArg_1 const&)
+   *   -> decltype(T::count, int())
+   * {
+   *   return t.count;
+   * }
    * int Get_Count(Thing& t) { return GetCount(t, CaseArg); }
    * @endcode
    *
-   * Note the overloads will be checked from the highest case to the lowest. This would not work if
-   * the @c CaseArg_0 and @c CaseArg_1 arguments were interchanged - the "return 0" overload would
-   * always be selected. Unfortunately the case functions @b must be templated, even if there's no
-   * other reason for it.
+   * Note the overloads will be checked from the highest case to the lowest and the first one that
+   * is valid (via SFINAE) is used. This is the point of using the case arguments, to force an order
+   * to overload selection.Unfortunately this means the functions @b must be templated, even if
+   * there's no other reason for it, because it depends on SFINAE which doesn't apply to normal
+   * overloads.
    *
    * Note @c decltype does not accept explicit types - to have the type of "int" an @c int must be
    * constructed. This is easy for builtin types except @c void. @c CaseVoidFunc is provided for that
