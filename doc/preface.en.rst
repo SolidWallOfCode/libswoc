@@ -18,18 +18,14 @@
 Preface
 *******
 
-What is Apache Traffic Server?
-==============================
+The Solid Wall of C++ library is a collection of C++ classes and utilities that I have written find
+useful. You might find them useful as well. All of these are used in the Apache Traffic Server
+codebase, which is where I first developed them, along with some contributions. I have split them
+out in to this side project in order to
 
-|ATS| is a high-performance web proxy cache that improves network efficiency
-and performance by caching frequently-accessed information at the edge of the
-network. This brings content physically closer to end users, while enabling
-faster delivery and reduced bandwidth use. |TS| is designed to improve content
-delivery for enterprises, Internet service providers (ISPs), backbone
-providers, and large intranets by maximizing existing and available bandwidth.
+*  Make them available to non-Traffic Server projects.
 
-This manual will explore every aspect of installing, managing, extending, and
-troubleshooting |TS|.
+*  Have a venue where I can do more rapidly development than is possible inside Traffic Server.
 
 Typographic Conventions
 =======================
@@ -40,31 +36,24 @@ Italic
     Used to introduce new terms on their initial appearance.
 
     Example:
-        The |ATS| object storage is based on a *cyclone buffer* architecture.
-        Cyclone buffers are a form of storage addressing in which a single
-        writer continually reclaims the oldest allocations for use by new
-        updates.
+        A :term:`Scalar` is an integral value that is always a multiple of a fixed constant.
 
 Monospace
     Represents C/C++ language statements, commands, file paths, file content,
     and computer output.
 
     Example:
-        The default installation prefix for |TS| is ``/usr/local/ts``.
+        The default library name is ``libswoc++``.
 
 Bracketed Monospace
     Represents variables for which you should substitute a value in file content
     or commands.
 
     Example:
-        Running the command ``traffic_ctl metric get <name>`` will display the current
-        value of a performance statistic, where ``<name>`` is the statistic
-        whose value you wish to view.
+        Use ``test_libswoc <test>`` to run specific unit tests..
 
 Ellipsis
     Indicates the omission of irrelevant or unimportant information.
-
-.. _intro-other-resources:
 
 Other Resources
 ===============
@@ -72,51 +61,5 @@ Other Resources
 Websites
 --------
 
-Official Website
+Apache Traffic Server
     https://trafficserver.apache.org/
-
-    The official |ATS| project website is hosted by the |ASF|. Documentation,
-    software downloads, community resource links, security announcements, and
-    more are located, or linked to, at the site.
-
-Online Documentation
-    https://docs.trafficserver.apache.org/
-
-    The most up to date version of the documentation is hosted at |RTD|, with
-    built-in search functionality. Documentation for past releases is also
-    available.
-
-Bug Tracker
-    https://github.com/apache/trafficserver/issues
-
-    If you wish to report bugs, or look for open issues on which you may help
-    contribute to the |TS| project, please visit the public bug tracker site.
-
-Mailing Lists
--------------
-
-User List
-    The user's mailing list offers support and discussions oriented to users
-    and administrators of the |TS| software.
-
-    Send an email to ``users-subscribe@trafficserver.apache.org`` to join the
-    list.
-
-Developer List
-    If you have questions about, or wish to discuss, the development of |TS|,
-    plugins for the server, or other developer-oriented matters, the developer
-    list offers an active list of both core project members and external
-    contributors.
-
-    Send an email to ``dev-subscribe@trafficserver.apache.org`` to join the
-    list.
-
-Internet Relay Chat (IRC)
--------------------------
-
-The ``#traffic-server`` channel on ``irc.freenode.net`` is the official IRC
-resource for the |TS| project, and boasts active discussions.
-
-Community Forums
-----------------
-

@@ -69,3 +69,5 @@ add_custom_target(clang-format-include COMMAND ${CMAKE_HOME_DIRECTORY}/tools/cla
 add_custom_target(clang-format-ext COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${CMAKE_HOME_DIRECTORY}/include/swoc/ext)
 add_custom_target(clang-format)
 add_dependencies(clang-format clang-format-src clang-format-include clang-format-ext)
+
+add_subdirectory(doc EXCLUDE_FROM_ALL)

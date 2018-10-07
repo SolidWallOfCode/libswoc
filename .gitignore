@@ -1,5 +1,6 @@
 # Prerequisites
 *.d
+*.cbp
 
 # Compiled Object files
 *.slo
@@ -16,10 +17,6 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -33,3 +30,7 @@
 
 cmake-build-debug
 .idea
+doc/_build
+CMakeFiles/
+cmake-build-release/
+venv/
