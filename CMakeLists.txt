@@ -57,8 +57,9 @@ add_executable(test_libswoc
     src/unit_tests/test_Lexicon.cc
     src/unit_tests/test_meta.cc)
 
-find_library(POSIX_THREAD_LIB pthread)
-target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
+#find_library(POSIX_THREAD_LIB pthread)
+#target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
+target_link_libraries(test_libswoc swoc++)
 
 install(TARGETS swoc++ ARCHIVE DESTINATION lib)
 install(FILES ${core_headers} DESTINATION include/swoc)

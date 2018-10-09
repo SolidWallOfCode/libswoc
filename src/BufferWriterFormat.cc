@@ -28,7 +28,6 @@
 #include <ctime>
 #include <sys/param.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_base.h"
@@ -928,6 +927,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern)
 
 } // namespace swoc
 
+#if 0
 namespace
 {
 swoc::BufferWriter &
@@ -960,24 +960,21 @@ BWF_ThreadID(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
   return bwformat(w, spec, pthread_self());
 }
 
-namespace
+template <size_t N>
+auto
+thread_getname(char (&name)[N], swoc::meta::CaseArg_0) -> void
 {
-  template <size_t N>
-  auto
-  thread_getname(char (&name)[N], swoc::meta::CaseArg_0) -> void
-  {
-    static constexpr swoc::TextView text("thread");
-    static_assert(N > text.size(), "Array too small");
-    memcpy(name, text.data(), text.size() + 1);
-  }
-  template <size_t N>
-  auto
-  thread_getname(char (&name)[N], swoc::meta::CaseArg_1)
-    -> decltype(pthread_getname_np(pthread_t{}, name, N), swoc::meta::CaseVoidFunc())
-  {
-    pthread_getname_np(pthread_self(), name, N);
-  }
-} // namespace
+  static constexpr swoc::TextView text("thread");
+  static_assert(N > text.size(), "Array too small");
+  memcpy(name, text.data(), text.size() + 1);
+}
+template <size_t N>
+auto
+thread_getname(char (&name)[N], swoc::meta::CaseArg_1)
+  -> decltype(pthread_getname_np(pthread_t{}, name, N), swoc::meta::CaseVoidFunc())
+{
+  pthread_getname_np(pthread_self(), name, N);
+}
 
 swoc::BufferWriter &
 BWF_ThreadName(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
@@ -997,6 +994,7 @@ static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
 }();
 
 } // namespace
+#endif
 
 namespace std
 {
