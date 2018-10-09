@@ -27,7 +27,7 @@
 #include <cstdint>
 
 struct Hash32_FNV {
-  using self_type = Hash32_FNV;
+  using self_type                = Hash32_FNV;
   static constexpr uint32_t INIT = 0x811c9dc5u;
 
   Hash32_FNV();
@@ -47,7 +47,7 @@ private:
 };
 
 struct Hash64_FNV {
-  using self_type = Hash64_FNV;
+  using self_type                = Hash64_FNV;
   static constexpr uint64_t INIT = 0xcbf29ce484222325ull;
 
   Hash64_FNV();
