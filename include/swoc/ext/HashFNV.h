@@ -25,11 +25,10 @@
 #pragma once
 
 #include <cstdint>
-static constexpr uint32_t FNV_INIT_32 = 0x811c9dc5u;
-static constexpr uint64_t FNV_INIT_64 = 0xcbf29ce484222325ull;
 
 struct Hash32_FNV {
   using self_type = Hash32_FNV;
+  static constexpr uint32_t INIT = 0x811c9dc5u;
 
   Hash32_FNV();
 
@@ -49,6 +48,7 @@ private:
 
 struct Hash64_FNV {
   using self_type = Hash64_FNV;
+  static constexpr uint64_t INIT = 0xcbf29ce484222325ull;
 
   Hash64_FNV();
 
@@ -88,7 +88,7 @@ Hash32_FNV::final() -> self_type &
 inline auto
 Hash32_FNV::clear() -> self_type &
 {
-  hval = FNV_INIT_32;
+  hval = INIT;
   return *this;
 }
 
@@ -134,7 +134,7 @@ inline Hash64_FNV::operator uint64_t() const
 inline auto
 Hash64_FNV::clear() -> self_type &
 {
-  hval = FNV_INIT_64;
+  hval = INIT;
   return *this;
 }
 
