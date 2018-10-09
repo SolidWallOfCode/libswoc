@@ -293,7 +293,7 @@ public:
   /// Drop @a n characters from the end of the buffer.
   /// The extent is reduced but the data is not overwritten and can be recovered with
   /// @c fill.
-  self_type &discard(size_t n);
+  self_type &discard(size_t n) override;
 
   /// Reduce the capacity by @a n.
   self_type &restrict(size_t n) override;
