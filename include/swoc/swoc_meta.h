@@ -36,56 +36,57 @@ namespace meta
    * the expression for validity. E.g.
    *
    * @code
-   * template <typename T> auto func(T& t, CaseArg_0 const&) -> decltype(T::item, int()) { }
+   * template <typename T> auto func(T && t, CaseTag<0>) -> decltype(t.item, int()) { }
    * @endcode
    *
    * The comma operator discards the type and value of the left operand therefore the return type of
-   * the function is @c int but this overload will not be available if @c T::item does not compile
-   * (e.g., there is no such member). The presence of @c T::item also prevents this compilation check
+   * the function is @c int but this overload will not be available if @c t.item does not compile
+   * (e.g., there is no such member). The presence of @c t.item also prevents this compilation check
    * from happening until overload selection is needed. Therefore if the goal was a function that
    * would return the value of the @c T::count member if present and 0 if not, the code would be
    *
    * @code
-   * template <typename T> auto Get_Count(T& t, CaseArg_0 const&) -> int { return 0; }
-   * template <typename T> auto Get_Count(T& t, CaseArg_1 const&)
-   *   -> decltype(T::count, int())
-   * {
-   *   return t.count;
-   * }
+   * template <typename T> auto Get_Count(T && t, CaseTag<0>)
+   *   -> int
+   * { return 0; }
+   * template <typename T> auto Get_Count(T && t, CaseTag<1>)
+   *   -> decltype(t.count, int())
+   * { return t.count; }
    * int Get_Count(Thing& t) { return GetCount(t, CaseArg); }
    * @endcode
    *
    * Note the overloads will be checked from the highest case to the lowest and the first one that
-   * is valid (via SFINAE) is used. This is the point of using the case arguments, to force an order
-   * to overload selection.Unfortunately this means the functions @b must be templated, even if
-   * there's no other reason for it, because it depends on SFINAE which doesn't apply to normal
-   * overloads.
+   * is valid (via SFINAE) is used. This is the point of using the case arguments, to force an
+   * ordering on the overload selection. Unfortunately this means the functions @b must be
+   * templated, even if there's no other reason for it, because it depends on SFINAE which doesn't
+   * apply to normal overloads.
+   *
+   * The key point is the expression in the @c decltype should be the same expression used in the
+   * method to verify it will compile. It is annoying to type it twice but there's not a better
+   * option.
    *
    * Note @c decltype does not accept explicit types - to have the type of "int" an @c int must be
    * constructed. This is easy for builtin types except @c void. @c CaseVoidFunc is provided for that
    * situation, e.g. <tt>decltype(CaseVoidFunc())</tt> provides @c void via @c decltype.
    */
 
-  // Base case
-  struct CaseArg_0 {
-  };
-  // Additional cases
-  struct CaseArg_1 : public CaseArg_0 {
-  };
-  struct CaseArg_2 : public CaseArg_1 {
-  };
-  struct CaseArg_3 : public CaseArg_2 {
-  };
-  // Add more as needed, but 4 seems enough for all forseeable uses.
-
-  // This is the final subclass so that callers can always use this, even if more cases are added.
-  // This must be a subclass of the last specific case type.
-  struct CaseArg_Final : public CaseArg_3 {
-    constexpr CaseArg_Final() {}
+  /// Case hierarchy.
+  template <unsigned N> struct CaseTag : public CaseTag<N - 1> {
+    constexpr CaseTag() {}
+    static constexpr unsigned value = N;
   };
 
-  // A single static instance suffices for all uses.
-  static constexpr CaseArg_Final CaseArg;
+  /// Anchor the hierarchy.
+  template <> struct CaseTag<0> {
+    constexpr CaseTag() {}
+    static constexpr unsigned value = 0;
+  };
+
+  /** This is the final case - it forces the super class hierarchy.
+   * After defining the cases using the indexed case arguments, this is used to to perform the call.
+   * To increase the hierarchy depth, change the template argument to a larger number.
+   */
+  static constexpr CaseTag<9> CaseArg{};
 
   // A function to provide a @c void type for use in cases.
   // Other types can use the default constructor, e.g. "int()" for @c int.
@@ -94,4 +95,4 @@ namespace meta
   {
   }
 } // namespace meta
-} // namespace swoc
+} // namespace ts

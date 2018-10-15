@@ -895,13 +895,13 @@ namespace detail
 {
   template <typename T>
   auto
-  tag_label(std::ostream &, const meta::CaseArg_0 &) -> void
+  tag_label(std::ostream &, const meta::CaseTag<0> &) -> void
   {
   }
 
   template <typename T>
   auto
-  tag_label(std::ostream &w, const meta::CaseArg_1 &) -> decltype(T::label, meta::CaseVoidFunc())
+  tag_label(std::ostream &w, const meta::CaseTag<1> &) -> decltype(T::label, meta::CaseVoidFunc())
   {
     w << T::label;
   }

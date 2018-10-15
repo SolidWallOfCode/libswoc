@@ -626,13 +626,13 @@ namespace bwf
   /// provide one.
   template <typename F>
   auto
-  arg_capture(F &&f, BufferWriter &, Spec const &, std::any &&, swoc::meta::CaseArg_0) -> void
+  arg_capture(F &&f, BufferWriter &, Spec const &, std::any &&, swoc::meta::CaseTag<0>) -> void
   {
     throw std::runtime_error("Capture specification used in format extractor that does not support capture");
   }
   template <typename F>
   auto
-  arg_capture(F &&f, BufferWriter &w, Spec const &spec, std::any &&value, swoc::meta::CaseArg_1)
+  arg_capture(F &&f, BufferWriter &w, Spec const &spec, std::any &&value, swoc::meta::CaseTag<1>)
     -> decltype(f.capture(w, spec, value))
   {
     return f.capture(w, spec, value);
@@ -930,13 +930,13 @@ namespace detail
 {
   template <typename T>
   auto
-  tag_label(BufferWriter &w, const bwf::Spec &, const meta::CaseArg_0 &) -> void
+  tag_label(BufferWriter &w, const bwf::Spec &, meta::CaseTag<0>) -> void
   {
   }
 
   template <typename T>
   auto
-  tag_label(BufferWriter &w, const bwf::Spec &, const meta::CaseArg_1 &) -> decltype(T::label, meta::CaseVoidFunc())
+  tag_label(BufferWriter &w, const bwf::Spec &, meta::CaseTag<1>) -> decltype(T::label, meta::CaseVoidFunc())
   {
     w.print("{}", T::label);
   }
