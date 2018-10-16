@@ -881,7 +881,9 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date)
     auto r = w.remaining();
     size_t n{0};
     // Verify @a fmt is null terminated, even outside the bounds of the view.
-    WEAK_ASSERT(date._fmt.data()[date._fmt.size() - 1] == 0 || date._fmt.data()[date._fmt.size()] == 0);
+    if (date._fmt.data()[date._fmt.size() - 1] != 0 && date._fmt.data()[date._fmt.size()] != 0) {
+      throw(std::invalid_argument{"BWF Date String is not null terminated."});
+    }
     // Get the time, GMT or local if specified.
     if (spec._ext == "local"sv) {
       localtime_r(&date._epoch, &t);
@@ -898,8 +900,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date)
       // Direct write didn't work. Unfortunately need to write to a temporary
       // buffer or the sizing isn't correct if @a w is clipped because @c
       // strftime returns 0 if the buffer isn't large enough.
-      char buff[256]; // hope for the best - no real way to resize appropriately
-                      // on failure.
+      char buff[256]; // hope for the best - no real way to resize appropriately on failure.
       n = strftime(buff, sizeof(buff), date._fmt.data(), &t);
       w.write(buff, n);
     }
@@ -926,75 +927,6 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern)
 }
 
 } // namespace swoc
-
-#if 0
-namespace
-{
-swoc::BufferWriter &
-BWF_Timestamp(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
-{
-  // Unfortunately need to write to a temporary buffer or the sizing isn't
-  // correct if @a w is clipped because @c strftime returns 0 if the buffer
-  // isn't large enough.
-  char buff[32];
-  std::time_t t = std::time(nullptr);
-  auto n        = strftime(buff, sizeof(buff), "%Y %b %d %H:%M:%S", std::localtime(&t));
-  return w.write(buff, n);
-}
-
-swoc::BufferWriter &
-BWF_Now(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
-{
-  return bwformat(w, spec, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-}
-
-swoc::BufferWriter &
-BWF_Tick(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
-{
-  return bwformat(w, spec, std::chrono::high_resolution_clock::now().time_since_epoch().count());
-}
-
-swoc::BufferWriter &
-BWF_ThreadID(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
-{
-  return bwformat(w, spec, pthread_self());
-}
-
-template <size_t N>
-auto
-thread_getname(char (&name)[N], swoc::meta::CaseArg_0) -> void
-{
-  static constexpr swoc::TextView text("thread");
-  static_assert(N > text.size(), "Array too small");
-  memcpy(name, text.data(), text.size() + 1);
-}
-template <size_t N>
-auto
-thread_getname(char (&name)[N], swoc::meta::CaseArg_1)
-  -> decltype(pthread_getname_np(pthread_t{}, name, N), swoc::meta::CaseVoidFunc())
-{
-  pthread_getname_np(pthread_self(), name, N);
-}
-
-swoc::BufferWriter &
-BWF_ThreadName(swoc::BufferWriter &w, swoc::bwf::Spec const &spec)
-{
-  char name[32]; // manual says at least 16, bump that up a bit.
-  thread_getname(name, swoc::meta::CaseArg);
-  return bwformat(w, spec, std::string_view{name});
-}
-
-static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
-  swoc::bwf::Global_Names.assign("now", &BWF_Now);
-  swoc::bwf::Global_Names.assign("tick", &BWF_Tick);
-  swoc::bwf::Global_Names.assign("timestamp", &BWF_Timestamp);
-  swoc::bwf::Global_Names.assign("thread-id", &BWF_ThreadID);
-  swoc::bwf::Global_Names.assign("thread-name", &BWF_ThreadName);
-  return true;
-}();
-
-} // namespace
-#endif
 
 namespace std
 {

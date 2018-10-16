@@ -28,7 +28,6 @@
 #include <iosfwd>
 #include <string_view>
 
-#include "swoc/swoc_common.h"
 #include "swoc/TextView.h"
 #include "swoc/MemSpan.h"
 
@@ -399,7 +398,9 @@ BufferWriter::remaining() const
 // --- FixedBufferWriter ---
 inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buf(buffer), _capacity(capacity)
 {
-  WEAK_ASSERT(_capacity == 0 || buffer != nullptr);
+  if (_capacity != 0 && buffer == nullptr) {
+    throw(std::invalid_argument{"FixedBufferWriter created with null buffer and non-zero size."});
+  };
 }
 
 inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buf(nullptr), _capacity(0) {}
@@ -480,7 +481,9 @@ FixedBufferWriter::extent() const
 inline auto
 FixedBufferWriter::restrict(size_t n) -> self_type &
 {
-  WEAK_ASSERT(n <= _capacity);
+  if (n <= _capacity) {
+    throw(std::invalid_argument{"FixedBufferWriter restrict value more than capacity"});
+  }
 
   _capacity -= n;
   _restriction += n;
@@ -505,8 +508,6 @@ FixedBufferWriter::restore(size_t n) -> self_type &
 inline auto
 FixedBufferWriter::discard(size_t n) -> self_type &
 {
-  WEAK_ASSERT(n <= _attempted);
-
   _attempted -= std::min(_attempted, n);
   return *this;
 }

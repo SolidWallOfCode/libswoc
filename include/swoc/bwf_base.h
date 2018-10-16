@@ -367,6 +367,10 @@ namespace bwf
     } _binding{super_type::_map};
   };
 
+  /** Default global names.
+   * This nameset is used if no other is provided. Therefore bindings added to this nameset will be
+   * available in the default formatting use.
+   */
   extern GlobalNames Global_Names;
 
   // --------------- Implementation --------------------

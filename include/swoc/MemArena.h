@@ -25,7 +25,6 @@
 #include <memory>
 #include <utility>
 
-#include "swoc/swoc_common.h"
 #include "swoc/MemSpan.h"
 #include "swoc/Scalar.h"
 #include "swoc/IntrusiveDList.h"
@@ -287,7 +286,9 @@ MemArena::Block::remaining() const
 inline MemSpan
 MemArena::Block::alloc(size_t n)
 {
-  WEAK_ASSERT(n <= this->remaining());
+  if (n <= this->remaining()) {
+    throw(std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
+  }
   MemSpan zret = this->remnant().prefix(n);
   allocated += n;
   return zret;

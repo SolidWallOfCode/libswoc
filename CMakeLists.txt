@@ -7,7 +7,6 @@ project(libswoc)
 include_directories(include)
 
 set(core_headers
-    include/swoc/swoc_common.h
     include/swoc/swoc_meta.h
     include/swoc/Scalar.h
     include/swoc/TextView.h
