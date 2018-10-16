@@ -33,7 +33,7 @@ set(ext_headers
 set(lib_src
     src/TextView.cc
     src/MemArena.cc
-    src/BufferWriterFormat.cc
+    src/bw_format.cc
     src/Errata.cc
     src/swoc_file.cc
         include/swoc/bwf_printf.h)
@@ -47,7 +47,7 @@ add_executable(test_libswoc
     src/unit_tests/test_MemSpan.cc
     src/unit_tests/test_MemArena.cc
     src/unit_tests/test_BufferWriter.cc
-    src/unit_tests/test_BufferWriterFormat.cc
+    src/unit_tests/test_bw_format.cc
     src/unit_tests/test_IntrusiveDList.cc
     src/unit_tests/test_IntrusiveHashMap.cc
     src/unit_tests/test_Scalar.cc
