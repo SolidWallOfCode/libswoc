@@ -481,7 +481,7 @@ FixedBufferWriter::extent() const
 inline auto
 FixedBufferWriter::restrict(size_t n) -> self_type &
 {
-  if (n <= _capacity) {
+  if (n > _capacity) {
     throw(std::invalid_argument{"FixedBufferWriter restrict value more than capacity"});
   }
 

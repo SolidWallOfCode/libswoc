@@ -21,8 +21,28 @@
 #include <cstring>
 
 #include "swoc/swoc_meta.h"
+#include "swoc/TextView.h"
 
 #include "swoc/ext/catch.hpp"
+
+struct A {
+  int _value;
+};
+
+struct AA : public A {
+};
+
+struct B {
+  std::string _value;
+};
+
+struct C {
+};
+
+struct D {
+};
+
+// Some example meta-programming, saving it for possible later use.
 
 template <typename...> struct is_any_of_1 {
   static constexpr bool value = false;
@@ -39,19 +59,7 @@ template <typename T, typename... Rest> struct is_any_of_2 {
   static constexpr bool value = std::disjunction<std::is_same<T, Rest>...>::value;
 };
 
-struct A {
-};
-
-struct B {
-};
-
-struct C {
-};
-
-struct D {
-};
-
-TEST_CASE("Meta", "[meta]")
+TEST_CASE("Meta Example", "[meta][example]")
 {
   REQUIRE(is_any_of_1<A, A, B, C>::value);
   REQUIRE(!is_any_of_1<D, A, B, C>::value);
@@ -64,4 +72,36 @@ TEST_CASE("Meta", "[meta]")
   REQUIRE(is_any_of_2<A, A>::value);
   REQUIRE(!is_any_of_2<A, D>::value);
   REQUIRE(!is_any_of_2<A>::value);
+}
+
+// Start of ts::meta testing.
+
+namespace
+{
+template <typename T>
+auto
+detect(T &&t, swoc::meta::CaseTag<0>) -> std::string_view
+{
+  return "none";
+}
+template <typename T>
+auto
+detect(T &&t, swoc::meta::CaseTag<1>) -> decltype(t._value, std::string_view())
+{
+  return "value";
+}
+template <typename T>
+std::string_view
+detect(T &&t)
+{
+  return detect(t, swoc::meta::CaseArg);
+}
+} // namespace
+
+TEST_CASE("Meta", "[meta]")
+{
+  REQUIRE(detect(A()) == "value");
+  REQUIRE(detect(B()) == "value");
+  REQUIRE(detect(C()) == "none");
+  REQUIRE(detect(AA()) == "value");
 }

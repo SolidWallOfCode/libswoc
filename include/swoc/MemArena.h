@@ -286,7 +286,7 @@ MemArena::Block::remaining() const
 inline MemSpan
 MemArena::Block::alloc(size_t n)
 {
-  if (n <= this->remaining()) {
+  if (n > this->remaining()) {
     throw(std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
   }
   MemSpan zret = this->remnant().prefix(n);
