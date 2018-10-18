@@ -22,7 +22,6 @@ set(core_headers
     include/swoc/Errata.h
     include/swoc/swoc_file.h
     include/swoc/Lexicon.h
-    include/swoc/IntrusivePtr.h
 )
 
 # These are external but required.
