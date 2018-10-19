@@ -95,4 +95,4 @@ namespace meta
   {
   }
 } // namespace meta
-} // namespace ts
+} // namespace swoc

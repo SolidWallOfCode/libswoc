@@ -18,8 +18,7 @@ set(core_headers
     include/swoc/bwf_base.h
     include/swoc/bwf_std.h
     include/swoc/bwf_ex.h
-    include/swoc/bwf_swoc.h
-    include/swoc/Errata.h
+        include/swoc/Errata.h
     include/swoc/swoc_file.h
     include/swoc/Lexicon.h
 )

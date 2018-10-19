@@ -928,8 +928,10 @@ FixedBufferWriter::printv(bwf::Format const &fmt, std::tuple<Args...> const &arg
   return static_cast<self_type &>(this->super_type::printv(fmt, args));
 }
 
-// Because BufferWriter & formatting depend on other utilities, those can't provide formatting support
-// directly. Therefore it's done here.
+// Special case support for @c Scalar, because @c Scalar is a base utility for some other utilities
+// there can be some unpleasant cirularities if @c Scalar includes BufferWriter formatting. If the
+// support is here then it's fine because anything using BWF for @c Scalar must include this header.
+template < intmax_t N, typename C, typename T > class Scalar;
 namespace detail
 {
   template <typename T>
@@ -944,14 +946,6 @@ namespace detail
   {
     w.print("{}", T::label);
   }
-  template <typename T>
-  inline BufferWriter &
-  tag_label(BufferWriter &w, bwf::Spec const &spec)
-  {
-    tag_label<T>(w, spec, meta::CaseArg);
-    return w;
-  }
-
 } // namespace detail
 
 template <intmax_t N, typename C, typename T>
@@ -959,7 +953,10 @@ BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, Scalar<N, C, T> const &x)
 {
   bwformat(w, spec, x.value());
-  return spec.has_numeric_type() ? w : detail::tag_label<T>(w, spec);
+  if (!spec.has_numeric_type()) {
+    detail::tag_label<T>(w, spec, meta::CaseArg);
+  }
+  return w;
 }
 
 } // namespace swoc
