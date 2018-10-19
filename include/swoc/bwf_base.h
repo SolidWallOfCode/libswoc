@@ -199,6 +199,7 @@ namespace bwf
   class BoundNames
   {
   public:
+    virtual ~BoundNames();
     /** Generate output text for @a name on the output @a w using the format specifier @a spec.
      * This must match the @c BoundNameSignature type.
      *
@@ -443,7 +444,7 @@ namespace bwf
   }
 
   inline Format::TextViewExtractor::operator bool() const { return !_fmt.empty(); }
-  inline Format::FormatExtractor::operator bool() const { return _idx < _fmt.size(); }
+  inline Format::FormatExtractor::operator bool() const { return _idx < static_cast<int>(_fmt.size()); }
 
   /// --- Names / Generators ---
 

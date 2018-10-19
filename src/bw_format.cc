@@ -661,6 +661,7 @@ namespace bwf
     }
   }
 
+  BoundNames::~BoundNames() {}
 } // namespace bwf
 
 BufferWriter &
