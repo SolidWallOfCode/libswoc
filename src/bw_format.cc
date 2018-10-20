@@ -282,10 +282,10 @@ namespace bwf
   Format::FormatExtractor::operator()(std::string_view &literal_v, swoc::bwf::Spec &spec)
   {
     literal_v = {};
-    if (_idx < _fmt.size() && _fmt[_idx]._type == Spec::LITERAL_TYPE) {
+    if (_idx < int(_fmt.size()) && _fmt[_idx]._type == Spec::LITERAL_TYPE) {
       literal_v = _fmt[_idx++]._ext;
     }
-    if (_idx < _fmt.size() && _fmt[_idx]._type != Spec::LITERAL_TYPE) {
+    if (_idx < int(_fmt.size()) && _fmt[_idx]._type != Spec::LITERAL_TYPE) {
       spec = _fmt[_idx++];
       return true;
     }
@@ -310,7 +310,7 @@ namespace bwf
   {
     size_t extent = aux.extent();
     size_t min    = spec._min;
-    size_t size   = aux.size();
+    size_t size   = size_t(aux.size());
     if (extent < min) {
       size_t delta      = min - extent;
       size_t left_delta = 0, right_delta = delta; // left justify values
@@ -854,7 +854,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e)
     "EHWPOISON: ",
   }};
   // This provides convenient safe access to the errno short name array.
-  auto short_name = [](int n) { return n < static_cast<int>(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
+  auto short_name = [](int n) { return n < int(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
   static const bwf::Format number_fmt{"[{}]"sv}; // numeric value format.
   if (spec.has_numeric_type()) {                 // if numeric type, print just the numeric
                                                  // part.
@@ -983,7 +983,6 @@ namespace bwf
 
     if (!_fmt.empty()) {
       bool width_p = false;
-      auto size    = _fmt.size();
       literal      = _fmt.take_prefix_at('%');
       if (_fmt.empty()) {
         return false;
