@@ -310,7 +310,6 @@ namespace bwf
   {
     size_t extent = aux.extent();
     size_t min    = spec._min;
-    size_t size   = size_t(aux.size());
     if (extent < min) {
       size_t delta      = min - extent;
       size_t left_delta = 0, right_delta = delta; // left justify values
