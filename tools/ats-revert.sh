@@ -61,6 +61,10 @@ if [ -f ${ATS}/src/tscore/BufferWriterFormat.cc ] ; then
   (cd ${ATS}; git mv src/tscore/BufferWriterFormat.cc src/tscpp/util/bw_format.cc)
 fi
 
+if [ -f ${ATS}/include/tscore/bwf_std_format.h ] ; then
+  (cd ${ATS}; git mv include/tscore/bwf_std_format.h include/tscpp/util/bwf_ex.h)
+fi
+
 if [ -f ${ATS}/src/tscore/unit_tests/test_BufferWriter.cc ] ; then
   (cd ${ATS}; git mv src/tscore/unit_tests/test_BufferWriter.cc src/tscpp/util/unit_tests)
   sed -i -E --expr '/test_BufferWriter[.]cc/d' ${ATS}/src/tscore/Makefile.am
@@ -71,8 +75,8 @@ if [ -f ${ATS}/src/tscore/unit_tests/test_BufferWriter.cc ] ; then
 fi
 
 if [ -f ${ATS}/src/tscore/unit_tests/test_BufferWriterFormat.cc ] ; then
-  (cd ${ATS}; git mv src/tscore/unit_tests/test_BufferWriterFormat.cc src/tscpp/util/unit_tests/bw_format.cc)
-  sed -i -E --expr '/test_bwformat[.]cc/d' ${ATS}/src/tscore/Makefile.am
+  (cd ${ATS}; git mv src/tscore/unit_tests/test_BufferWriterFormat.cc src/tscpp/util/unit_tests/test_bw_format.cc)
+  sed -i -E --expr '/test_bw_format[.]cc/d' ${ATS}/src/tscore/Makefile.am
   if ! grep -q test_bw_format[.]cc ${ATS}/src/tscpp/util/Makefile.am ; then
       sed -i -E --expr '\!test_MemSpan.cc!i\
 \tunit_tests/test_bw_format.cc \\' ${ATS}/src/tscpp/util/Makefile.am
@@ -82,15 +86,19 @@ fi
 if cp src/bw_format.cc ${ATS}/src/tscpp/util ; then
   rewrite ${ATS}/src/tscpp/util/bw_format.cc
   sed -i -E --expr '/BufferWriterFormat[.]cc/d' ${ATS}/src/tscore/Makefile.am
-  if ! grep -q test_bw_format[.]cc ${ATS}/src/tscpp/util/Makefile.am ; then
-      sed -i -E --expr '\!test_MemSpan.cc!i\
-\tunit_tests/test_bw_format.cc \\' ${ATS}/src/tscpp/util/Makefile.am
+  if ! grep -q '\sbw_format[.]cc' ${ATS}/src/tscpp/util/Makefile.am ; then
+      sed -i -E --expr '\!la_SOURCES!a\
+\tbw_format.cc \\' ${ATS}/src/tscpp/util/Makefile.am
   fi
 fi
 
+if cp src/unit_tests/test_bw_format.cc ${ATS}/src/tscpp/util/unit_tests ; then
+  rewrite ${ATS}/src/tscpp/util/unit_tests/test_bw_format.cc
+fi
+
 if cp include/swoc/bwf_std.h ${ATS}/include/tscpp/util ; then
-  rewrite ${ATS}/include/tscpp/util/bwf_std.h
   (cd ${ATS}; git add include/tscpp/util/bwf_std.h)
+  rewrite ${ATS}/include/tscpp/util/bwf_std.h
   if ! grep -q bwf_std[.]h ${ATS}/include/tscpp/util/Makefile.am ; then
       sed -i -E --expr '\!include_HEADERS!a\
 \tbwf_std.h \\' ${ATS}/include/tscpp/util/Makefile.am
@@ -108,7 +116,6 @@ fi
 
 if cp include/swoc/bwf_ex.h ${ATS}/include/tscpp/util ; then
   rewrite ${ATS}/include/tscpp/util/bwf_ex.h
-  (cd ${ATS}; git add include/tscpp/util/bwf_ex.h)
   if ! grep -q bwf_ex[.]h ${ATS}/include/tscpp/util/Makefile.am ; then
       sed -i -E --expr '\!include_HEADERS!a\
 \tbwf_ex.h \\' ${ATS}/include/tscpp/util/Makefile.am
@@ -135,52 +142,97 @@ fi
 
 find ${ATS} \( -name '*.cc' -o -name '*.h' \) -exec sed -i -E -e 's!tscore/BufferWriterForward[.]h!tscpp/util/BufferWriter.h!' {} \;
 find ${ATS} \( -name '*.cc' -o -name '*.h' \) -exec sed -i -E -e 's!tscore/BufferWriter[.]h!tscpp/util/BufferWriter.h!' {} \;
+find ${ATS} \( -name '*.cc' -o -name '*.h' \) -exec sed -i -E -e 's!tscore/bwf_std_format[.]h!tscpp/util/bwf_ex.h!' {} \;
 find ${ATS} \( -name '*.cc' -o -name '*.h' \) -exec sed -i -E -e 's!BWFSpec!bwf::Spec!' {} \;
 
 if ! grep -q bwf_base[.]h ${ATS}/src/tscore/CryptoHash.cc ; then
     sed -i -E --expr '\!tscore/SHA256!a\
 #include "tscpp/util/bwf_base.h"' ${ATS}/src/tscore/CryptoHash.cc
 fi
-sed -i -E --expr '/namespace ts/,+11c\
-namespace ts {\
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, ats::CryptoHash const &hash);\
-} // namespace ts\
-' ${ATS}/include/tscore/CryptoHash.h
-
-cat > /tmp/cmd.sh <<'CODE'
-$a\
-\
-namespace ts\
-{\
-inline BufferWriter &\
-bwformat(BufferWriter &w, bwf::Spec const &spec, ats::CryptoHash const &hash)\
-{\
-  bwf::Spec local_spec{spec};\
-  if ('X' != local_spec._type)\
-    local_spec._type = 'x';\
-  return bwformat(w, local_spec, std::string_view(reinterpret_cast<const char *>(hash.u8), CRYPTO_HASH_SIZE));\
-}\
-} // namespace ts
-CODE
-
-sed -i -E --file /tmp/cmd.sh ${ATS}/src/tscore/CryptoHash.cc
+if ! grep -q bwf_base[.]h ${ATS}/src/tscore/ink_net.cc ; then
+    sed -i -E --expr '\!tscpp/util/TextView[.]h!a\
+#include "tscpp/util/bwf_base.h"' ${ATS}/src/tscore/ink_inet.cc
+fi
+if ! grep -q bwf_base[.]h ${ATS}/proxy/http/HttpDebugNames.cc ; then
+    sed -i -E --expr '\!HttpUpdateSM[.]h!a\
+#include "tscpp/util/bwf_base.h"' ${ATS}/proxy/http/HttpDebugNames.cc
+fi
+if ! grep -q bwf_base[.]h ${ATS}/proxy/http/HttpProxyServerMain.cc ; then
+    sed -i -E --expr '\!HttpProxyServerMain[.]h!a\
+#include "tscpp/util/bwf_base.h"' ${ATS}/proxy/http/HttpProxyServerMain.cc
+fi
+if ! grep -q bwf_base[.]h ${ATS}/src/traffic_cache_tool/CacheDefs.cc ; then
+    sed -i -E --expr '\!fcntl[.]h!a\
+#include "tscpp/util/bwf_base.h"' ${ATS}/src/traffic_cache_tool/CacheDefs.cc
+fi
+if ! grep -q bwf_base[.]h ${ATS}/src/traffic_cache_tool/CacheScan.cc ; then
+    sed -i -E --expr '\!proxy/hdrs/URL[.]h!a\
+#include "tscpp/util/bwf_base.h"' ${ATS}/src/traffic_cache_tool/CacheScan.cc
+fi
+if ! grep -q bwf_base[.]h ${ATS}/src/traffic_cache_tool/CacheTool.cc ; then
+    sed -i -E --expr 's!tscpp/util/BufferWriter.h!tscpp/util/bwf_base.h!' ${ATS}/src/traffic_cache_tool/CacheTool.cc
+fi
+if ! grep -q bwf_base[.]h ${ATS}/src/traffic_cache_tool/Makefile.inc ; then
+    sed -i -E --expr '\!BufferWriterFormat.o!c\
+\t$(top_builddir)/src/tscpp/util/.libs/MemArena.o \\\
+\t$(top_builddir)/src/tscpp/util/.libs/bw_format.o \\' ${ATS}/src/traffic_cache_tool/Makefile.inc
+fi
 
 function bwf_upgrade {
   sed -i -E --expr 's!clip[(]!restrict(!' $1
   sed -i -E --expr 's!extend[(]!restore(!' $1
   sed -i -E --expr 's!auxBuffer[(]!aux_data(!' $1
   sed -i -E --expr 's!fill[(]!commit(!' $1
+  sed -i -E --expr 's!BWFormat!bwf::Format!' $1
 }
 
 bwf_upgrade ${ATS}/src/tscore/Diags.cc
 bwf_upgrade ${ATS}/iocore/eventsystem/I_MIOBufferWriter.h
+bwf_upgrade ${ATS}/proxy/http/HttpConnectionCount.cc
+sed -i -E --expr 's!ts::bwf_register_global!ts::bwf::Global_Names.assign!' ${ATS}/proxy/http/HttpProxyServerMain.cc
+sed -i -E --expr 's!tscpp/util/bwf_ex[.]h!tscpp/util/bwf_std.h!' ${ATS}/proxy/http/HttpServerSession.cc
 
+sed -i -E --expr '/HttpTransactHeaders::add_forwarded_field_to_request/,/^}/s!hdr << (.*);!hdr.write(\1);!' ${ATS}/proxy/http/HttpTransactHeaders.cc
+sed -i -E --expr '/HttpTransactHeaders::add_forwarded_field_to_request/,/^}/s!lw << (.*);!hdr.write(\1);!' ${ATS}/proxy/http/HttpTransactHeaders.cc
+sed -i -E --expr '/HttpTransactHeaders::add_forwarded_field_to_request/,/^}/s!hdr.write[(](.*)" << (.*);!hdr.write(\1").write(\2;!' ${ATS}/proxy/http/HttpTransactHeaders.cc
+sed -i -E --expr '/HttpTransactHeaders::add_forwarded_field_to_request/,/^}/s!.fill[(]!.commit(!' ${ATS}/proxy/http/HttpTransactHeaders.cc
+sed -i -E --expr '/HttpTransactHeaders::add_forwarded_field_to_request/,/^}/s!.auxBuffer[(]!.aux_data(!' ${ATS}/proxy/http/HttpTransactHeaders.cc
+sed -i -E --expr 's!err\s*<<\s*(.*);!err.write(\1);!' ${ATS}/proxy/http/ForwardedConfig.cc
+sed -i -E --expr 's!.write[(]([^<]*)<<\s*(.*);!.write(\1).write(\2;!' ${ATS}/proxy/http/ForwardedConfig.cc
+sed -i -E --expr 's!.write[(]([^<]*)<<\s*(.*);!.write(\1).write(\2;!' ${ATS}/proxy/http/ForwardedConfig.cc
+sed -i -E --expr 's!error\s*<<\s*(.*);!error.write(\1);!' ${ATS}/proxy/http/unit_tests/test_ForwardedConfig.cc
+sed -i -E --expr 's!tscpp/util/BufferWriter[.]h!tscpp/util/bwf_base.h!' ${ATS}/proxy/IPAllow.cc
+sed -i -E --expr 's!<tscpp/util/BufferWriter[.]h>!"tscpp/util/bwf_base.h"!' ${ATS}/src/tscpp/util/unit_tests/test_IntrusiveHashMap.cc
+sed -i -E --expr 's!tscpp/util/BufferWriter[.]h!tscpp/util/bwf_base.h!' ${ATS}/src/tscore/unit_tests/test_History.cc
+sed -i -E --expr 's!tscpp/util/BufferWriter[.]h!tscpp/util/bwf_base.h!' ${ATS}/src/tscore/unit_tests/test_ink_inet.cc
+sed -i -E --expr 's!bw_err.reset!bw_err.clear!' ${ATS}/proxy/IPAllow.cc
+sed -i -E --expr 's!w[.]clip[(]!w.restrict(!' ${ATS}/mgmt/LocalManager.cc
+sed -i -E --expr 's!w[.]extend[(]!w.restore(!' ${ATS}/mgmt/LocalManager.cc
+sed -i -E --expr 's!w[.]reset[(]!w.clear(!' ${ATS}/src/tscore/unit_tests/test_History.cc
+sed -i -E --expr 's!w[.]reset[(]!w.clear(!' ${ATS}/src/tscore/unit_tests/test_ink_inet.cc
+
+sed -i -E --expr '/test_MIOBuffer/d' ${ATS}/iocore/eventsystem/Makefile.am
+sed -i -E --expr 's!test_Event \\!test_Event!' ${ATS}/iocore/eventsystem/Makefile.am
+
+# Need to enable IntrusiveDList and IntrusiveHashMap unit tests.
+if ! grep -q test_IntrusiveHashMap[.]cc ${ATS}/src/tscpp/util/Makefile.am ; then
+  sed -i -E --expr '\!unit_test_main!a\
+\tunit_tests/test_IntrusiveHashMap.cc \\' ${ATS}/src/tscpp/util/Makefile.am
+fi
+
+if ! grep -q test_IntrusiveDList[.]cc ${ATS}/src/tscpp/util/Makefile.am ; then
+  sed -i -E --expr '\!unit_test_main!a\
+\tunit_tests/test_IntrusiveDList.cc \\' ${ATS}/src/tscpp/util/Makefile.am
+fi
+
+# Bit of magic for final cleanup.
 sed -i -E --expr '96s!commit!fill!' ${ATS}/iocore/eventsystem/I_MIOBufferWriter.h
-sed -i -E --expr '140d' ${ATS}/iocore/eventsystem/I_MIOBufferWriter.h
-sed -i -E --expr '428,449d' ${ATS}/iocore/eventsystem/IOBuffer.cc
+sed -i -E --expr '/ssize_t operator>>/d' ${ATS}/iocore/eventsystem/I_MIOBufferWriter.h
+sed -i -E --expr '/^ssize_t/,$d' ${ATS}/iocore/eventsystem/IOBuffer.cc
+sed -i -E --expr '/^namespace/,/namespace/s!void!ts::BufferWriter\&!' ${ATS}/proxy/http/HttpProxyServerMain.cc
+sed -i -E --expr '/^namespace/,/namespace/s!(\s+)bwformat!\1return bwformat!' ${ATS}/proxy/http/HttpProxyServerMain.cc
 
-sed -i -E --expr '\!tscpp/util/TextView[.]h!a\
-#include "tscpp/util/bwf_base.h"' ${ATS}/src/tscore/ink_inet.cc
+(cd ${ATS}; make -j clang-format) > /dev/null
 
 exit 0
 
@@ -244,6 +296,13 @@ if cp include/swoc/TextView.h ${ATS}/include/tscpp/util/TextView.h ; then
   rewrite ${ATS}/include/tscpp/util/TextView.h
 else
   echo "Failed to copy TextView.h"
+  exit 1;
+fi
+
+if cp src/TextView.cc ${ATS}/src/tscpp/util/TextView.cc ; then
+  rewrite ${ATS}/src/tscpp/util/TextView.cc
+else
+  echo "Failed to copy TextView.cc"
   exit 1;
 fi
 
@@ -370,3 +429,39 @@ fi
 
 find ${ATS} \( -name '*.cc' -o -name '*.h' \) -exec sed -i -E -e 's!tscore/MemArena[.]h!tscpp/util/MemArena.h!' {} \;
 
+### IntrusiveHashMap
+if [ -f ${ATS}/include/tscore/IntrusiveHashMap.h ] ; then
+  (cd ${ATS}; git mv include/tscore/IntrusiveHashMap.h include/tscpp/util)
+  sed -i -E --expr '/IntrusiveHashMap[.h]/d' ${ATS}/src/tscore/Makefile.am
+  if ! grep -q IntrusiveHashMap[.]h ${ATS}/src/tscpp/util/Makefile.am ; then
+      sed -i -E --expr '\!IntrusiveDList!a\
+\tIntrusiveHashMap.h \\' ${ATS}/src/tscpp/util/Makefile.am
+  fi
+  if ! grep -q IntrusiveHashMap[.]h ${ATS}/include/tscpp/util/Makefile.am ; then
+      sed -i -E --expr '\!IntrusiveDList[.]h!a\
+\tIntrusiveHashMap.h \\' ${ATS}/include/tscpp/util/Makefile.am
+  fi
+#  if ! grep -q test_IntrusiveHashMap[.]cc ${ATS}/src/tscpp/util/Makefile.am ; then
+#      sed -i -E --expr '\!unit_test_main!a\
+##\tunit_tests/test_IntrusiveHashMap.cc \\ requires BufferWriter move to libtscpputil' ${ATS}/src/tscpp/util/Makefile.am
+#  fi
+  find ${ATS} \( -name '*.cc' -o -name '*.h' \) -exec sed -i -E -e 's!tscore/IntrusiveHashMap[.]h!tscpp/util/IntrusiveHashMap.h!' {} \;
+  find ${ATS} \( -name '*.cc' -o -name '*.h' \) -exec sed -i -E -e 's!IntrusiveHashMap<([^>]*)>!ts::IntrusiveHashMap<\1>!' {} \;
+fi
+
+if [ -f ${ATS}/src/tscore/unit_tests/test_IntrusiveHashMap.cc ] ; then
+  (cd ${ATS}; git mv src/tscore/unit_tests/test_IntrusiveHashMap.cc src/tscpp/util/unit_tests)
+  sed -i -E --expr '/test_IntrusiveHashMap[.]cc/d' ${ATS}/src/tscore/Makefile.am
+fi
+
+if cp src/unit_tests/test_IntrusiveHashMap.cc ${ATS}/src/tscpp/util/unit_tests ; then
+  rewrite ${ATS}/src/tscpp/util/unit_tests/test_IntrusiveHashMap.cc
+  sed -i -E --expr 's!tscpp/util/bwf_base.h!tscore/BufferWriter.h!' ${ATS}/src/tscore/Makefile.am
+fi
+
+if cp include/swoc/IntrusiveHashMap.h ${ATS}/include/tscpp/util ; then
+  rewrite ${ATS}/include/tscpp/util/IntrusiveHashMap.h
+else
+  echo "Failed to copy IntrusiveHashMap.h"
+  exit 1;
+fi
