@@ -315,3 +315,37 @@ TEST_CASE("TextView Conversions", "[libts][TextView]")
   REQUIRE(25 == svtoi(n3));
   REQUIRE(31 == svtoi(n3, nullptr, 10));
 }
+
+TEST_CASE("TransformView", "[libts][TransformView]")
+{
+  std::string_view source{"Evil Dave Rulz"};
+  swoc::TransformView<int (*)(int) noexcept, std::string_view> xv1(&tolower, source);
+  auto xv2 = swoc::transform_view_of(&tolower, source);
+  TextView tv{source};
+
+  REQUIRE(xv1 == xv2);
+
+  bool match_p = true;
+  while (xv1) {
+    if (*xv1 != tolower(*tv)) {
+      match_p = false;
+      break;
+    }
+    ++xv1;
+    ++tv;
+  }
+  REQUIRE(match_p);
+  REQUIRE(xv1 != xv2);
+
+  tv      = source;
+  match_p = true;
+  while (xv2) {
+    if (*xv2 != tolower(*tv)) {
+      match_p = false;
+      break;
+    }
+    ++xv2;
+    ++tv;
+  }
+  REQUIRE(match_p);
+};
