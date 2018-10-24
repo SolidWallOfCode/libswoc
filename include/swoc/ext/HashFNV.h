@@ -4,7 +4,7 @@
 
   Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
   See the NOTICE file distributed with this work for additional information regarding copyright
-  ownership.  The ASF licenses this fileN to you under the Apache License, Version 2.0 (the
+  ownership.  The ASF licenses this file to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance with the License.  You may obtain a
   copy of the License at
 
@@ -25,148 +25,169 @@
 #pragma once
 
 #include <cstdint>
+#include "swoc/TextView.h"
 
-struct Hash32_FNV {
-  using self_type                = Hash32_FNV;
+namespace swoc
+{
+struct Hash32FNV1a {
+protected:
+  using self_type                = Hash32FNV1a;
   static constexpr uint32_t INIT = 0x811c9dc5u;
 
-  Hash32_FNV();
+public:
+  using value_type = uint32_t;
 
-  template <typename XF> self_type &update(const void *data, size_t len, const XF &xf);
-  self_type &update(const void *data, size_t len);
+  Hash32FNV1a() = default;
+
+  self_type &update(std::string_view const &data);
 
   self_type & final();
+
+  value_type get() const;
+
   self_type &clear();
 
-  template <typename XF> uint32_t hash_immediate(const void *data, size_t len, const XF &xf);
+  template <typename X, typename V> self_type &update(TransformView<X, V> view);
 
-  operator uint32_t() const;
+  template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
+
+  value_type hash_immediate(std::string_view const &data);
 
 private:
-  uint32_t hval;
+  value_type hval{INIT};
 };
 
-struct Hash64_FNV {
-  using self_type                = Hash64_FNV;
+struct Hash64FNV1a {
+protected:
+  using self_type                = Hash64FNV1a;
   static constexpr uint64_t INIT = 0xcbf29ce484222325ull;
 
-  Hash64_FNV();
+public:
+  using value_type = uint64_t;
 
-  template <typename XF> self_type &update(const void *data, size_t len, const XF &xf);
-  self_type &update(const void *data, size_t len);
+  Hash64FNV1a() = default;
+
+  self_type &update(std::string_view const &data);
 
   self_type & final();
+
+  value_type get() const;
+
   self_type &clear();
 
-  template <typename XF> uint64_t hash_immediate(const void *data, size_t len, const XF &xf);
+  template <typename X, typename V> self_type &update(TransformView<X, V> view);
 
-  operator uint64_t() const;
+  template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
+
+  value_type hash_immediate(std::string_view const& data);
 
 private:
-  uint64_t hval;
+  value_type hval{INIT};
 };
 
 // ----------
 // Implementation
 
-inline Hash32_FNV::Hash32_FNV()
-{
-  this->clear();
-}
-
-inline Hash32_FNV::operator uint32_t() const
-{
-  return hval;
-}
+// -- 32 --
 
 inline auto
-Hash32_FNV::final() -> self_type &
-{
-  return *this;
-}
-
-inline auto
-Hash32_FNV::clear() -> self_type &
+Hash32FNV1a::clear() -> self_type &
 {
   hval = INIT;
   return *this;
 }
 
-template <typename XF>
+template <typename X, typename V>
 auto
-Hash32_FNV::update(const void *data, size_t len, const XF &xf) -> self_type &
+Hash32FNV1a::update(TransformView<X, V> view) -> self_type &
 {
-  const uint8_t *bp = static_cast<const uint8_t *>(data);
-  const uint8_t *be = bp + len;
-
-  for (; bp < be; ++bp) {
-    hval ^= static_cast<uint32_t>(xf(*bp));
+  for (; view; ++view) {
+    hval ^= static_cast<value_type>(*view);
     hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
   }
   return *this;
 }
 
 inline auto
-Hash32_FNV::update(const void *data, size_t len) -> self_type &
+Hash32FNV1a::update(std::string_view const &data) -> self_type &
 {
-  return this->update(data, len, [](uint8_t c) { return c; });
+  return this->update(transform_view_of(data));
 }
 
-template <typename XF>
-uint32_t
-Hash32_FNV::hash_immediate(const void *data, size_t len, const XF &xf)
+inline auto
+Hash32FNV1a::final() -> self_type &
 {
-  return this->update(data, len, xf).final();
+  return *this;
 }
 
-// ---
-
-inline Hash64_FNV::Hash64_FNV()
-{
-  this->clear();
-}
-
-inline Hash64_FNV::operator uint64_t() const
+inline auto
+Hash32FNV1a::get() const -> value_type
 {
   return hval;
 }
 
+template <typename X, typename V>
+auto
+Hash32FNV1a::hash_immediate(swoc::TransformView<X, V> const &view) -> value_type
+{
+  return this->update(view).get();
+}
+
 inline auto
-Hash64_FNV::clear() -> self_type &
+Hash32FNV1a::hash_immediate(std::string_view const &data) -> value_type
+{
+  return this->update(data).final().get();
+}
+
+// -- 64 --
+
+inline auto
+Hash64FNV1a::clear() -> self_type &
 {
   hval = INIT;
   return *this;
 }
 
-inline auto
-Hash64_FNV::final() -> self_type &
-{
-  return *this;
-}
-
-template <typename XF>
+template <typename X, typename V>
 auto
-Hash64_FNV::update(const void *data, size_t len, const XF &xf) -> self_type &
+Hash64FNV1a::update(TransformView<X, V> view) -> self_type &
 {
-  const uint8_t *bp = static_cast<const uint8_t *>(data);
-  const uint8_t *be = bp + len;
-
-  for (; bp < be; ++bp) {
-    hval ^= static_cast<uint64_t>(xf(*bp));
+  for (; view; ++view) {
+    hval ^= static_cast<value_type>(*view);
     hval += (hval << 1) + (hval << 4) + (hval << 5) + (hval << 7) + (hval << 8) + (hval << 40);
   }
   return *this;
 }
 
 inline auto
-Hash64_FNV::update(const void *data, size_t len) -> self_type &
+Hash64FNV1a::update(std::string_view const &data) -> self_type &
 {
-  return this->update(data, len, [](uint8_t c) { return c; });
+  return this->update(transform_view_of(data));
 }
 
-template <typename XF>
-uint64_t
-Hash64_FNV::hash_immediate(const void *data, size_t len, const XF &xf)
+inline auto
+Hash64FNV1a::final() -> self_type &
 {
-  return this->update(data, len, xf).final();
+  return *this;
 }
+
+inline auto
+Hash64FNV1a::get() const -> value_type
+{
+  return hval;
+}
+
+template <typename X, typename V>
+auto
+Hash64FNV1a::hash_immediate(swoc::TransformView<X, V> const &view) -> value_type
+{
+  return this->update(view).final().get();
+}
+
+inline auto
+Hash64FNV1a::hash_immediate(std::string_view const &data) -> value_type
+{
+  return this->update(data).final().get();
+}
+
+} // namespace swoc

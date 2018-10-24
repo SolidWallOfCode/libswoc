@@ -356,7 +356,7 @@ template <typename E>
 uint32_t
 Lexicon<E>::Item::NameLinkage::hash_of(std::string_view s)
 {
-  return Hash32_FNV().hash_immediate(s.data(), s.size(), [](uint8_t c) { return islower(c) ? toupper(c) : c; });
+  return Hash32FNV1a().hash_immediate(transform_view_of(&toupper, s));
 }
 
 template <typename E>
