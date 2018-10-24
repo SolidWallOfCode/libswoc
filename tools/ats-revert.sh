@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Need to run this in the libswoc directory.
-ATS=../work
+ATS=../ats
 
 function rewrite {
   sed -i -E --expr 's!swoc/swoc_meta!tscpp/util/ts_meta!g' $1
@@ -11,7 +11,35 @@ function rewrite {
   sed -i -E --expr 's!namespace swoc!namespace ts!g' $1
   sed -i -E --expr 's!ts/swoc_meta!tscpp/util/ts_meta!g' $1
   sed -i -E --expr 's!swoc_meta!ts_meta!g' $1
+  sed -i -E --expr 's![[]libswoc[]]![libtscpputil]!' $1
 }
+
+### Lexicon
+
+if cp include/swoc/Lexicon.h ${ATS}/include/tscpp/util ; then
+  rewrite ${ATS}/include/tscpp/util/Lexicon.h
+  (cd ${ATS};git add include/tscpp/util/Lexicon.h)
+else
+  echo "Failed to copy Lexicon.h"
+  exit 1;
+fi
+
+if [ -f ${ATS}/src/tscore/unit_tests/test_Lexicon.cc ] ; then
+  (cd ${ATS}; git mv src/tscore/unit_tests/test_Lexicon.cc src/tscpp/util/unit_tests)
+fi
+
+if cp src/unit_tests/test_Lexicon.cc ${ATS}/src/tscpp/util/unit_tests ; then
+  rewrite ${ATS}/src/tscpp/util/unit_tests/test_Lexicon.cc
+  if ! grep -q test_Lexicon[.]cc ${ATS}/src/tscpp/util/Makefile.am ; then
+      sed -i -E --expr '\!test_MemArena.cc!i\
+\tunit_tests/test_Lexicon.cc \\' ${ATS}/src/tscpp/util/Makefile.am
+  fi
+  if ! grep -q Lexicon[.]h ${ATS}/include/tscpp/util/Makefile.am ; then
+      sed -i -E --expr '\!MemArena!i\
+\tLexicon.h \\' ${ATS}/include/tscpp/util/Makefile.am
+  fi
+fi
+exit 0
 
 # Scalar
 if [ -f ${ATS}/include/tscore/Scalar.h ] ; then
@@ -409,6 +437,7 @@ fi
 
 if cp src/MemArena.cc ${ATS}/src/tscpp/util ; then
   rewrite ${ATS}/src/tscpp/util/MemArena.cc
+  sed -i -E --expr 's!tscpp/util/Scalar[.]h!tscore/Scalar.h!g' ${ATS}src/tscpp/util/MemArena.cc
 else
   echo "Failed to copy test_MemArena.cc"
   exit 1;
@@ -416,7 +445,6 @@ fi
 
 if cp src/unit_tests/test_MemArena.cc ${ATS}/src/tscpp/util/unit_tests/test_MemArena.cc ; then
   rewrite ${ATS}/src/tscpp/util/unit_tests/test_MemArena.cc
-  sed -i -E --expr 's!tscpp/util/Scalar[.]h!tscore/Scalar.h!g' ${ATS}src/tscpp/util/MemArena.cc
   sed -i -E --expr 'MemArena[.]cc/d' ${ATS}/src/tscore/Makefile.am
   if ! grep -q \\sMemArena[.]cc ${ATS}/src/tscpp/util/Makefile.am ; then
       sed -i -E --expr '\!PostScript[.]h!i\
