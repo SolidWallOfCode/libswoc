@@ -932,7 +932,7 @@ FixedBufferWriter::printv(bwf::Format const &fmt, std::tuple<Args...> const &arg
 // Special case support for @c Scalar, because @c Scalar is a base utility for some other utilities
 // there can be some unpleasant cirularities if @c Scalar includes BufferWriter formatting. If the
 // support is here then it's fine because anything using BWF for @c Scalar must include this header.
-template < intmax_t N, typename C, typename T > class Scalar;
+template <intmax_t N, typename C, typename T> class Scalar;
 namespace detail
 {
   template <typename T>

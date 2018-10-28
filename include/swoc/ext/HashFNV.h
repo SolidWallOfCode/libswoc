@@ -79,7 +79,7 @@ public:
 
   template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
 
-  value_type hash_immediate(std::string_view const& data);
+  value_type hash_immediate(std::string_view const &data);
 
 private:
   value_type hval{INIT};

@@ -298,7 +298,7 @@ protected:
   IntrusiveHashMap<typename Item::NameLinkage> _by_name;
   /// Access by value.
   IntrusiveHashMap<typename Item::ValueLinkage> _by_value;
-  NameDefault _name_default; ///< Name to return if no value not found.
+  NameDefault _name_default;   ///< Name to return if no value not found.
   ValueDefault _value_default; ///< Value to return if name not found.
 };
 
