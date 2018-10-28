@@ -240,7 +240,7 @@ public:
   /** Construct from span
    *
    */
-  FixedBufferWriter(const MemSpan &span);
+  FixedBufferWriter(MemSpan<char> const &span);
 
   /** Construct empty buffer.
    * This is useful for doing sizing before allocating a buffer.
@@ -256,8 +256,6 @@ public:
 
   /// Move assignment.
   FixedBufferWriter &operator=(FixedBufferWriter &&) = default;
-
-  FixedBufferWriter(MemSpan &span) : _buf(span.begin()), _capacity(static_cast<size_t>(span.size())) {}
 
   /// Write a single character @a c to the buffer.
   FixedBufferWriter &write(char c) override;
@@ -276,9 +274,6 @@ public:
 
   /// Get the start of the unused output buffer.
   char *aux_data() override;
-
-  /// Get the span of the unused output buffer
-  MemSpan aux_span();
 
   /// Get the total capacity of the output buffer.
   size_t capacity() const override;
@@ -403,6 +398,8 @@ inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _bu
   };
 }
 
+inline FixedBufferWriter::FixedBufferWriter(MemSpan<char> const &span) : _buf{span.begin()}, _capacity{span.size()} {}
+
 inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buf(nullptr), _capacity(0) {}
 
 inline FixedBufferWriter &
@@ -450,12 +447,6 @@ inline char *
 FixedBufferWriter::aux_data()
 {
   return error() ? nullptr : _buf + _attempted;
-}
-
-inline MemSpan
-FixedBufferWriter::aux_span()
-{
-  return error() ? MemSpan{} : MemSpan{_buf + _attempted, static_cast<ptrdiff_t>(this->remaining())};
 }
 
 inline auto
@@ -523,8 +514,8 @@ inline auto
 FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type &
 {
   auto limit = std::min<size_t>(_capacity, _attempted); // max offset of region possible.
-  MemSpan src_span{_buf + src, std::min<ptrdiff_t>(limit, src + n)};
-  MemSpan dst_span{_buf + dst, std::min<ptrdiff_t>(limit, dst + n)};
+  MemSpan<char> src_span{_buf + src, std::min(limit, src + n)};
+  MemSpan<char> dst_span{_buf + dst, std::min(limit, dst + n)};
   std::memmove(dst_span.data(), src_span.data(), std::min(dst_span.size(), src_span.size()));
   return *this;
 }

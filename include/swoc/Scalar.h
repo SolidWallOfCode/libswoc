@@ -111,7 +111,7 @@ namespace detail
   // Unit value, to be rounded up.
   template <typename C> struct scalar_unit_round_up_t {
     C _n;
-    //    template <typename I> constexpr operator scalar_unit_round_up_t<I>() { return {static_cast<I>(_n)}; }
+    //    template <typename I> constexpr operator scalar_unit_round_up_t<I>() { return {static_cast<I>(_size)}; }
     template <intmax_t N, typename I>
     constexpr I
     scale() const
@@ -122,7 +122,7 @@ namespace detail
   // Unit value, to be rounded down.
   template <typename C> struct scalar_unit_round_down_t {
     C _n;
-    //    template <typename I> operator scalar_unit_round_down_t<I>() { return {static_cast<I>(_n)}; }
+    //    template <typename I> operator scalar_unit_round_down_t<I>() { return {static_cast<I>(_size)}; }
     template <intmax_t N, typename I>
     constexpr I
     scale() const

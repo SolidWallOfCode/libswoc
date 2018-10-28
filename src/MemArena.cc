@@ -63,7 +63,7 @@ MemArena::make_block(size_t n)
   return new (::malloc(n)) Block(free_space);
 }
 
-MemSpan
+MemSpan<char>
 MemArena::alloc(size_t n)
 {
   Block *block = _active.head();

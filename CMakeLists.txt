@@ -18,7 +18,7 @@ set(core_headers
     include/swoc/bwf_base.h
     include/swoc/bwf_std.h
     include/swoc/bwf_ex.h
-        include/swoc/Errata.h
+    include/swoc/Errata.h
     include/swoc/swoc_file.h
     include/swoc/Lexicon.h
 )
@@ -34,7 +34,7 @@ set(lib_src
     src/bw_format.cc
     src/Errata.cc
     src/swoc_file.cc
-        include/swoc/bwf_printf.h)
+    include/swoc/bwf_printf.h)
 
 add_library(swoc++ STATIC "${core_headers}" "${ext_headers}" "${lib_src}")
 
@@ -54,8 +54,6 @@ add_executable(test_libswoc
     src/unit_tests/test_Lexicon.cc
     src/unit_tests/test_meta.cc)
 
-#find_library(POSIX_THREAD_LIB pthread)
-#target_link_libraries(test_libswoc swoc++ ${POSIX_THREAD_LIB})
 target_link_libraries(test_libswoc swoc++)
 
 install(TARGETS swoc++ ARCHIVE DESTINATION lib)

@@ -168,25 +168,27 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw.clear();
   bw.print("{}", int_ptr);
   REQUIRE(bw.view() == "0xbadd0956");
-  auto char_ptr = "good";
+  char char_ptr[] = "delain";
   bw.clear();
   bw.print("{:x}", static_cast<char *>(ptr));
   REQUIRE(bw.view() == "0xbadd0956");
   bw.clear();
   bw.print("{}", char_ptr);
-  REQUIRE(bw.view() == "good");
+  REQUIRE(bw.view() == "delain");
 
   swoc::MemSpan span{ptr, 0x200};
-  bw.clear();
-  bw.print("{}", span);
+  bw.clear().print("{}", span);
   REQUIRE(bw.view() == "0x200@0xbadd0956");
 
-  bw.clear();
-  bw.print("{::d}", swoc::MemSpan(const_cast<char *>(char_ptr), 4));
-  REQUIRE(bw.view() == "676f6f64");
-  bw.clear();
-  bw.print("{:#:d}", swoc::MemSpan(const_cast<char *>(char_ptr), 4));
-  REQUIRE(bw.view() == "0x676f6f64");
+  swoc::MemSpan cspan { char_ptr, 6 };
+  bw.clear().print("{::d}", cspan);
+  REQUIRE(bw.view() == "64 65 6c 61 69 6e");
+  bw.clear().print("{:#:d}", cspan);
+  REQUIRE(bw.view() == "0x64 0x65 0x6c 0x61 0x69 0x6e");
+  bw.clear().print("{:#.2:d}", cspan);
+  REQUIRE(bw.view() == "0x6465 0x6c61 0x696e");
+  bw.clear().print("{::d}", cspan.rebind());
+  REQUIRE(bw.view() == "64656c61696e");
 
   std::string_view sv{"abc123"};
   bw.clear();

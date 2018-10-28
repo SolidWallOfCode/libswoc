@@ -74,14 +74,14 @@ protected:
     size_t remaining() const;
 
     /// Span of unallocated storage.
-    MemSpan remnant();
+    MemSpan<char> remnant();
 
     /** Allocate @a n bytes from this block.
      *
      * @param n Number of bytes to allocate.
      * @return The span of memory allocated.
      */
-    MemSpan alloc(size_t n);
+    MemSpan<char> alloc(size_t n);
 
     /** Check if the byte at address @a ptr is in this block.
      *
@@ -137,7 +137,7 @@ public:
       @param n number of bytes to allocate.
       @return a MemSpan of the allocated memory.
    */
-  MemSpan alloc(size_t n);
+  MemSpan<char> alloc(size_t n);
 
   /** Allocate and initialize a block of memory.
 
@@ -191,7 +191,7 @@ public:
   size_t remaining() const;
 
   /// @returns the remaining contiguous space in the active generation.
-  MemSpan remnant();
+  MemSpan<char> remnant();
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -283,13 +283,13 @@ MemArena::Block::remaining() const
   return size - allocated;
 }
 
-inline MemSpan
+inline MemSpan<char>
 MemArena::Block::alloc(size_t n)
 {
   if (n > this->remaining()) {
     throw(std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
   }
-  MemSpan zret = this->remnant().prefix(n);
+  MemSpan<char> zret = this->remnant().prefix(n);
   allocated += n;
   return zret;
 }
@@ -303,10 +303,10 @@ MemArena::make(Args &&... args)
 
 inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
 
-inline MemSpan
+inline MemSpan<char>
 MemArena::Block::remnant()
 {
-  return {this->data() + allocated, static_cast<ptrdiff_t>(this->remaining())};
+  return {this->data() + allocated, this->remaining()};
 }
 
 inline size_t
@@ -327,10 +327,10 @@ MemArena::remaining() const
   return _active.empty() ? 0 : _active.head()->remaining();
 }
 
-inline MemSpan
+inline MemSpan<char>
 MemArena::remnant()
 {
-  return _active.empty() ? MemSpan() : _active.head()->remnant();
+  return _active.empty() ? MemSpan<char>() : _active.head()->remnant();
 }
 
 inline size_t

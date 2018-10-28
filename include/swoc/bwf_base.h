@@ -765,8 +765,20 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr)
 }
 
 // MemSpan
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan const &span);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span);
 
+template <typename T>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<T> const &span)
+{
+  bwf::Spec s{spec};
+  // If the precision isn't already specified, make it the size of the objects in the span.
+  // This will break the output into blocks of that size.
+  if (spec._prec <= 0) {
+    s._prec = sizeof(T);
+  }
+  return bwformat(w, s, span.template rebind<void>());
+};
 // -- Common formatters --
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv);
@@ -867,14 +879,6 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bool f)
   return w;
 }
 
-// Generically a stream operator is a formatter with the default specification.
-template <typename V>
-BufferWriter &
-operator<<(BufferWriter &w, V &&v)
-{
-  return bwformat(w, bwf::Spec::DEFAULT, std::forward<V>(v));
-}
-
 // std::string support
 /** Print to a @c std::string
 
@@ -958,6 +962,14 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, Scalar<N, C, T> const &x)
     detail::tag_label<T>(w, spec, meta::CaseArg);
   }
   return w;
+}
+
+// Generically a stream operator is a formatter with the default specification.
+template <typename V>
+BufferWriter &
+operator<<(BufferWriter &w, V &&v)
+{
+  return bwformat(w, bwf::Spec::DEFAULT, std::forward<V>(v));
 }
 
 } // namespace swoc

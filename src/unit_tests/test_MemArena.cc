@@ -180,10 +180,10 @@ TEST_CASE("MemArena helper", "[libswoc][MemArena]")
 TEST_CASE("MemArena large alloc", "[libswoc][MemArena]")
 {
   swoc::MemArena arena;
-  swoc::MemSpan s = arena.alloc(4000);
+  auto s = arena.alloc(4000);
   REQUIRE(s.size() == 4000);
 
-  swoc::MemSpan s_a[10];
+  decltype(s) s_a[10];
   s_a[0] = arena.alloc(100);
   s_a[1] = arena.alloc(200);
   s_a[2] = arena.alloc(300);
@@ -254,7 +254,7 @@ TEST_CASE("MemArena full blocks", "[libswoc][MemArena]")
 TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
 {
   MemArena a1;
-  MemSpan span;
+  MemSpan<char> span;
   {
     MemArena a2{512};
     span = a2.alloc(128);

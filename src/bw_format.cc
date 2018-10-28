@@ -688,17 +688,25 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv)
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan const &span)
+bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span)
 {
-  static const bwf::Format default_fmt{"{:#x}@{:p}"};
   if (spec._ext.size() && 'd' == spec._ext.front()) {
     const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
-    if (spec._radix_lead_p) {
-      w.write('0');
-      w.write(digits[33]);
+    size_t block = spec._prec > 0 ? spec._prec : span.size();
+    TextView view { span.view() };
+    bool space_p = false;
+    while (view) {
+      if (space_p) w.write(' ');
+      space_p = true;
+      if (spec._radix_lead_p) {
+        w.write('0');
+        w.write(digits[33]);
+      }
+      bwf::Hex_Dump(w, view.prefix(block), digits);
+      view.remove_prefix(block);
     }
-    bwf::Hex_Dump(w, span.view(), digits);
   } else {
+    static const bwf::Format default_fmt{"{:#x}@{:p}"};
     w.print(default_fmt, span.size(), span.data());
   }
   return w;

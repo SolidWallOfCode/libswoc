@@ -152,10 +152,10 @@ protected:
     std::string_view localize(std::string_view src);
 
     /// Get the remnant of the curret block in the arena.
-    swoc::MemSpan remnant();
+    swoc::MemSpan<char> remnant();
 
     /// Allocate from the arena.
-    swoc::MemSpan alloc(size_t n);
+    swoc::MemSpan<char> alloc(size_t n);
 
     /// Reference count.
     std::atomic<int> _ref_count{0};
@@ -349,7 +349,7 @@ protected:
    * @param n Number of bytes to allocate.
    * @return A span of the allocated memory.
    */
-  MemSpan alloc(size_t n);
+  MemSpan<char> alloc(size_t n);
 
   /// Add a note which is already localized.
   self_type &note_localized(Severity, std::string_view const &text);
@@ -603,13 +603,13 @@ inline Errata::Data::Data(MemArena &&arena)
   _arena = std::move(arena);
 }
 
-inline swoc::MemSpan
+inline swoc::MemSpan<char>
 Errata::Data::remnant()
 {
   return _arena.remnant();
 }
 
-inline swoc::MemSpan
+inline swoc::MemSpan<char>
 Errata::Data::alloc(size_t n)
 {
   return _arena.alloc(n);
@@ -631,7 +631,7 @@ inline Errata::Errata(self_type &&that)
   std::swap(_data, that._data);
 }
 
-inline Errata::Errata(const self_type &that)
+inline Errata::Errata(self_type const &that)
 {
   if (nullptr != (_data = that._data)) {
     ++(_data->_ref_count);
@@ -728,8 +728,8 @@ Errata::note_v(Severity level, std::string_view fmt, std::tuple<Args...> const &
   auto span  = data->remnant();
   FixedBufferWriter bw{span};
   if (!bw.printv(fmt, args).error()) {
+    span = span.prefix(bw.extent());
     data->alloc(bw.extent()); // reserve the part of the remnant actually used.
-    span.remove_suffix(bw.aux_data());
   } else {
     // Not enough space, get a big enough chunk and do it again.
     span = this->alloc(bw.extent());
