@@ -692,11 +692,12 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span)
 {
   if (spec._ext.size() && 'd' == spec._ext.front()) {
     const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
-    size_t block = spec._prec > 0 ? spec._prec : span.size();
-    TextView view { span.view() };
+    size_t block       = spec._prec > 0 ? spec._prec : span.size();
+    TextView view{span.view()};
     bool space_p = false;
     while (view) {
-      if (space_p) w.write(' ');
+      if (space_p)
+        w.write(' ');
       space_p = true;
       if (spec._radix_lead_p) {
         w.write('0');

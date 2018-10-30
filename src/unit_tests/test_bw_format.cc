@@ -180,7 +180,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw.clear().print("{}", span);
   REQUIRE(bw.view() == "0x200@0xbadd0956");
 
-  swoc::MemSpan cspan { char_ptr, 6 };
+  swoc::MemSpan cspan{char_ptr, 6};
   bw.clear().print("{::d}", cspan);
   REQUIRE(bw.view() == "64 65 6c 61 69 6e");
   bw.clear().print("{:#:d}", cspan);

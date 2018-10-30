@@ -56,12 +56,14 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   REQUIRE(sp2.count() == 2 * idx_span.count());
   REQUIRE(sp2[0] == 0);
   REQUIRE(sp2[1] == 0);
-  // exactly one of le,be must be true.
+  // exactly one of { le, be } must be true.
   bool le = sp2[2] == 1 && sp2[3] == 0;
   bool be = sp2[2] == 0 && sp2[3] == 1;
   REQUIRE(le != be);
+  auto idx2 = sp2.rebind<int32_t>(); // still the same if converted back to original?
+  REQUIRE(idx_span.is_same(idx2));
 
-  // Verify size is preserved when rebinding to types that dont' evenly match the size.
+  // Verify attempts to rebind on non-integral sized arrays fails.
   span.assign(buff, 1022);
   REQUIRE(span.size() == 1022);
   REQUIRE(span.count() == 1022);
@@ -76,4 +78,17 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   // Check for assignment to void.
   vs = span;
   REQUIRE(vs.size() == 1022);
-}
+
+  // Test array constructors.
+  MemSpan<char> a{buff};
+  REQUIRE(a.size() == sizeof(buff));
+  REQUIRE(a.data() == buff);
+  float floats[] = {1.1, 2.2, 3.3, 4.4, 5.5};
+  MemSpan<float> fspan{floats};
+  REQUIRE(fspan.count() == 5);
+  REQUIRE(fspan[3] == 4.4f);
+  MemSpan<float> f2span{floats, floats + 5};
+  REQUIRE(fspan.data() == f2span.data());
+  REQUIRE(fspan.count() == f2span.count());
+  REQUIRE(fspan.is_same(f2span));
+};
