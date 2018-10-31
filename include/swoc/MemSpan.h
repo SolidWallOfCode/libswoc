@@ -418,6 +418,8 @@ namespace detail
 
 } // namespace detail
 
+// --- Standard memory operations ---
+
 template <typename T>
 int
 memcmp(MemSpan<T> const &lhs, MemSpan<T> const &rhs)
@@ -441,8 +443,6 @@ memcmp(MemSpan<T> const &lhs, MemSpan<T> const &rhs)
 
   return zret;
 }
-// need to bring memcmp in so this is an overload, not an override.
-using std::memcmp;
 
 template <typename T>
 inline T *
@@ -450,6 +450,8 @@ memcpy(MemSpan<T> &dst, T *src)
 {
   return memcpy(dst.data(), src, dst.size());
 }
+// need to bring memcmp in so this is an overload, not an override.
+using std::memcmp;
 
 template <typename T>
 inline T *
@@ -457,8 +459,42 @@ memcpy(T *dst, MemSpan<T> &src)
 {
   return memcpy(dst, src.data(), src.size());
 }
-
 using std::memcpy;
+
+template <typename T>
+inline MemSpan<T> const&
+memset(MemSpan<T> const& dst, T const& t)
+{
+  for ( auto & e : dst ) {
+    e = t;
+  }
+  return dst;
+}
+
+inline MemSpan<char> const&
+memset(MemSpan<char> const& dst, char c)
+{
+  std::memset(dst.data(), c, dst.size());
+  return dst;
+}
+
+inline MemSpan<unsigned char> const&
+memset(MemSpan<unsigned char> const& dst, unsigned char c)
+{
+  std::memset(dst.data(), c, dst.size());
+  return dst;
+}
+
+inline MemSpan<void> const&
+memset(MemSpan<void> const& dst, char c)
+{
+  std::memset(dst.data(), c, dst.size());
+  return dst;
+}
+
+using std::memset;
+
+// --- MemSpan<T> ---
 
 template <typename T> constexpr MemSpan<T>::MemSpan(T *ptr, size_t count) : _ptr{ptr}, _count{count} {}
 

@@ -233,8 +233,8 @@ TEST_CASE("MemArena full blocks", "[libswoc][MemArena]")
   size_t init_size = 32000;
   swoc::MemArena arena(init_size);
 
-  MemSpan m1{arena.alloc(init_size - 64).rebind<char>()};
-  MemSpan m2{arena.alloc(32000).rebind<char>()};
+  MemSpan m1{arena.alloc(init_size - 64).rebind<uint8_t>()};
+  MemSpan m2{arena.alloc(32000).rebind<unsigned char>()};
   MemSpan m3{arena.alloc(64000).rebind<char>()};
 
   REQUIRE(arena.remaining() >= 64);
@@ -242,13 +242,13 @@ TEST_CASE("MemArena full blocks", "[libswoc][MemArena]")
   REQUIRE(arena.reserved_size() < 2 * (32000 + 64000 + init_size));
 
   // Let's see if that memory is really there.
-  memset(m1.data(), 0xa5, m1.size());
-  memset(m2.data(), 0xc2, m2.size());
-  memset(m3.data(), 0x56, m3.size());
+  memset(m1, 0xa5);
+  memset(m2, 0xc2);
+  memset(m3, 0x56);
 
   REQUIRE(std::all_of(m1.begin(), m1.end(), [](uint8_t c) { return 0xa5 == c; }));
-  REQUIRE(std::all_of(m2.begin(), m2.end(), [](uint8_t c) { return 0xc2 == c; }));
-  REQUIRE(std::all_of(m3.begin(), m3.end(), [](uint8_t c) { return 0x56 == c; }));
+  REQUIRE(std::all_of(m2.begin(), m2.end(), [](unsigned char c) { return 0xc2 == c; }));
+  REQUIRE(std::all_of(m3.begin(), m3.end(), [](char c) { return 0x56 == c; }));
 }
 
 TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
