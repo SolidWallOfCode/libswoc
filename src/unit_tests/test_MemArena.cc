@@ -128,7 +128,7 @@ TEST_CASE("MemArena helper", "[libswoc][MemArena]")
 
   swoc::MemArena arena{256};
   REQUIRE(arena.size() == 0);
-  swoc::MemSpan s = arena.alloc(56);
+  swoc::MemSpan s = arena.alloc(56).rebind<char>();
   REQUIRE(arena.size() == 56);
   REQUIRE(arena.remaining() >= 200);
   void *ptr = s.begin();
@@ -141,7 +141,7 @@ TEST_CASE("MemArena helper", "[libswoc][MemArena]")
   arena.freeze(128);
   REQUIRE(arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr + 100));
-  swoc::MemSpan s2 = arena.alloc(10);
+  swoc::MemSpan s2 = arena.alloc(10).rebind<char>();
   void *ptr2       = s2.begin();
   REQUIRE(arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr2));
@@ -207,9 +207,9 @@ TEST_CASE("MemArena large alloc", "[libswoc][MemArena]")
 TEST_CASE("MemArena block allocation", "[libswoc][MemArena]")
 {
   swoc::MemArena arena{64};
-  swoc::MemSpan s  = arena.alloc(32);
-  swoc::MemSpan s2 = arena.alloc(16);
-  swoc::MemSpan s3 = arena.alloc(16);
+  swoc::MemSpan s  = arena.alloc(32).rebind<char>();
+  swoc::MemSpan s2 = arena.alloc(16).rebind<char>();
+  swoc::MemSpan s3 = arena.alloc(16).rebind<char>();
 
   REQUIRE(s.size() == 32);
   REQUIRE(arena.allocated_size() == 64);
@@ -233,9 +233,9 @@ TEST_CASE("MemArena full blocks", "[libswoc][MemArena]")
   size_t init_size = 32000;
   swoc::MemArena arena(init_size);
 
-  MemSpan m1{arena.alloc(init_size - 64)};
-  MemSpan m2{arena.alloc(32000)};
-  MemSpan m3{arena.alloc(64000)};
+  MemSpan m1{arena.alloc(init_size - 64).rebind<char>()};
+  MemSpan m2{arena.alloc(32000).rebind<char>()};
+  MemSpan m3{arena.alloc(64000).rebind<char>()};
 
   REQUIRE(arena.remaining() >= 64);
   REQUIRE(arena.reserved_size() > 32000 + 64000 + init_size);
@@ -257,7 +257,7 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
   MemSpan<char> span;
   {
     MemArena a2{512};
-    span = a2.alloc(128);
+    span = a2.alloc(128).rebind<char>();
     REQUIRE(a2.contains(span.data()));
     a1 = std::move(a2);
   }

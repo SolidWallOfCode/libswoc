@@ -156,7 +156,7 @@ Errata::note_localized(Severity level, std::string_view const &text)
 MemSpan<char>
 Errata::alloc(size_t n)
 {
-  return this->writeable_data()->_arena.alloc(n);
+  return this->writeable_data()->_arena.alloc(n).rebind<char>();
 }
 
 Errata &

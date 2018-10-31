@@ -606,13 +606,13 @@ inline Errata::Data::Data(MemArena &&arena)
 inline swoc::MemSpan<char>
 Errata::Data::remnant()
 {
-  return _arena.remnant();
+  return _arena.remnant().rebind<char>();
 }
 
 inline swoc::MemSpan<char>
 Errata::Data::alloc(size_t n)
 {
-  return _arena.alloc(n);
+  return _arena.alloc(n).rebind<char>();
 }
 
 inline bool
