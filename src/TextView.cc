@@ -91,6 +91,34 @@ swoc::svtoi(TextView src, TextView *out, int base)
 {
   intmax_t zret = 0;
 
+  if (src.ltrim_if(&isspace) && src) {
+    TextView parsed;
+    const char *start = src.data();
+    bool neg          = false;
+    if ('-' == *src) {
+      ++src;
+      neg = true;
+    } else if ('+' == *src) {
+      ++src;
+    }
+    zret = intmax_t(svtou(src, &parsed, base));
+    if (!parsed.empty()) {
+      if (out) {
+        out->assign(start, parsed.data_end());
+      }
+      if (neg) {
+        zret = -zret;
+      }
+    }
+  }
+  return zret;
+}
+
+uintmax_t
+swoc::svtou(TextView src, TextView *out, int base)
+{
+  uintmax_t zret = 0;
+
   if (out) {
     out->clear();
   }
@@ -100,11 +128,6 @@ swoc::svtoi(TextView src, TextView *out, int base)
   if (src.ltrim_if(&isspace) && src) {
     const char *start = src.data();
     int8_t v;
-    bool neg = false;
-    if ('-' == *src) {
-      ++src;
-      neg = true;
-    }
     // If base is 0, it wasn't specified - check for standard base prefixes
     if (0 == base) {
       base = 10;
@@ -137,12 +160,8 @@ swoc::svtoi(TextView src, TextView *out, int base)
       break;
     }
 
-    if (out && (src.data() > (neg ? start + 1 : start))) {
+    if (out && (src.data() > start)) {
       out->assign(start, src.data());
-    }
-
-    if (neg) {
-      zret = -zret;
     }
   }
   return zret;

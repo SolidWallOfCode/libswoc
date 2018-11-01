@@ -462,31 +462,31 @@ memcpy(T *dst, MemSpan<T> &src)
 using std::memcpy;
 
 template <typename T>
-inline MemSpan<T> const&
-memset(MemSpan<T> const& dst, T const& t)
+inline MemSpan<T> const &
+memset(MemSpan<T> const &dst, T const &t)
 {
-  for ( auto & e : dst ) {
+  for (auto &e : dst) {
     e = t;
   }
   return dst;
 }
 
-inline MemSpan<char> const&
-memset(MemSpan<char> const& dst, char c)
+inline MemSpan<char> const &
+memset(MemSpan<char> const &dst, char c)
 {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
 
-inline MemSpan<unsigned char> const&
-memset(MemSpan<unsigned char> const& dst, unsigned char c)
+inline MemSpan<unsigned char> const &
+memset(MemSpan<unsigned char> const &dst, unsigned char c)
 {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
 
-inline MemSpan<void> const&
-memset(MemSpan<void> const& dst, char c)
+inline MemSpan<void> const &
+memset(MemSpan<void> const &dst, char c)
 {
   std::memset(dst.data(), c, dst.size());
   return dst;

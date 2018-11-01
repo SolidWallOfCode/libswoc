@@ -302,11 +302,15 @@ TEST_CASE("TextView Conversions", "[libts][TextView]")
   TextView n4 = "13f8q";
   TextView n5 = "0x13f8";
   TextView n6 = "0X13f8";
+  TextView n7 = "-2345679";
+  TextView n8 = "+2345679";
   TextView x;
   n2.ltrim_if(&isspace);
 
   REQUIRE(956783 == svtoi(n));
   REQUIRE(956783 == svtoi(n2));
+  REQUIRE(956783 == svtoi(n2, &x));
+  REQUIRE(x == n2);
   REQUIRE(0x13f8 == svtoi(n4, &x, 16));
   REQUIRE(x == "13f8");
   REQUIRE(0x13f8 == svtoi(n5));
@@ -314,6 +318,13 @@ TEST_CASE("TextView Conversions", "[libts][TextView]")
 
   REQUIRE(25 == svtoi(n3));
   REQUIRE(31 == svtoi(n3, nullptr, 10));
+
+  REQUIRE(-2345679 == svtoi(n7));
+  REQUIRE(-2345679 == svtoi(n7, &x));
+  REQUIRE(x == n7);
+  REQUIRE(2345679 == svtoi(n8));
+  REQUIRE(2345679 == svtoi(n8, &x));
+  REQUIRE(x == n8);
 }
 
 TEST_CASE("TransformView", "[libts][TransformView]")

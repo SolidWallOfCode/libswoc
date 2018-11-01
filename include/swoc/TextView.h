@@ -518,17 +518,30 @@ protected:
 // Internal character conversion table.
 // Converts a character to the numeric digit value, or negative if the character is not a valid digit.
 extern const int8_t svtoi_convert[256];
-;
 
-/** Convert the text in @c TextView @a src to a numeric value.
+/** Convert the text in @c TextView @a src to a signed numeric value.
 
     If @a parsed is non-null then the part of the string actually parsed is placed there.
-    @a base sets the conversion base. This defaults to 10 with two special cases:
+    @a base sets the conversion base. If not set base 10 is used with two special cases:
 
     - If the number starts with a literal '0' then it is treated as base 8.
     - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
+
+    If @a base is explicitly set then any leading radix indicator is not supported.
 */
 intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
+
+/** Convert the text in @c TextView @a src to an unsigned numeric value.
+
+    If @a parsed is non-null then the part of the string actually parsed is placed there.
+    @a base sets the conversion base. If not set base 10 is used with two special cases:
+
+    - If the number starts with a literal '0' then it is treated as base 8.
+    - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
+
+    If @a base is explicitly set then any leading radix indicator is not supported.
+*/
+uintmax_t svtou(TextView src, TextView *parsed = nullptr, int base = 0);
 
 /** Convert the text in @c src to an unsigned numeric value.
  *
@@ -537,9 +550,9 @@ intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
  * @return The converted numeric value.
  *
  * This is a specialized function useful only where conversion performance is critical. It is used
- * inside @c svtoi for the common cases of 8, 10, and 16, therefore normally this isn't much more
- * performant in those cases than just @c svtoi. Because of this only positive values are parsed.
- * If determining the radix from the text or signed value parsing is needed, used @c svtoi.
+ * inside @c svtoi and @c svtou for the common cases of 8, 10, and 16, therefore normally this isn't
+ * much more performant than @c svtoi. Because of this only positive values are parsed. If
+ * determining the radix from the text or signed value parsing is needed, used @c svtoi.
  *
  * @a src is updated in place to indicate what characters were parsed. Parsing stops on the first
  * invalid digit, so any leading non-digit characters (e.g. whitespace) must already be removed.
