@@ -260,11 +260,11 @@ namespace bwf
      * @param name Name associated with the @a generator.
      * @param generator The generator function.
      */
-    self_type &assign(std::string_view name, const Generator &generator);
+    self_type &assign(std::string_view const &name, Generator const &generator);
 
   protected:
     /// Copy @a name in to local storage and return a view of it.
-    std::string_view localize(std::string_view name);
+    std::string_view localize(std::string_view const &name);
 
     using Map = std::unordered_map<std::string_view, Generator>;
     Map _map;              ///< Mapping of name -> generator
@@ -334,7 +334,7 @@ namespace bwf
      * @param bg A bound generator that requires no context.
      * @return @c *this
      */
-    self_type &assign(std::string_view name, const BoundGenerator &bg);
+    self_type &assign(std::string_view const &name, const BoundGenerator &bg);
 
     /// Inherit unbound generator assignment from the @c super_type.
     using super_type::assign;
@@ -509,7 +509,7 @@ namespace bwf
 
   template <typename F>
   std::string_view
-  NameBinding<F>::localize(std::string_view name)
+  NameBinding<F>::localize(std::string_view const &name)
   {
     auto span = _arena.alloc(name.size());
     memcpy(span.data(), name.data(), name.size());
@@ -518,10 +518,9 @@ namespace bwf
 
   template <typename F>
   auto
-  NameBinding<F>::assign(std::string_view name, const Generator &generator) -> self_type &
+  NameBinding<F>::assign(std::string_view const &name, Generator const &generator) -> self_type &
   {
-    name       = this->localize(name);
-    _map[name] = generator;
+    _map[this->localize(name)] = generator;
     return *this;
   }
 
@@ -544,6 +543,13 @@ namespace bwf
   GlobalNames::bind()
   {
     return _binding;
+  }
+
+  template <typename T>
+  auto
+  ContextNames<T>::assign(std::string_view const &name, BoundGenerator const &bg) -> self_type &
+  {
+    _binding.assign(name, bg);
   }
 
   /// --- Formatting ---
