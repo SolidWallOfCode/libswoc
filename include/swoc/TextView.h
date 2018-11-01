@@ -26,11 +26,8 @@
 
 #pragma once
 #include <bitset>
-#include <functional>
-#include <type_traits>
 #include <iosfwd>
 #include <memory.h>
-#include <algorithm>
 #include <string>
 #include <string_view>
 

@@ -28,6 +28,7 @@
 #include <string>
 #include <iosfwd>
 #include <string_view>
+#include <functional>
 #include <tuple>
 #include <any>
 
