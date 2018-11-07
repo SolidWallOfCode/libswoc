@@ -32,7 +32,7 @@
 using swoc::TextView;
 using namespace std::literals;
 
-TEST_CASE("TextView Constructor", "[libts][TextView]")
+TEST_CASE("TextView Constructor", "[libswoc][TextView]")
 {
   static std::string base = "Evil Dave Rulez!";
   TextView tv(base);
@@ -42,7 +42,7 @@ TEST_CASE("TextView Constructor", "[libts][TextView]")
   constexpr TextView d{"Grigor!"sv};
 }
 
-TEST_CASE("TextView Operations", "[libts][TextView]")
+TEST_CASE("TextView Operations", "[libswoc][TextView]")
 {
   TextView tv{"Evil Dave Rulez"};
   TextView tv_lower{"evil dave rulez"};
@@ -70,7 +70,7 @@ TEST_CASE("TextView Operations", "[libts][TextView]")
   REQUIRE(strcasecmp(nothing, tv) != 0);
 }
 
-TEST_CASE("TextView Trimming", "[libts][TextView]")
+TEST_CASE("TextView Trimming", "[libswoc][TextView]")
 {
   TextView tv("  Evil Dave Rulz   ...");
   TextView tv2{"More Text1234567890"};
@@ -81,7 +81,7 @@ TEST_CASE("TextView Trimming", "[libts][TextView]")
   REQUIRE("Evil Dave Rulz" == TextView(tv).trim(" ."));
 }
 
-TEST_CASE("TextView Find", "[libts][TextView]")
+TEST_CASE("TextView Find", "[libswoc][TextView]")
 {
   TextView addr{"172.29.145.87:5050"};
   REQUIRE(addr.find(':') == 13);
@@ -90,7 +90,7 @@ TEST_CASE("TextView Find", "[libts][TextView]")
   REQUIRE(addr.rfind('.') == 10);
 }
 
-TEST_CASE("TextView Affixes", "[libts][TextView]")
+TEST_CASE("TextView Affixes", "[libswoc][TextView]")
 {
   TextView s; // scratch.
   TextView tv1("0123456789;01234567890");
@@ -254,7 +254,7 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   REQUIRE(s.empty());
 };
 
-TEST_CASE("TextView Formatting", "[libts][TextView]")
+TEST_CASE("TextView Formatting", "[libswoc][TextView]")
 {
   TextView a("01234567");
   {
@@ -294,7 +294,7 @@ TEST_CASE("TextView Formatting", "[libts][TextView]")
   }
 }
 
-TEST_CASE("TextView Conversions", "[libts][TextView]")
+TEST_CASE("TextView Conversions", "[libswoc][TextView]")
 {
   TextView n  = "   956783";
   TextView n2 = n;
@@ -327,7 +327,7 @@ TEST_CASE("TextView Conversions", "[libts][TextView]")
   REQUIRE(x == n8);
 }
 
-TEST_CASE("TransformView", "[libts][TransformView]")
+TEST_CASE("TransformView", "[libswoc][TransformView]")
 {
   std::string_view source{"Evil Dave Rulz"};
   swoc::TransformView<int (*)(int) noexcept, std::string_view> xv1(&tolower, source);
@@ -360,3 +360,44 @@ TEST_CASE("TransformView", "[libts][TransformView]")
   }
   REQUIRE(match_p);
 };
+
+/* Test streaming token extraction which handles a separator and quotes.
+ */
+TEST_CASE("TextView Tokens", "[libswoc][textview][tokens]") {
+  auto tokenizer = [] (TextView & src, char sep) -> TextView {
+    TextView::size_type idx = 0;
+    char sep_list[3] = {'"', sep, 0 };
+    bool in_quote_p = false;
+    while (idx < src.size()) {
+      idx = src.find_first_of(sep_list, idx);
+      if (TextView::npos == idx) {
+        break;
+      } else if ('"' == src[idx]) {
+        in_quote_p = !in_quote_p;
+        ++idx;
+      } else if (sep == src[idx]) {
+        if (in_quote_p) {
+          ++idx;
+        } else {
+          break;
+        }
+      }
+    }
+    return src.take_prefix_at(idx).trim_if(&isspace).trim('"');
+  };
+
+ TextView src = "one, two";
+ REQUIRE(tokenizer(src, ',') == "one");
+ REQUIRE(tokenizer(src, ',') == "two");
+ REQUIRE(src.empty());
+ src = R"("one, two")"; // quotes around comma.
+ REQUIRE(tokenizer(src, ',') == "one, two");
+ REQUIRE(src.empty());
+ src = R"lol(one, "two" , "a,b  ", some "a,,b" stuff, last)lol";
+ REQUIRE(tokenizer(src, ',') == "one");
+REQUIRE(tokenizer(src, ',') == "two");
+REQUIRE(tokenizer(src, ',') == "a,b  ");
+REQUIRE(tokenizer(src, ',') == R"lol(some "a,,b" stuff)lol");
+REQUIRE(tokenizer(src, ',') == "last");
+REQUIRE(src.empty());
+}
