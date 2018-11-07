@@ -291,7 +291,7 @@ namespace bwf
     class Binding : public BoundNames
     {
     public:
-      Binding(const super_type::Map &map);
+      explicit Binding(const super_type::Map &map);
       BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
 
     protected:
@@ -464,7 +464,7 @@ namespace bwf
   inline BufferWriter &
   NilBoundNames::operator()(BufferWriter &, bwf::Spec const &) const
   {
-    throw std::runtime_error("Use of nil bound names in BW formating");
+    throw std::runtime_error("Use of nil bound names in BW formatting");
   }
 
   template <typename T> inline ContextNames<T>::Binding::Binding(Map const &map) : _map(map) {}
