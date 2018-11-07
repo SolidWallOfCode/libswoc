@@ -42,28 +42,10 @@ namespace swoc
 class MemArena
 {
   using self_type = MemArena; ///< Self reference type.
-protected:
+
+public:
   /// Simple internal arena block of memory. Maintains the underlying memory.
   struct Block {
-    size_t size;         ///< Actual block size.
-    size_t allocated{0}; ///< Current allocated (in use) bytes.
-    struct Linkage {
-      Block *_next{nullptr};
-      Block *_prev{nullptr};
-
-      static Block *&next_ptr(Block *);
-
-      static Block *&prev_ptr(Block *);
-    } _link;
-
-    /** Construct to have @a n bytes of available storage.
-     *
-     * Note this is descriptive - this presumes use via placement new and the size value describes
-     * memory already allocated immediately after this instance.
-     * @param n The amount of storage.
-     */
-    Block(size_t n);
-
     /// Get the start of the data in this block.
     char *data();
 
@@ -98,11 +80,33 @@ protected:
      * @param ptr Memory to be de-allocated.
      */
     static void operator delete(void *ptr);
+
+  protected:
+    friend MemArena;
+
+    /** Construct to have @a n bytes of available storage.
+     *
+     * Note this is descriptive - this presumes use via placement new and the size value describes
+     * memory already allocated immediately after this instance.
+     * @param n The amount of storage.
+     */
+    explicit Block(size_t n);
+
+    size_t size;         ///< Actual block size.
+    size_t allocated{0}; ///< Current allocated (in use) bytes.
+
+    struct Linkage {
+      Block *_next{nullptr};
+      Block *_prev{nullptr};
+
+      static Block *&next_ptr(Block *);
+
+      static Block *&prev_ptr(Block *);
+    } _link;
   };
 
   using BlockList = IntrusiveDList<Block::Linkage>;
 
-public:
   /** Construct with reservation hint.
    *
    * No memory is initially reserved, but when memory is needed this will be done so at least
@@ -207,6 +211,17 @@ public:
    * @return Total memory footprint.
    */
   size_t reserved_size() const;
+
+  using const_iterator = BlockList::const_iterator;
+  using iterator       = const_iterator; // only const iteration allowed on blocks.
+
+  /// Iterate over active blocks.
+  const_iterator begin() const;
+  const_iterator end() const;
+
+  /// Iterator over frozen blocks.
+  const_iterator frozen_begin() const;
+  const_iterator frozen_end() const;
 
 protected:
   /** Internally allocates a new block of memory of size @a n bytes.
@@ -337,6 +352,30 @@ inline size_t
 MemArena::reserved_size() const
 {
   return _active_reserved + _frozen_reserved;
+}
+
+inline auto
+MemArena::begin() const -> const_iterator
+{
+  return _active.begin();
+}
+
+inline auto
+MemArena::end() const -> const_iterator
+{
+  return _active.end();
+}
+
+inline auto
+MemArena::frozen_begin() const -> const_iterator
+{
+  return _frozen.begin();
+}
+
+inline auto
+MemArena::frozen_end() const -> const_iterator
+{
+  return _frozen.end();
 }
 
 } // namespace swoc
