@@ -41,18 +41,21 @@ add_library(swoc++ STATIC "${core_headers}" "${ext_headers}" "${lib_src}")
 add_executable(test_libswoc
     include/swoc/ext/catch.hpp
     src/unit_tests/unit_test_main.cc
-    src/unit_tests/test_TextView.cc
-    src/unit_tests/test_MemSpan.cc
-    src/unit_tests/test_MemArena.cc
+
     src/unit_tests/test_BufferWriter.cc
     src/unit_tests/test_bw_format.cc
+    src/unit_tests/test_Errata.cc
     src/unit_tests/test_IntrusiveDList.cc
     src/unit_tests/test_IntrusiveHashMap.cc
+    src/unit_tests/test_Lexicon.cc
+    src/unit_tests/test_MemSpan.cc
+    src/unit_tests/test_MemArena.cc
+    src/unit_tests/test_meta.cc
+    src/unit_tests/test_TextView.cc
     src/unit_tests/test_Scalar.cc
     src/unit_tests/test_swoc_file.cc
-    src/unit_tests/test_Errata.cc
-    src/unit_tests/test_Lexicon.cc
-    src/unit_tests/test_meta.cc)
+
+    src/unit_tests/ex_TextView.cc)
 
 target_link_libraries(test_libswoc swoc++)
 

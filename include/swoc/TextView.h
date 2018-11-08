@@ -112,9 +112,9 @@ public:
 
   /** Constructor from constant string.
 
-      Construct directly from an array of characters. All elements of the array are
-      included in the view unless the last element is nul, in which case it is elided.
-      If this is inapropriate then a constructor with an explicit size should be used.
+      Construct directly from an array of characters. All elements of the array are included in the
+      view unless the last element is nul, in which case it is elided. If this is inapropriate then
+      a constructor with an explicit size should be used.
 
       @code
         TextView a("A literal string");

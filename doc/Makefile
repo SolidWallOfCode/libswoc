@@ -24,6 +24,9 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html       to make standalone HTML files"
 
+uml:
+	@if [ ! -d uml ] ; then mkdir uml; fi
+
 html: uml ext/local-config.py
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b html $(srcdir) $(BUILDDIR)/html
 	@echo

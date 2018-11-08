@@ -4,20 +4,17 @@
 
     @section license License
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+    agreements.  See the NOTICE file distributed with this work for additional information regarding
+    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with the License.  You may
+    obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
     limitations under the License.
 */
 
@@ -360,44 +357,3 @@ TEST_CASE("TransformView", "[libswoc][TransformView]")
   }
   REQUIRE(match_p);
 };
-
-/* Test streaming token extraction which handles a separator and quotes.
- */
-TEST_CASE("TextView Tokens", "[libswoc][textview][tokens]") {
-  auto tokenizer = [] (TextView & src, char sep) -> TextView {
-    TextView::size_type idx = 0;
-    char sep_list[3] = {'"', sep, 0 };
-    bool in_quote_p = false;
-    while (idx < src.size()) {
-      idx = src.find_first_of(sep_list, idx);
-      if (TextView::npos == idx) {
-        break;
-      } else if ('"' == src[idx]) {
-        in_quote_p = !in_quote_p;
-        ++idx;
-      } else if (sep == src[idx]) {
-        if (in_quote_p) {
-          ++idx;
-        } else {
-          break;
-        }
-      }
-    }
-    return src.take_prefix_at(idx).trim_if(&isspace).trim('"');
-  };
-
- TextView src = "one, two";
- REQUIRE(tokenizer(src, ',') == "one");
- REQUIRE(tokenizer(src, ',') == "two");
- REQUIRE(src.empty());
- src = R"("one, two")"; // quotes around comma.
- REQUIRE(tokenizer(src, ',') == "one, two");
- REQUIRE(src.empty());
- src = R"lol(one, "two" , "a,b  ", some "a,,b" stuff, last)lol";
- REQUIRE(tokenizer(src, ',') == "one");
-REQUIRE(tokenizer(src, ',') == "two");
-REQUIRE(tokenizer(src, ',') == "a,b  ");
-REQUIRE(tokenizer(src, ',') == R"lol(some "a,,b" stuff)lol");
-REQUIRE(tokenizer(src, ',') == "last");
-REQUIRE(src.empty());
-}

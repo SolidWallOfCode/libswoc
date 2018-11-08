@@ -21,6 +21,7 @@ Solid Wall of C++
 
   preface.en
   code/meta.en
+  code/TextView.en
   code/Scalar.en
 
 Indices and tables
