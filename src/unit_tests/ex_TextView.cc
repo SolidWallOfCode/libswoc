@@ -32,28 +32,55 @@ using swoc::TextView;
 using namespace std::literals;
 
 // CSV parsing.
-namespace {
-
+namespace
+{
 // Standard results array so these names can be used repeatedly.
-std::array<char const*, 6> alphabet {{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot" }};
+std::array<char const *, 6> alphabet{{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot"}};
 
-void parse_csv(char const* value, std::function<void (TextView)> const& f) {
+void
+parse_csv(char const *value, std::function<void(TextView)> const &f)
+{
   TextView v(value, strlen(value));
   while (v) {
-    TextView token {v.take_prefix_at(',').trim_if(&isspace)};
+    TextView token{v.take_prefix_at(',').trim_if(&isspace)};
     if (token) { // skip empty tokens (double separators)
       f(token);
     }
   }
 }
 
+void
+parse_kw(TextView src, std::function<void(TextView, TextView)> const &f)
+{
+  while (src) {
+    TextView value{src.take_prefix_at(',').trim_if(&isspace)};
+    if (value) {
+      TextView key{value.take_prefix_at('=').rtrim_if(&isspace)};
+      f(key, value);
+    }
+  }
 }
 
-TEST_CASE("TextView Example CSV", "[libswoc][example][textview][csv]") {
-  char const* src = "alpha, bravo,charlie,  delta  ,echo ,, ,foxtrot";
+} // namespace
+
+TEST_CASE("TextView Example CSV", "[libswoc][example][textview][csv]")
+{
+  char const *src = "alpha, bravo,charlie,  delta  ,echo ,, ,foxtrot";
+  int idx         = 0;
+  parse_csv(src, [&](TextView tv) -> void { REQUIRE(tv == alphabet[idx++]); });
+};
+
+TEST_CASE("TextView Example KW", "[libswoc][example][textview][kw]")
+{
+  TextView src{"alpha=1, bravo= 2,charlie = 3,  delta =4  ,echo ,, ,foxtrot=6"};
   int idx = 0;
-  parse_csv(src, [&] (TextView tv) -> void {
-    REQUIRE(tv == alphabet[idx++]);
+  parse_kw(src, [&](TextView key, TextView value) -> void {
+    REQUIRE(key == alphabet[idx++]);
+    if (idx == 5) {
+      REQUIRE(!value);
+    } else {
+      REQUIRE(svtou(value) == idx);
+    }
   });
 };
 
