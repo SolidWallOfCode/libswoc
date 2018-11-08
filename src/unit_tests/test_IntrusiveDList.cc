@@ -30,135 +30,12 @@
 
 using swoc::IntrusiveDList;
 
-// --------------------
-// Code for documentation - placed here to guarantee the examples at least compile.
-// First so that additional tests do not require updating the documentation source links.
-
-class Message
+namespace
 {
-  using self_type = Message; ///< Self reference type.
-
-public:
-  // Message severity level.
-  enum Severity { LVL_DEBUG, LVL_INFO, LVL_WARN, LVL_ERROR };
-
-protected:
-  std::string _text; // Text of the message.
-  Severity _severity{LVL_DEBUG};
-  int _indent{0}; // indentation level for display.
-
-  // Intrusive list support.
-  struct Linkage {
-    static self_type *&next_ptr(self_type *); // Link accessor.
-    static self_type *&prev_ptr(self_type *); // Link accessor.
-
-    self_type *_next{nullptr}; // Forward link.
-    self_type *_prev{nullptr}; // Backward link.
-  } _link;
-
-  bool is_in_list() const;
-
-  friend class Container;
-};
-
-auto
-Message::Linkage::next_ptr(self_type *that) -> self_type *&
-{
-  return that->_link._next;
-}
-auto
-Message::Linkage::prev_ptr(self_type *that) -> self_type *&
-{
-  return that->_link._prev;
-}
-
-bool
-Message::is_in_list() const
-{
-  return _link._next || _link._prev;
-}
-
-class Container
-{
-  using self_type   = Container;
-  using MessageList = IntrusiveDList<Message::Linkage>;
-
-public:
-  ~Container();
-
-  template <typename... Args> self_type &debug(std::string_view fmt, Args &&... args);
-
-  size_t count() const;
-  self_type &clear();
-  Message::Severity max_severity() const;
-  void print() const;
-
-protected:
-  MessageList _msgs;
-};
-
-Container::~Container()
-{
-  this->clear(); // clean up memory.
-}
-
-auto
-Container::clear() -> self_type &
-{
-  Message *msg;
-  while (nullptr != (msg = _msgs.take_head())) {
-    delete msg;
-  }
-  _msgs.clear();
-  return *this;
-}
-
-size_t
-Container::count() const
-{
-  return _msgs.count();
-}
-
-template <typename... Args>
-auto
-Container::debug(std::string_view fmt, Args &&... args) -> self_type &
-{
-  Message *msg = new Message;
-  swoc::bwprintv(msg->_text, fmt, std::forward_as_tuple(args...));
-  msg->_severity = Message::LVL_DEBUG;
-  _msgs.append(msg);
-  return *this;
-}
-
-Message::Severity
-Container::max_severity() const
-{
-  auto spot = std::max_element(_msgs.begin(), _msgs.end(),
-                               [](Message const &lhs, Message const &rhs) { return lhs._severity < rhs._severity; });
-  return spot == _msgs.end() ? Message::Severity::LVL_DEBUG : spot->_severity;
-}
-
-void
-Container::print() const
-{
-  for (auto &&elt : _msgs) {
-    std::cout << static_cast<unsigned int>(elt._severity) << ": " << elt._text << std::endl;
-  }
-}
-
-TEST_CASE("IntrusiveDList Example", "[libswoc][IntrusiveDList]")
-{
-  Container container;
-
-  container.debug("This is message {}", 1);
-  REQUIRE(container.count() == 1);
-  // Destructor is checked for non-crashing as container goes out of scope.
-}
-
 struct Thing {
+  std::string _payload;
   Thing *_next{nullptr};
   Thing *_prev{nullptr};
-  std::string _payload;
 
   Thing(std::string_view text) : _payload(text) {}
 
@@ -168,6 +45,7 @@ struct Thing {
     {
       return t->_next;
     }
+
     static Thing *&
     prev_ptr(Thing *t)
     {
@@ -176,41 +54,9 @@ struct Thing {
   };
 };
 
-// Just for you, @maskit ! Demonstrating non-public links and subclassing.
-class PrivateThing : protected Thing
-{
-  using self_type  = PrivateThing;
-  using super_type = Thing;
+using ThingList = IntrusiveDList<Thing::Linkage>;
 
-public:
-  PrivateThing(std::string_view text) : super_type(text) {}
-
-  struct Linkage {
-    static self_type *&
-    next_ptr(self_type *t)
-    {
-      return swoc::ptr_ref_cast<self_type>(t->_next);
-    }
-    static self_type *&
-    prev_ptr(self_type *t)
-    {
-      return swoc::ptr_ref_cast<self_type>(t->_prev);
-    }
-  };
-
-  std::string const &
-  payload() const
-  {
-    return _payload;
-  }
-};
-
-// End of documentation example code.
-// If any lines above here are changed, the documentation must be updated.
-// --------------------
-
-using ThingList        = IntrusiveDList<Thing::Linkage>;
-using PrivateThingList = IntrusiveDList<PrivateThing::Linkage>;
+} // namespace
 
 TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
 {
@@ -282,14 +128,4 @@ TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
   list.insert_before(list.end(), new Thing("trailer"));
   REQUIRE(list.count() == 4);
   REQUIRE(list.tail()->_payload == "trailer");
-
-  PrivateThingList priv_list;
-  for (int i = 1; i <= 23; ++i) {
-    std::string name;
-    swoc::bwprint(name, "Item {}", i);
-    priv_list.append(new PrivateThing(name));
-    REQUIRE(priv_list.count() == i);
-  }
-  REQUIRE(priv_list.head()->payload() == "Item 1");
-  REQUIRE(priv_list.tail()->payload() == "Item 23");
 }

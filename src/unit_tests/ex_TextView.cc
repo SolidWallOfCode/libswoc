@@ -113,6 +113,7 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
         }
       }
     }
+
     // clip the token from @a src and trim whitespace.
     auto zret = src.take_prefix_at(idx).trim_if(&isspace);
     if (strip_quotes_p) {

@@ -407,6 +407,45 @@ ptr_ref_cast(P *&p)
   return *(u._t);
 };
 
+/** Utility class to provide intrusive links.
+ *
+ * @tparam T Class to link.
+ *
+ * The normal use is to declare this as a member to provide the links and the linkage functions.
+ * @code
+ * class Thing {
+ *   // blah blah
+ *   Thing* _next{nullptr};
+ *   Thing* _prev{nullptr};
+ *   using Linkage = swoc::IntrusiveLinkage<Thing, &Thing::_next, &Thing::_prev>;
+ * };
+ * using ThingList = swoc::IntrusiveDList<Thing::Linkage>;
+ * @endcode
+ * The template will default to the names '_next' and '_prev' therefore in the example it could
+ * have been done as
+ * @code
+ *   using Linkage = swoc::IntrusiveLinkage<Thing>;
+ * @endcode
+ */
+template <typename T, typename L> struct IntrusiveLinkageRebind {
+  static T *&next_ptr(T *thing); ///< Retrieve reference to next pointer.
+  static T *&prev_ptr(T *thing); ///< Retrive reference to previous pointer.
+};
+
+template <typename T, typename L>
+T *&
+IntrusiveLinkageRebind<T, L>::next_ptr(T *thing)
+{
+  return ptr_ref_cast<T>(L::next_ptr(thing));
+}
+
+template <typename T, typename L>
+T *&
+IntrusiveLinkageRebind<T, L>::prev_ptr(T *thing)
+{
+  return ptr_ref_cast<T>(L::prev_ptr(thing));
+}
+
 // --- Implementation ---
 
 template <typename L> IntrusiveDList<L>::const_iterator::const_iterator() {}

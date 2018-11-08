@@ -128,6 +128,7 @@ pygments_style = 'default'
 
 nitpicky = True
 nitpick_ignore = [ ('cpp:identifier', 'intmax_t')
+                 , ('cpp:identifier', 'size_t')
                  , ('cpp:identifier', 'unspecified_type')
                  , ('cpp:typeOrConcept', 'T') # template arg
                  , ('cpp:typeOrConcept', 'F') # template arg

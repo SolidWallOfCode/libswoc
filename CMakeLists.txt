@@ -55,6 +55,7 @@ add_executable(test_libswoc
     src/unit_tests/test_Scalar.cc
     src/unit_tests/test_swoc_file.cc
 
+    src/unit_tests/ex_IntrusiveDList.cc
     src/unit_tests/ex_TextView.cc)
 
 target_link_libraries(test_libswoc swoc++)
