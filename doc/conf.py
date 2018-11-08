@@ -50,12 +50,15 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.plantuml'
+    'sphinxcontrib.plantuml',
+    'local'
 ]
 
 #extensions += [
 #  'doxygen'
 #]
+
+exec(open('ext/local-config.py').read())
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -74,7 +77,7 @@ project = u'Solid Wall Of C++'
 copyright = u'{}, amc@apache.org'.format(date.today().year)
 
 # The full version, including alpha/beta/rc tags.
-release = "0.1"
+release = "1.0"
 # The short X.Y version.
 version = '.'.join(release.split('.', 2)[:2])
 
@@ -124,7 +127,9 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 nitpicky = True
-nitpick_ignore = [ ('cpp:typeOrConcept', 'T') # template arg
+nitpick_ignore = [ ('cpp:identifier', 'intmax_t')
+                 , ('cpp:identifier', 'unspecified_type')
+                 , ('cpp:typeOrConcept', 'T') # template arg
                  , ('cpp:typeOrConcept', 'F') # template arg
                  , ('cpp:typeOrConcept', 'Args') # variadic template arg
                  , ('cpp:typeOrConcept', 'Rest') # variadic template arg

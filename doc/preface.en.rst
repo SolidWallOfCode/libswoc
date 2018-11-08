@@ -1,5 +1,5 @@
-.. Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements. See the NOTICE file distributed with this work for
+.. Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+   agreements. See the NOTICE file distributed with this work for
    additional information regarding copyright ownership. The ASF licenses this file to you under the
    Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
    the License. You may obtain a copy of the License at
@@ -11,21 +11,16 @@
    or implied. See the License for the specific language governing permissions and limitations under
    the License.
 
-.. include:: ../common-defs.rst
+.. include:: common-defs.rst
 
 .. _preface:
 
 Preface
 *******
 
-The Solid Wall of C++ library is a collection of C++ classes and utilities that I have written find
-useful. You might find them useful as well. All of these are used in the Apache Traffic Server
-codebase, which is where I first developed them, along with some contributions. I have split them
-out in to this side project in order to
+The Solid Wall of C++ library is a collection of C++ classes and utilities. This code evolved out of infrastructure used in `Apache Traffic Server <https://trafficserver.apache.org>`__. The utilities had become useful enough there were requests to be able to use them in ATS plugins and other, unrelated projects. Hence this library. I hope you find it as useful as I have.
 
-*  Make them available to non-Traffic Server projects.
-
-*  Have a venue where I can do more rapidly development than is possible inside Traffic Server.
+Because this code is used inside an Apache Software Foundation project, it carries the ASF copyright. It is not, however, officially affiliated with the ASF. This is my personal project which I am pleased to share with the ASF and anyone else.
 
 Typographic Conventions
 =======================

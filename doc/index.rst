@@ -19,7 +19,9 @@ Solid Wall of C++
 .. toctree::
   :maxdepth: 1
 
-  preface/index.en
+  preface.en
+  code/meta.en
+  code/Scalar.en
 
 Indices and tables
 ==================
