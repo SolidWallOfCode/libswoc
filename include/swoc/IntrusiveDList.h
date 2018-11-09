@@ -88,7 +88,11 @@ template <typename L> class IntrusiveDList
 public:
   using self_type = IntrusiveDList; ///< Self reference type.
   /// The list item type.
-  using value_type = typename std::remove_pointer<typename std::remove_reference<decltype(L::next_ptr(nullptr))>::type>::type;
+  // Get the result of calling the pointer access function, then strip off reference and pointer
+  // qualifiers. @c nullptr is used instead of the pointer type because this is done precisely
+  // to find that type.
+  using value_type = typename std::remove_pointer<
+    typename std::remove_reference<typename std::invoke_result<decltype(L::next_ptr), nullptr_t>::type>::type>::type;
 
   /// Const iterator.
   class const_iterator

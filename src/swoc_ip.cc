@@ -29,8 +29,8 @@ using swoc::TextView;
 using swoc::svtoi;
 using swoc::svtou;
 
-namespace {
-
+namespace
+{
 // sockaddr::sin_len - call this with a sockaddr type and Meta_Case_arg to set the sin_len
 // member if it exists.
 template <typename T>
@@ -46,8 +46,12 @@ Set_Sockaddr_Len_Case(T *addr, swoc::meta::CaseTag<1>) -> decltype(T::sin_len, s
   addr->sin_len = sizeof(T);
 }
 
-template < typename T >
-void Set_Sockaddr_Len(T * addr) { Set_Sockaddr_Len_Case(addr, swoc::meta::CaseArg);}
+template <typename T>
+void
+Set_Sockaddr_Len(T *addr)
+{
+  Set_Sockaddr_Len_Case(addr, swoc::meta::CaseArg);
+}
 
 } // namespace
 
@@ -141,21 +145,21 @@ IpEndpoint::family_name(uint16_t family)
 {
   switch (family) {
   case AF_INET:
-    return "ipv4"sv;
+    return "ipv4"_sv;
   case AF_INET6:
-    return "ipv6"sv;
+    return "ipv6"_sv;
   case AF_UNIX:
-    return "unix"sv;
+    return "unix"_sv;
   case AF_UNSPEC:
-    return "unspec"sv;
+    return "unspec"_sv;
   }
-  return "unknown"sv;
+  return "unknown"_sv;
 }
 
 IpEndpoint &
 IpEndpoint::set_to_any(int family)
 {
-  ink_zero(*this);
+  memset(*this, 0, sizeof(*this));
   if (AF_INET == family) {
     sa4.sin_family      = family;
     sa4.sin_addr.s_addr = INADDR_ANY;
@@ -171,7 +175,7 @@ IpEndpoint::set_to_any(int family)
 IpEndpoint &
 IpEndpoint::set_to_loopback(int family)
 {
-  ink_zero(*this);
+  memset(*this, 0, sizeof(*this));
   if (AF_INET == family) {
     sa.sa_family        = family;
     sa4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -445,7 +449,7 @@ IpRange::parse(std::string_view src)
   static const uint64_t ones[]{UINT64_MAX, UINT64_MAX};
   static const IpAddr MAX_ADDR6{reinterpret_cast<in6_addr const &>(ones)};
 
-  auto idx = src.find_first_of("/-"sv);
+  auto idx = src.find_first_of("/-"_sv);
   if (idx != src.npos) {
     if (idx + 1 >= src.size()) { // must have something past the separator or it's bogus.
       ;                          // empty
@@ -453,7 +457,7 @@ IpRange::parse(std::string_view src)
       if (_min.parse(src.substr(0, idx))) { // load the address
         TextView parsed;
         src.remove_prefix(idx + 1); // drop address and separator.
-        int cidr = ts::svtoi(src, &parsed);
+        int cidr = svtou(src, &parsed);
         if (parsed.size() && 0 <= cidr) { // a cidr that's a positive integer.
           // Special case the cidr sizes for 0, maximum, and for IPv6 64 bit boundaries.
           if (_min.is_ip4()) {

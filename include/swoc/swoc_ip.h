@@ -28,7 +28,6 @@
 
 namespace swoc
 {
-
 class IpAddr; // forward declare.
 class IpRange;
 

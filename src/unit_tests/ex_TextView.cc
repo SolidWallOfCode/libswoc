@@ -180,7 +180,7 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
 
   // Test against ETAG like data.
   TextView tag = R"o("TAG956")o";
-  src = R"o("TAG1234", W/"TAG999", "TAG956", "TAG777")o";
+  src          = R"o("TAG1234", W/"TAG999", "TAG956", "TAG777")o";
   REQUIRE(match(tag, src));
   tag = R"o("TAG599")o";
   REQUIRE(!match(tag, src));
