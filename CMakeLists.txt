@@ -7,20 +7,21 @@ project(libswoc)
 include_directories(include)
 
 set(core_headers
-    include/swoc/swoc_meta.h
-    include/swoc/Scalar.h
-    include/swoc/TextView.h
-    include/swoc/IntrusiveDList.h
-    include/swoc/IntrusiveHashMap.h
-    include/swoc/MemSpan.h
-    include/swoc/MemArena.h
     include/swoc/BufferWriter.h
     include/swoc/bwf_base.h
     include/swoc/bwf_std.h
     include/swoc/bwf_ex.h
     include/swoc/Errata.h
-    include/swoc/swoc_file.h
+    include/swoc/IntrusiveDList.h
+    include/swoc/IntrusiveHashMap.h
+    include/swoc/swoc_ip.h
     include/swoc/Lexicon.h
+    include/swoc/MemArena.h
+    include/swoc/MemSpan.h
+    include/swoc/Scalar.h
+    include/swoc/TextView.h
+    include/swoc/swoc_file.h
+    include/swoc/swoc_meta.h
 )
 
 # These are external but required.
@@ -29,12 +30,14 @@ set(ext_headers
 )
 
 set(lib_src
-    src/TextView.cc
-    src/MemArena.cc
     src/bw_format.cc
     src/Errata.cc
+    src/swoc_ip.cc
+    src/MemArena.cc
     src/swoc_file.cc
-    include/swoc/bwf_printf.h)
+    src/TextView.cc
+    include/swoc/bwf_printf.h
+    )
 
 add_library(swoc++ STATIC "${core_headers}" "${ext_headers}" "${lib_src}")
 
