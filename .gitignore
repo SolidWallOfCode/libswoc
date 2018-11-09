@@ -31,6 +31,7 @@
 cmake-build-debug
 .idea
 doc/_build
+doc/doxy
 doc/ext/local-config.py
 doc/ext/__*
 CMakeFiles/

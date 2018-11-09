@@ -329,7 +329,7 @@ public:
 protected:
   value_type *_head{nullptr}; ///< First element in list.
   value_type *_tail{nullptr}; ///< Last element in list.
-  size_t _count{0};           ///< # of elements in list.
+  size_t _count{0};           ///< Number of elements in list.
 };
 
 /** Utility class to provide intrusive links.

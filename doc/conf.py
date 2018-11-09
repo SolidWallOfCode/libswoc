@@ -51,14 +51,17 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinxcontrib.plantuml',
+    'sphinxcontrib.doxylink',
+    'breathe',
     'local'
 ]
 
-#extensions += [
-#  'doxygen'
-#]
-
 exec(open('ext/local-config.py').read())
+
+breathe_projects = { "libswoc": "doxy/xml" }
+breathe_default_project = "libswoc"
+
+doxylink = { "libswoc" : ( 'doxy/libswoc.tag' , 'http://34.222.224.81/libswoc/doxygen' ) }
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -129,9 +132,12 @@ pygments_style = 'default'
 nitpicky = True
 nitpick_ignore = [ ('cpp:identifier', 'intmax_t')
                  , ('cpp:identifier', 'size_t')
+                 , ('cpp:identifier', 'self_type')
+                 , ('cpp:identifier', 'super_type')
                  , ('cpp:identifier', 'unspecified_type')
-                 , ('cpp:typeOrConcept', 'T') # template arg
-                 , ('cpp:typeOrConcept', 'F') # template arg
+                 , ('cpp:identifier', 'L') # template arg
+                 , ('cpp:identifier', 'T') # template arg
+                 , ('cpp:identifier', 'F') # template arg
                  , ('cpp:typeOrConcept', 'Args') # variadic template arg
                  , ('cpp:typeOrConcept', 'Rest') # variadic template arg
                  ]
@@ -290,54 +296,6 @@ latex_documents = [
 
 from docutils.transforms import frontmatter
 from sphinx.writers import manpage
-
-# Override ManualPageWriter and ManualPageTranslator in the only way
-# that Sphinx supports
-
-BaseWriter = manpage.ManualPageWriter
-
-
-class ManualPageWriter(BaseWriter):
-    def translate(self):
-        transform = frontmatter.DocTitle(self.document)
-
-        section, index = transform.candidate_index(self.document)
-        if index:
-
-            # A sentence after the title is the manual page description
-            if len(section) > 1 and isinstance(section[1], nodes.paragraph):
-
-                description = section.pop(1).astext()
-                description = description[:1].lower() + description[1:]
-                description = description.rstrip('.')
-
-                self.document.settings.subtitle = description
-
-            # Instead of section_level = -1, use the standard Docutils
-            # DocTitle transform to hide the top level title
-            transform.promote_title(self.document)
-
-        # The title is the manual page name
-        transform.set_metadata()
-
-        BaseWriter.translate(self)
-
-
-manpage.ManualPageWriter = ManualPageWriter
-
-BaseTranslator = manpage.ManualPageTranslator
-
-
-class ManualPageTranslator(BaseTranslator):
-    def __init__(self, builder, *args, **kwds):
-        BaseTranslator.__init__(self, builder, *args, **kwds)
-
-        # Instead of section_level = -1, use the standard Docutils
-        # DocTitle transform to hide the top level title
-        self.section_level = 0
-
-
-manpage.ManualPageTranslator = ManualPageTranslator
 
 # -- Options for Texinfo output ------------------------------------------------
 

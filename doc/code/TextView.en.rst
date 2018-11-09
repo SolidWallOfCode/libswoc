@@ -15,7 +15,7 @@
    specific language governing permissions and limitations
    under the License.
 
-.. include:: ../common.defs
+.. include:: ../common-defs.rst
 
 .. default-domain:: cpp
 .. highlight:: cpp
@@ -30,10 +30,10 @@ Synopsis
 
 .. class:: TextView
 
-This class acts as a view in to memory allocated / owned elsewhere. It is in effect a pointer and
+This class acts as a view of memory allocated / owned elsewhere. It is in effect a pointer and
 should be treated as such (e.g. care must be taken to avoid dangling references by knowing where the
-memory really is). The purpose is to provide string manipulation that is faster and safer than
-raw pointers or duplicating strings.
+memory really is). The purpose is to provide string manipulation that is faster and safer than raw
+pointers or duplicating strings.
 
 Description
 ===========
@@ -86,7 +86,7 @@ A secondary distinction is what is done by modifying methods if the selected cha
 Both of these cases are useful in different circumstances.
 
 As noted, :class:`TextView` is designed as a pointer style class. Therefore it has an increment
-operator which is equivalent to :func:`TextView::remove_prefix`, and a dereference operator, which
+operator which is equivalent to :libswoc:`TextView::remove_prefix`, and a dereference operator, which
 act the same way as on a pointer. The difference is the view knows where the end of the view is.
 This provides a comfortably familiar way of iterating through a view, the main difference being
 checking the view itself rather than a dereference of it (like a C-style string) or a range limit.
@@ -114,6 +114,27 @@ checking the view itself rather than a dereference of it (like a C-style string)
 Views are very cheap to construct therefore making a copy is a neglible expense. For this reason
 if it is necessary to remember places or parts of a view, it is better to create a :class:`TextView`
 instance that holds the location or substring rather than storing offsets or pointers.
+
+Basic Operations
+================
+
+:class:`TextView` is essentially a collection of operations which have been found to be common and
+useful in manipulating contiguous blocks of text.
+
+Construction
+------------
+
+Constructing a view means creating a view from another object which owns the memory (for creating
+views from other views see `Extraction`_).
+
+Searching
+---------
+
+Extraction
+----------
+
+Extraction is creating a new view from an existing view. Because views cannot in general be expanded
+new views will be sub-sequences of existing views.
 
 Parsing with TextView
 =====================

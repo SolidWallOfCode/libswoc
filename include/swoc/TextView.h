@@ -286,7 +286,7 @@ public:
   */
   template <typename F> self_type prefix_if(F const &pred) const;
 
-  /// Overload to provide better return type.
+  /// Drop the first @a n bytes from the view.
   self_type &remove_prefix(size_t n);
 
   /// Remove the prefix delimited by the first occurence of @a c.
