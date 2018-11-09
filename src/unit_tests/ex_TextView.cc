@@ -122,6 +122,35 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
     return zret;
   };
 
+  auto extract_tag = [](TextView src) -> TextView {
+    src.trim_if(&isspace);
+    if (src.prefix(2) == "W/"_sv) {
+      src.remove_prefix(2);
+    }
+    if (!src.empty() && *src == '"') {
+      src = (++src).take_prefix_at('"');
+    }
+    return src;
+  };
+
+  auto match = [&](TextView tag, TextView src, bool strong_p = true) -> bool {
+    if (strong_p && tag.prefix(2) == "W/"_sv) {
+      return false;
+    }
+    tag = extract_tag(tag);
+    while (src) {
+      TextView token{tokenizer(src, ',')};
+      if (!strong_p) {
+        token = extract_tag(token);
+      }
+      if (token == tag || token == "*"_sv) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Basic testing.
   TextView src = "one, two";
   REQUIRE(tokenizer(src, ',') == "one");
   REQUIRE(tokenizer(src, ',') == "two");
@@ -148,4 +177,22 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
   REQUIRE(tokenizer(src, ',', false) == R"lol(some "a,,b" stuff)lol");
   REQUIRE(tokenizer(src, ',', false) == "last");
   REQUIRE(src.empty());
+
+  // Test against ETAG like data.
+  TextView tag = R"o("TAG956")o";
+  src = R"o("TAG1234", W/"TAG999", "TAG956", "TAG777")o";
+  REQUIRE(match(tag, src));
+  tag = R"o("TAG599")o";
+  REQUIRE(!match(tag, src));
+  REQUIRE(match(tag, R"o("*")o"));
+  tag = R"o("TAG999")o";
+  REQUIRE(!match(tag, src));
+  REQUIRE(match(tag, src, false));
+  tag = R"o(W/"TAG777")o";
+  REQUIRE(!match(tag, src));
+  REQUIRE(match(tag, src, false));
+  tag = "TAG1234";
+  REQUIRE(match(tag, src));
+  REQUIRE(!match(tag, {})); // don't crash on empty source list.
+  REQUIRE(!match({}, src)); // don't crash on empty tag.
 }
