@@ -96,7 +96,7 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   REQUIRE("0123456789" == prefix);
   REQUIRE("67890" == tv1.suffix(5));
 
-  TextView tv2 = tv1.prefix(';');
+  TextView tv2 = tv1.prefix_at(';');
   REQUIRE(tv2 == "0123456789");
 
   TextView right{tv1};
@@ -107,7 +107,7 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   TextView tv3 = "abcdefg:gfedcba";
   left         = tv3;
   right        = left.split_suffix_at(";:,");
-  TextView pre{tv3}, post{pre.split_suffix_at(7)};
+  TextView pre{tv3}, post{pre.split_suffix(7)};
   REQUIRE(right.size() == 7);
   REQUIRE(left.size() == 7);
   REQUIRE(left == "abcdefg");
@@ -133,12 +133,12 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   REQUIRE("956" == t);
 
   t = addr3;
-  TextView sf{t.suffix(':')};
+  TextView sf{t.suffix_at(':')};
   REQUIRE("5050" == sf);
   REQUIRE(t == addr3);
 
   t = addr3;
-  s = t.split_suffix_at(11);
+  s = t.split_suffix(4);
   REQUIRE("5050" == s);
   REQUIRE("192.168.1.1" == t);
 
@@ -183,24 +183,24 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   // necessitates this workaround of failures in the string_view API. With a
   // TextView, it would just be repeated @c take_suffix_at('.')
   std::string_view fqdn{"bob.ne1.corp.ngeo.com"};
-  TextView elt{TextView{fqdn}.suffix('.')};
+  TextView elt{TextView{fqdn}.suffix_at('.')};
   REQUIRE(elt == "com");
 
   // Unroll loop for testing.
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix_at('.');
   REQUIRE(elt == "ngeo");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix_at('.');
   REQUIRE(elt == "corp");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix_at('.');
   REQUIRE(elt == "ne1");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix_at('.');
   REQUIRE(elt == "bob");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix_at('.');
   REQUIRE(elt.empty());
 
   // Check some edge cases.
@@ -223,18 +223,25 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   REQUIRE(token.size() == 0);
   REQUIRE(token.empty());
 
+  s = ".."sv;
+  REQUIRE(s.size() == 2);
+  token = s.take_suffix_at('.');
+  REQUIRE(token.size() == 0);
+  REQUIRE(token.empty());
+  REQUIRE(s.size() == 1);
+
   auto is_not_alnum = [](char c) { return !isalnum(c); };
 
   s = "file.cc";
-  REQUIRE(s.suffix('.') == "cc");
+  REQUIRE(s.suffix_at('.') == "cc");
   REQUIRE(s.suffix_if(is_not_alnum) == "cc");
-  REQUIRE(s.prefix('.') == "file");
+  REQUIRE(s.prefix_at('.') == "file");
   REQUIRE(s.prefix_if(is_not_alnum) == "file");
   s.remove_suffix_at('.');
   REQUIRE(s == "file");
   s = "file.cc.org.123";
-  REQUIRE(s.suffix('.') == "123");
-  REQUIRE(s.prefix('.') == "file");
+  REQUIRE(s.suffix_at('.') == "123");
+  REQUIRE(s.prefix_at('.') == "file");
   s.remove_suffix_if(is_not_alnum);
   REQUIRE(s == "file.cc.org");
   s.remove_suffix_at('.');
@@ -247,7 +254,7 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   s.remove_suffix_at('!');
   REQUIRE(s.empty());
   s = "file.cc.org";
-  s.remove_prefix('!');
+  s.remove_prefix_at('!');
   REQUIRE(s.empty());
 };
 
