@@ -22,6 +22,7 @@ Solid Wall of C++
   preface.en
   code/meta.en
   code/IntrusiveDList.en
+  code/MemArena.en
   code/TextView.en
   code/Scalar.en
 
