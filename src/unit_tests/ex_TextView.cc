@@ -24,6 +24,7 @@
 
 #include <array>
 #include <functional>
+#include <swoc/swoc_file.h>
 
 #include "swoc/TextView.h"
 #include "swoc/ext/catch.hpp"
@@ -115,7 +116,7 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
     }
 
     // clip the token from @a src and trim whitespace.
-    auto zret = src.take_prefix_at(idx).trim_if(&isspace);
+    auto zret = src.take_prefix(idx).trim_if(&isspace);
     if (strip_quotes_p) {
       zret.trim('"');
     }
@@ -196,3 +197,21 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
   REQUIRE(!match(tag, {})); // don't crash on empty source list.
   REQUIRE(!match({}, src)); // don't crash on empty tag.
 }
+
+// Example: line parsing from a file.
+
+TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]") {
+  swoc::file::path path{ "doc/conf.py" };
+  std::error_code ec;
+
+  auto content = swoc::file::load(path, ec);
+  size_t n_lines = 0;
+
+  TextView src { content };
+  while (! src.empty()) {
+    auto line = src.take_prefix_at('\n').trim_if(&isspace);
+    if (line.empty() || '#' == *line) continue;
+    ++n_lines;
+  }
+  REQUIRE(n_lines == 84);
+};

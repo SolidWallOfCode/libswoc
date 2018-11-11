@@ -13,6 +13,8 @@
 
 .. _meta:
 
+.. default-domain:: cpp
+
 Meta
 ****
 

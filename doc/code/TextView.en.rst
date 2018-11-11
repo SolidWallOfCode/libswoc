@@ -1,24 +1,23 @@
-.. Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
+.. Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+   agreements.  See the NOTICE file distributed with this work for additional information regarding
+   copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with the License.  You may obtain
+   a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing,
-   software distributed under the License is distributed on an
-   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-   KIND, either express or implied.  See the License for the
-   specific language governing permissions and limitations
+   Unless required by applicable law or agreed to in writing, software distributed under the License
+   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+   or implied.  See the License for the specific language governing permissions and limitations
    under the License.
 
 .. include:: ../common-defs.rst
 
 .. default-domain:: cpp
 .. highlight:: cpp
+.. |TV| replace:: :code:`TextView`
+
+.. _string-view: https://en.cppreference.com/w/cpp/string/basic_string_view
 
 TextView
 *************
@@ -30,66 +29,47 @@ Synopsis
 
 .. class:: TextView
 
-This class acts as a view of memory allocated / owned elsewhere. It is in effect a pointer and
-should be treated as such (e.g. care must be taken to avoid dangling references by knowing where the
-memory really is). The purpose is to provide string manipulation that is faster and safer than raw
-pointers or duplicating strings.
+   :libswoc:`Reference documentation <swoc::TextView>`.
+
+This class acts as a view of memory allocated / owned elsewhere and treated as a sequence of 8 bit
+characters. It is in effect a pointer and should be treated as such (e.g. care must be taken to
+avoid dangling references by knowing where the memory really is). The purpose is to provide string
+manipulation that is safer than raw pointers and much faster than duplicating strings.
 
 Description
 ===========
 
-:class:`TextView` is a subclass of :code:`std::string_view` and threfore has those methods. On top
-of that base it provides a number of ancillary methods to support commonly performed string
-manipulations.
+|TV| is a subclass of `std::string_view <string-view>`_ and inherits all of those methods.
+The additional functionality of |TV| is for easy string manipulation, with an emphasis
+on fast parsing of string data. As noted, an instance of |TV| is a pointer and needs to be handled
+as such. It does not own the memory and therefore, like a pointer, care must be taken that the
+memory is not deallocated while the |TV| still references it.
 
-A :class:`TextView` should be treated as an enhanced character pointer that both a location and a
-size. This is what makes it possible to pass substrings around without having to make copies or
-allocate additional memory. This comes at the cost of keeping track of the actual owner of the
-string memory and making sure the :class:`TextView` does not outlive the memory owner. This is
-identical to memory issues with a raw pointer and it is best to treat a :class:`TextView` the same
-way as a pointer. Any place that passes a :code:`char *` and a size is an excellent candidate for
-using a :class:`TextView` as it is more convenient and no more risky or expensive than the existing
-arguments.
+Any place that passes a :code:`char *` and a size is an excellent candidate for using a |TV|. Code
+that uses functions like :code:`strtok` or tracks pointers and offsets internall is an excellent
+candidate for using |TV| instead.
 
-In deciding between :code:`std::string_view` and :class:`TextView` remember these easily and cheaply
-cross convert. In general if the string is treated as a block of data, :code:`std::string_view` is
-better. If the contents of the string are to be examined / parsed then :class:`TextView` is better.
-For example, if the string is used simply as a key or a hash source, use :code:`std::string_view`.
-Contrariwise if the string may contain substrings of interest such as key / value pairs, then use a
-:class:`TextView`.
+Because |TV| is a subclass of :code:`std::string_view` it can be unclear which is a better choice.
+In many cases it doesn't matter, since because of this relationship converting between the types is
+at most as expensive as a copy of the same type, and in cases of constant reference, can be free. In
+general if the string is treated as a block of data, :code:`std::string_view` is a better choice. If
+the contents of the string are to be examined / parsed then |TV| is better. For example, if the
+string is used simply as a key or a hash source, use :code:`std::string_view`. Contrariwise if the
+string may contain substrings of interest such as key / value pairs, then use a |TV|.
 
-When passing :class:`TextView` as an argument, it is very debatable whether passing by value or
-passing by reference is more efficient, therefore it's not likely to matter in production code. My
-personal heuristic is whether the function will modify the value. If so, passing by value saves a
-copy to a local variable therefore it should be passed by value. If the function simply passes the
-:class:`TextView` on to other functions, then pass by constant reference. This distinction is
-irrelevant to the caller, the same code at the call site will work in either case.
+When passing |TV| as an argument, it is very debatable whether passing by value or passing by
+reference is more efficient, therefore it's not likely to matter in production code. My personal
+heuristic is whether the function will modify the value. If so, passing by value saves a copy to a
+local variable therefore it should be passed by value. If the function simply passes the |TV| on to
+other functions, then pass by constant reference. This distinction is irrelevant to the caller, the
+same code at the call site will work in either case.
 
-:class:`TextView` provides a variety of methods for manipulating the view. This can seem complex
-but they are distinguished by distinct categories of function so that for any particular use there
-is a clearly best choice.
-
-The primary distinction is how an character in the view is selected.
-
-* Index, an offset in to the view.
-
-* Comparison, either a single character or set of characters which is matched against a single character in the view.
-
-* Predicate, a function that takes a single character argument and returns a bool to indicate a match.
-
-A secondary distinction is what is done by modifying methods if the selected character is not found.
-
-* The "split" methods do nothing - if the target character is not found, the view is not modified.
-
-* The "take" methods always do something - if the target character is not found, the entire view is used.
-
-Both of these cases are useful in different circumstances.
-
-As noted, :class:`TextView` is designed as a pointer style class. Therefore it has an increment
-operator which is equivalent to :libswoc:`TextView::remove_prefix`, and a dereference operator, which
+As noted, |TV| is designed as a pointer style class. Therefore it has an increment operator which is
+equivalent to :code:`std::string_view::remove_prefix`. |TV| also has  a dereference operator, which
 act the same way as on a pointer. The difference is the view knows where the end of the view is.
 This provides a comfortably familiar way of iterating through a view, the main difference being
 checking the view itself rather than a dereference of it (like a C-style string) or a range limit.
+E.g. the code to write a simple hash function [#]_ could be
 
 .. code-block:: cpp
 
@@ -101,7 +81,8 @@ checking the view itself rather than a dereference of it (like a C-style string)
       return hash;
    }
 
-:class:`TextView` can also act as a container, which means range for loops work as expected.
+Because |TV| inherits from :code:`std::string_view` it can also be used as a container for range
+:code:`for` loops.
 
 .. code-block:: cpp
 
@@ -111,36 +92,91 @@ checking the view itself rather than a dereference of it (like a C-style string)
       return hash;
    }
 
-Views are very cheap to construct therefore making a copy is a neglible expense. For this reason
-if it is necessary to remember places or parts of a view, it is better to create a :class:`TextView`
-instance that holds the location or substring rather than storing offsets or pointers.
+The standard functions :code:`strcmp`, :code:`memcmp`, and :code:`strcasecmp` are overloaded for
+|TV| so that a |TV| can be used as if it were a C-style string. The size is is taken from the |TV|
+and doesn't need to be passed in explicitly.
 
 Basic Operations
 ================
 
-:class:`TextView` is essentially a collection of operations which have been found to be common and
-useful in manipulating contiguous blocks of text.
+|TV| is essentially a collection of operations which have been found to be common and useful in
+manipulating contiguous blocks of text.
 
 Construction
 ------------
 
 Constructing a view means creating a view from another object which owns the memory (for creating
-views from other views see `Extraction`_).
+views from other views see `Extraction`_). This can be a :code:`char const*` pointer and size, two
+pointers, a literal string, a :code:`std::string` or a :code:`std::string_view` although in the last
+case there is presumably yet another object that actually owns the memory. All of these constructors
+require only the equivalent of two assignment statements. The one thing to be careful of is if a
+literal string is used, the |TV| will drop the terminating nul character from the view. This is almost
+always the correct behavior, but if it isn't an explicit size can be used. There is no constructor
+from just a C-style string because this has overloading conflicts with the literal string constructor.
+In practice this has rarely been an issue, particularly with fully C++ code which should not be passing
+around raw pointers to C-style strings.
+
+A |TV| can be constructed from a null :code:`char const*` pointer or a straight :code:`nullptr`. This
+will construct an empty |TV| identical to one default constructed.
 
 Searching
 ---------
+
+Because |TV| is a subclass of :code:`std::string_view` all of its search method work on a |TV|. The
+only search methods provided beyond those are :libswoc:`TextView::find_if` and
+:libswoc:`TextView::rfind_if` which search the view by a predicate. The predicate takes a single
+:code:`char` argument and returns a :code:`bool`. The search terminates on the first character for
+which the predicate returns :code:`true`.
 
 Extraction
 ----------
 
 Extraction is creating a new view from an existing view. Because views cannot in general be expanded
-new views will be sub-sequences of existing views.
+new views will be sub-sequences of existing views. This is the primary utility of a |TV|. As
+noted in the `general description <Description>`_ |TV| supports copying or removing prefixes and
+suffixes of the view. All of this is possible using the underlying :code:`std::string_view_substr`
+but this is frequently much clumsier. The development of |TV| was driven to a large extent by the
+desire to make such code much more compact and expressive, while being at least as safe. In particular
+extraction methods on |TV| do useful and well defined things when given out of bounds arguments.
+This is quite handy when extracting tokens based on separator characters.
+
+The primary distinction is how a character in the view is selected.
+
+*  By index, an offset in to the view. These have plain names, such as :libswoc:`TextView::prefix`.
+
+*  By character comparison, either a single character or set of characters which is matched against a single
+   character in the view. These are suffixed with "at" such as :libswoc:`TextView::prefix_at`.
+
+*  By predicate, a function that takes a single character argument and returns a bool to indicate a match.
+   These are suffixed with "if", such as :libswoc:`TextView::prefix_if`.
+
+A secondary distinction is what is done to the view by the methods.
+
+*  The base methods make a new view without modifying the existing view.
+
+*  The "split..." methods remove the corresponding part of the view and return it. The selected character
+   is discarded and not left in either the returned view nor the source view. If the selected character
+   is not in the view, an empty view is returned and the source view is not modified.
+
+*  The "take..." methods remove the corresponding part of the view and return it. The selected character
+   is discarded and not left in either the returned view nor the source view. If the selected character
+   is not in the view, the entire view is returned and the source view is cleared.
+
+Other
+-----
+
+|TV| provides a collection of "trim" methods, which remove leading or trailing characters. This can
+be done for a single character, one of a set of characters, or a predicate. The most common use is
+with the predicate :code:`isspace` which removes leading and/or trailing whitespace as needed.
 
 Parsing with TextView
 =====================
 
-A primary use of :class:`TextView` is to do string parsing. It is easy and fast to split
-strings in to tokens without modifying the original data.
+Time for some examples demonstrating string parsing using |TV|. One of the goals of the design of |TV|
+was to minimize the need to allocate memory to hold intermediate results. For this reason, the normal
+style of use is a streaming / incremental one, where tokens are extracted from a source one by one
+and placed in |TV| instances, with the orignal source |TV| being reduced by each extraction until
+it is empty.
 
 CSV Example
 -----------
@@ -181,6 +217,30 @@ The basic list processing is the same as the previous example, with each element
 a "list" with ``=`` as the separator. Note if there is no ``=`` character then all of the list
 element is moved to :arg:`key` leaving :arg:`value` empty, which is the desired result. A bit of
 extra white space trimming it done in case there was space between the key and the ``=``.
+
+Line Processing
+---------------
+
+|TV| works well when parsing lines from a file. For this example, :libswoc:`load` will
+be used. This method, given a path, loads the entire content of the file into a :code:`std::string`.
+This will serve as the owner of the string memory. If it is kept around with the configuration, all
+of the parsed strings can be instances of |TV| that reference memory in that :code:`std::string`. If
+the density of useful text is sufficiently high, this is a convenient way to handle parsing with
+minimal memory allocations.
+
+This example counts the number of code lines in the documenations ``conf.py`` file.
+
+.. literalinclude:: ../../src/unit_tests/ex_TextView.cc
+   :lines: 203-217
+
+The |TV| :arg:`src` is constructed from the :code:`std::string` :arg:`content` which contains the
+file contents. While that view is not empty, a line is taken each look and leading and trailing
+whitespace is trimmed. If this results in an empty view or one where the first character is the
+Python comment character ``#`` it is not counted. The newlines are discard by the prefix extraction.
+The use of :libswoc:`TextView::take_prefix_at` forces the extraction of text even if there is no
+final newline. If this were a file of key value pairs, then :arg:`line` would be subjected to one of
+the other examples to extract the values. For all of this, there is only one memory allocation, that
+needed for :arg:`content` to load the file contents.
 
 Entity Tag Lists Example
 ------------------------
@@ -241,3 +301,7 @@ use of :code:`TextView` (which was actually called "StringView" then) it was mad
 interchangeable in an efficient way. Passing a :code:`TextView` to a :code:`std::string_view
 const&` is zero marginal cost because of inheritance and passing by value is also no more expensive
 than just :code:`std::string_view`.
+
+.. rubric:: Footnotes
+
+.. [#] This is a horrible hash function, do not actually use it.

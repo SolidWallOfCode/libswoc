@@ -20,13 +20,20 @@
 .. default-domain:: cpp
 
 Scalar
-*********
+******
+
+.. class:: template < intmax_t N, typename COUNTER, typename T > Scalar
+
+   :libswoc:`Reference documentation <swoc::Scalar>`.
 
 Scalar is a header only library that provides scaled and typed numerical values. Using Scalar
 starts with defining types which have a *scale factor* and optionally a *tag*. Values in an instance
 of Scalar are always multiples of the scale factor.
 
-The tag is used to create categories of related types, the same underlying "metric" at different scales. To enforce this Scalar does not allow assignment between instances with different tags. If this is not important the tag can be omitted and a default generic one will be used, thereby allowing arbitrary assignments.
+The tag is used to create categories of related types, the same underlying "metric" at different
+scales. To enforce this Scalar does not allow assignment between instances with different tags. If
+this is not important the tag can be omitted and a default generic one will be used, thereby
+allowing arbitrary assignments.
 
 Scalar is designed to be fast and efficient. When converting bewteen similar types with different
 scales it will do the minimum amout of work while minimizing the risk of integer overflow. Instances

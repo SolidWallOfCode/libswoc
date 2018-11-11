@@ -58,10 +58,10 @@ extensions = [
 
 exec(open('ext/local-config.py').read())
 
-breathe_projects = { "libswoc": "doxy/xml" }
+breathe_projects = { "libswoc": "doxygen/xml" }
 breathe_default_project = "libswoc"
 
-doxylink = { "libswoc" : ( 'doxy/libswoc.tag' , 'http://34.222.224.81/libswoc/doxygen' ) }
+doxylink = { "libswoc" : ( 'doxygen/libswoc.tag' , '../../reference/' ) }
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

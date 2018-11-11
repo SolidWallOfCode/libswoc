@@ -27,7 +27,10 @@ help:
 uml:
 	@if [ ! -d uml ] ; then mkdir uml; fi
 
-html: uml ext/local-config.py
+static:
+	@if [ ! -d static ] ; then mkdir static; fi
+
+html: static uml ext/local-config.py
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b html $(srcdir) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -42,3 +45,6 @@ publish: clean html
 ext/local-config.py : Makefile
 	@echo "plantuml = '$(JAVA) -jar $(PLANTUML_JAR)'" > ext/local-config.py
 	@echo "plantuml_output_format = 'svg'" >> ext/local-config.py
+
+doxygen:
+	doxygen

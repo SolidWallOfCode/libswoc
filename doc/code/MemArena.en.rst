@@ -11,7 +11,7 @@
    or implied. See the License for the specific language governing permissions and limitations under
    the License.
 
-.. include:: ../../common.defs
+.. include:: ../common-defs.rst
 .. highlight:: cpp
 .. default-domain:: cpp
 .. |MemArena| replace:: :class:`MemArena`
