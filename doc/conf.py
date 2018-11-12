@@ -61,7 +61,7 @@ exec(open('ext/local-config.py').read())
 breathe_projects = { "libswoc": "doxygen/xml" }
 breathe_default_project = "libswoc"
 
-doxylink = { "libswoc" : ( 'doxygen/libswoc.tag' , '../../reference/' ) }
+doxylink = { "libswoc" : ( 'doxygen/libswoc.tag' , 'reference/' ) }
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

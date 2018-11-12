@@ -30,7 +30,7 @@ uml:
 static:
 	@if [ ! -d static ] ; then mkdir static; fi
 
-html: static uml ext/local-config.py
+html: static uml ext/local-config.py reference
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b html $(srcdir) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -48,3 +48,6 @@ ext/local-config.py : Makefile
 
 doxygen:
 	doxygen
+
+reference:
+	@if [ ! -f _build/html/reference ] ; then ln -s ../../doxygen/html _build/html/reference ; fi
