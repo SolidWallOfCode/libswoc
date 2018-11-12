@@ -51,13 +51,10 @@ radix10(swoc::TextView src, swoc::TextView &out)
   unsigned zret = 0;
 
   out.clear();
-  src.ltrim_if(&isspace);
   if (src.size()) {
-    auto start = src.data();
+    auto origin = src.data();
     zret       = swoc::svto_radix<10>(src);
-    if (start != src.data()) {
-      out.assign(start, src.data());
-    }
+    out.assign(origin, src.data());
   }
   return zret;
 }
@@ -240,7 +237,7 @@ namespace bwf
       char c2 = fmt[off + 1];
       if (c1 == c2) {
         // double braces count as literals, but must tweak to output only 1 brace.
-        literal = fmt.take_prefix_at(off + 1);
+        literal = fmt.take_prefix(off + 1);
         return false;
       } else if ('}' == c1) {
         throw std::invalid_argument("Unopened } in format string.");
@@ -260,7 +257,7 @@ namespace bwf
       if (off == TextView::npos) {
         throw std::invalid_argument("BWFormat: Unclosed { in format string");
       }
-      specifier = fmt.take_prefix_at(off);
+      specifier = fmt.take_prefix(off);
       return true;
     }
     return false;

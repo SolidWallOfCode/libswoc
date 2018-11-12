@@ -87,30 +87,25 @@ class TextView : public std::string_view
 
 public:
   /// Default constructor (empty buffer).
-  constexpr TextView();
+  constexpr TextView() = default;
 
-  /** Construct explicitly with a pointer and size.
+  /** Construct from pointer and size.
+   *
+   * @param ptr Pointer to first character.
+   * @param n Number of characters.
    */
-  constexpr TextView(const char *ptr, ///< Pointer to buffer.
-                     size_t n         ///< Size of buffer.
-  );
+  constexpr TextView(const char *ptr, size_t n);
 
-  /** Construct explicitly with a pointer and size.
-      If @a n is negative it is treated as 0.
-      @internal Overload for convience, otherwise get "narrow conversion" errors.
+  /** Construct from a half open range [first, last).
+   *
+   * @param first Start of half open range.
+   * @param last End of half open range.
+   *
+   * The character at @a first will be in the view, but the character at @a last will not.
    */
-  constexpr TextView(const char *ptr, ///< Pointer to buffer.
-                     int n            ///< Size of buffer.
-  );
+  constexpr TextView(char const* first, char const* last);
 
-  /** Construct from a half open range of two pointers.
-      @note The byte at @start is in the view but the byte at @a end is not.
-  */
-  constexpr TextView(const char *start, ///< First byte in the view.
-                     const char *end    ///< First byte not in the view.
-  );
-
-  /** Constructor from constant string.
+  /** Construct from constant string.
 
       Construct directly from an array of characters. All elements of the array are included in the
       view unless the last element is nul, in which case it is elided. If this is inapropriate then
@@ -119,6 +114,7 @@ public:
       @code
         TextView a("A literal string");
       @endcode
+      The last character in @a a will be 'g'.
    */
   template <size_t N> constexpr TextView(const char (&s)[N]);
 
@@ -128,25 +124,30 @@ public:
   constexpr TextView(std::nullptr_t);
 
   /// Construct from a @c std::string_view.
+  /// @note This provides an user defined conversion from @c std::string_view to @c TextView. The
+  /// reverse conversion is implicit in @c TextView being a subclass of @c std::string_view.
   constexpr TextView(super_type const &that);
 
   /// Construct from @c std::string, referencing the entire string contents.
-  /// @internal Not all compilers make @c std::string methods called @c constexpr
+  /// @internal This can't be @c constexpr because this uses methods in @c std::string that may
+  /// not be @c constexpr.
   TextView(std::string const &str);
 
-  /// Pointer to byte past the last byte in the view.
-  const char *data_end() const;
-
-  /// Assignment.
+  /// Assign a super class instance, @c std::string_view  to @a this.
   self_type &operator                    =(super_type const &that);
+
+  /// Assign a constant array to @a this.
+  /// @note If the last character of @a s is a nul byte, it is not included in the view.
   template <size_t N> self_type &operator=(const char (&s)[N]);
+
+  /// Assign from a @c std::string.
   self_type &operator                    =(const std::string &s);
 
-  /// Explicitly set the view.
+  /// Explicitly set the start @a ptr and size @a n of the view.
   self_type &assign(char const *ptr, size_t n);
 
-  /// Explicitly set the view to the range [ @a b , @a e )
-  self_type &assign(char const *b, char const *e);
+  /// Explicitly set the view to the half open range [ @a first , @a last )
+  self_type &assign(char const *first, char const *lsat);
 
   /// Explicitly set the view from a @c std::string
   self_type &assign(std::string const &s);
@@ -161,23 +162,27 @@ public:
   /// @return The first byte in the view.
   char operator*() const;
 
-  /** Shift the view to discard the first byte.
-      @return @a this.
+  /** Discard the first byte of the view.
+   *
+   *  @return @a this.
   */
   self_type &operator++();
 
-  /// Shift the view to discard the first byte.
-  /// @return A pre-increment copy of the view.
+  /** Discard the first byte of the view.
+   *
+   * @return The view before discarding the byte.
+   */
   self_type operator++(int);
 
-  /** Shift the view to discard the leading @a n bytes.
-      Equivalent to @c std::string_view::remove_prefix
-      @return @a this
+  /** Discard the first @a n bytes of the view.
+   *
+   *  Equivalent to @c remove_prefix(n).
+   *  @return @a this
   */
   self_type &operator+=(size_t n);
 
   /// Check for empty view.
-  /// @return @c true if the view has a zero pointer @b or size.
+  /// @return @c true if the view has a nullptr @b or zero size.
   bool operator!() const;
 
   /// Check for non-empty view.
@@ -198,7 +203,7 @@ public:
 
   /** Remove bytes from the start of the view that are in @a delimiters.
    */
-  self_type &ltrim(super_type const &delimiters);
+  self_type &ltrim(std::string_view const &delimiters);
 
   /** Remove bytes from the start of the view that are in @a delimiters.
       @internal This is needed to avoid collisions with the templated predicate style.
@@ -218,7 +223,7 @@ public:
 
   /** Remove bytes from the end of the view that are in @a delimiters.
    */
-  self_type &rtrim(super_type const &delimiters);
+  self_type &rtrim(std::string_view const &delimiters);
 
   /** Remove bytes from the end of the view that are in @a delimiters.
       @internal This is needed to avoid collisions with the templated predicate style.
@@ -238,7 +243,7 @@ public:
 
   /** Remove bytes from the start and end of the view that are in @a delimiters.
    */
-  self_type &trim(super_type const &delimiters);
+  self_type &trim(std::string_view const &delimiters);
 
   /** Remove bytes from the start and end of the view that are in @a delimiters.
       @internal This is needed to avoid collisions with the templated predicate style.
@@ -252,166 +257,244 @@ public:
   */
   template <typename F> self_type &trim_if(F const &pred);
 
-  /** Get the prefix of size @a n.
-
-      If @a n is greater than the size the entire view is returned.
-
-      @return A view of the prefix.
-  */
+  /** Get a view of a prefix.
+   *
+   * @param n Number of chars in the prefix.
+   * @return A view of the first @a n characters in @a this, bounded by the size of @a this.
+   */
   self_type prefix(size_t n) const;
-  /// Convenience overload to avoid ambiguity for literal numbers.
-  self_type prefix(int n) const;
-  /** Get the prefix delimited by the first occurence of the character @a c.
 
-      If @a c is not found the entire view is returned.
-      The delimiter character is not included in the returned view.
+  /** Get a view of a prefix bounded by @a c.
+   *
+   * @param c Delimiter character.
+   * @return A view of the prefix bounded by @a c, or all of @a this if @a c is not found.
+   * @note The character @a c is not included in the returned view.
+   */
+  self_type prefix_at(char c) const;
 
-      @return A view of the prefix.
-  */
-  self_type prefix(char c) const;
-  /** Get the prefix delimited by the first occurence of a character in @a delimiters.
+  /** Get a view of a prefix bounded by a character in @a delimiters.
+   *
+   * @param delimiters A set of characters.
+   * @return A view of the prefix bounded by any character in @a delimiters, or all of @a this if
+   * none are found.
+   * @note The delimiter character is not included in the returned view.
+   */
+  self_type prefix_at(std::string_view const &delimiters) const;
 
-      If no such character is found the entire view is returned.
-      The delimiter character is not included in the returned view.
-
-      @return A view of the prefix.
-  */
-  self_type prefix(super_type const &delimiters) const;
-  /** Get the prefix delimited by the first character for which @a pred is @c true.
-
-      If no such character is found the entire view is returned
-      The delimiter character is not included in the returned view.
-
-      @return A view of the prefix.
-  */
+  /** Get a view of a prefix bounded by a character predicate @a pred.
+   *
+   * @a pred must be a functor which takes a @c char argument and returns @c bool. Each character in
+   * @a this is tested by @a pred and the prefix is delimited by the first character for which @a
+   * pred is @c true.
+   *
+   * @param pred A character predicate.
+   * @return A view of the prefix bounded by @a pred or all of @a this if
+   * @a pred is not @c true for any characer.
+   * @note The deliminting character is not included in the returned view.
+   */
   template <typename F> self_type prefix_if(F const &pred) const;
 
-  /// Drop the first @a n bytes from the view.
-  self_type &remove_prefix(size_t n);
-
-  /// Remove the prefix delimited by the first occurence of @a c.
+  /** Remove the leading characters of @a this up to and including @a c.
+   *
+   * @param c Delimiter character.
+   * @return @a this.
+   * @note The first occurence of character @a c is removed along with all preceeding characters, or
+   * the view is cleared if @a c is not found.
+   */
   self_type &remove_prefix_at(char c);
 
-  /// Remove the prefix delimited by the first occurence of a character for which @a pred is @c true.
+  /** Remove the leading characters of @a this up to and including the first character matching @a delimiters.
+   *
+   * @param delimiters Characters to match.
+   * @return @a this.
+   * @note The first occurence of any character in @a delimiters is removed along with all preceeding
+   * characters, or the view is cleared if none are found.
+   */
+  self_type &remove_prefix_at(std::string_view const& delimiters);
+
+  /** Remove the leading characters up to and including the character selected by @a pred.
+   *
+   * @tparam F Predicate function type.
+   * @param pred The predicate instance.
+   * @return @a this.
+   */
   template <typename F> self_type &remove_prefix_if(F const &pred);
 
-  /** Split a prefix from the view on the character at offset @a n.
+  /** Remove and return a prefix bounded by the character at index @a n.
+   *
+   * @param n Size of the return prefix.
+   * @return The first @a n bytes of @a this if @a n is in @a this, otherwise an empty view.
+   *
+   * The prefix is removed and returned if the requested prefix is no larger than @a this,
+   * otherwise @a this is not modified.
+   *
+   * @note The character at offset @a n is discarded if @a this is modified.
+   *
+   * @see @c take_prefix
+   */
+  self_type split_prefix(size_t n);
 
-      The view is split in to two parts and the byte at offset @a n is discarded. @a this retains
-      all data @b after offset @a n (equivalent to <tt>TextView::substr(n+1)</tt>). A new view
-      containing the initial bytes up to but not including the byte at offset @a n is returned,
-      (equivalent to <tt>TextView(0, n)</tt>).
-
-      This is convenient when tokenizing.
-
-      If @a n is larger than the size of the view no change is made and an empty buffer is
-      returned. Therefore this method is most useful when checking for the presence of the delimiter
-      is desirable, as the result of @c find methods can be passed directly to this method.
-
-      @note This method and its overloads always remove the delimiter character.
-
-      @code
-        void f(TextView& text) {
-          TextView token = text.get_prefix_at(text.find(delimiter));
-          if (token) { // ... process token }
-      @endcode
-
-      @return The prefix bounded at offset @a n or an empty view if @a n is more than the view
-      size.
-
-      @see take_prefix_at
-  */
-  self_type split_prefix_at(size_t n);
-
-  /// Convenience overload for literal numbers.
-  self_type split_prefix_at(int n);
-  /// Convenience overload, split on character.
+  /** Remove and return a prefix bounded by the first occurrence of @a c.
+   *
+   * @param c The character to match.
+   * @return The prefix bounded by @a c if @a c is found, an empty view if not.
+   *
+   * The prefix is removed and returned if @a c is found, otherwise @a this is not modified.
+   *
+   * @note The character at offset @a n is discarded if @a this is modified.
+   *
+   * @see @c take_prefix
+   */
   self_type split_prefix_at(char c);
-  /// Convenience overload, split on delimiter set.
-  self_type split_prefix_at(super_type const &delimiters);
-  /// Convenience overload, split on predicate.
+
+  /** Remove and return a prefix bounded by the first occurrence of any of @a delimiters.
+   *
+   * @param delimiters The characters to match.
+   * @return The prefix bounded by a delimiter if one is found, otherwise an empty view.
+   *
+   * The prefix is removed and returned if a @a delimiter is found, otherwise @a this is not modified.
+   *
+   * @note The matching character is discarded if @a this is modified.
+   *
+   * @see @c take_prefix_at
+   */
+  self_type split_prefix_at(std::string_view const &delimiters);
+
+  /** Remove and return a prefix bounded by the first character that satisfies @a pred.
+   *
+   * @tparam F Predicate functor type.
+   * @param pred A function taking @c char and returning @c bool.
+   * @return The prefix bounded by the first character satisfying @a pred.
+   *
+   * The prefix is removed and returned if a a character satisfying @a pred is found, otherwise
+   * @a this is not modified.
+   *
+   * @note The matching character is discarded if @a this is modified.
+   *
+   * @see @c take_prefix_if
+   */
   template <typename F> self_type split_prefix_if(F const &pred);
 
-  /** Split a prefix from the view on the character at offset @a n.
+  /** Remove and return the first @a n characters.
+   *
+   * @param n Size of the return prefix.
+   * @return The first @a n bytes of @a this if @a n is in @a this, otherwise all of @a this.
+   *
+   * The prefix is removed and returned if the requested prefix is no larger than @a this,
+   * otherwise all of @a this is removed and returned.
+   *
+   * @note The character at offset @a n is discarded if @a n is within the bounds of @a this.
+   *
+   * @see @c split_prefix
+   */
+  self_type take_prefix(size_t n);
 
-      The view is split in to two parts and the byte at offset @a n is discarded. @a this retains
-      all data @b after offset @a n (equivalent to <tt>TextView::substr(n+1)</tt>). A new view
-      containing the initial bytes up to but not including the byte at offset @a n is returned,
-      (equivalent to <tt>TextView(0, n)</tt>).
-
-      This is convenient when tokenizing.
-
-      If @a n is larger than the view size then the entire view is removed and returned, leaving an
-      empty view. Therefore if @this is not empty, a non-empty view is always returned. This is desirable
-      if a non-empty return view is always wanted, regardless of whether a delimiter is present.
-
-      @note This method and its overloads always remove the delimiter character.
-
-      @code
-      TextView text;
-      while (text) {
-        TextView token = text.take_prefix_at(text.find(delimiter));
-        // token will always be non-empty because text was not empty.
-      }
-      @endcode
-
-      @return The prefix bounded at offset @a n or the entire view if @a n is more than the view
-      size.
-
-      @see split_prefix_at
-  */
-  self_type take_prefix_at(size_t n);
-
-  /// Convenience overload, extract on delimiter set.
+  /** Remove and return a prefix bounded by the first occurrence of @a c.
+   *
+   * @param c The character to match.
+   * @return The prefix bounded by @a c if @a c is found, all of @a this if not.
+   *
+   * The prefix is removed and returned if @a c is found, otherwise all of @a this is removed and
+   * returned.
+   *
+   * @note The character at offset @a n is discarded if found.
+   *
+   * @see @c split_prefix_at
+   */
   self_type take_prefix_at(char c);
-  /// Convenience overload, extract on delimiter set.
-  self_type take_prefix_at(super_type const &delimiters);
-  /// Convenience overload, extract on predicate.
+
+  /** Remove and return a prefix bounded by the first occurrence of any of @a delimiters.
+   *
+   * @param delimiters The characters to match.
+   * @return The prefix bounded by a delimiter if one is found, otherwise all of @a this.
+   *
+   * The prefix is removed and returned if a @a delimiter is found, otherwise all of @a this is
+   * removed and returned.
+   *
+   * @note The matching character is discarded if found.
+   *
+   * @see @c split_prefix_at
+   */
+  self_type take_prefix_at(std::string_view const &delimiters);
+
+  /** Remove and return a prefix bounded by the first character that satisfies @a pred.
+   *
+   * @tparam F Predicate functor type.
+   * @param pred A function taking @c char and returning @c bool.
+   * @return The prefix bounded by the first character satisfying @a pred, or all of @a this if none
+   * is found.
+   *
+   * The prefix is removed and returned if a a character satisfying @a pred is found, otherwise
+   * all of @a this is removed and returned.
+   *
+   * @note The matching character is discarded if found.
+   *
+   * @see @c split_prefix_if
+   */
   template <typename F> self_type take_prefix_if(F const &pred);
 
-  /** Get the last @a n characters of the view.
-
-      @return A buffer that contains @a n characters at the end of the view.
-  */
+  /** Get a view of a prefix.
+   *
+   * @param n Number of chars in the prefix.
+   * @return A view of the last @a n characters in @a this, bounded by the size of @a this.
+   */
   self_type suffix(size_t n) const;
 
-  /// Convenience overload to avoid ambiguity for literal numbers.
-  self_type suffix(int n) const;
-  /// Convenience overload for character.
-  self_type suffix(char c) const;
-  /// Convenience overload for delimiter set.
-  self_type suffix(super_type const &delimiters) const;
-  /// Convenience overload for delimiter set.
-  self_type suffix(const char *delimiters) const;
-  /// Get the prefix delimited by the first character for which @a pred is @c true.
+  /** Get a view of a suffix bounded by @a c.
+   *
+   * @param c Delimiter character.
+   * @return A view of the suffix bounded by @a c, or all of @a this if @a c is not found.
+   * @note The character @a c is not included in the returned view.
+   */
+  self_type suffix_at(char c) const;
+
+  /** Get a view of a suffix bounded by a character in @a delimiters.
+   *
+   * @param delimiters A set of characters.
+   * @return A view of the suffix bounded by any character in @a delimiters, or all of @a this if
+   * none are found.
+   * @note The delimiter character is not included in the returned view.
+   */
+  self_type suffix_at(std::string_view const &delimiters) const;
+
+  /** Get a view of a suffix bounded by a character predicate @a pred.
+   *
+   * @a pred must be a functor which takes a @c char argument and returns @c bool. Each character in
+   * @a this is tested by @a pred and the suffix is delimited by the last character for which @a
+   * pred is @c true.
+   *
+   * @param pred A character predicate.
+   * @return A view of the suffix bounded by @a pred or all of @a this if
+   * @a pred is not @c true for any characer.
+   * @note The deliminting character is not included in the returned view.
+   */
   template <typename F> self_type suffix_if(F const &pred) const;
 
-  /// Overload to provide better return type.
-  self_type &remove_suffix(size_t n);
-
-  /// Remove a suffix, delimited by the last occurence of @c c.
+  /** Remove the trailing characters of @a this up to and including @a c.
+   *
+   * @param c Delimiter character.
+   * @return @a this.
+   * @note The last occurence of character @a c is removed along with all succeeding characters, or
+   * the view is cleared if @a c is not found.
+   */
   self_type &remove_suffix_at(char c);
 
-  /// Remove a suffix, delimited by the last occurence of a character for which @a pred is @c true.
+  /** Remove the trailing characters of @a this up to and including the last character matching @a delimiters.
+   *
+   * @param delimiters Characters to match.
+   * @return @a this.
+   * @note The first occurence of any character in @a delimiters is removed along with all preceeding
+   * characters, or the view is cleared if none are found.
+   */
+  self_type &remove_suffix_at(std::string_view const& delimiters);
+
+  /** Remove the trailing characters up to and including the character selected by @a pred.
+   *
+   * @tparam F Predicate function type.
+   * @param pred The predicate instance.
+   * @return @a this.
+   */
   template <typename F> self_type &remove_suffix_if(F const &f);
-
-  /** Split the view to get a suffix of size @a n.
-
-      The view is split in to two parts, a suffix of size @a n and a remainder which is the original
-      view less @a n + 1 characters at the end. That is, the character between the suffix and the
-      remainder is discarded. This is equivalent to <tt>TextView::suffix(this->size()-n)</tt> and
-      <tt>TextView::remove_suffix(this->size() - (n+1))</tt>.
-
-      If @a n is equal to or larger than the size of the view the entire view is removed as the
-      suffix.
-
-      @return The suffix of size @a n.
-
-      @see split_suffix_at
-  */
-  self_type split_suffix(size_t n);
-  /// Convenience overload for literal integers.
-  self_type split_suffix(int n);
 
   /** Split the view on the character at offset @a n.
 
@@ -429,14 +512,14 @@ public:
       @return The suffix bounded at offset @a n or an empty view if @a n is more than the view
       size.
   */
-  self_type split_suffix_at(size_t n);
-
+  self_type split_suffix(size_t n);
   /// Convenience overload for literal integers.
-  self_type split_suffix_at(int n);
+  self_type split_suffix(int n);
+
   /// Convenience overload for character.
   self_type split_suffix_at(char c);
   /// Convenience overload for delimiter set.
-  self_type split_suffix_at(super_type const &delimiters);
+  self_type split_suffix_at(std::string_view const &delimiters);
   /// Split the view on the last character for which @a pred is @c true.
   template <typename F> self_type split_suffix_if(F const &pred);
 
@@ -456,26 +539,46 @@ public:
       @return The suffix bounded at offset @a n or the entire view if @a n is more than the view
       size.
   */
-  self_type take_suffix_at(size_t n);
+  self_type take_suffix(size_t n);
 
-  /// Convenience overload for literal integers.
-  self_type take_suffix_at(int n);
-  /// Convenience overload for character.
   self_type take_suffix_at(char c);
-  /// Convenience overload for delimiter set.
-  self_type take_suffix_at(super_type const &delimiters);
+
+  self_type take_suffix_at(std::string_view const &delimiters);
+
   /// Split the view on the last character for which @a pred is @c true.
   template <typename F> self_type take_suffix_if(F const &pred);
 
-  /** Prefix check.
-      @return @c true if @a this is a prefix of @a that.
-  */
-  bool isPrefixOf(super_type const &that) const;
+  /** Check if the view begins with a specific @a prefix.
+   *
+   * @param prefix String to check against @a this.
+   * @return @c true if <tt>this->prefix(prefix.size()) == prefix</tt>, @c false otherwise.
+   * @internal C++20 preview.
+   */
+  bool starts_with(super_type const &prefix) const;
 
-  /** Case ignoring prefix check.
-      @return @c true if @a this is a prefix of @a that, ignoring case.
-  */
-  bool isNoCasePrefixOf(super_type const &that) const;
+  /** Check if the view begins with a specific @a prefix, ignoring case.
+   *
+   * @param prefix String to check against @a this.
+   * @return @c true if <tt>this->prefix(prefix.size()) == prefix</tt> without regard to case, @c false otherwise.
+   * @internal C++20 preview.
+   */
+  bool starts_with_nocase(super_type const &that) const;
+
+  /** Check if the view ends with a specific @a suffix.
+   *
+   * @param suffix String to check against @a this.
+   * @return @c true if <tt>this->suffix(suffix.size()) == suffix</tt>, @c false otherwise.
+   * @internal C++20 preview.
+   */
+  bool ends_with(super_type const &suffix) const;
+
+  /** Check if the view starts with a specific @a prefix, ignoring case.
+   *
+   * @param prefix String to check against @a this.
+   * @return @c true if <tt>this->suffix(suffix.size()) == suffix</tt> without regard to case, @c false otherwise.
+   * @internal C++20 preview.
+   */
+  bool ends_with_nocase(super_type const &suffix) const;
 
   // Functors for using this class in STL containers.
   /// Ordering functor, lexicographic comparison.
@@ -486,6 +589,7 @@ public:
       return -1 == strcmp(lhs, rhs);
     }
   };
+
   /// Ordering functor, case ignoring lexicographic comparison.
   struct LessThanNoCase {
     bool
@@ -495,6 +599,15 @@ public:
     }
   };
 
+  /** Get a pointer to past the last byte.
+   *
+   * @return The first byte past the end of the view.
+   *
+   * This is effectively @c std::string_view::end() except it explicit returns a pointer and not
+   * (potentially) an iterator class, to match up with @c data().
+   */
+  char const* data_end() const;
+
   /// Specialized stream operator implementation.
   /// @note Use the standard stream operator unless there is a specific need for this, which is unlikely.
   /// @return The stream @a os.
@@ -502,14 +615,32 @@ public:
   /// so alignment / fill have to be explicitly handled.
   template <typename Stream> Stream &stream_write(Stream &os, const TextView &b) const;
 
+  /// @cond OVERLOAD
+  // These methods are all overloads of other methods, defined in order to make the API more
+  // convenient to use. Mostly these overload @c int for @c size_t so naked numbers work as expected.
+  constexpr TextView(const char *ptr, int n);
+  self_type prefix(int n) const;
+  self_type take_suffix(int n);
+  self_type split_prefix(int n);
+  self_type suffix(int n) const;
+  /// @endcond
+
+  /// @cond COVARY
+  // Methods defined in order to co-vary the return type. All of these chain to the super class
+  // and return @a this as type @c self_type.
+  self_type &remove_prefix(size_t n);
+  self_type &remove_suffix(size_t n);
+  /// @endcond
+
+
 protected:
   /// Faster find on a delimiter set, taking advantage of supporting only ASCII.
-  size_t search(super_type const &delimiters) const;
+  size_t search(std::string_view const &delimiters) const;
   /// Faster reverse find on a delimiter set, taking advantage of supporting only ASCII.
-  size_t rsearch(super_type const &delimiters) const;
+  size_t rsearch(std::string_view const &delimiters) const;
 
   /// Initialize a bit mask to mark which characters are in this view.
-  static void init_delimiter_set(super_type const &delimiters, std::bitset<256> &set);
+  static void init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set);
 };
 
 // Internal character conversion table.
@@ -551,8 +682,8 @@ uintmax_t svtou(TextView src, TextView *parsed = nullptr, int base = 0);
  * much more performant than @c svtoi. Because of this only positive values are parsed. If
  * determining the radix from the text or signed value parsing is needed, used @c svtoi.
  *
- * @a src is updated in place to indicate what characters were parsed. Parsing stops on the first
- * invalid digit, so any leading non-digit characters (e.g. whitespace) must already be removed.
+ * @a src is updated in place bhy removing parsed characters. Parsing stops on the first invalid digit, so any leading non-digit
+ * characters (e.g. whitespace) must already be removed.
  */
 template <uintmax_t N>
 uintmax_t
@@ -560,8 +691,8 @@ svto_radix(swoc::TextView &src)
 {
   static_assert(0 < N && N <= 36, "Radix must be in the range 1..36");
   uintmax_t zret{0};
-  uintmax_t v;
-  while (src.size() && (0 <= (v = swoc::svtoi_convert[static_cast<unsigned char>(*src)])) && v < N) {
+  int8_t v;
+  while (src.size() && (0 <= (v = swoc::svtoi_convert[uint8_t(*src)])) && v < N) {
     zret *= N;
     zret += v;
     ++src;
@@ -573,27 +704,20 @@ svto_radix(swoc::TextView &src)
 // Inline implementations.
 
 // === TextView Implementation ===
-inline constexpr TextView::TextView() {}
 inline constexpr TextView::TextView(const char *ptr, size_t n) : super_type(ptr, n) {}
 inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n) {}
-inline constexpr TextView::TextView(const char *start, const char *end) : super_type(start, end - start) {}
+inline constexpr TextView::TextView(char const*first, char const*last) : super_type(first, last - first) {}
 inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) : super_type(that) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1) {}
 
 inline void
-TextView::init_delimiter_set(super_type const &delimiters, std::bitset<256> &set)
+TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set)
 {
   set.reset();
   for (char c : delimiters)
     set[static_cast<uint8_t>(c)] = true;
-}
-
-inline const char *
-TextView::data_end() const
-{
-  return this->data() + this->size();
 }
 
 inline TextView &
@@ -605,7 +729,7 @@ TextView::clear()
 
 inline char TextView::operator*() const
 {
-  return this->empty() ? 0 : *(this->data());
+  return this->empty() ? char(0) : *(this->data());
 }
 
 inline bool TextView::operator!() const
@@ -683,7 +807,7 @@ TextView::assign(char const *b, char const *e)
 }
 
 inline size_t
-TextView::search(super_type const &delimiters) const
+TextView::search(std::string_view const &delimiters) const
 {
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
@@ -695,7 +819,7 @@ TextView::search(super_type const &delimiters) const
 }
 
 inline size_t
-TextView::rsearch(super_type const &delimiters) const
+TextView::rsearch(std::string_view const &delimiters) const
 {
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
@@ -719,13 +843,13 @@ TextView::prefix(int n) const
 }
 
 inline TextView
-TextView::prefix(char c) const
+TextView::prefix_at(char c) const
 {
   return this->prefix(this->find(c));
 }
 
 inline TextView
-TextView::prefix(super_type const &delimiters) const
+TextView::prefix_at(std::string_view const &delimiters) const
 {
   return this->prefix(this->search(delimiters));
 }
@@ -760,6 +884,18 @@ TextView::remove_prefix_at(char c)
   return *this;
 }
 
+inline TextView &
+TextView::remove_prefix_at(std::string_view const& delimiters)
+{
+  auto n = this->find_first_of(delimiters);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->super_type::remove_prefix(n + 1);
+  }
+  return *this;
+}
+
 template <typename F>
 TextView &
 TextView::remove_prefix_if(F const &pred)
@@ -774,7 +910,7 @@ TextView::remove_prefix_if(F const &pred)
 }
 
 inline TextView
-TextView::split_prefix_at(size_t n)
+TextView::split_prefix(size_t n)
 {
   self_type zret; // default to empty return.
   if (n < this->size()) {
@@ -785,19 +921,19 @@ TextView::split_prefix_at(size_t n)
 }
 
 inline TextView
-TextView::split_prefix_at(int n)
+TextView::split_prefix(int n)
 {
-  return this->split_prefix_at(static_cast<size_t>(n));
+  return this->split_prefix_at(size_t(n));
 }
 
 inline TextView
 TextView::split_prefix_at(char c)
 {
-  return this->split_prefix_at(this->find(c));
+  return this->split_prefix(this->find(c));
 }
 
 inline TextView
-TextView::split_prefix_at(super_type const &delimiters)
+TextView::split_prefix_at(std::string_view const &delimiters)
 {
   return this->split_prefix_at(this->search(delimiters));
 }
@@ -810,7 +946,7 @@ TextView::split_prefix_if(F const &pred)
 }
 
 inline TextView
-TextView::take_prefix_at(size_t n)
+TextView::take_prefix(size_t n)
 {
   n              = std::min(n, this->size());
   self_type zret = this->prefix(n);
@@ -821,20 +957,20 @@ TextView::take_prefix_at(size_t n)
 inline TextView
 TextView::take_prefix_at(char c)
 {
-  return this->take_prefix_at(this->find(c));
+  return this->take_prefix(this->find(c));
 }
 
 inline TextView
-TextView::take_prefix_at(super_type const &delimiters)
+TextView::take_prefix_at(std::string_view const &delimiters)
 {
-  return this->take_prefix_at(this->search(delimiters));
+  return this->take_prefix(this->search(delimiters));
 }
 
 template <typename F>
 inline TextView
 TextView::take_prefix_if(F const &pred)
 {
-  return this->take_prefix_at(this->find_if(pred));
+  return this->take_prefix(this->find_if(pred));
 }
 
 inline TextView
@@ -851,13 +987,13 @@ TextView::suffix(int n) const
 }
 
 inline TextView
-TextView::suffix(char c) const
+TextView::suffix_at(char c) const
 {
   return this->suffix((this->size() - std::min(this->size(), this->rfind(c))) - 1);
 }
 
 inline TextView
-TextView::suffix(super_type const &delimiters) const
+TextView::suffix_at(std::string_view const &delimiters) const
 {
   return this->suffix((this->size() - std::min(this->size(), this->rsearch(delimiters))) - 1);
 }
@@ -873,6 +1009,18 @@ inline TextView &
 TextView::remove_suffix_at(char c)
 {
   auto n = this->rfind(c);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->remove_suffix(this->size() - n);
+  }
+  return *this;
+}
+
+inline TextView &
+TextView::remove_suffix_at(std::string_view const& delimiters)
+{
+  auto n = this->find_last_of(delimiters);
   if (n == npos) {
     this->clear();
   } else {
@@ -911,77 +1059,61 @@ TextView::split_suffix(size_t n)
   self_type zret;
   n    = std::min(n, this->size());
   zret = this->suffix(n);
-  this->remove_suffix(n + 1); // haha, saved by integer overflow!
+  this->remove_suffix(n + 1);
   return zret;
 }
 
 inline TextView
 TextView::split_suffix(int n)
 {
-  return this->split_suffix(static_cast<size_t>(n));
-}
-
-inline TextView
-TextView::split_suffix_at(size_t n)
-{
-  self_type zret;
-  if (n < this->size()) {
-    n    = this->size() - n;
-    zret = this->suffix(n - 1);
-    this->remove_suffix(n);
-  }
-  return zret;
-}
-
-inline TextView
-TextView::split_suffix_at(int n)
-{
-  return this->split_suffix_at(static_cast<size_t>(n));
+  return this->split_suffix(size_t(n));
 }
 
 inline TextView
 TextView::split_suffix_at(char c)
 {
-  return this->split_suffix_at(this->rfind(c));
+  auto idx = this->rfind(c);
+  return npos == idx ? self_type{} : this->split_suffix(this->size() - (idx+1));
 }
 
 inline TextView
-TextView::split_suffix_at(super_type const &delimiters)
+TextView::split_suffix_at(std::string_view const &delimiters)
 {
-  return this->split_suffix_at(this->rsearch(delimiters));
+  auto idx = this->rsearch(delimiters);
+  return npos == idx ? self_type{} : this->split_suffix(this->size() - (idx+1));
 }
 
 template <typename F>
 inline TextView
 TextView::split_suffix_if(F const &pred)
 {
-  return this->split_suffix_at(this->rfind_if(pred));
+  return this->split_suffix(this->rfind_if(pred));
 }
 
 inline TextView
-TextView::take_suffix_at(size_t n)
+TextView::take_suffix(size_t n)
 {
   self_type zret{*this};
-  *this = zret.split_prefix_at(n);
+  *this = zret.split_prefix(n);
   return zret;
 }
 
 inline TextView
-TextView::take_suffix_at(int n)
+TextView::take_suffix(int n)
 {
-  return this->take_suffix_at(static_cast<size_t>(n));
+  return this->take_suffix(size_t(n));
 }
 
 inline TextView
 TextView::take_suffix_at(char c)
 {
-  return this->take_suffix_at(this->rfind(c));
+  return this->take_suffix(this->rfind(c));
 }
 
 inline TextView
-TextView::take_suffix_at(super_type const &delimiters)
+TextView::take_suffix_at(std::string_view const &delimiters)
 {
-  return this->take_suffix_at(this->rsearch(delimiters));
+  return this->take_suffix(this->rsearch(delimiters));
 }
 
 template <typename F>
@@ -1033,7 +1165,7 @@ TextView::trim(char c)
 }
 
 inline TextView &
-TextView::ltrim(super_type const &delimiters)
+TextView::ltrim(std::string_view const &delimiters)
 {
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
@@ -1054,7 +1186,7 @@ TextView::ltrim(const char *delimiters)
 }
 
 inline TextView &
-TextView::rtrim(super_type const &delimiters)
+TextView::rtrim(std::string_view const &delimiters)
 {
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
@@ -1069,7 +1201,7 @@ TextView::rtrim(super_type const &delimiters)
 }
 
 inline TextView &
-TextView::trim(super_type const &delimiters)
+TextView::trim(std::string_view const &delimiters)
 {
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
@@ -1125,16 +1257,32 @@ TextView::trim_if(F const &pred)
   return this->ltrim_if(pred).rtrim_if(pred);
 }
 
-inline bool
-TextView::isPrefixOf(super_type const &that) const
-{
-  return this->size() <= that.size() && 0 == memcmp(this->data(), that.data(), this->size());
+inline char const* TextView::data_end() const {
+  return this->data() + this->size();
 }
 
 inline bool
-TextView::isNoCasePrefixOf(super_type const &that) const
+TextView::starts_with(super_type const &that) const
 {
-  return this->size() <= that.size() && 0 == strncasecmp(this->data(), that.data(), this->size());
+  return this->size() >= that.size() && 0 == ::memcmp(this->data(), that.data(), that.size());
+}
+
+inline bool
+TextView::starts_with_nocase(super_type const &that) const
+{
+  return this->size() >= that.size() && 0 == ::strncasecmp(this->data(), that.data(), that.size());
+}
+
+inline bool
+TextView::ends_with(super_type const &that) const
+{
+  return this->size() >= that.size() && 0 == ::memcmp(this->data_end() - that.size(), that.data(), that.size());
+}
+
+inline bool
+TextView::ends_with_nocase(super_type const &that) const
+{
+  return this->size() >= that.size() && 0 == ::strncasecmp(this->data_end() - that.size(), that.data(), that.size());
 }
 
 inline int

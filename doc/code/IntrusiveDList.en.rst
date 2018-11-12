@@ -30,7 +30,9 @@ will be referenced by pointers.
 Definition
 **********
 
-:libswoc:`Class Documentation <IntrusiveDList>`.
+.. class:: template < typename L > IntrusiveDList
+
+   :libswoc:`Reference documentation <IntrusiveDList>`.
 
 Usage
 *****
@@ -120,12 +122,16 @@ Other methods for the various severity levels would be implemented in a similar 
 intrusive list does not do memory management, the container must clean that up itself, as in the
 :code:`clear` method. A bit of care must be exercised because the links are in the elements, and
 these links are used for iteration therefore using an iterator that references a deleted object is
-risky. One approach, illustrated here, is to use :func:`swoc::IntrusiveDList::take_head` to remove the
+risky. One approach, illustrated here, is to use :libswoc:`IntrusiveDList::take_head` to remove the
 element before destroying it. Another option is to allocation the elements in a :class:`MemArena` to
 avoid the need for any explicit cleanup.
 
 .. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
    :lines: 106-114
+
+There is a method specifically for this situation as well, :libswoc:`IntrusiveDList::apply` which
+applies a functor to every element in the list in such a way that even if elements are deleted or
+removed by the functor, iteration is still successful.
 
 In some cases the elements of the list are subclasses and the links are declared in a super class
 and are therefore of the super class type. For instance, in the unit test a class :code:`Thing` is

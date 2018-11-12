@@ -125,8 +125,8 @@ swoc::svtou(TextView src, TextView *out, int base)
   if (!(0 <= base && base <= 36)) {
     return 0;
   }
-  if (src.ltrim_if(&isspace) && src) {
-    const char *start = src.data();
+  if (src.ltrim_if(&isspace).size()) {
+    auto origin = src.data();
     int8_t v;
     // If base is 0, it wasn't specified - check for standard base prefixes
     if (0 == base) {
@@ -160,8 +160,8 @@ swoc::svtou(TextView src, TextView *out, int base)
       break;
     }
 
-    if (out && (src.data() > start)) {
-      out->assign(start, src.data());
+    if (out) {
+      out->assign(origin, src.data());
     }
   }
   return zret;
