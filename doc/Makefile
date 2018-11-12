@@ -50,4 +50,4 @@ doxygen:
 	doxygen
 
 reference:
-	@if [ ! -f _build/html/reference ] ; then ln -s ../../doxygen/html _build/html/reference ; fi
+	@if [ ! -f _build/html/reference ] ; then mkdir -p _build/html; ln -s ../../doxygen/html _build/html/reference ; fi

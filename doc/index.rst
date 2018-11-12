@@ -20,6 +20,8 @@ Solid Wall of C++
   :maxdepth: 1
 
   preface.en
+  code/BufferWriter.en
+  code/BW_Format.en
   code/meta.en
   code/IntrusiveDList.en
   code/MemArena.en
