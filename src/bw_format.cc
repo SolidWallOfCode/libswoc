@@ -51,13 +51,10 @@ radix10(swoc::TextView src, swoc::TextView &out)
   unsigned zret = 0;
 
   out.clear();
-  src.ltrim_if(&isspace);
   if (src.size()) {
-    auto start = src.data();
+    auto origin = src.data();
     zret       = swoc::svto_radix<10>(src);
-    if (start != src.data()) {
-      out.assign(start, src.data());
-    }
+    out.assign(origin, src.data());
   }
   return zret;
 }
