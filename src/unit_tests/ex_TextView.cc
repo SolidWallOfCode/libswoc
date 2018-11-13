@@ -200,18 +200,29 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
 
 // Example: line parsing from a file.
 
-TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]") {
-  swoc::file::path path{ "doc/conf.py" };
+TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
+{
+  swoc::file::path path{"doc/conf.py"};
   std::error_code ec;
 
-  auto content = swoc::file::load(path, ec);
+  auto content   = swoc::file::load(path, ec);
   size_t n_lines = 0;
 
-  TextView src { content };
-  while (! src.empty()) {
+  TextView src{content};
+  while (!src.empty()) {
     auto line = src.take_prefix_at('\n').trim_if(&isspace);
-    if (line.empty() || '#' == *line) continue;
+    if (line.empty() || '#' == *line)
+      continue;
     ++n_lines;
   }
   REQUIRE(n_lines == 84);
 };
+
+TEST_CASE("TextView misc", "[libswoc][example][textview][misc]")
+{
+  TextView src = "  alpha.bravo.old:charlie.delta.old  :  echo.foxtrot.old  ";
+  REQUIRE("alpha.bravo" == src.take_prefix_at(':').remove_suffix_at('.').ltrim_if(&isspace));
+  REQUIRE("charlie.delta" == src.take_prefix_at(':').remove_suffix_at('.').ltrim_if(&isspace));
+  REQUIRE("echo.foxtrot" == src.take_prefix_at(':').remove_suffix_at('.').ltrim_if(&isspace));
+  REQUIRE(src.empty());
+}

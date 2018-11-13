@@ -162,18 +162,14 @@ A secondary distinction is what is done to the view by the methods.
    is discarded and not left in either the returned view nor the source view. If the selected character
    is not in the view, the entire view is returned and the source view is cleared.
 
-Other
------
-
-|TV| provides a collection of "trim" methods, which remove leading or trailing characters. This can
-be done for a single character, one of a set of characters, or a predicate. The most common use is
-with the predicate :code:`isspace` which removes leading and/or trailing whitespace as needed.
-
-Affix Methods
--------------
-
 .. _`std::string_view::remove_prefix`: https://en.cppreference.com/w/cpp/string/basic_string_view/remove_prefix
 .. _`std::string_view::remove_suffix`: https://en.cppreference.com/w/cpp/string/basic_string_view/remove_suffix
+
+This is a table of the affix oriented methods, grouped by the properties of the methods. "Bounded"
+indicates whether the operation requires the target character, however specified, to be within the
+bounds of the view. On this note, the :code:`remove_prefix` and :code:`remove_suffix` are differently
+implement in |TV| compared to :code:`std::string_view`. Rather than being undefined, the methods will
+clear the view if the size specified is larger than the contents of the view.
 
 +-----------------+--------+---------+------------------------------------------+
 | Operation       | Affix  | Bounded | Method                                   |
@@ -226,6 +222,32 @@ Affix Methods
 |                 |        +         +------------------------------------------+
 |                 |        |         | :libswoc:`TextView::take_suffix_if`      |
 +-----------------+--------+---------+------------------------------------------+
+
+Other
+-----
+
+The comparison operators for |TV| are inherited from :code:`std::string_view` and therefore use the
+content of the view to determine the relationship.
+
+|TV| provides a collection of "trim" methods which remove leading or trailing characters. These have
+similar suffixes with the same meaning as the affix methods. This can be done for a single
+character, one of a set of characters, or a predicate. The most common use is with the predicate
+:code:`isspace` which removes leading and/or trailing whitespace as needed.
+
+Numeric conversions are provided, in signed (:libswoc:`svtoi`) and unsigned (:libswoc:`svtou`) flavors.
+These functions are designed to be "complete" in the sense that any other string to integer conversion
+can be mapped to one of these functions.
+
+The standard functions :code:`strcmp`, :code:`strcasecmp`, and :code:`memcmp` are overloaded when
+at least of the parameters is a |TV|. The length is taken from the view, rather than being an explicit
+parameter as with :code:`strncasecmp`.
+
+When no other useful result can be returned, |TV| methods return a reference to the instance. This
+makes chaining methods easy. If a list consisted of colon separated elements, each of which was
+of the form "A.B.old" and just the "A.B" part was needed, sans leading white space:
+
+.. literalinclude:: ../../src/unit_tests/ex_TextView.cc
+   :lines: 223-227
 
 Parsing with TextView
 =====================

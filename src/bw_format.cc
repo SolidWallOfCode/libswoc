@@ -53,7 +53,7 @@ radix10(swoc::TextView src, swoc::TextView &out)
   out.clear();
   if (src.size()) {
     auto origin = src.data();
-    zret       = swoc::svto_radix<10>(src);
+    zret        = swoc::svto_radix<10>(src);
     out.assign(origin, src.data());
   }
   return zret;

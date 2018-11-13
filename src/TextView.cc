@@ -64,6 +64,7 @@ strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
   return zret;
 }
 
+/// @cond INTERNAL
 const int8_t swoc::svtoi_convert[256] = {
   /* [can't do this nicely because clang format won't allow exdented comments]
    0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
@@ -85,6 +86,7 @@ const int8_t swoc::svtoi_convert[256] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // E0
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // F0
 };
+/// @endcond
 
 intmax_t
 swoc::svtoi(TextView src, TextView *out, int base)
