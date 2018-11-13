@@ -169,6 +169,64 @@ Other
 be done for a single character, one of a set of characters, or a predicate. The most common use is
 with the predicate :code:`isspace` which removes leading and/or trailing whitespace as needed.
 
+Affix Methods
+-------------
+
+.. _`std::string_view::remove_prefix`: https://en.cppreference.com/w/cpp/string/basic_string_view/remove_prefix
+.. _`std::string_view::remove_suffix`: https://en.cppreference.com/w/cpp/string/basic_string_view/remove_suffix
+
++-----------------+--------+---------+------------------------------------------+
+| Operation       | Affix  | Bounded | Method                                   |
++=================+========+=========+==========================================+
+| Copy            | Prefix | No      | :libswoc:`TextView::prefix`              |
+|                 +        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::prefix_at`           |
+|                 +        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::prefix_if`           |
+|                 +--------+---------+------------------------------------------+
+|                 | Suffix | No      | :libswoc:`TextView::suffix`              |
+|                 +        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::suffix_at`           |
+|                 +        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::suffix_if`           |
++-----------------+--------+---------+------------------------------------------+
+| Modify          | Prefix | No      | `std::string_view::remove_prefix`_       |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::remove_prefix_at`    |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::remove_prefix_if`    |
+|                 +--------+---------+------------------------------------------+
+|                 | Suffix | No      | `std::string_view::remove_suffix`_       |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::remove_suffix_at`    |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::remove_suffix_if`    |
++-----------------+--------+---------+------------------------------------------+
+| Modify and Copy | Prefix | Yes     | :libswoc:`TextView::split_prefix`        |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::split_prefix_at`     |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::split_prefix_if`     |
+|                 |        +---------+------------------------------------------+
+|                 |        | No      | :libswoc:`TextView::take_prefix`         |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::take_prefix_at`      |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::take_prefix_if`      |
+|                 +--------+---------+------------------------------------------+
+|                 | Suffix | Yes     | :libswoc:`TextView::split_suffix`        |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::split_suffix_at`     |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::split_suffix_if`     |
+|                 |        +---------+------------------------------------------+
+|                 |        | No      | :libswoc:`TextView::take_suffix`         |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::take_suffix_at`      |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::take_suffix_if`      |
++-----------------+--------+---------+------------------------------------------+
+
 Parsing with TextView
 =====================
 
