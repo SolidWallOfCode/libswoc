@@ -727,13 +727,13 @@ Errata::note_v(Severity level, std::string_view fmt, std::tuple<Args...> const &
   Data *data = this->writeable_data();
   auto span  = data->remnant();
   FixedBufferWriter bw{span};
-  if (!bw.printv(fmt, args).error()) {
+  if (!bw.print_v(fmt, args).error()) {
     span = span.prefix(bw.extent());
     data->alloc(bw.extent()); // reserve the part of the remnant actually used.
   } else {
     // Not enough space, get a big enough chunk and do it again.
     span = this->alloc(bw.extent());
-    FixedBufferWriter{span}.printv(fmt, args);
+    FixedBufferWriter{span}.print_v(fmt, args);
   }
   this->note_localized(level, span.view());
   return *this;

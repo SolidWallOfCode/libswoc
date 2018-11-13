@@ -18,9 +18,19 @@
 Preface
 *******
 
-The Solid Wall of C++ library is a collection of C++ classes and utilities. This code evolved out of infrastructure used in `Apache Traffic Server <https://trafficserver.apache.org>`__. The utilities had become useful enough there were requests to be able to use them in ATS plugins and other, unrelated projects. Hence this library. I hope you find it as useful as I have.
+Because this code is used inside an Apache Software Foundation project, it carries the ASF
+copyright. It is not, however, officially affiliated with the ASF. This is my personal project which
+I am pleased to share with the ASF and anyone else.
 
-Because this code is used inside an Apache Software Foundation project, it carries the ASF copyright. It is not, however, officially affiliated with the ASF. This is my personal project which I am pleased to share with the ASF and anyone else.
+The unit testing coding is divided in to two types. Files that start with "test\_..." are the core
+unit tests. Files that start with "ex\_..." are unit tests that exist to provide example code for
+the documentation. Therefore some of the constructs or arrangement of code in the example files will
+look a bit odd as straight up unit tests. This also means that changing code in any example file
+will likely require updating the documentation, which includes code from those files by line number.
+This is the primary reason for the split, so that the real unit tests can be updated without concern
+for breaking the documentation examples. I wanted the example code in the unit tests in order to
+verify that it compiles and runs. This helps keep the documentation more up to date, particularly
+if there are API changes.
 
 Typographic Conventions
 =======================
@@ -31,7 +41,7 @@ Italic
     Used to introduce new terms on their initial appearance.
 
     Example:
-        A :term:`Scalar` is an integral value that is always a multiple of a fixed constant.
+        A :term:`scalar` is an integral value that is always a multiple of a fixed constant.
 
 Monospace
     Represents C/C++ language statements, commands, file paths, file content,

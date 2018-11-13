@@ -73,8 +73,8 @@ using ::strcmp; // Make this an overload, not an override.
     @c TextView is based on an earlier classes @c ConstBuffer, @c StringView and influenced by @c
     Boost.string_ref and @c std::string_view. None of these were adequate for how use of @c
     ConstBuffer evolved with regard to text based manipulations. @c TextView is a super set of @c
-    std::string_view (and therefore our local implementation, @std::string_view). It is designed to
-    be a drop in replacement.
+    std::string_view (and therefore our local implementation, @c std::string_view). It is designed
+    to be a drop in replacement.
 
     @note To simplify the interface there is no constructor just a character pointer. Constructors require
     either a literal string or an explicit length. This avoid ambiguities which are much more annoying that
@@ -494,7 +494,7 @@ public:
    * @param pred The predicate instance.
    * @return @a this.
    */
-  template <typename F> self_type &remove_suffix_if(F const &f);
+  template <typename F> self_type &remove_suffix_if(F const &pred);
 
   /** Remove and return a suffix of size @a n.
    *
@@ -625,7 +625,7 @@ public:
 
   /** Check if the view starts with a specific @a prefix, ignoring case.
    *
-   * @param prefix String to check against @a this.
+   * @param suffix String to check against @a this.
    * @return @c true if <tt>this->suffix(suffix.size()) == suffix</tt> without regard to case, @c false otherwise.
    * @internal C++20 preview.
    */

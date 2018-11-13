@@ -39,7 +39,7 @@ namespace detail
   what(std::string_view const &fmt, Args &&... args)
   {
     std::string zret;
-    swoc::bwprintv(zret, fmt, std::forward_as_tuple(args...));
+    swoc::bwprint_v(zret, fmt, std::forward_as_tuple(args...));
     return std::move(zret);
   }
 } // namespace detail

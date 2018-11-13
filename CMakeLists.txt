@@ -22,7 +22,7 @@ set(core_headers
     include/swoc/TextView.h
     include/swoc/swoc_file.h
     include/swoc/swoc_meta.h
-)
+    include/swoc/bwf_ip.h)
 
 # These are external but required.
 set(ext_headers
@@ -58,6 +58,7 @@ add_executable(test_libswoc
     src/unit_tests/test_Scalar.cc
     src/unit_tests/test_swoc_file.cc
 
+    src/unit_tests/ex_bw_format.cc
     src/unit_tests/ex_IntrusiveDList.cc
     src/unit_tests/ex_TextView.cc)
 

@@ -221,6 +221,8 @@ public:
   /// Construct to empty list.
   IntrusiveDList() = default;
 
+  IntrusiveDList(self_type const &that) = delete;
+
   /// Move list to @a this and leave @a that empty.
   IntrusiveDList(self_type &&that);
 
@@ -241,7 +243,7 @@ public:
   /// @return This container.
   self_type &prepend(value_type *v);
 
-  /// Add @elt as the last element in the list.
+  /// Add @a elt as the last element in the list.
   /// @return This container.
   self_type &append(value_type *v);
 

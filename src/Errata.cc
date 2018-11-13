@@ -1,4 +1,5 @@
 /** @file
+ *
     Errata implementation.
 
     @section license License

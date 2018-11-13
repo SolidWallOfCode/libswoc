@@ -20,5 +20,17 @@
   the License.
  */
 
-#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_RUNNER
 #include "swoc/ext/catch.hpp"
+
+void EX_BWF_Format_Init();
+
+int
+main(int argc, char *argv[])
+{
+  EX_BWF_Format_Init();
+
+  int result = Catch::Session().run(argc, argv);
+
+  return result;
+}

@@ -13,8 +13,14 @@
 
 .. _manual-toc:
 
+*****************
 Solid Wall of C++
 *****************
+
+The Solid Wall of C++ library is a collection of C++ classes and utilities. This code evolved out of
+infrastructure used in `Apache Traffic Server <https://trafficserver.apache.org>`__. The utilities
+had become useful enough there were requests to be able to use them in ATS plugins and other,
+unrelated projects. Hence this library. I hope you find it as useful as I have.
 
 .. toctree::
   :maxdepth: 1
@@ -29,7 +35,27 @@ Solid Wall of C++
   code/Scalar.en
 
 Indices and tables
-==================
+******************
 
 * :ref:`genindex`
 * :ref:`search`
+
+Glossary
+********
+
+.. glossary::
+
+   name binding
+      A map of names to formatted output generators.
+
+   format context
+      A value used by a :term:`name binding` to provide context for the formatted output.
+
+   format string
+      A string that describes formatted output.
+
+   format specifier
+      An element in a :term:`format string` which is replaced by formatted output of an argument.
+
+   scalar
+      A scaled /quantized integral value.

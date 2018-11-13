@@ -37,40 +37,40 @@ namespace bwf
 {
   struct Spec;
   class Format;
-  class BoundNames;
+  class NameBinding;
 } // namespace bwf
 
-/** Base (abstract) class for concrete buffer writers.
+/** Wrapper for operations on a buffer.
+ *
+ * This maintains information about the size and amount in use of the buffer, preventing data
+ * overruns. In all cases, methods that write to the buffer clip the input to the size of the
+ * remaining buffer space. The @c error method can be used to detect such clipping. The theoretical
+ * size of the buffer is also tracked such that if there is not enough buffer space, the amount
+ * needed can be determined by the method @c extent.
+ *
+ * @note This is a protocol class, concrete subclasses implement the functionality.
  */
 class BufferWriter
 {
 public:
-  /** Add the character @a c to the buffer.
-
-      @a c is added only if there is room in the buffer. If not, the instance is put in to an error
-      state. In either case the value for @c extent is incremented.
-
-      @internal If any variant of @c write discards any characters, the instance must be put in an
-      error state (indicated by the override of @c error).  Derived classes must not assume the
-      write() functions will not be called when the instance is in an error state.
-
-      @return @c *this
-  */
+  /** Write @a c to the buffer.
+   *
+   * @param c Character to write.
+   * @return @a this.
+   */
   virtual BufferWriter &write(char c) = 0;
 
-  /** Add @a data to the buffer, up to @a length bytes.
-
-      Data is added only up to the remaining room in the buffer. If the remaining capacity is
-      exceeded (i.e. data is not written to the output), the instance is put in to an error
-      state. In either case the value for @c extent is incremented by @a length.
-
-      @internal This uses the single character write to output the data. It is presumed concrete
-      subclasses will override this method to use more efficient mechanisms, dependent on the type
-      of output buffer.
-
-      @return @c *this
-  */
-  virtual BufferWriter &write(const void *data, size_t length);
+  /** Write @a length bytes starting at @a data to the buffer.
+   *
+   * @param data Source data.
+   * @param length Number of bytes in the source data.
+   * @return @a this.
+   *
+   * @internal This uses the single character write to output the data. It is presumed concrete
+   * subclasses will override this method to use more efficient mechanisms, dependent on the type of
+   * output buffer.
+   */
+  virtual BufferWriter &write(void const *data, size_t length);
 
   /** Add the contents of @a sv to the buffer, up to the size of the view.
 
@@ -82,69 +82,51 @@ public:
   */
   BufferWriter &write(const std::string_view &sv);
 
-  /// Get the address of the first byte in the output buffer.
+  /// Address of the first byte in the output buffer.
   virtual const char *data() const = 0;
 
   /// Get the error state.
   /// @return @c true if in an error state, @c false if not.
   virtual bool error() const = 0;
 
-  /** Get the address of the next output byte in the buffer.
+  /** Address of the first unused byte in the output buffer.
 
-      Succeeding calls to non-const member functions, other than this method, must be presumed to
-      invalidate the current auxiliary buffer (contents and address).
-
-      Care must be taken to not write to data beyond this plus @c remaining bytes. Usually the
-      safest mechanism is to create a @c FixedBufferWriter on the auxillary buffer and write to that.
-
-      @code
-      swoc::FixedBufferWriter subw(w.aux_data(), w.remaining());
-      write_some_stuff(subw); // generate output into the buffer.
-      w.fill(subw.extent()); // update main buffer writer.
-      @endcode
+      The address is fragile and calls to non-const methods can invalidate it.
 
       @return Address of the next output byte, or @c nullptr if there is no remaining capacity.
    */
   virtual char *aux_data();
 
-  /// Get the total capacity.
-  /// @return The total number of bytes that can be written without causing an error condition.
+  /// @return The number of bytes that can be successfully written to this buffer.
   virtual size_t capacity() const = 0;
 
-  /// Get the extent.
-  /// @return Total number of characters that have been written, including those discarded due to an error condition.
+  /// @return Number of characters written to the buffer, including those discarded.
   virtual size_t extent() const = 0;
 
-  /// Get the output size.
-  /// @return Total number of characters that are in the buffer (successfully written and not discarded)
+  /// @return Number of bytes of valid (used) data in the buffer.
   size_t size() const;
 
-  /// Get the remaining buffer space.
-  /// @return Number of additional characters that can be written without causing an error condidtion.
+  /// @return The number of bytes which have not yet been written.
   size_t remaining() const;
 
   /** Increase the extent by @a n bytes.
-
-      @param n The number of bytes to add to the extent.
-
-      The buffer content is unchanged, only the extent value is adjusted.
-
-      This is useful
-      when doing local buffer filling using @c aux_data. After writing data there, it can be
-      added to the extent using this method.
-
-      @internal Concrete subclasses @b must override this to advance in a way consistent with the
-      specific buffer type.
-
-      @return @c *this
-  */
+   *
+   * @param n Number of bytes to consume.
+   * @return @a this.
+   *
+   * This is used to add data written in the @c aux_data to the written data in the buffer.
+   *
+   * @internal Concrete subclasses @b must override this in a way consistent with the specific buffer type.
+   */
   virtual BufferWriter &commit(size_t n) = 0;
 
   /** Decrease the extent by @a n.
    *
    * @param n Number of bytes to remove from the extent.
+   * @return @a this.
    *
-   * The buffer content is unchanged, only the extent value is adjusted.
+   * The buffer content is unchanged, only the extent value is adjusted. This effectively discards
+   * @a n bytes of already written data.
    */
   virtual BufferWriter &discard(size_t n) = 0;
 
@@ -157,8 +139,9 @@ public:
   /// Restore @a n bytes of capacity.
   /// If there is an error condition, this function clears it and sets the extent to the size.  It
   /// then increases the capacity by n characters.
-  /// @note It is required that any restored capacity have been previously removed by @c shrink.
-  /// @see shrink
+  /// @note This does not make the internal buffer size larger. It can only restore capacity earlier
+  /// removed by @c restrict.
+  /// @see restrict
   virtual BufferWriter &restore(size_t n) = 0;
 
   /** Copy data from one part of the buffer to another.
@@ -172,54 +155,110 @@ public:
    * @param src Offset of the first byte to copy from.
    * @param n Number of bytes to copy.
    * @return @c *this
+   *
+   * @internal This is used to perform justification for formatting.
    */
   virtual BufferWriter &copy(size_t dst, size_t src, size_t n) = 0;
 
   // Force virtual destructor.
   virtual ~BufferWriter();
 
-  /** BufferWriter print.
+  /** Formatted output to the buffer.
+   *
+   * @tparam Args Types of the format arguments.
+   * @param fmt Format string to control formatted output.
+   * @param args Parameters for the format string.
+   * @return @a this.
+   *
+   * The format string is Python style.
+   * See http://docs.solidwallofcode.com/libswoc/code/BW_Format.en.html for further information.
+   *
+   * @note This must be declared here, but the implementation is in @c bwf_base.h. That file does
+   * not need to be included if formatted output is not used.
+   */
+  template <typename... Args> BufferWriter &print(const TextView &fmt, Args &&... args);
 
-      This prints its arguments to the @c BufferWriter @a w according to the format @a fmt. The format
-      string is based on Python style formating, each argument substitution marked by braces, {}. Each
-      specification has three parts, a @a name, a @a specifier, and an @a extention. These are
-      separated by colons. The name should be either omitted or a number, the index of the argument to
-      use. If omitted the place in the format string is used as the argument index. E.g. "{} {} {}",
-      "{} {1} {}", and "{0} {1} {2}" are equivalent. Using an explicit index does not reset the
-      position of subsequent substiations, therefore "{} {0} {}" is equivalent to "{0} {0} {2}".
+  /** Formatted output to the buffer.
+   *
+   * @tparam Args Types of the arguments for formatting.
+   * @param fmt Format string.
+   * @param args The format arguments in a tuple.
+   * @return @a this
+   *
+   * This is the equivalent of the "va..." form for printing. Alternate front ends to formatted
+   * output should gather their formatting arguments into a tuple, usually using
+   * @c std::forward_as_tuple().
+   */
+  template <typename... Args> BufferWriter &print_v(const TextView &fmt, const std::tuple<Args...> &args);
 
-      @note This must be declared here, but the implementation is in @c bwf_base.h
-  */
-  template <typename... Rest> BufferWriter &print(const TextView &fmt, Rest &&... rest);
-
-  /** Print overload to take arguments as a tuple instead of explicitly.
-      This is useful for forwarding variable arguments from other functions / methods.
-  */
-  template <typename... Args> BufferWriter &printv(const TextView &fmt, const std::tuple<Args...> &args);
-
-  /// Print using a preparsed @a fmt.
+  /** Formatted output to the buffer.
+   *
+   * @tparam Args Types of the format input parameters.
+   * @param fmt Pre-condensed format.
+   * @param args Arguments for the format string.
+   * @return @a this.
+   */
   template <typename... Args> BufferWriter &print(const bwf::Format &fmt, Args &&... args);
-  template <typename... Args> BufferWriter &printv(const bwf::Format &fmt, const std::tuple<Args...> &args);
 
-  /** Print the arguments on to the buffer.
+  /** Formatted output to the buffer.
+   *
+   * @tparam Args Types of the parameter for formatting.
+   * @param fmt Pre-condensed format string.
+   * @param args The format parameters in a tuple.
+   * @return @a this
+   *
+   * This is the equivalent of the "va..." form for printing. Alternate front ends to formatted
+   * output should gather their formatting arguments into a tuple, usually using
+   * @c std::forward_as_tuple().
+   */
+  template <typename... Args> BufferWriter &print_v(const bwf::Format &fmt, const std::tuple<Args...> &args);
+
+  /** Write formatted output of @a args to @a this buffer.
    *
    * This is the base implementation, all of the other variants are wrappers for this.
    *
-   * @tparam F Format processor - returns chunks of the format.
-   * @tparam Args Arguments for the format.
+   * @tparam F Format processor type.
+   * @tparam Args Types for format parameters.
    * @param names Name set for specifier names.
+   * @param f Format processor instance, which parse the format piecewise.
+   * @param args The format parameters in a tuple.
    */
   template <typename F, typename... Args>
-  BufferWriter &print_nv(bwf::BoundNames const &names, F &&f, std::tuple<Args...> const &args);
-  /// Convenience for no format argument style invocation.
-  template <typename F> BufferWriter &print_nv(const bwf::BoundNames &names, F &&f);
+  BufferWriter &print_nfv(bwf::NameBinding const &names, F &&f, std::tuple<Args...> const &args);
 
-  /// Output the buffer contents to the @a stream.
-  /// @return The destination stream.
+  /** Write formatted output of @a args to @a this buffer.
+   *
+   * @tparam F Format processor type.
+   * @param names Name set for specifier names.
+   * @param f Format processor instance, which parse the format piecewise.
+   *
+   * @note This is primarily an internal convenience for certain situations where a format parameter
+   * tuple is not needed and difficult to create.
+   */
+  template <typename F> BufferWriter &print_nfv(const bwf::NameBinding &names, F &&f);
+
+  /** Write formatted output to @a this buffer.
+   *
+   * @param names Name set for specifier names.
+   * @param fmt Format string.
+   *
+   * This is intended to be use with context name binding where @a names has the bindings and the
+   * format string @a fmt contains only references to those names, not to any arguments.
+   */
+  BufferWriter &print_n(const bwf::NameBinding &names, TextView const &fmt);
+
+  /** IO stream operator.
+   *
+   * @param stream Output stream.
+   * @return @a stream
+   *
+   * Write the buffer contents to @a stream.
+   */
   virtual std::ostream &operator>>(std::ostream &stream) const = 0;
 };
 
-/** A @c BufferWrite concrete subclass to write to a fixed size buffer.
+/** A concrete @c BufferWriter class for a fixed buffer.
+ *
  */
 class FixedBufferWriter : public BufferWriter
 {
@@ -230,20 +269,14 @@ public:
   /** Construct a buffer writer on a fixed @a buffer of size @a capacity.
 
       If writing goes past the end of the buffer, the excess is dropped.
-
-      @note If you create a instance of this class with capacity == 0 (and a nullptr buffer), you
-      can use it to measure the number of characters a series of writes would result it (from the
-      extent() value) without actually writing.
    */
   FixedBufferWriter(char *buffer, size_t capacity);
 
-  /** Construct from span
-   *
-   */
+  /// Construct using the memory @a span as the buffer.
   FixedBufferWriter(MemSpan<char> const &span);
 
-  /** Construct empty buffer.
-   * This is useful for doing sizing before allocating a buffer.
+  /** Constructor an empty buffer with no capacity.
+   * This can be useful to measure the extent of the output before allocating memory.
    */
   FixedBufferWriter(std::nullptr_t);
 
@@ -260,19 +293,19 @@ public:
   /// Write a single character @a c to the buffer.
   FixedBufferWriter &write(char c) override;
 
-  /// Write @a data to the buffer, up to @a length bytes.
+  /// Write @a length bytes, starting at @a data, to the buffer.
   FixedBufferWriter &write(const void *data, size_t length) override;
 
   // Bring in non-overridden methods.
   using super_type::write;
 
-  /// Return the output buffer.
+  /// @return The start of the buffer.
   const char *data() const override;
 
-  /// Return whether there has been an error.
+  /// @return @c true if output has been discarded, @a false otherwise.
   bool error() const override;
 
-  /// Get the start of the unused output buffer.
+  /// @return Start of the unused buffer, or @c nullptr is there is no remaining unwritten space.
   char *aux_data() override;
 
   /// Get the total capacity of the output buffer.
@@ -285,14 +318,12 @@ public:
   self_type &commit(size_t n) override;
 
   /// Drop @a n characters from the end of the buffer.
-  /// The extent is reduced but the data is not overwritten and can be recovered with
-  /// @c fill.
   self_type &discard(size_t n) override;
 
   /// Reduce the capacity by @a n.
   self_type &restrict(size_t n) override;
 
-  /// Extend the capacity by @a n.
+  /// Restore @a n bytes of the capacity.
   self_type &restore(size_t n) override;
 
   /// Copy data in the buffer.
@@ -303,10 +334,10 @@ public:
   /// @code
   ///   bw.reset().print("....."); // clear old data and print new data.
   /// @endcode
-  /// This is equivalent to @c reduce(0) but clearer for that case.
+  /// This is equivalent to @c w.discard(w.size()) but clearer for that case.
   self_type &clear();
 
-  /// Provide a string_view of all successfully written characters.
+  /// @return The used part of the buffer as a @c std::string_view.
   std::string_view view() const;
 
   /// Provide a @c string_view of all successfully written characters as a user conversion.
@@ -315,14 +346,15 @@ public:
   /// Output the buffer contents to the @a stream.
   std::ostream &operator>>(std::ostream &stream) const override;
 
-  // Overrides for co-variance
+  /// @cond COVARY
   template <typename... Rest> self_type &print(TextView fmt, Rest &&... rest);
 
-  template <typename... Args> self_type &printv(TextView fmt, std::tuple<Args...> const &args);
+  template <typename... Args> self_type &print_v(TextView fmt, std::tuple<Args...> const &args);
 
   template <typename... Args> self_type &print(bwf::Format const &fmt, Args &&... args);
 
-  template <typename... Args> self_type &printv(bwf::Format const &fmt, std::tuple<Args...> const &args);
+  template <typename... Args> self_type &print_v(bwf::Format const &fmt, std::tuple<Args...> const &args);
+  /// @endcond
 
 protected:
   char *const _buf;        ///< Output buffer.
@@ -331,11 +363,29 @@ protected:
   size_t _restriction = 0; ///< Restricted capacity.
 };
 
-/** A buffer writer that writes to an array of char (of fixed size N) that is internal to the writer instance.
-
-    It's called 'local' because instances are typically declared as stack-allocated, local function
-    variables.
-*/
+/** A @c BufferWriter that has an internal buffer.
+ *
+ * @tparam N Number of bytes in internal buffer.
+ *
+ * The buffer is part of the class instance and is therefore allocated from the same memory pool
+ * as the object. E.g, if this is declared as a local variable the buffer is on the stack.
+ *
+ * This was written to make code such as
+ * @code
+ * char buff[1024];
+ * FixedBufferWriter w(buff, sizeof(buff));
+ * @endcode
+ * simpler as
+ * @code
+ * LocalBufferWriter<1024> w;
+ * @endcode
+ *
+ * This also makes it possible to use inside expressions and other stream operations without concern
+ * about having to previously declare the storage. E.g.
+ * @code
+ * create_note(LocalBufferWriter<256>().print("Note {}", idx).view());
+ * @endcode
+ */
 template <size_t N> class LocalBufferWriter : public FixedBufferWriter
 {
   using self_type  = LocalBufferWriter;
@@ -523,7 +573,7 @@ FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type &
 inline std::string_view
 FixedBufferWriter::view() const
 {
-  return std::string_view(_buf, size());
+  return {_buf, size()};
 }
 
 /// Provide a @c string_view of all successfully written characters as a user conversion.

@@ -215,7 +215,7 @@ TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
       continue;
     ++n_lines;
   }
-  REQUIRE(n_lines == 84);
+  REQUIRE(n_lines == 85);
 };
 
 TEST_CASE("TextView misc", "[libswoc][example][textview][misc]")
