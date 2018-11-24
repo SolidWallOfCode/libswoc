@@ -124,7 +124,7 @@ auto
 Container::debug(std::string_view fmt, Args &&... args) -> self_type &
 {
   Message *msg = new Message;
-  swoc::bwprintv(msg->_text, fmt, std::forward_as_tuple(args...));
+  swoc::bwprint_v(msg->_text, fmt, std::forward_as_tuple(args...));
   msg->_severity = Message::LVL_DEBUG;
   _msgs.append(msg);
   return *this;

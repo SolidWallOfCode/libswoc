@@ -52,7 +52,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinxcontrib.plantuml',
     'sphinxcontrib.doxylink',
-    'breathe',
+#    'breathe',
     'local'
 ]
 
@@ -131,10 +131,13 @@ pygments_style = 'default'
 
 nitpicky = True
 nitpick_ignore = [ ('cpp:identifier', 'intmax_t')
+                 , ('cpp:identifier', 'uintmax_t')
                  , ('cpp:identifier', 'size_t')
+                 , ('cpp:identifier', 'time_t')
                  , ('cpp:identifier', 'self_type')
                  , ('cpp:identifier', 'super_type')
                  , ('cpp:identifier', 'unspecified_type')
+                 , ('cpp:identifier', 'bwf')
                  , ('cpp:identifier', 'L') # template arg
                  , ('cpp:identifier', 'T') # template arg
                  , ('cpp:identifier', 'F') # template arg
@@ -173,7 +176,7 @@ from docutils.utils import unescape
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = 'static/images/trans_logo_tm_380x69.png'
+html_logo = 'images/balcora-gate-400x400.jpg'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -183,7 +186,7 @@ from docutils.utils import unescape
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['static']
+#html_static_path = ['static']
 
 # Include a stylesheet that overrides default table styling, to provide
 # content wrapping.

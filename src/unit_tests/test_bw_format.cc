@@ -26,7 +26,6 @@
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
-#include "swoc/bwf_printf.h"
 
 #include "swoc/ext/catch.hpp"
 
@@ -50,6 +49,9 @@ TEST_CASE("bwprint basics", "[bwprint]")
 {
   swoc::LocalBufferWriter<256> bw;
   std::string_view fmt1{"Some text"sv};
+  swoc::bwf::Format fmt2("left >{0:<9}< right >{0:>9}< center >{0:^9}<");
+  std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
+  static const swoc::bwf::Format bad_arg_fmt{"{{BAD_ARG_INDEX:{} of {}}}"};
 
   bw.print(fmt1);
   REQUIRE(bw.view() == fmt1);
@@ -126,36 +128,19 @@ TEST_CASE("bwprint basics", "[bwprint]")
   bw.clear();
   bw.print("Arg {} Arg {{{{}}}} {}", 9, 10);
   REQUIRE(bw.view() == "Arg 9 Arg {{}} 10");
-  bw.clear();
+  bw.clear().print(bad_arg_fmt, 17, 23);
+  REQUIRE(bw.view() == "{BAD_ARG_INDEX:17 of 23}");
 
   bw.clear().print("{leif}");
   REQUIRE(bw.view() == "{~leif~}"); // expected to be missing.
 
-  //  bw.clear().print("Thread: {thread-name} [{thread-id:#x}] - Tick: {tick} - Epoch: {now} - timestamp: {timestamp} !{0}", 31267);
-  //  REQUIRE(swoc::TextView(bw.view()).take_suffix_at('!') == "31267");
+  bw.clear().print(fmt2, 956);
+  REQUIRE(bw.view() == "left >956      < right >      956< center >   956   <");
 }
 
 TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
 {
   swoc::LocalBufferWriter<256> bw;
-  swoc::bwf::Format fmt("left >{0:<9}< right >{0:>9}< center >{0:^9}<");
-  std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
-
-  bw.clear();
-  static const swoc::bwf::Format bad_arg_fmt{"{{BAD_ARG_INDEX:{} of {}}}"};
-  bw.print(bad_arg_fmt, 17, 23);
-  REQUIRE(bw.view() == "{BAD_ARG_INDEX:17 of 23}");
-
-  bw.clear();
-  bw.print(fmt, 956);
-  REQUIRE(bw.view() == "left >956      < right >      956< center >   956   <");
-
-  bw.clear().print("Text: _{0:20.10}_", text);
-  REQUIRE(bw.view() == "Text: _0123456789          _");
-  bw.clear().print("Text: _{0:>20.10}_", text);
-  REQUIRE(bw.view() == "Text: _          0123456789_");
-  bw.clear().print("Text: _{0:-<20.10,20}_", text.substr(52));
-  REQUIRE(bw.view() == "Text: _QRSTUVWXYZ----------_");
 
   void *ptr = reinterpret_cast<void *>(0XBADD0956);
   bw.clear();
@@ -560,116 +545,6 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   REQUIRE(w.view() == "name = Evil Dave");
   w.clear().print("name = {}", swoc::bwf::FirstOf(empty, empty, s3, empty, s2, s1));
   REQUIRE(w.view() == "name = Leif");
-}
-
-// Test alternate format parsing.
-struct AltFormatEx {
-  AltFormatEx(TextView fmt);
-
-  explicit operator bool() const;
-  bool operator()(std::string_view &literal, swoc::bwf::Spec &spec);
-  TextView _fmt;
-};
-
-AltFormatEx::AltFormatEx(TextView fmt) : _fmt{fmt} {}
-
-AltFormatEx::operator bool() const
-{
-  return !_fmt.empty();
-}
-
-bool
-AltFormatEx::operator()(std::string_view &literal, swoc::bwf::Spec &spec)
-{
-  if (_fmt.size()) {
-    literal = _fmt.split_prefix_at('%');
-    if (literal.empty()) {
-      literal = _fmt;
-      _fmt.clear();
-      return false;
-    }
-
-    if (_fmt.size() >= 1) {
-      char c = _fmt[0];
-      if (c == '%') {
-        literal = {literal.data(), literal.size() + 1};
-        ++_fmt;
-      } else if (c == '<') {
-        size_t off = 0;
-        do {
-          off = _fmt.find('>', off + 1);
-          if (off == TextView::npos) {
-            throw std::invalid_argument("Unclosed leading angle bracket");
-          }
-        } while (':' == _fmt[off - 1]);
-        spec.parse(_fmt.substr(1, off - 1));
-        if (spec._name.empty()) {
-          throw std::invalid_argument("No name in specifier");
-        }
-        _fmt.remove_prefix(off + 1);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-struct Header {
-  TextView
-  proto() const
-  {
-    return "ipv4";
-  }
-  TextView
-  chi() const
-  {
-    return "10.56.128.96";
-  }
-};
-
-using AltNames = swoc::bwf::ContextNames<Header>;
-
-TEST_CASE("bwf alternate", "[libswoc][bwf]")
-{
-  using BW   = swoc::BufferWriter;
-  using Spec = swoc::bwf::Spec;
-  AltNames names;
-  Header hdr;
-  names.assign("proto", [](BW &w, Spec const &spec, Header &hdr) -> BW & { return swoc::bwformat(w, spec, hdr.proto()); });
-  names.assign("chi", [](BW &w, Spec const &spec, Header &hdr) -> BW & { return swoc::bwformat(w, spec, hdr.chi()); });
-
-  swoc::LocalBufferWriter<256> w;
-  w.print_nv(names.bind(hdr), AltFormatEx("This is chi - %<chi>"));
-  REQUIRE(w.view() == "This is chi - 10.56.128.96");
-  w.clear().print_nv(names.bind(hdr), AltFormatEx("Use %% for a single"));
-  REQUIRE(w.view() == "Use % for a single");
-  w.clear().print_nv(names.bind(hdr), AltFormatEx("Use %%<proto> for %<proto>, dig?"));
-  REQUIRE(w.view() == "Use %<proto> for ipv4, dig?");
-  w.clear().print_nv(names.bind(hdr), AltFormatEx("Width |%<proto:10>| dig?"));
-  REQUIRE(w.view() == "Width |ipv4      | dig?");
-  w.clear().print_nv(names.bind(hdr), AltFormatEx("Width |%<proto:>10>| dig?"));
-  REQUIRE(w.view() == "Width |      ipv4| dig?");
-
-  swoc::bwprintf(w.clear(), "Fifty Six = %d", 56);
-  REQUIRE(w.view() == "Fifty Six = 56");
-  swoc::bwprintf(w.clear(), "int is %i", 101);
-  REQUIRE(w.view() == "int is 101");
-  swoc::bwprintf(w.clear(), "int is %zd", 102);
-  REQUIRE(w.view() == "int is 102");
-  swoc::bwprintf(w.clear(), "int is %ld", 103);
-  REQUIRE(w.view() == "int is 103");
-  swoc::bwprintf(w.clear(), "int is %s", 104);
-  REQUIRE(w.view() == "int is 104");
-  swoc::bwprintf(w.clear(), "int is %ld", -105);
-  REQUIRE(w.view() == "int is -105");
-
-  TextView digits{"0123456789"};
-  swoc::bwprintf(w.clear(), "Chars |%*s|", 12, digits);
-  REQUIRE(w.view() == "Chars |  0123456789|");
-  swoc::bwprintf(w.clear(), "Chars %.*s", 4, digits);
-  REQUIRE(w.view() == "Chars 0123");
-  swoc::bwprintf(w.clear(), "Chars |%*.*s|", 12, 5, digits);
-  REQUIRE(w.view() == "Chars |       01234|");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

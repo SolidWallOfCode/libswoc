@@ -1,18 +1,14 @@
-.. Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
+.. Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+   agreements.  See the NOTICE file distributed with this work for additional information regarding
+   copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with the License.  You may obtain
+   a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing,
-   software distributed under the License is distributed on an
-   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-   KIND, either express or implied.  See the License for the
-   specific language governing permissions and limitations
+   Unless required by applicable law or agreed to in writing, software distributed under the License
+   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+   or implied.  See the License for the specific language governing permissions and limitations
    under the License.
 
 .. include:: ../common-defs.rst
@@ -39,21 +35,31 @@ Description
 
    :libswoc:`Reference documentation <BufferWriter>`.
 
-|BW| is intended to increase code reliability and reduce complexity in the common
-circumstance of generating formatted output strings in fixed buffers. Current usage is a mixture of
-:code:`snprintf` and :code:`memcpy` which provides a large scope for errors and verbose code to
-check for buffer overruns. The goal is to provide a wrapper over buffer size tracking to make such
-code simpler and less vulnerable to implementation error.
+.. class:: FixedBufferWriter
 
-|BW| itself is an abstract class to describe the base interface to wrappers for
-various types of output buffers. As a common example, :class:`FixedBufferWriter` is a subclass
-designed to wrap a fixed size buffer. :class:`FixedBufferWriter` is constructed by passing it a
-buffer and a size, which it then tracks as data is written. Writing past the end of the buffer is
-clipped to prevent overruns.
+   :libswoc:`Reference documentation <FixedBufferWriter>`.
 
-Consider current code that looks like this.
+.. class:: template < uintmax_t N > LocalBufferWriter
 
-.. code-block:: cpp
+   :libswoc:`Reference documentation <LocalBufferWriter>`.
+
+|BW| is designed for use in the common circumstance of generating formatted output strings in fixed
+buffers. The goal is to replace usage that is a mixture of :code:`snprintf` and :code:`memcpy`. |BW|
+automates buffer size checking and clipping for better reliability.
+
+|BW| itself is an abstract class to describe the base interface to wrappers for various types of
+output buffers. As a common example, :libswoc:`FixedBufferWriter` is a subclass that wraps a fixed
+size buffer. An instance is constructed by passing it a buffer and a size, which it then tracks as
+data is written. Writing past the end of the buffer is automatically clipped to prevent overruns.
+
+|BW| tracks two sizes - the actual amount of space used in the buffer and the amount of data written.
+The former is bounded by the buffer size to prevent overruns. The latter provides a mechanism both
+to detect the clipping done to prevent overruns, and the amount of space needed to avoid it.
+
+Usage
++++++
+
+Consider a common case of code like ::
 
    char buff[1024];
    char * ptr = buff;
@@ -75,144 +81,120 @@ Consider current code that looks like this.
      len -= n;
    }
 
-This is changed to
-
-.. code-block:: cpp
+This is changed to::
 
    char buff[1024];
-   ts::FixedBufferWriter bw(buff, sizeof(buff));
+   swoc::FixedBufferWriter bw(buff, sizeof(buff));
    //...
-   bw.write(thing1, thing1_len);
+   bw.write(thing1, thing1_len).
    bw.write(thing2, thing2_len);
    bw.write(thing3, thing3_len);
 
-The remaining length is updated every time and checked every time. A series of checks, calls to
-:code:`memcpy`, and size updates become a simple series of calls to :func:`BufferWriter::write`.
+Or even more compactly with :libswoc:`LocalBufferWriter` ::
 
-For other types of interaction, :class:`FixedBufferWriter` provides access to the unused buffer via
-:func:`BufferWriter::auxBuffer` and :func:`BufferWriter::remaining`. This makes it possible to easily
-use :code:`snprintf`, given that :code:`snprint` returns the number of bytes written.
-:func:`BufferWriter::fill` is used to indicate how much of the unused buffer was used. Therefore
-something like (riffing off the previous example)::
+   swoc::LocalBufferWriter<1024> bw;
+   // ...
+   bw.write(thing1, thing1_len).write(thing2, thing2_len).write(thing3, thing3_len);
 
-   if (len > 0) {
-      len -= snprintf(ptr, len, "format string", args...);
+For every call to :libswoc:`BufferWriter::write` the remaining length is updated and checked,
+discarding any overrun. This replaces the need to write the checks explictly on every :code:`memcpy`.
+Usually, however, |BW| will do the needed space checks that were not done at all previously.
+
+A similar mechanism works for :code:`snprintf`::
+
+   if (count < sizeof(buff)) {
+      count += snprintf(buff + count, sizeof(buff) - count, "blah blah", arg1, ...);
    }
 
-becomes::
+vs. ::
 
-   bw.fill(snprintf(bw.auxBuffer(), bw.remaining(),
-           "format string", args...));
+   bw.commit(snprintf(bw.aux_data(), bw.remaining(), "blah blah", arg1, ...));
 
-By hiding the length tracking and checking, the result is a simple linear sequence of output chunks,
-making the logic much eaier to follow.
+As before, the buffer limits are updated and checked, discarding as needed.
 
-Usage
-+++++
+|BW| itself is an abstract class and can't be constructed. Use is provided through concrete subclasses.
 
-The header files are divided in to two variants. :swoc:git:`include/tscore/BufferWriter.h` provides the basic
-capabilities of buffer output control. :swoc:git:`include/tscore/BufferWriterFormat.h` provides the basic
-:ref:`formatted output mechanisms <bw-formatting>`, primarily the implementation and ancillary
-classes for :class:`BWFSpec` which is used to build formatters.
+:class:`FixedBufferWriter`
+   This operates on an externally defined buffer of a fixed size. The constructor requires providing
+   the start and size of the buffer. Output is limited to that buffer.
 
-|BW| is an abstract base class, in the style of :code:`std::ostream`. There are
-several subclasses for various use cases. When passing around this is the common type.
+:class:`LocalBufferWriter`
+   This is a template class which takes a single size argument. An internal buffer of that size is
+   made part of the instance and used as the output buffer.
 
-:class:`FixedBufferWriter` writes to an externally provided buffer of a fixed length. The buffer must
-be provided to the constructor. This will generally be used in a function where the target buffer is
-external to the function or already exists.
-
-:class:`LocalBufferWriter` is a templated class whose template argument is the size of an internal
-buffer. This is useful when the buffer is local to a function and the results will be transferred
-from the buffer to other storage after the output is assembled. Rather than having code like::
-
-   char buff[1024];
-   ts::FixedBufferWriter bw(buff, sizeof(buff));
-
-it can be written more compactly as::
-
-   ts::LocalBufferWriter<1024> bw;
-
-In many cases, when using :class:`LocalBufferWriter` this is the only place the size of the buffer
-needs to be specified and therefore can simply be a constant without the overhead of defining a size
-to maintain consistency. The choice between :class:`LocalBufferWriter` and :class:`FixedBufferWriter`
-comes down to the owner of the buffer - the former has its own buffer while the latter operates on
-a buffer owned by some other object. Therefore if the buffer is declared locally, use
-:class:`LocalBufferWriter` and if the buffer is recevied from an external source (such as via a
-function parameter) use :class:`FixedBufferWriter`.
+:class:`FixedBufferWriter` is used where the buffer is pre-existing or externally supplied. If the
+buffer is only accessed by the output generation then :class:`LocalBufferWriter` is more convenient,
+eliminating the need to separately declare the buffer. It also makes :class:`LocalBufferWriter` usable
+in line
 
 Writing
 -------
 
-The basic mechanism for writing to a |BW| is :func:`BufferWriter::write`.
-This is an overloaded method for a character (:code:`char`), a buffer (:code:`void *, size_t`)
-and a string view (:code:`std::string_view`). Because there is a constructor for :code:`std::string_view`
-that takes a :code:`const char*` as a C string, passing a literal string works as expected.
-
-There are also stream operators in the style of C++ stream I/O. The basic template is
-
-.. code-block:: cpp
-
-   template < typename T > ts::BufferWriter& operator << (ts::BufferWriter& w, T const& t);
-
-The stream operators are provided as a convenience, the primary mechanism for formatted output is
-via overloading the :func:`bwformat` function. Except for a limited set of cases the stream operators
-are implemented by calling :func:`bwformat` with the Buffer Writer, the argument, and a default
-format specification.
+The primary method for sending output to a |BW| is :libswoc:`BufferWriter::write`. This is an
+overloaded method with overloads for a character (:code:`char`), a buffer (:code:`void *, size_t`),
+or a string view (:code:`std::string_view`). This covers literal strings and C-style strings because
+both of those implicitly convert to :code:`std::string_view`. For :code:`snprintf` style support,
+see `buffer writer formatting <bw-format>`_.
 
 Reading
 -------
 
-Data in the buffer can be extracted using :func:`BufferWriter::data`. This and
-:func:`BufferWriter::size` return a pointer to the start of the buffer and the amount of data
-written to the buffer. This is effectively the same as :func:`BufferWriter::view` which returns a
-:code:`std::string_view` which covers the output data. Calling :func:`BufferWriter::error` will indicate
-if more data than space available was written (i.e. the buffer would have been overrun).
-:func:`BufferWriter::extent` returns the amount of data written to the |BW|. This
-can be used in a two pass style with a null / size 0 buffer to determine the buffer size required
-for the full output.
+Data in the buffer can be extracted using :libswoc:`BufferWriter::data`, along with
+:libswoc:`BufferWriter::size`. Together these return a pointer to the start of the buffer and the
+amount of data written to the buffer. The same result can be obtained with
+:libswoc:`FixedBufferWriter::view` which returns a :code:`std::string_view` which covers the output
+data.
+
+Calling :libswoc:`BufferWriter::error` will indicate if more data than space available was written
+(i.e. the buffer would have been overrun). :libswoc:`BufferWriter::extent` returns the amount of
+data written to the |BW|. This can be used in a two pass style with a null / size 0 buffer to
+determine the buffer size required for the full output.
 
 Advanced
 --------
 
-The :func:`BufferWriter::clip` and :func:`BufferWriter::extend` methods can be used to reserve space
-in the buffer. A common use case for this is to guarantee matching delimiters in output if buffer
-space is exhausted. :func:`BufferWriter::clip` can be used to temporarily reduce the buffer size by
-an amount large enough to hold the terminal delimiter. After writing the contained output,
-:func:`BufferWriter::extend` can be used to restore the capacity and then output the terminal
-delimiter.
+The :libswoc:`BufferWriter::restrict` and :libswoc:`BufferWriter::restore` methods can be used to
+reserve space in the buffer. A common use case for this is to guarantee matching delimiters in
+output if buffer space is exhausted. :libswoc:`BufferWriter::restrict` can be used to temporarily
+reduce the buffer capacity by an amount large enough to hold the terminal delimiter. After writing
+the contained output, :libswoc:`BufferWriter::restore` can be used to restore the capacity and then
+output the terminal delimiter. E.g. ::
 
-.. warning:: **Never** call :func:`BufferWriter::extend` without previously calling :func:`BufferWriter::clip` and always pass the same argument value.
+   w.restrict(1);
+   w.write('[');
+   /// other output to w.
+   w.restore(1).write(']'); // always works, even if buffer was overrrun.
 
-:func:`BufferWriter::remaining` returns the amount of buffer space not yet consumed.
+.. warning::
 
-:func:`BufferWriter::auxBuffer` returns a pointer to the first byte of the buffer not yet used. This
-is useful to do speculative output, or do bounded output in a manner similar to using
-:func:`BufferWriter::clip` and :func:`BufferWriter::extend`. A new |BW| instance
-can be constructed with
+   :libswoc::`BufferWriter::restore` can only restore capacity that was removed by
+   :libswoc:`BufferWriter::restrict`. It can **not** make the capacity larger than it was
+   originally.
 
-.. code-block:: cpp
+As something of an alternative it is easy to do "speculative" output.
+:libswoc:`BufferWriter::aux_data` returns a pointer to the first byte of the buffer not yet used,
+and :libswoc:`BufferWriter::remaining` returns the amount of buffer space not yet consumed. These
+can be easily used to create a new :libswoc:`FixedBufferWriter` on the unused space ::
 
-   ts::FixedBufferWriter subw(w.auxBuffer(), w.remaining());
+   ts::FixedBufferWriter subw(w.aux_data(), w.remaining());
 
-or as a convenience ::
+Output can be written to :arg:`subw`. If successful :libswoc:`BufferWriter::commit` can be used to
+add that output to the original buffer :arg:`w` ::
 
-   ts::FixedBuffer subw{w.auxBuffer()};
+   w.commit(subw.size());
 
-Output can be written to :arg:`subw`. If successful, then :code:`w.fill(subw.size())` will add that
-output to the main buffer. Depending on the purpose, :code:`w.fill(subw.extent())` can be used -
-this will track the attempted output if sizing is important. Note that space for any terminal
-markers can be reserved by bumping down the size from :func:`BufferWriter::remaining`. Be careful of
-underrun as the argument is an unsigned type.
+If there is an error :arg:`subw` can be discarded and some suitable error output written to :arg:`w`
+instead. A common use case is to verify there is sufficient space in the buffer and create a "not
+enough space" message if not. E.g. ::
 
-If there is an error then :arg:`subw` can be ignored and some suitable error output written to
-:arg:`w` instead. A common use case is to verify there is sufficient space in the buffer and create
-a "not enough space" message if not. E.g. ::
+   ts::FixedBufferWriter subw{w.aux_data(), w.remaining()};
+   write_some_output(subw);
+   if (!subw.error()) w.commit(subw.size());
+   else w.write("[...]");
 
-   ts::FixedBufferWriter subw{w.auxWriter()};
-   this->write_some_output(subw);
-   if (!subw.error()) w.fill(subw.size());
-   else w.write("Insufficient space"sv);
+While this can be used in a manner similar to using :libswoc:`BufferWriter::restrict` and
+:libswoc:`BufferWriter::restore` by subtracting from :libswoc:`BufferWriter::remaining`, this can be
+a bit risky because the return value is unsigned and underflow would be problematic.
 
 Examples
 ++++++++
@@ -247,7 +229,7 @@ becomes
 
    // ...
 
-   w.write(" ["sv);
+   w.write(" [");
    if (s->txn_conf->insert_request_via_string > 2) { // Highest verbosity
       w.write(incoming_via);
    } else {
@@ -259,13 +241,13 @@ There will be no overrun on the memory buffer in :arg:`w`, in strong contrast to
 This can be done better, as ::
 
    if (w.remaining() >= 3) {
-      w.clip(1).write(" ["sv);
+      w.restrict(1).write(" [");
       if (s->txn_conf->insert_request_via_string > 2) { // Highest verbosity
          w.write(incoming_via);
       } else {
          w.write(std::string_view{incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT});
       }
-      w.extend(1).write(']');
+      w.restore(1).write(']');
    }
 
 This has the result that the terminal bracket will always be present which is very much appreciated

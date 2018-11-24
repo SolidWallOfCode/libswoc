@@ -32,12 +32,12 @@
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_base.h"
 #include "swoc/bwf_ex.h"
-#include "swoc/bwf_printf.h"
+#include "swoc/bwf_ip.h"
 #include "swoc/swoc_meta.h"
 
 using namespace std::literals;
 
-swoc::bwf::GlobalNames swoc::bwf::Global_Names;
+swoc::bwf::ExternalNames swoc::bwf::Global_Names;
 
 namespace
 {
@@ -95,6 +95,7 @@ namespace bwf
   }
 
   Spec::Spec(const TextView &fmt) { this->parse(fmt); }
+
   /// Parse a format specification.
   bool
   Spec::parse(TextView fmt)
@@ -657,17 +658,12 @@ namespace bwf
     }
   }
 
-  BoundNames::~BoundNames() {}
+  NameBinding::~NameBinding() {}
 } // namespace bwf
 
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv)
 {
-  int width = static_cast<int>(spec._min); // amount left to fill.
-  if (spec._prec > 0) {
-    sv = sv.substr(0, spec._prec);
-  }
-
   if ('x' == spec._type || 'X' == spec._type) {
     const char *digits = 'x' == spec._type ? bwf::LOWER_DIGITS : bwf::UPPER_DIGITS;
     width -= sv.size() * 2;
@@ -932,6 +928,291 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern)
   return w;
 }
 
+// --- IP address support ---
+
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, in_addr_t addr)
+{
+  uint8_t *ptr = reinterpret_cast<uint8_t *>(&addr);
+  bwf::Spec local_spec{spec}; // Format for address elements.
+  bool align_p = false;
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      align_p          = true;
+      local_spec._fill = '0';
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      align_p          = true;
+      local_spec._fill = spec._ext[0];
+    }
+  }
+
+  if (align_p) {
+    local_spec._min   = 3;
+    local_spec._align = bwf::Spec::Align::RIGHT;
+  } else {
+    local_spec._min = 0;
+  }
+
+  bwf::Format_Integer(w, local_spec, ptr[0], false);
+  w.write('.');
+  bwf::Format_Integer(w, local_spec, ptr[1], false);
+  w.write('.');
+  bwf::Format_Integer(w, local_spec, ptr[2], false);
+  w.write('.');
+  bwf::Format_Integer(w, local_spec, ptr[3], false);
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, in6_addr const &addr)
+{
+  using QUAD = uint16_t const;
+  bwf::Spec local_spec{spec}; // Format for address elements.
+  uint8_t const *ptr   = addr.s6_addr;
+  uint8_t const *limit = ptr + sizeof(addr.s6_addr);
+  QUAD *lower          = nullptr; // the best zero range
+  QUAD *upper          = nullptr;
+  bool align_p         = false;
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      align_p          = true;
+      local_spec._fill = '0';
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      align_p          = true;
+      local_spec._fill = spec._ext[0];
+    }
+  }
+
+  if (align_p) {
+    local_spec._min   = 4;
+    local_spec._align = bwf::Spec::Align::RIGHT;
+  } else {
+    local_spec._min = 0;
+    // do 0 compression if there's no internal fill.
+    for (QUAD *spot = reinterpret_cast<QUAD *>(ptr), *last = reinterpret_cast<QUAD *>(limit), *current = nullptr; spot < last;
+         ++spot) {
+      if (0 == *spot) {
+        if (current) {
+          // If there's no best, or this is better, remember it.
+          if (!lower || (upper - lower < spot - current)) {
+            lower = current;
+            upper = spot;
+          }
+        } else {
+          current = spot;
+        }
+      } else {
+        current = nullptr;
+      }
+    }
+  }
+
+  if (!local_spec.has_numeric_type()) {
+    local_spec._type = 'x';
+  }
+
+  for (; ptr < limit; ptr += 2) {
+    if (reinterpret_cast<uint8_t const *>(lower) <= ptr && ptr <= reinterpret_cast<uint8_t const *>(upper)) {
+      if (ptr == addr.s6_addr) {
+        w.write(':'); // only if this is the first quad.
+      }
+      if (ptr == reinterpret_cast<uint8_t const *>(upper)) {
+        w.write(':');
+      }
+    } else {
+      uint16_t f = (ptr[0] << 8) + ptr[1];
+      bwformat(w, local_spec, f);
+      if (ptr != limit - 2) {
+        w.write(':');
+      }
+    }
+  }
+  return w;
+}
+
+#if 0
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, IpAddr const &addr)
+{
+  bwf::Spec local_spec{spec}; // Format for address elements and port.
+  bool addr_p{true};
+  bool family_p{false};
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      local_spec._ext.remove_prefix(1);
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      local_spec._ext.remove_prefix(2);
+    }
+  }
+  if (local_spec._ext.size()) {
+    addr_p = false;
+    for (char c : local_spec._ext) {
+      switch (c) {
+        case 'a':
+        case 'A':
+          addr_p = true;
+          break;
+        case 'f':
+        case 'F':
+          family_p = true;
+          break;
+      }
+    }
+  }
+
+  if (addr_p) {
+    if (addr.isIp4()) {
+      bwformat(w, spec, addr._addr._ip4);
+    } else if (addr.isIp6()) {
+      bwformat(w, spec, addr._addr._ip6);
+    } else {
+      w.print("*Not IP address [{}]*", addr.family());
+    }
+  }
+
+  if (family_p) {
+    local_spec._min = 0;
+    if (addr_p) {
+      w.write(' ');
+    }
+    if (spec.has_numeric_type()) {
+      bwformat(w, local_spec, static_cast<uintmax_t>(addr.family()));
+    } else {
+      bwformat(w, local_spec, addr.family());
+    }
+  }
+  return w;
+}
+#endif
+
+namespace
+{
+  std::string_view
+  family_name(sa_family_t family)
+  {
+    switch (family) {
+    case AF_INET:
+      return "ipv4"sv;
+    case AF_INET6:
+      return "ipv6"sv;
+    case AF_UNIX:
+      return "unix"sv;
+    case AF_UNSPEC:
+      return "unspec"sv;
+    default:
+      return "unknown"sv;
+    }
+  }
+} // namespace
+
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr)
+{
+  bwf::Spec local_spec{spec}; // Format for address elements and port.
+  bool port_p{true};
+  bool addr_p{true};
+  bool family_p{false};
+  bool local_numeric_fill_p{false};
+  char local_numeric_fill_char{'0'};
+  sockaddr_in const *ip4{nullptr};
+  sockaddr_in6 const *ip6{nullptr};
+  in_port_t port = 0;
+
+  if (spec._type == 'p' || spec._type == 'P') {
+    bwformat(w, spec, static_cast<void const *>(addr));
+    return w;
+  }
+
+  switch (addr->sa_family) {
+  case AF_INET:
+    ip4  = reinterpret_cast<sockaddr_in const *>(addr);
+    port = ip4->sin_port;
+    break;
+  case AF_INET6:
+    ip6  = reinterpret_cast<sockaddr_in6 const *>(addr);
+    port = ip6->sin6_port;
+    break;
+  default:
+    return w.print("*Not IP address [{}]*", addr->sa_family);
+    break;
+  }
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      local_numeric_fill_p = true;
+      local_spec._ext.remove_prefix(1);
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      local_numeric_fill_p    = true;
+      local_numeric_fill_char = spec._ext.front();
+      local_spec._ext.remove_prefix(2);
+    }
+  }
+  if (local_spec._ext.size()) {
+    addr_p = port_p = false;
+    for (char c : local_spec._ext) {
+      switch (c) {
+      case 'a':
+      case 'A':
+        addr_p = true;
+        break;
+      case 'p':
+      case 'P':
+        port_p = true;
+        break;
+      case 'f':
+      case 'F':
+        family_p = true;
+        break;
+      }
+    }
+  }
+
+  if (addr_p) {
+    bool bracket_p = false;
+    switch (addr->sa_family) {
+    case AF_INET:
+      bwformat(w, spec, ip4->sin_addr.s_addr);
+      break;
+    case AF_INET6:
+      if (port_p) {
+        w.write('[');
+        bracket_p = true; // take a note - put in the trailing bracket.
+      }
+      bwformat(w, spec, ip6->sin6_addr);
+      break;
+    }
+    if (bracket_p)
+      w.write(']');
+    if (port_p)
+      w.write(':');
+  }
+
+  if (port_p) {
+    if (local_numeric_fill_p) {
+      local_spec._min   = 5;
+      local_spec._fill  = local_numeric_fill_char;
+      local_spec._align = bwf::Spec::Align::RIGHT;
+    } else {
+      local_spec._min = 0;
+    }
+    bwformat(w, local_spec, port);
+  }
+  if (family_p) {
+    local_spec._min = 0;
+    if (addr_p || port_p)
+      w.write(' ');
+    if (spec.has_numeric_type()) {
+      bwformat(w, local_spec, uintmax_t(addr->sa_family));
+    } else {
+      bwformat(w, local_spec, family_name(addr->sa_family));
+    }
+  }
+  return w;
+}
+
 } // namespace swoc
 
 namespace std
@@ -942,169 +1223,3 @@ operator<<(ostream &s, swoc::FixedBufferWriter &w)
   return s << w.view();
 }
 } // namespace std
-
-// --- C_Format / printf support ----
-
-namespace swoc
-{
-namespace bwf
-{
-  void
-  C_Format::capture(BufferWriter &w, Spec const &spec, std::any const &value)
-  {
-    unsigned v;
-    if (typeid(int *) == value.type())
-      v = static_cast<unsigned>(*std::any_cast<int *>(value));
-    else if (typeid(unsigned *) == value.type())
-      v = *std::any_cast<unsigned *>(value);
-    else if (typeid(size_t *) == value.type())
-      v = static_cast<unsigned>(*std::any_cast<size_t *>(value));
-    else
-      return;
-
-    if (spec._ext == "w")
-      _saved._min = v;
-    if (spec._ext == "p") {
-      _saved._prec = v;
-    }
-  }
-
-  bool
-  C_Format::operator()(std::string_view &literal, Spec &spec)
-  {
-    TextView parsed;
-
-    // clean up any old business from a previous specifier.
-    if (_prec_p) {
-      spec._type = Spec::CAPTURE_TYPE;
-      spec._ext  = "p";
-      _prec_p    = false;
-      return true;
-    } else if (_saved_p) {
-      spec     = _saved;
-      _saved_p = false;
-      return true;
-    }
-
-    if (!_fmt.empty()) {
-      bool width_p = false;
-      literal      = _fmt.take_prefix_at('%');
-      if (_fmt.empty()) {
-        return false;
-      }
-      if (!_fmt.empty()) {
-        if ('%' == *_fmt) {
-          literal = {literal.data(), literal.size() + 1};
-          ++_fmt;
-          return false;
-        }
-      }
-
-      spec._align = Spec::Align::RIGHT; // default unless overridden.
-      do {
-        char c = *_fmt;
-        if ('-' == c) {
-          spec._align = Spec::Align::LEFT;
-        } else if ('+' == c) {
-          spec._sign = Spec::SIGN_ALWAYS;
-        } else if (' ' == c) {
-          spec._sign = Spec::SIGN_NEVER;
-        } else if ('#' == c) {
-          spec._radix_lead_p = true;
-        } else if ('0' == c) {
-          spec._fill = '0';
-        } else {
-          break;
-        }
-        ++_fmt;
-      } while (!_fmt.empty());
-
-      if (_fmt.empty()) {
-        literal = TextView{literal.data(), _fmt.data()};
-        return false;
-      }
-
-      if ('*' == *_fmt) {
-        width_p = true; // signal need to capture width.
-        ++_fmt;
-      } else {
-        auto width = radix10(_fmt, parsed);
-        if (!parsed.empty()) {
-          spec._min = width;
-        }
-      }
-
-      if ('.' == *_fmt) {
-        ++_fmt;
-        if ('*' == *_fmt) {
-          _prec_p = true;
-          ++_fmt;
-        } else {
-          auto x = radix10(_fmt, parsed);
-          if (!parsed.empty()) {
-            spec._prec = x;
-          } else {
-            spec._prec = 0;
-          }
-        }
-      }
-
-      if (_fmt.empty()) {
-        literal = TextView{literal.data(), _fmt.data()};
-        return false;
-      }
-
-      char c = *_fmt++;
-      // strip length modifiers.
-      if ('l' == c || 'h' == c)
-        c = *_fmt++;
-      if ('l' == c || 'z' == c || 'j' == c || 't' == c || 'h' == c)
-        c = *_fmt++;
-
-      switch (c) {
-      case 'c':
-        spec._type = c;
-        break;
-      case 'i':
-      case 'd':
-      case 'j':
-      case 'z':
-        spec._type = 'd';
-        break;
-      case 'x':
-      case 'X':
-        spec._type = c;
-        break;
-      case 'f':
-        spec._type = 'f';
-        break;
-      case 's':
-        spec._type = 's';
-        break;
-      case 'p':
-        spec._type = c;
-        break;
-      default:
-        literal = TextView{literal.data(), _fmt.data()};
-        return false;
-      }
-      if (width_p || _prec_p) {
-        _saved_p = true;
-        _saved   = spec;
-        spec     = Spec::DEFAULT;
-        if (width_p) {
-          spec._type = Spec::CAPTURE_TYPE;
-          spec._ext  = "w";
-        } else if (_prec_p) {
-          _prec_p    = false;
-          spec._type = Spec::CAPTURE_TYPE;
-          spec._ext  = "p";
-        }
-      }
-      return true;
-    }
-    return false;
-  }
-
-} // namespace bwf
-} // namespace swoc

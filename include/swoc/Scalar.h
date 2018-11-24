@@ -51,7 +51,7 @@ namespace detail
   // only do 1 division to get both the quotient and remainder for (n/N) and (n%N). In cases where
   // N,S are powers of 2 I have verified recent GNU compilers will optimize to bit operations.
 
-  /// Convert a count @a c that is scale @s S to scale @c N
+  /// Convert a count @a c that is scale @a S to scale @c N
   template <intmax_t N, intmax_t S>
   intmax_t
   scale_conversion_round_up(intmax_t c)
@@ -68,7 +68,7 @@ namespace detail
     }
   }
 
-  /// Convert a count @a c that is scale @s S to scale @c N
+  /// Convert a count @a c that is scale @a S to scale @c N
   template <intmax_t N, intmax_t S>
   intmax_t
   scale_conversion_round_down(intmax_t c)

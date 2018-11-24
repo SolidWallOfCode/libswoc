@@ -17,6 +17,7 @@
 .. highlight:: cpp
 .. default-domain:: cpp
 
+**************
 IntrusiveDList
 **************
 

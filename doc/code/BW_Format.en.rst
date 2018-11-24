@@ -1,111 +1,105 @@
-.. Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
+.. Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+   agreements.  See the NOTICE file distributed with this work for additional information regarding
+   copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with the License.  You may obtain
+   a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing,
-   software distributed under the License is distributed on an
-   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-   KIND, either express or implied.  See the License for the
-   specific language governing permissions and limitations
+   Unless required by applicable law or agreed to in writing, software distributed under the License
+   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+   or implied.  See the License for the specific language governing permissions and limitations
    under the License.
 
 .. include:: ../common-defs.rst
 .. highlight:: cpp
 .. default-domain:: cpp
+.. |BW| replace:: :code:`BufferWriter`
+.. |BWF| replace:: :code:`BufferWriter` formatting
 
+.. _bw-format:
 
+***********************
 BufferWriter Formatting
 ***********************
 
 Synopsis
-++++++++
+********
 
 .. code-block:: cpp
 
    #include <swoc/bwf_base.h>
 
 Description
-+++++++++++
+***********
 
-The base :class:`BufferWriter` was made to provide memory safety for formatted output. Support for
-formmatted output was made to provide *type* safety. The implementation deduces the types of the
-arguments to be formatted and handles them in a type specific and safe way.
+Formatted output was added to :class:`BufferWriter` for several reasons.
 
-The formatting style is of the "prefix" or "printf" style - the format is specified first and then
-all the arguments. This contrasts to the "infix" or "streaming" style where formatting, literals,
-and argument are intermixed in the order of output. There are various arguments for both styles but
-conversations within the |TS| community indicated a clear preference for the prefix style. Therefore
-formatted out consists of a format string, containing *formats*, which are replaced during output
-with the values of arguments to the print function.
+*  Type safe formatted output in addition to buffer safe formatted output. Rather than non-obvious
+   cleverness with :code:`snprintf` and :libswoc:`BufferWriter::commit`, build the formatting
+   in directly.
 
-The primary use case for formatting is formatted output to fixed buffers. This is by far the
-dominant style of output in |TS| and during the design phase I was told any performance loss must be
-minimal. While work has and will be done to extend :class:`BufferWriter` to operate on non-fixed
-buffers, such use is secondary to operating directly on memory.
+*  Specialized output functions for complex types, to have the class provide the formatting logic
+   instead of cut and pasted code in multiple locations. This also avoids breaking modularity to
+   get the data needed for good formatting.
+
+*  Argument naming, both for ordering, repeating, and for "global" names which can be used without
+   arguments. This is also intended for use where there are context dependent names, e.g. for
+   printing in the context of an HTTP header, the header field names could be made so their use
+   is replaced by the value of that field.
+
+*  The ability to pass arbitrary "extra" data to formatting functions for special, type dependent
+   purposes.
+
+The formatting style is the "prefix" or "printf" style - the format is specified first and then all
+the arguments. The syntax is based on `Python formatting
+<https://docs.python.org/3/library/string.html#formatstrings>`__. This contrasts to the "infix" or
+"streaming" style where formatting, literals, and argument are intermixed in the order of output.
+There are various arguments for both styles but conversations within the Trafffic Server community
+indicated a clear preference for the prefix style. Therefore creating formatted output consists of a
+:term:`format string`, containing literal text and :term:`format specifier`\ s, which are replaced
+with generated text, usually based on the values of arguments to the print function.
+
+The design is optimized for formatted output to fixed buffers. This is by far the dominant style in
+the expected use cases and during the design phase I was told any performance loss compared to
+:code:`snprintf` must be minimal. While work has and will be done to extend :class:`BufferWriter` to
+operate on non-fixed buffers, such use is secondary to operating directly on contiguous buffers.
 
 .. important::
 
    The overriding design goal is to provide the type specific formatting and flexibility of C++
    stream operators with the performance of :code:`snprintf` and :code:`memcpy`.
 
-This will preserve the general style of output in |TS| while still reaping the benefits of type safe
-formatting with little to no performance cost.
+Usage
+*****
 
-Type safe formatting has two major benefits -
+As noted |BWF| is modeled on Python string formatting because the Traffic Server project uses quite
+a bit of Python. It seemed a good model for prefix style formatting, mapping easily in to the
+set of desired features. The primary divergences are
 
-*  No mismatch between the format specifier and the argument. Although some modern compilers do
-   better at catching this at run time, there is still risk (especially with non-constant format
-   strings) and divergence between operating systems such that there is no `universally correct
-   choice <https://github.com/apache/trafficserver/pull/3476/files>`__. In addition the number of
-   arguments can be verified to be correct which is often useful.
+*  Names do not refer to in scope variables, but to output generators local to the print context via
+   `Name Binding`_.
 
-*  Formatting can be customized per type or even per partial type (e.g. :code:`T*` for generic
-   :code:`T`). This enables embedding common formatting work in the format system once, rather than
-   duplicating it in many places (e.g. converting enum values to names). This makes it easier for
-   developers to make useful error messages. See :ref:`this example <bwf-http-debug-name-example>`
-   for more detail.
+*  The addition of a third colon separated field to provide extension data to the formatting logic.
 
-As a result of these benefits there has been other work on similar projects, to replace
-:code:`printf` a better mechanism. Unfortunately most of these are rather project specific and don't
-suit the use case in |TS|. The two best options, `Boost.Format
-<https://www.boost.org/doc/libs/1_64_0/libs/format/>`__ and `fmt <https://github.com/fmtlib/fmt>`__,
-while good, are also not quite close enough to outweight the benefits of a version specifically
-tuned for |TS|. ``Boost.Format`` is not acceptable because of the Boost footprint. ``fmt`` has the
-problem of depending on C++ stream operators and therefore not having the required level of
-performance or memory characteristics. Its main benefit, of reusing stream operators, doesn't apply
-to |TS| because of the nigh non-existence of such operators. The possibility of using C++ stream
-operators was investigated but changing those to use pre-existing buffers not allocated internally
-was very difficult, judged worse than building a relatively simple implementation from scratch. The
-actual core implementation of formatted output for :class:`BufferWriter` is not very large - most of
-the overall work will be writing formatters, work which would need to be done in any case but in
-contrast to current practice, only done once.
+The primary entry point for this is :libswoc:`BufferWriter::print`.
 
-:class:`BufferWriter` supports formatting output in a style similar to Python formatting via
-:func:`BufferWriter::print`. Looking at the other versions of work in this area, almost all of them
-have gone with this style. Boost.Format also takes basically this same approach, just using
-different paired delimiters. |TS| contains increasing amounts of native Python code which means many
-|TS| developers will already be familiar (or should become familiar) with this style of formatting.
-While not *exactly* the same at the Python version, BWF (:class:`BufferWriter` Formatting) tries to
-be as similar as language and internal needs allow.
-
-As noted previously and in the Python and even :code:`printf` way, a format string consists of
-literal text in which formats are embedded. Each format marks a place where formatted data of
-an argument will be placed, along with argument specific formatting. The format is divided in to
-three parts, separated by colons.
-
-While this seems a bit complex, all of it is optional. If default output is acceptable, then BWF
-will work with just the format ``{}``. In a sense, ``{}`` serves the same function for output as
+A format string consists of literal text in which format specifiers are embedded. Each specifier
+marks a place where generated output will be placed. The specifier is marked by paired braces and is
+divided in to three fields, separated by colons. These fields are optional - if default output is
+acceptable, a pair of braces will suffice. In a sense, ``{}`` serves the same function for output as
 :code:`auto` does for programming - the compiler knows the type, it should be able to do something
-reasonable without the programmer needing to be explicit.
+reasonable without the programmer needing to be explicit. The fields are used in the less common
+cases where greater control of the output is required.
 
-.. productionList:: Format
-   format: "{" [name] [":" [specifier] [":" extension]] "}"
+Format Specifier Grammar
+========================
+
+This is the grammar for the fields inside a format specifier. The three fields are :token:`name`,
+:token:`style`, and :token:`extension`.
+
+.. productionList:: Format Specifier
+   specifier: "{" [name] [":" [style] [":" extension]] "}"
    name: index | ICHAR+
    index: non-negative integer
    extension: ICHAR*
@@ -121,27 +115,29 @@ reasonable without the programmer needing to be explicit.
       ``bw.print("{1} {0}", 'a', 'b')`` => ``b a``
 
    The :token:`name` can be omitted in which case it is treated as an index in parallel to the
-   position in the format string. Only the position in the format string matters, not what names
-   other format elements may have used.
+   position in the format string relative to other argument based specifiers. Only the position in
+   the format string matters, not what arguments other format specifiers may have used.
 
       ``bw.print("{0} {2} {}", 'a', 'b', 'c')`` => ``a c c``
 
       ``bw.print("{0} {2} {2}", 'a', 'b', 'c')`` => ``a c c``
 
-   Note that an argument can be printed more than once if the name is used more than once.
+   Note an argument can be printed more than once if the name is used more than once.
 
       ``bw.print("{0} {} {0}", 'a', 'b')`` => ``a b a``
 
       ``bw.print("{0} {1} {0}", 'a', 'b')`` => ``a b a``
 
-   Alphanumeric names refer to values in a global table. These will be described in more detail
-   someday. Such names, however, do not count in terms of default argument indexing.
+   Alphanumeric names refer to values in a :term:`format context` table. These will be described in
+   more detail someday. Such names do not count in terms of default argument indexing. These rules
+   are designed to be natural, but any ambiguity can be eliminated by explicit indexing in the
+   specifiers.
 
-:token:`specifier`
+:token:`style`
    Basic formatting control.
 
-   .. productionList:: specifier
-      specifier: [[fill]align][sign]["#"]["0"][[min][.precision][,max][type]]
+   .. productionList:: Style
+      style: [[fill]align][sign]["#"]["0"][[min][.precision][,max][type]]
       fill: fill-char | URI-char
       URI-char: "%" hex-digit hex-digit
       fill-char: printable character except "{", "}", ":", "%"
@@ -150,11 +146,11 @@ reasonable without the programmer needing to be explicit.
       min: non-negative integer
       precision: positive integer
       max: non-negative integer
-      type: type: "g" | "s" | "S" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
+      type: "g" | "s" | "S" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
       hex-digit: "0" .. "9" | "a" .. "f" | "A" .. "F"
 
-   The output is placed in a field that is at least :token:`min` wide and no more than :token:`max` wide. If
-   the output is less than :token:`min` then
+   The output is placed in a field that is at least :token:`min` wide and no more than :token:`max`
+   wide. If the output is less than :token:`min` then
 
       *  The :token:`fill` character is used for the extra space required. This can be an explicit
          character or a URI encoded one (to allow otherwise reserved characters).
@@ -171,7 +167,8 @@ reasonable without the programmer needing to be explicit.
             Align in the middle, fill to left and right.
 
          =
-            Numerically align, putting the fill between the sign character and the value.
+            Numerically align, putting the fill between the sign character (left aligned) and the
+            value (right aligned).
 
    The output is clipped by :token:`max` width characters and by the end of the buffer.
    :token:`precision` is used by floating point values to specify the number of places of precision.
@@ -202,21 +199,25 @@ reasonable without the programmer needing to be explicit.
    :code:`std::string_view` and therefore a hex dump of an object can be done by creating a
    :code:`std::string_view` covering the data and then printing it with :code:`{:x}`.
 
-   The string type ('s' or 'S') is generally used to cause alphanumeric output for a value that would
-   normally use numeric output. For instance, a :code:`bool` is normally ``0`` or ``1``. Using the
-   type 's' yields ``true` or ``false``. The upper case form, 'S', applies only in these cases where the
-   formatter generates the text, it does not apply to normally text based values unless specifically noted.
+   The string type ('s' or 'S') is generally used to cause alphanumeric output for a value that
+   would normally use numeric output. For instance, a :code:`bool` is normally ``0`` or ``1``. Using
+   the type 's' yields ``true`` or ``false``. The upper case form, 'S', applies only in these cases
+   where the formatter generates the text, it does not apply to normally text based values unless
+   specifically noted. Therefore a :code:`bool` printed with the type 'S' yields ``TRUE`` or
+   ``FALSE``. This is frequently done with formatting for enumerations, printing the numeric value
+   by default and printing a text equivalent for format 's' or 'S'.
 
 :token:`extension`
-   Text (excluding braces) that is passed to the type specific formatter function. This can be used
-   to provide extensions for specific argument types (e.g., IP addresses). The base logic ignores it
-   but passes it on to the formatting function which can then behave different based on the
-   extension.
+   Text (excluding braces) passed to the type specific formatter function. This can be used to
+   provide extensions for specific argument types (e.g., IP addresses). It is never examined by
+   |BWF|, it is only effective in type specific formatting overloads.
 
-Usage Examples
---------------
+When a format specifier is parsed, the result is placed in an instance of :libswoc:`bwf::Spec <Spec>`.
 
-Some examples, comparing :code:`snprintf` and :func:`BufferWriter::print`. ::
+Examples
+========
+
+Some examples, comparing :code:`snprintf` and :libswoc:`BufferWriter::print`. ::
 
    if (len > 0) {
       auto n = snprintf(buff, len, "count %d", count);
@@ -251,8 +252,9 @@ name and a value for the enumeration. A key benefit here is the lack of need for
 the specific free function or method needed to do the name lookup. In this case,
 :code:`HttpDebugNuames::get_server_state_name`. Rather than every developer having to memorize the
 assocation between the type and the name lookup function, or grub through the code hoping for an
-example, the compiler is told once and henceforth does the lookup. The internal implementation of
-this is :ref:`here <bwf-http-debug-name-example>` ::
+example, the compiler is told once and henceforth does the lookup. The implementation of the
+formatter is described in `an example <bwf-http-debug-name-example>`. A sample of code previously
+used to output an error message using this enumeration. ::
 
    if (len > 0) {
       auto n = snprintf(buff, len, "Unexpected event %d in state %s[%d] for %.*s",
@@ -264,26 +266,32 @@ this is :ref:`here <bwf-http-debug-name-example>` ::
       len -= n;
    }
 
+Using |BW| ::
+
    bw.print("Unexpected event {0} in state {1}[{1:d}] for {2}",
       event, t_state.current.state, std::string_view{host, host_len});
 
-Using :code:`std::string`, which illustrates the advantage of a formatter overloading knowing how to
-get the size from the object and not having to deal with restrictions on the numeric type (e.g.,
-that :code:`%.*s` requires an :code:`int`, not a :code:`size_t`). ::
+Adapting to use of :code:`std::string_view` illustrates the advantage of a formatter overload
+knowing how to get the size from the object and not having to deal with restrictions on the numeric
+type (e.g., that :code:`%.*s` requires an :code:`int`, not a :code:`size_t`). ::
 
    if (len > 0) {
-      len -= snprintf(buff, len, "%.*s", static_cast<int>(s.size()), s.data);
+      len -= snprintf(buff, len, "%.*s", static_cast<int>(s.size()), s.data());
    }
+
+vs ::
 
    bw.print("{}", s);
 
-IP addresses are much easier. There are two big advantages here. One is not having to know the
-conversion function name. The other is the lack of having to declare local variables and having to
-remember what the appropriate size is. Beyond there this code is more performant because the output
-is rendered directly in the output buffer, not rendered to a temporary and then copied over. This
-lack of local variables can be particularly nice in the context of a :code:`switch` statement where
-local variables for a :code:`case` mean having to add extra braces, or declare the temporaries at an
-outer scope. ::
+or even
+
+   bw.write(s);
+
+The difference is even more stark with dealing with IP addresses. There are two big advantages here.
+One is not having to know the conversion function name. The other is the lack of having to declare
+local variables and having to remember what the appropriate size is. Not requiring local variables
+can be particularly nice in the context of a :code:`switch` statement where local variables for a
+:code:`case` mean having to add extra braces, or declare the temporaries at an outer scope. ::
 
    char ip_buff1[INET6_ADDRPORTSTRLEN];
    char ip_buff2[INET6_ADDRPORTSTRLEN];
@@ -293,72 +301,97 @@ outer scope. ::
       snprintf(buff, len, "Connecting to %s from %s", ip_buff1, ip_buff2);
    }
 
+vs ::
+
    bw.print("Connecting to {} from {}", addr1, addr2);
 
 User Defined Formatting
-+++++++++++++++++++++++
+=======================
 
 To get the full benefit of type safe formatting it is necessary to provide type specific formatting
 functions which are called when a value of that type is formatted. This is how type specific
-knowledge such as the names of enumeration values are encoded in a single location. Additional type
-specific formatting can be provided via the :token:`extension` field. Without this, special formatting
-requires extra functions and additional work at the call site, rather than a single consolidated
-formatting function.
+knowledge such as the names of enumeration values are encoded in a single location. The special
+formatting for IP address data is done by providing default formatters, it is not built in to the
+base formatting logic.
 
-To provide a formatter for a type :code:`V` the function :code:`bwformat` is overloaded. The signature
-would look like this::
+Most of the support for this is in the nested namespace :code:`bwf`.
 
-   BufferWriter& ts::bwformat(BufferWriter& w, BWFSpec const& spec, V const& v)
+The format style is stored in an instance of :libswoc:`bwf::Spec <Spec>`.
 
-:arg:`w` is the output and :arg:`spec` the parsed specifier, including the extension (if any). The
-calling framework will handle basic alignment as per :arg:`spec` therfore the overload does not need
-to unless the alignment requirements are more detailed (e.g. integer alignment operations) or
-performance is critical. In the latter case the formatter should make sure to use at least the
-minimum width in order to disable any additional alignment operation.
+.. namespace-push:: bwf
 
-It is important to note that a formatter can call another formatter. For example, the formatter for
-pointers looks like::
+.. class:: Spec
 
-   // Pointers that are not specialized.
-   inline BufferWriter &
-   bwformat(BufferWriter &w, BWFSpec const &spec, const void * ptr)
-   {
-      BWFSpec ptr_spec{spec};
-      ptr_spec._radix_lead_p = true;
-      if (ptr_spec._type == BWFSpec::DEFAULT_TYPE || ptr_spec._type == 'p') {
-         // if default or specifically 'p', switch to lower case hex.
-         ptr_spec._type = 'x';
-      } else if (ptr_spec._type == 'P') {
-         // Incoming 'P' means upper case hex.
-         ptr_spec._type = 'X';
-      }
-      return bw_fmt::Format_Integer(w, ptr_spec,
-         reinterpret_cast<intptr_t>(ptr), false);
-   }
+   Format specifier data.
 
-The code checks if the type ``p`` or ``P`` was used in order to select the appropriate case, then
-delegates the actual rendering to the integer formatter with a type of ``x`` or ``X`` as
+   :libswoc:`Reference <Spec>`.
+
+.. namespace-pop::
+
+Additional type specific formatting can be provided via the :token:`extension` field. This provides
+another option for tweaking formatted output vs. using wrapper classes.
+
+To provide a formatter for a type :code:`V` the function :code:`bwformat` is overloaded. The
+signature would look like this::
+
+   swoc::BufferWriter&
+   swoc::bwformat( swoc::BufferWriter& w
+                 , swoc::bwf::Spec const& spec
+                 , V const& v
+                 )
+
+:arg:`w` is the output and :arg:`spec` the :libswoc:`parsed format specifier <bwf::Spec>`, including
+the name and extension (if any). The calling framework will handle basic alignment as per
+:arg:`spec` therefore the overload normally does not need to do so. In some cases, however, the
+alignment requirements are more detailed (e.g. integer alignment operations) or performance is
+critical. In the latter case the formatter should make sure to use at least the :libswoc:`minimum
+width <bwf::Spec::_min>` in order to disable any framework alignment operation.
+
+It is important to note a formatter can call another formatter. For example, the formatter for
+pointers looks like
+
+.. literalinclude:: ../../include/swoc/bwf_base.h
+   :lines: 819-830
+
+The code first copies the format specification and forces a leading radix. Then it checks if the
+type ``p`` or ``P`` was used in order to select the appropriate case, then delegates the actual
+rendering to the :libswoc:`integer formatter <Format_Integer>` with a type of ``x`` or ``X`` as
 appropriate. In turn other formatters, if given the type ``p`` or ``P`` can cast the value to
-:code:`const void*` and call :code:`bwformat` on that to output the value as a pointer.
+:code:`const void*` and call :code:`bwformat` on that to output the value as a pointer. The
+difference between calling :code:`bwformat` vs. :libswoc:`BufferWriter::write` is the ability to
+pass the format specifier instance. If all of the formatting is handled directly, then direct |BW|
+methods are a good choice. If the formatter wants to use the built in formatting then
+:code:`bwformat` is the right choice. This is what is done with the pointer example above - the
+format specifier is copied and tweaked, and then passed on so that any formatting provided from the
+original format string remains valid.
 
-To help reduce duplication, the output stream operator :code:`operator<<` is defined to call this
-function with a default constructed :code:`BWFSpec` instance so that absent a specific overload
-a BWF formatter will also provide a C++ stream output operator.
+To help reduce duplication, the output stream operator :code:`operator<<` on a :code:`BufferWriter` is defined to call :code:`bwformat` with a default constructed :libswoc:`bwf::Spec` instance. This makes ::
+
+   w << thing;
+
+identical to ::
+
+   bwformat(w, swoc::bwf::Spec::DEFAULT, thing);
+
+which is also the same as ::
+
+   w.print("{}", thing);
 
 Enum Example
 ------------
 
 .. _bwf-http-debug-name-example:
 
-For a specific example of using BufferWriter formatting to make debug messages easier, consider the
-case of :code:`HttpDebugNames`. This is a class that serves as a namespace to provide various
-methods that convert state machine related data into descriptive strings. Currently this is
-undocumented (and even uncommented) and is therefore used infrequently, as that requires either
-blind cut and paste, or tracing through header files to understand the code. This can be greatly
-simplified by adding formatters to :ts:git:`proxy/http/HttpDebugNames.h` ::
+For a specific example of using |BWF| to make debug messages easier, consider the case of
+:code:`HttpDebugNames` in the Traffic Server code base. This is a class that serves as a namespace
+to provide various methods that convert state machine related enumerations into descriptive strings.
+Currently this is undocumented (and uncommented) and is therefore used infrequently, as that
+requires either blind cut and paste, or tracing through header files to understand the code. The
+result is much less useful diagnostics. This can be greatly simplified by adding formatters to
+:file:`proxy/http/HttpDebugNames.h` ::
 
-   inline ts::BufferWriter &
-   bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::ServerState_t state)
+   inline swoc::BufferWriter &
+   bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, HttpTransact::ServerState_t state)
    {
       if (spec.has_numeric_type()) {
          // allow the user to force numeric output with '{:d}' or other numeric type.
@@ -368,45 +401,59 @@ simplified by adding formatters to :ts:git:`proxy/http/HttpDebugNames.h` ::
       }
    }
 
-With this in place, any one wanting to print the name of the server state enumeration can do ::
+With this in place, the code to print the name of the server state enumeration is ::
 
-   bw.print("state {}", t_state.current_state);
+   bw.print("{}", t_state.current_state);
 
 There is no need to remember names like :code:`HttpDebugNames` nor which method in it does the
 conversion. The developer making the :code:`HttpDebugNames` class or equivalent can take care of
-that in the same header file that provides the type.
-
-.. note::
-
-   In actual practice, due to this method being so obscure it's not actually used as far as I
-   can determine.
+that in the same header file that provides the type. The type specific formatting is incorporated in
+to the general printing mechanism and from that point on works without any local code required, or memorization by the developer.
 
 Argument Forwarding
 -------------------
 
-It will frequently be useful for other libraries to allow local formatting (such as :code:`Errata`).
-For such cases the class methods will need to take variable arguments and then forward them on to
-the formatter. :class:`BufferWriter` provides the :func:`BufferWriter::printv` overload for this
-purpose. Instead of taking variable arguments, these overloads take a :code:`std::tuple` of
+It will frequently be useful for other libraries to support formatting for input strings. For such
+use cases the class methods will need to take variable arguments and then forward them on to the
+formatter. :class:`BufferWriter` provides :libswoc:`BufferWriter::print_v` for this purpose. Instead
+of taking C style variable arguments, these overloads take a reference to a :code:`std::tuple` of
 arguments. Such as tuple is easily created with `std::forward_as_tuple
-<http://en.cppreference.com/w/cpp/utility/tuple/forward_as_tuple>`__. A standard implementation that
-uses the :code:`std::string` overload for :func:`bwprint` would look like ::
+<http://en.cppreference.com/w/cpp/utility/tuple/forward_as_tuple>`__. An example of this is a container of messages. The message class is
 
-   template < typename ... Args >
-   std::string message(string_view fmt, Args &&... args) {
-      std::string zret;
-      return ts::bwprint(zret, fmt, std::forward_as_tuple(args...));
-   }
+.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+   :lines: 37-48,62
+   :emphasize-lines: 10
+
+The container class has a :code:`debug` method to append :code:`Message` instances using |BWF|.
+
+.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+   :lines: 81-82,89,98
+
+The implementation is simple.
+
+.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+   :lines: 122-131
+   :emphasize-lines: 6
 
 This gathers the argument (generally references to the arguments) in to a single tuple which is then
-passed by reference, to avoid restacking the arguments for every nested function call. In essence the
-arguments are put on the stack (inside the tuple) once and a reference to that stack is passed to
-nested functions.
+passed by reference, to avoid restacking the arguments for every nested function call. In essence
+refernces the arguments are put on the stack (inside the tuple) once and a reference to that stack
+is passed to nested functions. This replaces the C style :code:`va_list` and provides not just arguments but also complete type information.
 
-Specialized Types
------------------
+The example code uses :libswoc:`bwprint_v` to print to a :code:`std::string`. There is corresponding
+method, :libswoc:`BufferWriter::print_v`, which takes a tuple instead of an explicit list of
+arguments when working with |BW| instances. Internally, of course, :libswoc:`bwprint_v` is
+implemented using a local :libswoc:`FixedBufferWriter` instance and
+:libswoc:`BufferWriter::print_v`.
 
-These are types for which there exists a type specific BWF formatter.
+Default Type Specific Formatting
+================================
+
+|BWF| has a number of user defined formatting overloads built in, primarily for types used inside the |BWF| implementation, to avoid circular reference problems. There is also support for formatting
+`IP addresses <_ip_addr_fmt>`_ via an additional include file.
+
+Specific types
+--------------
 
 :code:`std::string_view`
    Generally the contents of the view.
@@ -417,13 +464,20 @@ These are types for which there exists a type specific BWF formatter.
    'p' or 'P'
       The pointer and length value of the view in lower ('p') or upper ('P') case.
 
-   The :token:`precision` is interpreted specially for this type to mean "skip :token:`precision`
-   initial characters". When combined with :token:`max` this allows a mechanism for printing
-   substrings of the :code:`std::string_view`. For instance, to print the 10th through 20th characters
-   the format ``{:.10,20}`` would suffice. Given the method :code:`substr` for :code:`std::string_view`
-   is cheap, it's unclear how useful this is.
+   For print substrings, views are sufficient cheap to do this in the arguments. For instance,
+   printing the 10th through 20th characters of the view :code:`text` means passing :code:`text.substr(9,11)` instead of :code:`text`.
 
-:code:`sockaddr const*`
+   .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+      :lines: 43-44,49-50
+
+:libswoc:`TextView`
+   Because this is a subclass of :code:`std::string_view`, all of the formatting for that works the same for this class. 
+
+.. _ip_addr_fmt:
+
+:code:`sockaddr const *`
+   :code:`#include <swoc/bwf_ip.h>`
+
    The IP address is printed. Fill is used to fill in address segments if provided, not to the
    minimum width if specified. :class:`IpEndpoint` and :class:`IpAddr` are supported with the same
    formatting. The formatting support in this case is extensive because of the commonality and
@@ -468,68 +522,82 @@ These are types for which there exists a type specific BWF formatter.
       }
 
 Format Classes
-++++++++++++++
+--------------
 
-Although the extension for a format can be overloaded to provide additional features, this can become
-too confusing and complex to use if it is used for fundamentally different semantics on the same
-based type. In that case it is better to provide a format wrapper class that holds the base type
-but can be overloaded to produce different (wrapper class based) output. The classic example is
-:code:`errno` which is an integral type but frequently should be formatted with additional information
-such as the descriptive string for the value. To do this the format wrapper class :code:`ts::bwf::Errno`
-is provided. Using it is simple::
+Although the extension for a format can be overloaded to provide additional features, this can
+become too confusing and complex to use if it is used for fundamentally different semantics on the
+same based type. In that case it is better to provide a format wrapper class that holds the base
+type but can be overloaded to produce different (wrapper class based) output. The classic example is
+:code:`errno` which is an integral type but frequently should be formatted with additional
+information such as the descriptive string for the value. To do this the format wrapper class
+:code:`swoc::bwf::Errno` is provided. Using it is simple::
 
-   w.print("File not open - {}", ts::bwf::Errno(errno));
+   w.print("File not open - {}", swoc::bwf::Errno(errno));
 
 which will produce output that looks like
 
    "File not open - EACCES: Permission denied [13]"
 
-For :code:`errno` this is handy in another way as :code:`ts::bwf::Errno` will preserve the value of
-:code:`errno` across other calls that might change it. E.g.::
+For :code:`errno` this is handy in another way as :code:`swoc::bwf::Errno` will preserve the value
+of :code:`errno` across other calls that might change it. E.g.::
 
-   ts::bwf::Errno last_err(errno);
+   swoc::bwf::Errno last_err(errno);
    // some other code generating diagnostics that might tweak errno.
    w.print("File not open - {}", last_err);
 
-This can also be useful for user defined data types. For instance, in the HostDB the type of the entry
-is printed in multiple places and each time this code is repeated ::
+This can also be useful for user defined data types. For instance, in the HostDB component of
+Traffic Server the type of the entry is printed in multiple places and each time this code is
+repeated ::
 
       "%s%s %s", r->round_robin ? "Round-Robin" : "",
          r->reverse_dns ? "Reverse DNS" : "", r->is_srv ? "SRV" : "DNS"
 
-This could be wrapped in a class, :code:`HostDBType` such as ::
+This could be wrapped in a class, :code:`HostDBFmt` such as ::
 
-   struct HostDBType {
+   struct HostDBFmt {
       HostDBInfo* _r { nullptr };
-      HostDBType(r) : _r(r) {}
+      HostDBFmt(r) : _r(r) {}
    };
 
 Then define a formatter for the wrapper ::
 
-   BufferWriter& bwformat(BufferWriter& w, BWFSpec const& spec, HostDBType const& wrap) {
-     return w.print("{}{} {}", wrap._r->round_robin ? "Round-Robin" : "",
-        r->reverse_dns ? "Reverse DNS" : "",
-        r->is_srv ? "SRV" : "DNS");
+   swoc::BufferWriter& bwformat( swoc::BufferWriter& w
+                               , swoc::bwf::Spec const&
+                               , HostDBFmt const& wrap
+   ) {
+      return w.print("{}{} {}", wrap._r->round_robin ? "Round-Robin" : "",
+         r->reverse_dns ? "Reverse DNS" : "",
+         r->is_srv ? "SRV" : "DNS");
    }
 
-Now this can be output elsewhere with just
+Now all of the cut and paste formatting code is replaced with ::
 
-   w.print("{}", HostDBType(r));
+   w.print("{}", HostDBFmt(r));
 
-If this is used multiple places, this is cleaner and more robust as it can be updated everywhere with a
-change in a single code location.
+These are the existing format classes in header file ``bfw_std_format.h``. All are in the
+:code:`swoc::bwf` namespace.
 
-These are the existing format classes in header file ``bfw_std_format.h``. All are in the :code:`ts::bwf` namespace.
+.. namespace-push:: bwf
 
 .. class:: Errno
 
-   Formatting for :code:`errno`. Generically the formatted output is the short name, the description,
-   and the numeric value. A format type of ``d`` will generate just the numeric value, while a format
-   type of ``s`` will generate just the short name and description.
+   Formatting for :code:`errno`. Generically the formatted output is the short name, the
+   description, and the numeric value. A format type of ``d`` will generate just the numeric value,
+   while a format type of ``s`` will generate just the short name and description.
 
-   .. function:: Errno(int errno)
+   :libswoc:`Reference <Errno>`.
 
-      Initialize the instance with the error value :arg:`errno`.
+.. class:: Date
+
+   Date formatting in the :code:`strftime` style. An instance can be constructed with a :code:`strftime` compatible format, or with a :code:`time_t` and format string.
+
+   When used the format specification can take an extention of "local" which formats the time as
+   local time. Otherwise it is GMT. ``w.print("{}", Date("%H:%M"));`` will print the hour and minute
+   as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will print the hour and minute in the
+   local time zone. ``w.print("{::gmt}"), ...);`` will output in GMT if additional explicitness is
+   desired.
+
+   :libswoc:`Reference <Date>`.
 
 .. function:: template < typename ... Args > FirstOf(Args && ... args)
 
@@ -543,49 +611,28 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
 
    This could also be done like::
 
-      w.print("{}", ts::bwf::FirstOf(name, "<void>"));
+      w.print("{}", swoc::bwf::FirstOf(name, "<void>"));
 
-   In addition, if the first argument is a local variable that exists only to do the empty check, that
-   variable can eliminated entirely. E.g.::
+   If the first argument is a local variable that exists only to do the empty check, that variable
+   can eliminated entirely.
 
       const char * name = thing.get_name();
       w.print("{}", name != nullptr ? name : "<void>")
 
    can be simplified to
 
-      w.print("{}", ts::bwf::FirstOf(thing.get_name(), "<void>"));
+      w.print("{}", swoc::bwf::FirstOf(thing.get_name(), "<void>"));
 
    In general avoiding ternary operators in the print argument list makes the code cleaner and
    easier to understand.
 
-.. class:: Date
-
-   Date formatting in the :code:`strftime` style.
-
-   .. function:: Date(time_t epoch, std::string_view fmt = "%Y %b %d %H:%M:%S")
-
-      :arg:`epoch` is the time to print. :arg:`fmt` is the format for printing which is identical to
-      that of `strftime <https://linux.die.net/man/3/strftime>`__. The default format looks like
-      "2018 Jun 08 13:55:37".
-
-   .. function:: Date(std::string_view fmt = "%Y %b %d %H:%M:%S")
-
-      As previous except the epoch is the current epoch at the time the constructor is invoked.
-      Therefore if the current time is to be printed the default constructor can be used.
-
-   When used the format specification can take an extention of "local" which formats the time as
-   local time. Otherwise it is GMT. ``w.print("{}", Date("%H:%M"));`` will print the hour and minute
-   as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will When used the format specification
-   can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
-   ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values.
-   ``w.print("{::local}", Date("%H:%M"));`` will print the hour and minute in the local time zone.
-   ``w.print("{::gmt}"), ...);`` will output in GMT if additional explicitness is desired.
+   :libswoc:`Reference <FirstOf>`.
 
 .. class:: OptionalAffix
 
-   Affix support for printing optional strings. This enables printing a string such the affixes are
-   printed only if the string is not empty. An empty string (or :code:`nullptr`) yields no output. A
-   common situation in which is this is useful is code like ::
+   Affix support for printing optional strings. This enables printing a string such that the affixes
+   are printed only if the string is not empty. An empty string (or :code:`nullptr`) yields no
+   output. A common situation in which is this is useful is code like ::
 
       printf("%s%s", data ? data : "", data ? " " : "");
 
@@ -595,100 +642,52 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
          printf("%s ", data);
       }
 
-   Instead :class:`OptionalAffix` can be used in line, which is easier if there are multiple items. E.g.
+   Instead :libswoc:`OptionalAffix` can be used in line, which is easier if there are multiple
+   items. E.g.
 
-      w.print("{}", ts::bwf::OptionalAffix(data)); // because default is single trailing space suffix.
+      // use default of a single trailing space.
+      w.print("Checking {} {}{}", name, swoc::bwf::OptionalAffix(subfield), result);
 
-   .. function:: OptionalAffix(const char* text, std::string_view suffix = " ", std::string_view prefix = "")
+   which avoids complex ternary operators, spurious format specifiers, or having to split the format
+   string across multiple calls. The arguments are the base string, then the suffix, then the
+   prefix. The suffix and prefix are optional and default to a single space and nothing. Therefore
+   in the previous example, if the :code:`subfield` isn't empty, there will be s space between it
+   and :code:`result`, but not space if :code:`subfield` is empty.
 
-      Create a format wrapper with :arg:`suffix` and :arg:`prefix`. If :arg:`text` is
-      :code:`nullptr` or is empty generate no output. Otherwise print the :arg:`prefix`,
-      :arg:`text`, :arg:`suffix`.
+   :libswoc:`Reference <OptionalAffix>`.
 
-   .. function:: OptionalAffix(std::string_view text, std::string_view suffix = " ", std::string_view prefix = "")
-
-      Create a format wrapper with :arg:`suffix` and :arg:`prefix`. If :arg:`text` is
-      :code:`nullptr` or is empty generate no output. Otherwise print the :arg:`prefix`,
-      :arg:`text`, :arg:`suffix`. Note that passing :code:`std::string` as the first argument will
-      work for this overload.
-
-Global Names
-++++++++++++
-
-As a convenience, there are a few predefined global names that can be used to generate output. These
-do not take any arguments to :func:`BufferWriter::print`, the data needed for output is either
-process or thread global and is retrieved directly. They also are not counted for automatic indexing.
-
-now
-   The epoch time in seconds.
-
-tick
-   The high resolution clock tick.
-
-timestamp
-   UTC time in the format "Year Month Date Hour:Minute:Second", e.g. "2018 Apr 17 14:23:47".
-
-thread-id
-   The id of the current thread.
-
-thread-name
-   The name of the current thread.
-
-ts-thread
-   A pointer to the |TS| :class:`Thread` object for the current thread. This is useful for comparisons.
-
-ts-ethread
-   A pointer to the |TS| :class:`EThread` object for the current thread. This is useful for comparisons
-   or to indicate if the thread is an :class:`EThread` (if not, the value will be :code:`nullptr`).
-
-For example, to have the same output as the normal diagnostic messages with a timestamp and the current thread::
-
-   bw.print("{timestamp} {ts-thread} Counter is {}", counter);
-
-Note that even though no argument is provided the global names do not count as part of the argument
-indexing, therefore the preceeding example could be written as::
-
-   bw.print("{timestamp} {ts-thread} Counter is {0}", counter);
+.. namespace-pop::
 
 Working with standard I/O
-+++++++++++++++++++++++++
+=========================
 
-:class:`BufferWriter` can be used with some of the basic I/O functionality of a C++ environment. At the lowest
-level the output stream operator can be used with a file descriptor or a :code:`std::ostream`. For these
-examples assume :code:`bw` is an instance of :class:`BufferWriter` with data in it.
-
-.. code-block:: cpp
-
-   int fd = open("some_file", O_RDWR);
-   bw >> fd; // Write to file.
-   bw >> std::cout; // write to standard out.
-
-For convenience a stream operator for :code:`std::stream` is provided to make the use more natural.
-
-.. code-block:: cpp
+For convenience a stream operator for :code:`std::stream` is provided to make the use more natural. ::
 
    std::cout << bw;
    std::cout << bw.view(); // identical effect as the previous line.
 
 Using a :class:`BufferWriter` with :code:`printf` is straight forward by use of the sized string
-format code.
+format code if necessary (generally using C++ IO streams is a better choice). ::
 
-.. code-block:: cpp
-
-   ts::LocalBufferWriter<256> bw;
+   swoc::LocalBufferWriter<256> bw;
    bw.print("Failed to connect to {}", addr1);
-   printf("%.*s\n", static_cast<int>(bw.size()), bw.data());
+   printf("%.*s\n", int(bw.size()), bw.data());
 
 Alternatively the output can be null terminated in the formatting to avoid having to pass the size. ::
 
-   ts::LocalBufferWriter<256> bw;
+   swoc::LocalBufferWriter<256> bw;
    printf("%s\n", bw.print("Failed to connect to {}\0", addr1).data());
 
-When using C++ stream I/O, writing to a stream can be done without any local variables at all.
+When using C++ stream I/O, writing to a stream can be done without any local variables at all. ::
 
-.. code-block:: cpp
+   std::cout << swoc::LocalBufferWriter<256>().print("Failed to connect to {}", addr1)
+             << std::endl;
 
-   std::cout << ts::LocalBufferWriter<256>().print("Failed to connect to {}\n", addr1);
+If done repeatedly, a :code:`using` improves the look ::
+
+   using LBW = swoc::LocalBufferWriter<256>;
+   // ...
+   std::cout << LBW().print("Failed to connect to {}", addr1) << std::endl;
 
 This is handy for temporary debugging messages as it avoids having to clean up local variable
 declarations later, particularly when the types involved themselves require additional local
@@ -696,164 +695,472 @@ declarations (such as in this example, an IP address which would normally requir
 buffer for conversion before printing). As noted previously this is particularly useful inside a
 :code:`case` where local variables are more annoying to set up.
 
-Reference
-+++++++++
-.. Future Use
-   .. class:: BufferWriter
+Name Binding
+============
 
-      :class:`BufferWriter` is the abstract base class which defines the basic client interface. This
-      is intended to be the reference type used when passing concrete instances rather than having to
-      support the distinct types.
+The first part of each format specifier is a name. This was originally done to be more compliant
+with Python formatting and is most commonly left blank, although sometimes it is used to format
+arguments out of order or use them multiple times. To make this a more useful feature, |BWF|
+supports :term:`name binding` which binds names to text generator functors. The generator is
+expected to write output to a |BW| instance to replace the specifier, rather than a formatting
+argument.
 
-      .. function:: BufferWriter & write(void * data, size_t length)
+The base formatting logic is passed an instance of a subclass of :libswoc:`NameBinding`. As the
+format string is processed, if a format specifier has a name that is not numeric, the formatting
+logic passes the :libswoc:`format specifier <Spec>` (which includes the :libswoc:`name
+<Spec::_name>`) and a |BW| instance to the name binding. The binding is expected to generate text on
+the |BW| instance in accordance with the format specifier. Generally this involves looking up a
+functor based on the name and calling that in turn to generate the text. |BWF| provides support for
+two use cases.
 
-         Write to the buffer starting at :arg:`data` for at most :arg:`length` bytes. If there is not
-         enough room to fit all the data, none is written.
+External Generators
+-------------------
 
-      .. function:: BufferWriter & write(std::string_view str)
+The first use case is for an "external generator" which generates text based on static or global
+data. An example would be a "timestamp" generator which generates a timestamp based on the current
+time. This could be associated with the name "timestamp" and used like
 
-         Write the string :arg:`str` to the buffer. If there is not enough room to write the string no
-         data is written.
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 130
 
-      .. function:: BufferWriter & write(char c)
+Context Generators
+------------------
 
-         Write the character :arg:`c` to the buffer. If there is no space in the buffer the character
-         is not written.
+The second is a "context generator" which generates text based on a context object. This use case
+presumes a set of generaorrs which access parts of a context object for text generation such that
+the output of the generator depends on the state of the context object. For example, the context
+object might be an HTTP request and the generators field accessors, each of which outputs the value
+for a specific field of the request. Because the name is handed to the name binding object, an
+implementation could subclass :libswoc:`NameBinding` and override the function operator to check the
+name first against fields in the request, and only if that doesn't match, do a lookup for a
+generator.
 
-      .. function:: BufferWriter & fill(size_t n)
+Global Names
+------------
 
-         Increase the output size by :arg:`n` without changing the buffer contents. This is used in
-         conjuction with :func:`BufferWriter::auxBuffer` after writing output to the buffer returned by
-         that method. If this method is not called then such output will not be counted by
-         :func:`BufferWriter::size` and will be overwritten by subsequent output.
+The external name generato suport is used to create a set of default global names. A global
+singleton instance of an external name binding, :libswoc:`ExternalNames`, is used by default.
+Generators assigned to this instance are therefore available in the default printing context. Here
+are a couple of examples for illustration of how this can be used.
 
-      .. function:: char * data() const
+A "timestamp" name was used as an example of a name useful to implement, so the example here will
+start by doing that.
 
-         Return a pointer to start of the buffer.
+First, the generator is defined.
 
-      .. function:: size_t size() const
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 61-73
 
-         Return the number of valid (written) bytes in the buffer.
+This generates a time stamp with the month through seconds, dropping the leading year and clipping
+everything past the seconds. It then adds milliseconds. Sample output looks like "Nov 16
+11:40:20.833". This is then attached to the default global name binding in an initialization function called during process startup.
 
-      .. function:: std::string_view view() const
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 115-122
+   :emphasize-lines: 4
 
-         Return a :code:`std::string_view` that covers the valid data in the buffer.
+Because the test code is statically linked to the library, this must be done via a function called
+from :code:`main` to be sure the library statics have been fully initialized. That taken care of,
+using the global name is trivial.
 
-      .. function:: size_t remaining() const
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 130
 
-         Return the number of available remaining bytes that could be written to the buffer.
+The output from a run is "Nov 16 12:21:05.545 Test Started". Note because this is a format
+specifier, all of the supported format style works without additional work. That's not very useful
+with a timestamp but consider printing the epoch time. Again, the generator is defined.
 
-      .. function:: size_t capacity() const
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 75-79
 
-         Return the number of bytes in the buffer.
+The generator is then assigned to the name "now".
 
-      .. function:: char * auxBuffer() const
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 118-121
+   :emphasize-lines: 2
 
-         Return a pointer to the first byte in the buffer not yet consumed.
+And used with various styles.
 
-      .. function:: BufferWriter & clip(size_t n)
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 133
 
-         Reduce the available space by :arg:`n` bytes.
+Sample output from a run is "Time is 1542393187 5bef0d63 5BEF0D63 0x5bef0d63".
 
-      .. function:: BufferWriter & extend(size_t n)
+Context Binding Example
+-----------------------
 
-         Increase the available space by :arg:`n` bytes. Extreme care must be used with this method as
-         :class:`BufferWriter` will trust the argument, having no way to verify it. In general this
-         should only be used after calling :func:`BufferWriter::clip` and passing the same value.
-         Together these allow the buffer to be temporarily reduced to reserve space for the trailing
-         element of a required pair of output strings, e.g. making sure a closing quote can be written
-         even if part of the string is not.
+Context name binding is useful for front ends to |BW|, not for direct use. The expected use case is
+format string provided by an external agent, with format specifiers to pull data from a context
+object where explicitly naming the context object isn't possible. As an example use case consider a
+Traffic Server plugin that provides a cookie manipulation function. When setting a cookie value, it
+is useful to access transaction specific data such as the URL, portions of the URL (e.g. the path),
+HTTP field values, some other cookie item value, etc. This can be provided easily by setting up a
+context binding which binds a request context, and binds the various names to the appropriate
+elements in the context.
 
-      .. function:: bool error() const
+To start the example, a *very* simplified context will be used - it is
+hardwired for comprehensibility, in production code the elements would be initialized for each
+transaction.
 
-         Return :code:`true` if the buffer has overflowed from writing, :code:`false` if not.
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 95-111
 
-      .. function:: size_t extent() const
+This holds the interesting information. Next up is a context name binding class that binds an
+instance of :code:`Context`. This can be done with the template :libswoc:`ContextNames`. The
+template class provides both a map of names to generators and the subclass of :libswoc:`NameBinding`
+to pass to the formatter.
 
-         Return the total number of bytes in all attempted writes to this buffer. This value allows a
-         successful retry in case of overflow, presuming the output data doesn't change. This works
-         well with the standard "try before you buy" approach of attempting to write output, counting
-         the characters needed, then allocating a sufficiently sized buffer and actually writing.
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 140
 
-      .. function:: BufferWriter & print(TextView fmt, ...)
+For each supported name a function is defined to extract that data. For fields and cookies, the
+extension will hold the field name and so the generator needs to look up the name from the extension
+in the specifier. The field generators are done as local lambda functions. The other generators are
+done as in place lambdas, since they simply pass a member of :code:`Context` to :code:`bwformat`. In
+production code this might done with lambdas, or file scope functions, or via methods in
+:code:`Context`. For writing the exmaple, lambdas were easiest and so those were used.
 
-         Print the arguments according to the format. See `bw-formatting`_.
+First the field generators, as those are more complex.
 
-      .. function:: template <typename ... Args> \
-            BufferWriter & printv(TextView fmt, std::tuple<Args...> && args)
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 148-155
 
-         Print the arguments in the tuple :arg:`args` according to the format. See `bw-formatting`_.
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 157-164
 
-      .. function:: std::ostream & operator >> (std::ostream & stream) const
+:code:`NA` is a constant string used to indicate a missing field / cookie.
 
-         Write the contents of the buffer to :arg:`stream` and return :arg:`stream`.
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 57
 
-      .. function:: ssize_t operator >> (int fd)
+With the field generators in place, time to hook up the generators. For the direct member ones, just define a lambda in place.
 
-         Write the contents of the buffer to file descriptor :arg:`fd` and return the number of bytes
-         write (the results of the call to file :code:`write()`).
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 167-177
 
-   .. class:: FixedBufferWriter : public BufferWriter
+In production code, :code:`cb` would be a process static, initialized at process start up, as the
+relationship between the names and the generators doesn't change. Time to try it out.
 
-      This is a class that implements :class:`BufferWriter` on a fixed buffer, passed in to the constructor.
+This test gets the "YRP" field.
 
-      .. function:: FixedBufferWriter(void * buffer, size_t length)
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 179-180
 
-         Construct an instance that will write to :arg:`buffer` at most :arg:`length` bytes. If more
-         data is written, all data past the maximum size is discarded.
+This test reconstructs the URL without the query parameters.
 
-      .. function:: FixedBufferWriter & reduce(size_t n)
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 182-183
 
-         Roll back the output to have :arg:`n` valid (used) bytes.
+That's a minimalist approach, using as little additional code as possible. But it's a bit funky to
+require the field names in the extension. There are various alternative approaches that could be
+used. The one considered here is to do more parsing work to make it easier for the users, by making
+the names more structured in the form "cookie.name" which means the value of the cookie element with
+the name "name". The two implementations shown here were chosen to demonstrate features of |BWF|.
 
-      .. function:: FixedBufferWriter & reset()
+One type of implementation is to change how names are handled by the context binding (`example
+<example-custom-name-dispatch>`__). Note the base formatting logic does not do name look, it only
+passes the name (embedded in the specifier) to the binding. By subclassing the binding this lookup
+can be intercepted and done differently, specifically by checking for names of the format "A.B" and
+using A to select the table in which to lookup B. The other alternative is to change the parsing of
+the format string so that a field name such as "{cookie.name}" is parsed as if it had been
+"{cookie::name}" (`example <example-custom-parsing>`__). Both of these approaches require understanding
+the core formatting logic and how to customize it, as explained in `Custom Formatting`.
 
-         Equivalent to :code:`reduce(0)`, provide for convenience.
+Custom Formatting
+=================
 
-      .. function:: FixedBufferWriter auxWriter(size_t reserve = 0)
+The internals of |BWF| are designed to enable using other format syntax. The one described in this
+document is simply the one implemented by default. Any format which can be used to generate literal
+output along with instances of :libswoc:`bwf::Spec` instances can be made to work. Along with
+support for binding names, this makes it relatively easy to create custom format styles for use
+in specialized applications, particularly with formatting user input, e.g. for user defined
+diagnostic messages.
 
-         Create a new instance of :class:`FixedBufferWriter` for the remaining output buffer. If
-         :arg:`reserve` is non-zero then if possible the capacity of the returned instance is reduced
-         by :arg:`reserve` bytes, in effect reserving that amount of space at the end. Note the space will
-         not be reserved if :arg:`reserve` is larger than the remaining output space.
+This starts with the :libswoc:`BufferWriter::print_nfv` method. This is the formatted output
+implementation, all of the other variants serving as shims to call this method. The method has three
+arguments.
 
-   .. class:: template < size_t N > LocalBufferWriter : public BufferWriter
+:arg:`names`
+   This is a container for bound names. If a specifier has a name that is not numeric, the specifier
+   is passed to the name binding for output.
 
-      This is a convenience class which is a subclass of :class:`FixedBufferWriter`. It which creates a
-      buffer as a member rather than having an external buffer that is passed to the instance. The
-      buffer is :arg:`N` bytes long. This differs from its super class only in the constructor, which
-      is only a default constructor.
+:arg:`ex`
+   The :term:` format extractor`. This is a functor that detects end of input and extracts literals
+   and specifiers. It has two required overloads and one optional.
 
-      .. function:: LocalBufferWriter::LocalBufferWriter()
+   .. class:: Extractor
 
-         Construct an instance with a capacity of :arg:`N`.
+      .. function:: explicit operator bool () const
 
-   .. class:: BWFSpec
+         :return: :code:`true` if there is more format string to process, otherwise :code:`false`.
 
-      This holds a format specifier. It has the parsing logic for a specifier and if the constructor is
-      passed a :code:`std::string_view` of a specifier, that will parse it and loaded into the class
-      members. This is useful to specialized implementations of :func:`bwformat`.
+      .. function:: bool operator () (std::string_view &literal, bwf::Spec &spec)
 
-   .. function:: template<typename V> BufferWriter& bwformat(BufferWriter & w, BWFSpec const & spec, V const & v)
+         :return: :code:`true` if a specifier was parsed and :arg:`spec` updated, otherwise :code:`false`.
 
-      A family of overloads that perform formatted output on a :class:`BufferWriter`. The set of types
-      supported can be extended by defining an overload of this function for the types.
+         Extract the next literal and/or specifier. It may be assumed both :arg:`literal` and
+         :arg;`spec` are initialized as if default constructed. If no literal is available
+         :arg:`literal` should be unmodified, otherwise it should be set to the literal. If a specifier
+         is found, :arg:`spec` must be updated to the parsed value of the specifier. If a specifier
+         is found the method must return :code:`true` otherwise it must return :code:`false`. The
+         method must always return at least one of :arg:`literal` or :arg:`spec` if the extractor
+         is not empty.
 
-   .. function:: template < typename ... Args > \
-                  std::string& bwprint(std::string & s, std::string_view format, Args &&... args)
+      .. function:: void capture(BufferWriter & w, const bwf::Spec & spec, std::any && value)
 
-      Generate formatted output in :arg:`s` based on the :arg:`format` and arguments :arg:`args`. The
-      string :arg:`s` is adjusted in size to be the exact length as required by the output. If the
-      string already had enough capacity it is not re-allocated, otherwise the resizing will cause
-      a re-allocation.
+         This is an optional method used to capture an argument. A pointer to the argument is placed
+         in :arg:`value` with full type information. The method may generate output but this is
+         not required. If this method is not present and the extractor returns a specifier with the
+         type :libswoc:`Spec::CAPTURE_TYPE`, an exception will be thrown.
 
-   .. function:: template < typename ... Args > \
-                  std::string& bwprintv(std::string & s, std::string_view format, std::tuple<Args...> args)
+:arg:`args`
+   A tuple containing the arguments to be formatted.
 
-      Generate formatted output in :arg:`s` based on the :arg:`format` and :arg:`args`, which must be a
-      tuple of the arguments to use for the format. The string :arg:`s` is adjusted in size to be the
-      exact length as required by the output. If the string already had enough capacity it is not
-      re-allocated, otherwise the resizing will cause a re-allocation.
+The formatting logic in :libswoc:`BufferWriter::print_nfv` is
 
-      This overload is used primarily as a back end to another function which takes the arguments for
-      the formatting independently.
+.. uml::
+   :align: center
+
+   title Core Formatting
+
+   start
+   while (ex()) is (not empty)
+     :ex(literal, spec);
+     if (literal) then (not empty)
+       :w.write(literal);
+     endif
+     if (spec) then (found)
+       if (spec._name) then (numeric or empty)
+         :format arg[spec];
+       else
+         :names(spec);
+       endif
+     endif
+
+   endwhile (empty)
+
+   stop
+
+If the name in :arg:`spec` is not empty and not numeric, rather than selecting a member of :arg:`args`
+the specifier is passed to the name binding, which presumably generates the appropriate output. The
+name is embedded in the specifier :arg:`spec` in the :libswoc:`Spec::_name` member for use by the
+name binding. Otherwise, an empty or numeric name means an argument is selected and passed to a
+:code:`bwformat` overload, the specific overload selected based on the type of the argument.
+
+For examples of this, the `Context Binding Example`_ will be redone in two different ways, each
+illustrating a different approach to customizing output formatting.
+
+.. _example-custom-parsing:
+
+Parsing Example
+---------------
+
+For this case, the parsing of the format specifier is overridden and if the name is of the form "A.B"
+it is treated as "A::B", that is "A" is put in the :arg:`_name` member and "B" is put in the :arg:`_ext`
+member. Any extension is ignored. In addition, to act more like a Traffic Server plugin (and illustrate
+how to use alternate specifier formats), the parser requires format specifiers to be of the form
+"**%{**\ *name*\ **:**\ *style*\ **}**\ ". A double percent "%%" will mark a percent that is not
+part of a format specifier.
+
+The first step is to declare a class that will be the extractor functor.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 285-295
+
+This will be used only as a temporary passed to :libswoc:`BufferWriter::print_nfv` and is therefore
+always constructed with the format string. The format string left to parse is kept in :arg:`_fmt` which
+means the empty check is really just a check on that.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 301-304
+
+The function operator, which parses the format string to extract literals and specifiers, is a bit more
+complex.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 306-342
+
+The rough logic is
+
+*  Search for a '%' - if not found, it's all literal, return that.
+
+*  Make sure the '%' isn't '%%' - if it is, need to return just a literal with the leading '%' and
+   skip the trailing '%', doing more parsing on the next call.
+
+*  Check for an open brace, and if found find the close brace, then parse the internals into a
+   specifier. Because the same style format as the default is used, the parser for :libswoc:`bwf::Spec`
+   can be used. Otherwise if something different were needed that parsing logic would replace
+
+   .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+      :lines: 326
+
+*  If a specifier was found, check the name for a period. If found, split it and put the prefix in
+   the name and the suffix in the extension.
+
+   .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+      :lines: 331-336
+
+A name binding
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 349-350
+
+is declared and names are assigned in the usual way. In addition to assigning context related names,
+external generators can also be assigned to the name binding, which can be a useful feature to
+inject external names in addition to the context specific ones.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 385
+
+After that, everything is ready to try it out.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 387-398
+
+.. _example-custom-name-dispatch:
+
+Name Binding Example
+--------------------
+
+Another approach is to override how name lookup is done in the binding. Because the field handling will be done in the override, methods are added to the :code:`Context` to do the generation for structured names, rather than placing that logic in the binding.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 194-215
+
+Next a subclass of :libswoc:`ContextNames` is created which binds to a :code:`ExContext` object.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 219-222
+
+Inside the class the function operator is overloaded to handle name look up.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 227-247
+
+The incoming name is taken from the specifier and split on a period. If that yields a non-empty
+result it is checked against the two valid structure names and the appropriate method on
+:code:`ExContext` called to generate the output. Otherwise the normal name look up is done to find
+the direct access generators.
+
+An instance is constructed and the direct access names assigned
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 251-260
+
+and it's time to try it out.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 262-278
+
+This tests structured names, direct access names, external names ("version"), and some formatting.
+
+C Style
+-------
+
+The formatting is sufficiently flexible to emulate C style or "printf" formatting. Given that a
+major motivation for this work was the inadequacy of C style formatting, it's a bit odd to have this
+example but it was done to show that even emulating :code:`printf`, it's still better. I must note
+this, although this works reasonably well, it's still an example and not suitable for production
+code. There are still some edge cases not handled, but as an proof of concept it's not worth fixing
+every detail.
+
+The first step is creating a format extractor, since the format string syntax is completley
+different from the default. This is done by creating a class to perform the extraction and hold
+state, although it will only be used as a temporary passed to :libswoc:`BufferWriter::print_nvf`.
+The state is required to track "captured" arguments. These are used to emulate the '*' marker for
+integers in format specifiers, which indicate their value is in an argument, not the format string.
+This can be done both for maximum size and precision, so both of the must be capturable. The basic
+logic is to keep a :libswoc:`bwf::Spec` in the class to hold the captured values, along with flags
+indicating the capture state (it may be necessary to do two captures, if both the maximum size and
+precision are variable).
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 411-431
+
+The empty indicator needs to be a bit different in that even if the format is empty, if the last
+part of the format string had a capture (indicated by :arg:`_saved_p` being :code:`true`) a
+non-empty state needs to be returned to get an invocation to output that last specifier.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 436-439
+
+The capture logic takes advantage of the fact that only integers can be captured, and in fact
+:code:`printf` itself requires exactly an :code:`int`. This logic is a bit more flexible, accepting
+:code:`unsigned` and :code:`size_t` also, but otherwise is fairly restrictive. It should also
+generate an error instead of silently returning on a bad type, but you can't have everything.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 441-459
+
+The set up for the capture passes the capture element in the extension of the return specifier,
+which this logic checks to know where to stash the captured value.
+
+The actual parsing logic will be skipped - it's in the example file
+:swoc:git:`src/unit_tests/ex_bw_format.cc` around line 461.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 461-462
+   :lineno-match:
+
+This handles all the basics of C style formatting including sign control, minimum and maximum
+widths, precision, and leading radix support. One thing of note is that integer size indicators
+(such as "l' in "%ld") are ignored - the type is known, therefore the sizing information is
+redundant at best and wrong at worst, so it is parsed and discarded. If a capture is needed, state
+is set the extrator instance and the specifier type is set to :libswoc:`bwf::Spec::CAPTURE_TYPE`
+which will cause the formatting logic to call the extractor method :code:`capture` with the
+corresponding argument. The specifier name is always empty, as strict in order processing is
+mandatory.
+
+Some example uses, along with verification of the results.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 617-636
+
+Summary
+-------
+
+These example show that changing the format style and/or syntax can be done with relatively little
+code. Even the C style formatting takes less than 100 lines of code to be mostly complete, even
+though it can't take advantage of the parsing in :libswoc:`bwf::Spec` and handle captures. This
+makes using |BWF| in existing projects with already defined syntax which is not the same as the
+default a low hurdle to get over.
+
+Design Notes
+************
+
+Type safe formatting has two major benefits -
+
+*  No mismatch between the format specifier and the argument. Although some modern compilers do
+   better at catching this at run time, there is still risk (especially with non-constant format
+   strings) and divergence between operating systems such that there is no `universally correct
+   choice <https://github.com/apache/trafficserver/pull/3476/files>`__. In addition the number of
+   arguments can be verified to be correct which is often useful.
+
+*  Formatting can be customized per type or even per partial type (e.g. :code:`T*` for generic
+   :code:`T`). This enables embedding common formatting work in the format system once, rather than
+   duplicating it in many places (e.g. converting enum values to names). This makes it easier for
+   developers to make useful error messages. See :ref:`this example <bwf-http-debug-name-example>`
+   for more detail.
+
+As a result of these benefits there has been other work on similar projects, to replace
+:code:`printf` a better mechanism. Unfortunately most of these are rather project specific and don't
+suit the use case in Traffic Server. The two best options, `Boost.Format
+<https://www.boost.org/doc/libs/1_64_0/libs/format/>`__ and `fmt <https://github.com/fmtlib/fmt>`__,
+while good, are also not quite close enough to outweight the benefits of a version specifically
+tuned for Traffic Server. ``Boost.Format`` is not acceptable because of the Boost footprint. ``fmt``
+has the problem of depending on C++ stream operators and therefore not having the required level of
+performance or memory characteristics. Its main benefit, of reusing stream operators, doesn't apply
+to Traffic Server because of the nigh non-existence of such operators. The possibility of using C++
+stream operators was investigated but changing those to use pre-existing buffers not allocated
+internally was very difficult, judged worse than building a relatively simple implementation from
+scratch. The actual core implementation of formatted output for :class:`BufferWriter` is not very
+large - most of the overall work will be writing formatters, work which would need to be done in any
+case but in contrast to current practice, only done once.
+
+This code has under gone multiple large scale revisions, some driven by use (the most recent only
+triggered by trying to write the examples in this document and finding some rough edges) and others
+by a need for additional functionality (the format extractor support). I think it's close to its
+final form and I am quite pleased with it. The most recent revisions to the alternate formatting
+support have made it rather simple to retrofit this work in to existing / legacy applications. I do
+expect to have some ongoing work on the documentation, which I consider currently basically a first
+pass.
