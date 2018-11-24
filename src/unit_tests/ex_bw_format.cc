@@ -42,11 +42,21 @@ TEST_CASE("BWFormat substrings", "[swoc][bwf][substr]")
   LocalBufferWriter<256> bw;
   std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
 
-  bw.clear().print("Text: _{0:20}_", text.substr(0, 10));
-  REQUIRE(bw.view() == "Text: _0123456789          _");
-  bw.clear().print("Text: _{0:>20}_", text.substr(0, 10));
-  REQUIRE(bw.view() == "Text: _          0123456789_");
+  bw.clear().print("Text: |{0:20}|", text.substr(0, 10));
+  REQUIRE(bw.view() == "Text: |0123456789          |");
+  bw.clear().print("Text: |{:20}|", text.substr(0, 10));
+  REQUIRE(bw.view() == "Text: |0123456789          |");
+  bw.clear().print("Text: |{:20.10}|", text);
+  REQUIRE(bw.view() == "Text: |0123456789          |");
+  bw.clear().print("Text: |{0:>20}|", text.substr(0, 10));
+  REQUIRE(bw.view() == "Text: |          0123456789|");
+  bw.clear().print("Text: |{:>20}|", text.substr(0, 10));
+  REQUIRE(bw.view() == "Text: |          0123456789|");
+  bw.clear().print("Text: |{0:>20.10}|", text);
+  REQUIRE(bw.view() == "Text: |          0123456789|");
   bw.clear().print("Text: |{0:->20}|", text.substr(9, 11));
+  REQUIRE(bw.view() == "Text: |---------9abcdefghij|");
+  bw.clear().print("Text: |{0:->20.11}|", text.substr(9));
   REQUIRE(bw.view() == "Text: |---------9abcdefghij|");
   bw.clear().print("Text: |{0:-<,20}|", text.substr(52, 10));
   REQUIRE(bw.view() == "Text: |QRSTUVWXYZ|");

@@ -4,20 +4,17 @@
 
     @section license License
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+    agreements.  See the NOTICE file distributed with this work for additional information regarding
+    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with the License.  You may
+    obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
     limitations under the License.
  */
 
@@ -38,27 +35,7 @@
 using namespace std::literals;
 
 swoc::bwf::ExternalNames swoc::bwf::Global_Names;
-
-namespace
-{
-// Customized version of string to int. Using this instead of the general @c svtoi function made @c
-// bwprint performance test run in < 30% of the time, changing it from about 2.5 times slower than
-// snprintf to a little faster. This version handles only positive integers in decimal.
-
-inline unsigned
-radix10(swoc::TextView src, swoc::TextView &out)
-{
-  unsigned zret = 0;
-
-  out.clear();
-  if (src.size()) {
-    auto origin = src.data();
-    zret        = swoc::svto_radix<10>(src);
-    out.assign(origin, src.data());
-  }
-  return zret;
-}
-} // namespace
+using swoc::svto_radix;
 
 namespace swoc
 {
@@ -105,8 +82,9 @@ namespace bwf
 
     _name = fmt.take_prefix_at(':');
     // if it's parsable as a number, treat it as an index.
-    n = radix10(_name, num);
-    if (num.size() == _name.size()) {
+    num = _name;
+    n = svto_radix<10>(num);
+    if (num.empty()) {
       _idx = static_cast<decltype(_idx)>(n);
     }
 
@@ -161,20 +139,22 @@ namespace bwf
           _fill = '0';
           ++sz;
         }
-        n = radix10(sz, num);
-        if (num.size()) {
+        num = sz;
+        n = svto_radix<10>(num);
+        if (num.size() < sz.size()) {
           _min = static_cast<decltype(_min)>(n);
-          sz.remove_prefix(num.size());
+          sz = num;
           if (!sz.size()) {
             return true;
           }
         }
         // precision
         if ('.' == *sz) {
-          n = radix10(++sz, num);
-          if (num.size()) {
+          num = ++sz;
+          n = svto_radix<10>(num);
+          if (num.size() < sz.size()) {
             _prec = static_cast<decltype(_prec)>(n);
-            sz.remove_prefix(num.size());
+            sz = num;
             if (!sz.size()) {
               return true;
             }
@@ -191,10 +171,11 @@ namespace bwf
         }
         // maximum width
         if (',' == *sz) {
-          n = radix10(++sz, num);
-          if (num.size()) {
+          num = ++sz;
+          n = svto_radix<10>(num);
+          if (num.size() < sz.size()) {
             _max = static_cast<decltype(_max)>(n);
-            sz.remove_prefix(num.size());
+            sz = num;
             if (!sz.size()) {
               return true;
             }
@@ -664,6 +645,10 @@ namespace bwf
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv)
 {
+  auto width = int(spec._min); // amount to fill.
+  if (spec._prec > 0) {
+    sv = sv.substr(0, spec._prec);
+  }
   if ('x' == spec._type || 'X' == spec._type) {
     const char *digits = 'x' == spec._type ? bwf::LOWER_DIGITS : bwf::UPPER_DIGITS;
     width -= sv.size() * 2;

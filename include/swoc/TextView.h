@@ -685,11 +685,6 @@ public:
   /// @endcond
 
 protected:
-  /// Faster find on a delimiter set, taking advantage of supporting only ASCII.
-  size_t search(std::string_view const &delimiters) const;
-  /// Faster reverse find on a delimiter set, taking advantage of supporting only ASCII.
-  size_t rsearch(std::string_view const &delimiters) const;
-
   /// Initialize a bit mask to mark which characters are in this view.
   static void init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set);
 };
@@ -857,79 +852,60 @@ TextView::assign(char const *b, char const *e)
   return *this;
 }
 
-inline size_t
-TextView::search(std::string_view const &delimiters) const
-{
-  std::bitset<256> valid;
-  this->init_delimiter_set(delimiters, valid);
-
-  for (const char *spot = this->data(), *limit = this->data_end(); spot < limit; ++spot)
-    if (valid[static_cast<uint8_t>(*spot)])
-      return spot - this->data();
-  return npos;
-}
-
-inline size_t
-TextView::rsearch(std::string_view const &delimiters) const
-{
-  std::bitset<256> valid;
-  this->init_delimiter_set(delimiters, valid);
-
-  for (const char *spot = this->data_end(), *limit = this->data(); spot > limit;)
-    if (valid[static_cast<uint8_t>(*--spot)])
-      return spot - this->data();
-  return npos;
-}
-
 inline TextView
 TextView::prefix(size_t n) const
 {
-  return self_type(this->data(), std::min(n, this->size()));
+  return { this->data(), std::min(n, this->size()) };
 }
 
 inline TextView
 TextView::prefix(int n) const
 {
-  return this->prefix(static_cast<size_t>(n));
+  return { this->data(), std::min<size_t>(n, this->size()) };
 }
 
 inline TextView
 TextView::prefix_at(char c) const
 {
-  return this->prefix(this->find(c));
+  self_type zret; // default to empty return.
+  if (auto n = this->find(c) ; n != npos) {
+    zret.assign(this->data(), n);
+  }
+  return zret;
 }
 
 inline TextView
 TextView::prefix_at(std::string_view const &delimiters) const
 {
-  return this->prefix(this->search(delimiters));
+  self_type zret; // default to empty return.
+  if ( auto n = this->find_first_of(delimiters) ; n != npos) {
+    zret.assign(this->data(), n);
+  }
+  return zret;
 }
 
 template <typename F>
 inline TextView
 TextView::prefix_if(F const &pred) const
 {
-  return this->prefix(this->find_if(pred));
+  self_type zret; // default to empty return.
+  if ( auto n = this->find_if(pred) ; n != npos) {
+    zret.assign(this->data(), n);
+  }
+  return zret;
 }
 
 inline TextView &
 TextView::remove_prefix(size_t n)
 {
-  if (n > this->size()) {
-    this->clear();
-  } else {
-    this->super_type::remove_prefix(n);
-  }
+  this->super_type::remove_prefix(std::min(n, this->size()));
   return *this;
 }
 
 inline TextView &
 TextView::remove_prefix_at(char c)
 {
-  auto n = this->find(c);
-  if (n == npos) {
-    this->clear();
-  } else {
+  if ( auto n = this->find(c) ; n != npos) {
     this->super_type::remove_prefix(n + 1);
   }
   return *this;
@@ -938,10 +914,7 @@ TextView::remove_prefix_at(char c)
 inline TextView &
 TextView::remove_prefix_at(std::string_view const &delimiters)
 {
-  auto n = this->find_first_of(delimiters);
-  if (n == npos) {
-    this->clear();
-  } else {
+  if (auto n = this->find_first_of(delimiters) ; n != npos) {
     this->super_type::remove_prefix(n + 1);
   }
   return *this;
@@ -951,10 +924,7 @@ template <typename F>
 TextView &
 TextView::remove_prefix_if(F const &pred)
 {
-  auto n = this->find_if(pred);
-  if (n == npos) {
-    this->clear();
-  } else {
+  if ( auto n = this->find_if(pred) ; n != npos) {
     this->super_type::remove_prefix(n + 1);
   }
   return *this;
@@ -974,7 +944,7 @@ TextView::split_prefix(size_t n)
 inline TextView
 TextView::split_prefix(int n)
 {
-  return this->split_prefix_at(size_t(n));
+  return this->split_prefix(size_t(n));
 }
 
 inline TextView
@@ -986,14 +956,14 @@ TextView::split_prefix_at(char c)
 inline TextView
 TextView::split_prefix_at(std::string_view const &delimiters)
 {
-  return this->split_prefix_at(this->search(delimiters));
+  return this->split_prefix(this->find_first_of(delimiters));
 }
 
 template <typename F>
 inline TextView
 TextView::split_prefix_if(F const &pred)
 {
-  return this->split_prefix_at(this->find_if(pred));
+  return this->split_prefix(this->find_if(pred));
 }
 
 inline TextView
@@ -1014,7 +984,7 @@ TextView::take_prefix_at(char c)
 inline TextView
 TextView::take_prefix_at(std::string_view const &delimiters)
 {
-  return this->take_prefix(this->search(delimiters));
+  return this->take_prefix(this->find_first_of(delimiters));
 }
 
 template <typename F>
@@ -1028,41 +998,60 @@ inline TextView
 TextView::suffix(size_t n) const
 {
   n = std::min(n, this->size());
-  return self_type(this->data_end() - n, n);
+  return { this->data_end() - n, n };
 }
 
 inline TextView
 TextView::suffix(int n) const
 {
-  return this->suffix(static_cast<size_t>(n));
+  return this->suffix(size_t(n));
 }
 
 inline TextView
 TextView::suffix_at(char c) const
 {
-  return this->suffix((this->size() - std::min(this->size(), this->rfind(c))) - 1);
+  self_type zret;
+  if (auto n = this->rfind(c) ; n != npos ) {
+    ++n;
+    zret.assign(this->data() + n, this->size() - n);
+  }
+  return zret;
 }
 
 inline TextView
 TextView::suffix_at(std::string_view const &delimiters) const
 {
-  return this->suffix((this->size() - std::min(this->size(), this->rsearch(delimiters))) - 1);
+  self_type zret;
+  if (auto n = this->find_last_of(delimiters) ; n != npos ) {
+    ++n;
+    zret.assign(this->data() + n, this->size() - n);
+  }
+  return zret;
 }
 
 template <typename F>
 inline TextView
 TextView::suffix_if(F const &pred) const
 {
-  return this->suffix((this->size() - std::min(this->size(), this->rfind_if(pred))) - 1);
+  self_type zret;
+  if (auto n = this->rfind_if(pred) ; n != npos ) {
+    ++n;
+    zret.assign(this->data() + n, this->size() - n);
+  }
+  return zret;
+}
+
+inline auto
+TextView::remove_suffix(size_t n) -> self_type &
+{
+  this->super_type::remove_suffix(std::min(n, this->size()));
+  return *this;
 }
 
 inline TextView &
 TextView::remove_suffix_at(char c)
 {
-  auto n = this->rfind(c);
-  if (n == npos) {
-    this->clear();
-  } else {
+  if ( auto n = this->rfind(c) ; n != npos) {
     this->remove_suffix(this->size() - n);
   }
   return *this;
@@ -1071,10 +1060,7 @@ TextView::remove_suffix_at(char c)
 inline TextView &
 TextView::remove_suffix_at(std::string_view const &delimiters)
 {
-  auto n = this->find_last_of(delimiters);
-  if (n == npos) {
-    this->clear();
-  } else {
+  if ( auto n = this->find_last_of(delimiters) ; n != npos) {
     this->remove_suffix(this->size() - n);
   }
   return *this;
@@ -1084,22 +1070,8 @@ template <typename F>
 TextView &
 TextView::remove_suffix_if(F const &pred)
 {
-  auto n = this->rfind_if(pred);
-  if (n == npos) {
-    this->clear();
-  } else {
+  if ( auto n = this->rfind_if(pred) ; n != npos) {
     this->remove_suffix(this->size() - n);
-  }
-  return *this;
-}
-
-inline auto
-TextView::remove_suffix(size_t n) -> self_type &
-{
-  if (n > this->size()) {
-    this->clear();
-  } else {
-    this->super_type::remove_suffix(n);
   }
   return *this;
 }
@@ -1130,7 +1102,7 @@ TextView::split_suffix_at(char c)
 inline TextView
 TextView::split_suffix_at(std::string_view const &delimiters)
 {
-  auto idx = this->rsearch(delimiters);
+  auto idx = this->find_last_of(delimiters);
   return npos == idx ? self_type{} : this->split_suffix(this->size() - (idx + 1));
 }
 
@@ -1164,7 +1136,7 @@ TextView::take_suffix_at(char c)
 inline TextView
 TextView::take_suffix_at(std::string_view const &delimiters)
 {
-  return this->take_suffix(this->rsearch(delimiters));
+  return this->take_suffix(this->find_last_of(delimiters));
 }
 
 template <typename F>

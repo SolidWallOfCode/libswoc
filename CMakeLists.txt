@@ -36,7 +36,6 @@ set(lib_src
     src/MemArena.cc
     src/swoc_file.cc
     src/TextView.cc
-    include/swoc/bwf_printf.h
     )
 
 add_library(swoc++ STATIC "${core_headers}" "${ext_headers}" "${lib_src}")

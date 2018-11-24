@@ -175,7 +175,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw.clear().print("{::d}", cspan.rebind());
   REQUIRE(bw.view() == "64656c61696e");
 
-  std::string_view sv{"abc123"};
+  TextView sv{"abc123"};
   bw.clear();
   bw.print("{}", sv);
   REQUIRE(bw.view() == sv);
@@ -191,12 +191,22 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw.clear();
   bw.print("|{:>16x}|", sv);
   REQUIRE(bw.view() == "|    616263313233|");
-  bw.clear();
-  bw.print("|{:^16x}|", sv);
+  bw.clear().print("|{:^16x}|", sv);
   REQUIRE(bw.view() == "|  616263313233  |");
-  bw.clear();
-  bw.print("|{:>16.2x}|", sv);
+  bw.clear().print("|{:>16.2x}|", sv);
   REQUIRE(bw.view() == "|            6162|");
+
+  // Substrings by argument adjustment.
+  bw.clear().print("|{:<0,7x}|", sv.prefix(4));
+  REQUIRE(bw.view() == "|6162633|");
+  bw.clear().print("|{:<5,7x}|", sv.prefix(2));
+  REQUIRE(bw.view() == "|6162 |");
+  bw.clear().print("|{:<5,7x}|", sv.prefix(3));
+  REQUIRE(bw.view() == "|616263|");
+  bw.clear().print("|{:<7x}|", sv.prefix(3));
+  REQUIRE(bw.view() == "|616263 |");
+
+  // Substrings by precision - should be same output.
   bw.clear().print("|{:<0.4,7x}|", sv);
   REQUIRE(bw.view() == "|6162633|");
   bw.clear().print("|{:<5.2,7x}|", sv);

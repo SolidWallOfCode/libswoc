@@ -175,26 +175,26 @@ clear the view if the size specified is larger than the contents of the view.
 | Operation       | Affix  | Bounded | Method                                   |
 +=================+========+=========+==========================================+
 | Copy            | Prefix | No      | :libswoc:`TextView::prefix`              |
-|                 +        +         +------------------------------------------+
-|                 |        |         | :libswoc:`TextView::prefix_at`           |
+|                 +        +---------+------------------------------------------+
+|                 |        | Yes     | :libswoc:`TextView::prefix_at`           |
 |                 +        +         +------------------------------------------+
 |                 |        |         | :libswoc:`TextView::prefix_if`           |
 |                 +--------+---------+------------------------------------------+
 |                 | Suffix | No      | :libswoc:`TextView::suffix`              |
-|                 +        +         +------------------------------------------+
-|                 |        |         | :libswoc:`TextView::suffix_at`           |
+|                 +        +---------+------------------------------------------+
+|                 |        | Yes     | :libswoc:`TextView::suffix_at`           |
 |                 +        +         +------------------------------------------+
 |                 |        |         | :libswoc:`TextView::suffix_if`           |
 +-----------------+--------+---------+------------------------------------------+
 | Modify          | Prefix | No      | `std::string_view::remove_prefix`_       |
-|                 |        +         +------------------------------------------+
-|                 |        |         | :libswoc:`TextView::remove_prefix_at`    |
+|                 |        +---------+------------------------------------------+
+|                 |        | Yes     | :libswoc:`TextView::remove_prefix_at`    |
 |                 |        +         +------------------------------------------+
 |                 |        |         | :libswoc:`TextView::remove_prefix_if`    |
 |                 +--------+---------+------------------------------------------+
 |                 | Suffix | No      | `std::string_view::remove_suffix`_       |
-|                 |        +         +------------------------------------------+
-|                 |        |         | :libswoc:`TextView::remove_suffix_at`    |
+|                 |        +---------+------------------------------------------+
+|                 |        | Yes     | :libswoc:`TextView::remove_suffix_at`    |
 |                 |        +         +------------------------------------------+
 |                 |        |         | :libswoc:`TextView::remove_suffix_if`    |
 +-----------------+--------+---------+------------------------------------------+

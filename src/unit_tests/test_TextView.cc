@@ -95,9 +95,24 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
 
   REQUIRE("0123456789" == prefix);
   REQUIRE("67890" == tv1.suffix(5));
+  REQUIRE(tv1 == tv1.prefix(9999));
+  REQUIRE(tv1 == tv1.suffix(9999));
 
   TextView tv2 = tv1.prefix_at(';');
   REQUIRE(tv2 == "0123456789");
+  REQUIRE(tv1.prefix_at('z').empty());
+  REQUIRE(tv1.suffix_at('z').empty());
+
+  s = tv1;
+  REQUIRE(s.remove_prefix(10) == ";01234567890");
+  s = tv1;
+  REQUIRE(s.remove_prefix(9999).empty());
+  s = tv1;
+  REQUIRE(s.remove_suffix(11) == "0123456789;");
+  s = tv1;
+  s.remove_suffix(9999);
+  REQUIRE(s.empty());
+  REQUIRE(s.data() == tv1.data());
 
   TextView right{tv1};
   TextView left{right.split_prefix_at(';')};
@@ -180,27 +195,26 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
 
   // Simulate pulling off FQDN pieces in reverse order from a string_view.
   // Simulates operations in HostLookup.cc, where the use of string_view
-  // necessitates this workaround of failures in the string_view API. With a
-  // TextView, it would just be repeated @c take_suffix_at('.')
+  // necessitates this workaround of failures in the string_view API.
   std::string_view fqdn{"bob.ne1.corp.ngeo.com"};
-  TextView elt{TextView{fqdn}.suffix_at('.')};
+  TextView elt{TextView{fqdn}.take_suffix_at('.')};
   REQUIRE(elt == "com");
+  fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
 
   // Unroll loop for testing.
-  fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix_at('.');
+  elt = TextView{fqdn}.take_suffix_at('.');
   REQUIRE(elt == "ngeo");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix_at('.');
+  elt = TextView{fqdn}.take_suffix_at('.');
   REQUIRE(elt == "corp");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix_at('.');
+  elt = TextView{fqdn}.take_suffix_at('.');
   REQUIRE(elt == "ne1");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix_at('.');
+  elt = TextView{fqdn}.take_suffix_at('.');
   REQUIRE(elt == "bob");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = TextView{fqdn}.suffix_at('.');
+  elt = TextView{fqdn}.take_suffix_at('.');
   REQUIRE(elt.empty());
 
   // Check some edge cases.
@@ -252,10 +266,10 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   s.remove_prefix_if(is_not_alnum);
   REQUIRE(s == "cc.org.123");
   s.remove_suffix_at('!');
-  REQUIRE(s.empty());
+  REQUIRE(s == "cc.org.123");
   s = "file.cc.org";
   s.remove_prefix_at('!');
-  REQUIRE(s.empty());
+  REQUIRE(s == "file.cc.org");
 };
 
 TEST_CASE("TextView Formatting", "[libswoc][TextView]")
@@ -314,7 +328,8 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
   REQUIRE(956783 == svtoi(n));
   REQUIRE(956783 == svtoi(n2));
   REQUIRE(956783 == svtoi(n2, &x));
-  REQUIRE(x == n2);
+  REQUIRE(x.data() == n2.data());
+  REQUIRE(x.size() == n2.size());
   REQUIRE(0x13f8 == svtoi(n4, &x, 16));
   REQUIRE(x == "13f8");
   REQUIRE(0x13f8 == svtoi(n5));
@@ -329,6 +344,22 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
   REQUIRE(2345679 == svtoi(n8));
   REQUIRE(2345679 == svtoi(n8, &x));
   REQUIRE(x == n8);
+
+  x = n4;
+  REQUIRE(13 == swoc::svto_radix<10>(x));
+  REQUIRE(x.size() + 2 == n4.size());
+  x = n4;
+  REQUIRE(0x13f8 == swoc::svto_radix<16>(x));
+  REQUIRE(x.size() + 4 == n4.size());
+  x = n4;
+  REQUIRE(7 == swoc::svto_radix<4>(x));
+  REQUIRE(x.size() + 2 == n4.size());
+  x = n3;
+  REQUIRE(31 == swoc::svto_radix<10>(x));
+  REQUIRE(x.size() == 0);
+  x = n3;
+  REQUIRE(25 == swoc::svto_radix<8>(x));
+  REQUIRE(x.size() == 0);
 }
 
 TEST_CASE("TransformView", "[libswoc][TransformView]")
