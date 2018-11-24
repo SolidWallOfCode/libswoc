@@ -1,2 +1,3 @@
 # libswoc
-Solid library of C++ utilties
+Solid Wall of C++ Library.
+[Documentation](http://docs.solidwallofcode.com/libswoc/index.html).
