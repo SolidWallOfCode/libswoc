@@ -83,7 +83,7 @@ namespace bwf
     _name = fmt.take_prefix_at(':');
     // if it's parsable as a number, treat it as an index.
     num = _name;
-    n = svto_radix<10>(num);
+    n   = svto_radix<10>(num);
     if (num.empty()) {
       _idx = static_cast<decltype(_idx)>(n);
     }
@@ -140,10 +140,10 @@ namespace bwf
           ++sz;
         }
         num = sz;
-        n = svto_radix<10>(num);
+        n   = svto_radix<10>(num);
         if (num.size() < sz.size()) {
           _min = static_cast<decltype(_min)>(n);
-          sz = num;
+          sz   = num;
           if (!sz.size()) {
             return true;
           }
@@ -151,10 +151,10 @@ namespace bwf
         // precision
         if ('.' == *sz) {
           num = ++sz;
-          n = svto_radix<10>(num);
+          n   = svto_radix<10>(num);
           if (num.size() < sz.size()) {
             _prec = static_cast<decltype(_prec)>(n);
-            sz = num;
+            sz    = num;
             if (!sz.size()) {
               return true;
             }
@@ -172,10 +172,10 @@ namespace bwf
         // maximum width
         if (',' == *sz) {
           num = ++sz;
-          n = svto_radix<10>(num);
+          n   = svto_radix<10>(num);
           if (num.size() < sz.size()) {
             _max = static_cast<decltype(_max)>(n);
-            sz = num;
+            sz   = num;
             if (!sz.size()) {
               return true;
             }
@@ -658,6 +658,10 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv)
       width -= 2;
     }
     bwf::Write_Aligned(w, [&w, &sv, digits]() { bwf::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill, 0);
+  } else if ('s' == spec._type) {
+    bwformat(w, spec, transform_view_of(&tolower, sv));
+  } else if ('S' == spec._type) {
+    bwformat(w, spec, transform_view_of(&toupper, sv));
   } else {
     width -= sv.size();
     bwf::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);

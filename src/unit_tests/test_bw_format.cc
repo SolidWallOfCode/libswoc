@@ -497,6 +497,7 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
 
 TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
 {
+  std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
   swoc::LocalBufferWriter<120> w;
 
   w.print("{}", swoc::bwf::Errno(13));
@@ -555,6 +556,11 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   REQUIRE(w.view() == "name = Evil Dave");
   w.clear().print("name = {}", swoc::bwf::FirstOf(empty, empty, s3, empty, s2, s1));
   REQUIRE(w.view() == "name = Leif");
+
+  w.clear().print("Lower - |{:s}|", text);
+  REQUIRE(w.view() == "Lower - |0123456789abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz|");
+  w.clear().print("Upper - |{:S}|", text);
+  REQUIRE(w.view() == "Upper - |0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ|");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

@@ -867,15 +867,24 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, const char *v)
 }
 
 inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::string const &s)
+{
+  return bwformat(w, spec, std::string_view{s});
+}
+
+inline BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, TextView tv)
 {
   return bwformat(w, spec, static_cast<std::string_view>(tv));
 }
 
-inline BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, std::string const &s)
+template <typename X, typename V>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, TransformView<X, V> &&view)
 {
-  return bwformat(w, spec, std::string_view{s});
+  while (view)
+    w.write(char(*(view++)));
+  return w;
 }
 
 template <typename F>

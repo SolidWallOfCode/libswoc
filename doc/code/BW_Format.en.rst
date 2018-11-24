@@ -464,7 +464,13 @@ Specific types
    'p' or 'P'
       The pointer and length value of the view in lower ('p') or upper ('P') case.
 
-   For print substrings, views are sufficiently cheap to do this in the arguments. For instance,
+   's'
+      The string in (forced) lower case.
+
+   'S'
+      The string in (forced) upper case.
+
+   For printing substrings, views are sufficiently cheap to do this in the arguments. For instance,
    printing the 10th through 20th characters of the view :code:`text` means passing
    :code:`text.substr(9,11)` instead of :code:`text`.
 
@@ -1139,8 +1145,9 @@ Design Notes
 
 This is essentially my own work but I want to call out Uthira Mohan, who was there at the start of
 what became |BWF|, a joint quicky project to play with variadic templates and formatting. This code
-is based directly on that project, rather excessively extended, as is my wont. Thanks, Uthira! This
-wouldn't have happened without you.
+is based directly on that project, rather excessively extended, as is my wont. Alan Wang contributed
+the floating point support, along with useful comments on the code and API while he was an intern.
+Thanks, Uthira and Alan!
 
 Type safe formatting has two major benefits -
 
