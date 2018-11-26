@@ -22,7 +22,7 @@ set(core_headers
     include/swoc/TextView.h
     include/swoc/swoc_file.h
     include/swoc/swoc_meta.h
-    include/swoc/bwf_ip.h)
+    include/swoc/bwf_ip.h include/swoc/swoc_version.h)
 
 # These are external but required.
 set(ext_headers
