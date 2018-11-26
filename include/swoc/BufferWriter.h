@@ -215,27 +215,39 @@ public:
 
   /** Write formatted output of @a args to @a this buffer.
    *
-   * This is the base implementation, all of the other variants are wrappers for this.
-   *
-   * @tparam F Format processor type.
+   * @tparam Extractor Format extractor type.
    * @tparam Args Types for format parameters.
    * @param names Name set for specifier names.
-   * @param f Format processor instance, which parse the format piecewise.
+   * @param ex Format processor instance, which parse the format piecewise.
    * @param args The format parameters in a tuple.
+   *
+   * @a Extractor must have at least two methods
+   * - A conversion to @c bool that indicates if there is data left.
+   * - A function of the signature <tt>bool ex(std::string_view& lit, bwf::Spec & spec)</tt>
+   *
+   * The latter must return whether a specificer was parsed, while filling in @a lit and @a spec
+   * as appropriate for the next chunk of format string. No literal is represented by a empty
+   * @a lit.
+   *
+   * @a names must be a subclass of @c NameBinding overriding methods as appropriate.
+   *
+   * @note This is the base implementation, all of the other variants are wrappers for this.
+   *
+   * @see NameBinding
    */
-  template <typename F, typename... Args>
-  BufferWriter &print_nfv(bwf::NameBinding const &names, F &&f, std::tuple<Args...> const &args);
+  template <typename Extractor, typename... Args>
+  BufferWriter &print_nfv(bwf::NameBinding const &names, Extractor &&ex, std::tuple<Args...> const &args);
 
   /** Write formatted output of @a args to @a this buffer.
    *
-   * @tparam F Format processor type.
+   * @tparam Extractor Format processor type.
    * @param names Name set for specifier names.
-   * @param f Format processor instance, which parse the format piecewise.
+   * @param ex Format processor instance, which parse the format piecewise.
    *
    * @note This is primarily an internal convenience for certain situations where a format parameter
    * tuple is not needed and difficult to create.
    */
-  template <typename F> BufferWriter &print_nfv(const bwf::NameBinding &names, F &&f);
+  template <typename Extractor> BufferWriter &print_nfv(const bwf::NameBinding &names, Extractor &&ex);
 
   /** Write formatted output to @a this buffer.
    *

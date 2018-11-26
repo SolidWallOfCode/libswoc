@@ -704,23 +704,6 @@ namespace bwf
 
 } // namespace bwf
 
-/* [Need to clip this out and put it in Sphinx
- *
- * The format parser :arg:`F` performs parsing of the format specifier, which is presumed to be
- * bound to this instance of :arg:`F`. The parser is called as a functor and must have a function
- * method with the signature
- *
- * bool (string_view & literal_v, bwf::Spec & spec)
- *
- * The parser must parse out to the next specifier in the format, or the end of the format if there
- * are no more specifiers. If the format is exhausted this should return @c false. A return of @c true
- * indicates there is either a literal, a specifier, or both.
- *
- * When a literal is found, it should be returned in :arg:`literal_v`. If a specifier is found and
- * parsed, it should be put in :arg:`spec`. Both of these *must* be cleared if the corresponding
- * data is not found in the incremental parse of the format.
- */
-
 // This is the real printing logic, all other variants pack up their arguments and send them here.
 template <typename Extractor, typename... Args>
 BufferWriter &
@@ -800,9 +783,9 @@ BufferWriter::print_v(const bwf::Format &fmt, const std::tuple<Args...> &args)
   return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), args);
 }
 
-template <typename F>
+template <typename Extractor>
 BufferWriter &
-BufferWriter::print_nfv(const bwf::NameBinding &names, F &&f)
+BufferWriter::print_nfv(const bwf::NameBinding &names, Extractor &&f)
 {
   return print_nfv(names, f, std::make_tuple());
 }
