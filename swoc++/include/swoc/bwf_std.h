@@ -32,7 +32,7 @@ template <typename T>
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, atomic<T> const &v)
 {
-  return swoc::bwformat(w, spec, v.load());
+  return ::swoc::bwformat(w, spec, v.load());
 }
 
 swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec);

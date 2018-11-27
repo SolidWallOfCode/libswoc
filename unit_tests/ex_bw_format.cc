@@ -26,6 +26,7 @@
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
+#include "swoc/bwf_ip.h"
 
 #include "catch.hpp"
 
@@ -361,9 +362,9 @@ TEST_CASE("bwf alternate syntax", "[libswoc][bwf][alternate]")
   Context CTX;
   LocalBufferWriter<256> w;
 
-  names.assign("tls", [](BW &w, Spec const &spec, Context &ctx) -> BW & { return swoc::bwformat(w, spec, ctx.tls_version); });
-  names.assign("proto", [](BW &w, Spec const &spec, Context &ctx) -> BW & { return swoc::bwformat(w, spec, ctx.ip_family); });
-  names.assign("chi", [](BW &w, Spec const &spec, Context &ctx) -> BW & { return swoc::bwformat(w, spec, ctx.ip_remote); });
+  names.assign("tls", [](BW &w, Spec const &spec, Context &ctx) -> BW & { return ::swoc::bwformat(w, spec, ctx.tls_version); });
+  names.assign("proto", [](BW &w, Spec const &spec, Context &ctx) -> BW & { return ::swoc::bwformat(w, spec, ctx.ip_family); });
+  names.assign("chi", [](BW &w, Spec const &spec, Context &ctx) -> BW & { return ::swoc::bwformat(w, spec, ctx.ip_remote); });
   names.assign("url",
                [](BufferWriter &w, Spec const &spec, Context const &ctx) -> BufferWriter & { return bwformat(w, spec, ctx.url); });
   names.assign("scheme", [](BufferWriter &w, Spec const &spec, Context const &ctx) -> BufferWriter & {
