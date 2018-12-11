@@ -35,10 +35,10 @@
 
 #pragma once
 
-namespace swoc {
-
-static constexpr unsigned MAJOR_VERION = 1;
+namespace swoc
+{
+static constexpr unsigned MAJOR_VERION  = 1;
 static constexpr unsigned MINOR_VERSION = 0;
 static constexpr unsigned POINT_VERSION = 3;
 
-}
+} // namespace swoc

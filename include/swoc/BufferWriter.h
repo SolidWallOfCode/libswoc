@@ -235,11 +235,12 @@ public:
    *
    * @see NameBinding
    */
-  template <typename Extractor, typename... Args>
-  BufferWriter &print_nfv(bwf::NameBinding const &names, Extractor &&ex, std::tuple<Args...> const &args);
+  template <typename Binding, typename Extractor, typename... Args>
+  BufferWriter &print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args);
 
   /** Write formatted output of @a args to @a this buffer.
    *
+   * @tparam Binding Name binding functor.
    * @tparam Extractor Format processor type.
    * @param names Name set for specifier names.
    * @param ex Format processor instance, which parse the format piecewise.
@@ -247,7 +248,7 @@ public:
    * @note This is primarily an internal convenience for certain situations where a format parameter
    * tuple is not needed and difficult to create.
    */
-  template <typename Extractor> BufferWriter &print_nfv(const bwf::NameBinding &names, Extractor &&ex);
+  template <typename Binding, typename Extractor> BufferWriter &print_nfv(Binding const &names, Extractor &&ex);
 
   /** Write formatted output to @a this buffer.
    *
@@ -257,7 +258,7 @@ public:
    * This is intended to be use with context name binding where @a names has the bindings and the
    * format string @a fmt contains only references to those names, not to any arguments.
    */
-  BufferWriter &print_n(const bwf::NameBinding &names, TextView const &fmt);
+  template <typename Binding> BufferWriter &print_n(Binding const &names, TextView const &fmt);
 
   /** IO stream operator.
    *

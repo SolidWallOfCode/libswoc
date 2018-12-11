@@ -209,11 +209,14 @@ namespace bwf
    */
   using ExternalGeneratorSignature = BufferWriter &(BufferWriter &w, Spec const &spec);
 
-  /** Protocol class for handling bound names.
+  /** Base class for implementing a name binding functor.
    *
-   * This is an API facade for names that are fully bound and do not need any data / context
-   * beyond that of the @c BufferWriter. It is expected other name collections will subclass
-   * this to pass to the formatting logic.
+   * This expected to be inherited by other classes that provide the name binding service.
+   * It does a few small but handy things.
+   *
+   * - Force a virtual destructor.
+   * - Force the implementation of the binding method by declaring it as a pure virtual.
+   * - Provide a standard "missing name" method.
    */
   class NameBinding
   {
@@ -232,25 +235,16 @@ namespace bwf
      */
     virtual BufferWriter &operator()(BufferWriter &w, Spec const &spec) const = 0;
 
-    /** Capture an argument.
-     *
-     * @param w Output.
-     * @param spec Capturing specifier.
-     * @param arg The captured argument.
-     *
-     * The binding is expected to stash the capture argument internally for later use.
-     *
-     * @note This is really for C / printf support where some specifiers are dependent on the value
-     * in the prior argument.
-     */
-    virtual void capture(BufferWriter &w, Spec const &spec, std::any const &arg) const;
-
   protected:
-    /// Write missing name output.
-    BufferWriter &err_invalid_name(BufferWriter &w, Spec const &) const;
+    /** Standardized missing name method.
+     *
+     * @param w The destination buffer.
+     * @return @a w
+     */
+    static BufferWriter &err_invalid_name(BufferWriter &w, Spec const &);
   };
 
-  /** An explictly empty set of bound names.
+  /** An explicitly empty set of bound names.
    *
    * To simplify the overall implementation, a name binding is always required to format output.
    * This class is used in situations where there is no available binding or such names would not be
@@ -307,7 +301,7 @@ namespace bwf
    * singleton instance of this is used as the default if no explicit name set is provided. This
    * enables the executable to establish a set of global names to be used.
    */
-  class ExternalNames : public NameMap<ExternalGeneratorSignature>
+  class ExternalNames : public NameMap<ExternalGeneratorSignature>, public NameBinding
   {
     using self_type  = ExternalNames;                       ///< Self reference type.
     using super_type = NameMap<ExternalGeneratorSignature>; ///< Super class.
@@ -315,23 +309,14 @@ namespace bwf
 
   public:
     using super_type::super_type; // import constructors.
-    /// Provide an accessor for formatting.
-    NameBinding &bind();
+
+    /// The bound accessor is this class.
+    NameBinding const &bind() const;
+
+    /// Bound name access.
+    BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
 
     /// @copydoc NameMap::assign(std::string_view const &name, Generator const &generator)
-
-  protected:
-    /// Binding support for this class.
-    class Binding : public NameBinding
-    {
-    public:
-      /// Construct from the name map.
-      explicit Binding(Map const &map);
-      BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
-
-    protected:
-      const Map &_map; ///< Reference to map where @c bind was called.
-    } _binding{super_type::_map};
   };
 
   /** Associate names with context dependent generators.
@@ -501,14 +486,8 @@ namespace bwf
 
   /// --- Names / Generators ---
 
-  // Base implementation does nothing as this is rarely used.
-  inline void
-  NameBinding::capture(BufferWriter &, swoc::bwf::Spec const &, std::any const &) const
-  {
-  }
-
   inline BufferWriter &
-  NameBinding::err_invalid_name(BufferWriter &w, const Spec &spec) const
+  NameBinding::err_invalid_name(BufferWriter &w, const Spec &spec)
   {
     return w.print("{{~{}~}}", spec._name);
   }
@@ -567,10 +546,8 @@ namespace bwf
     return *this;
   }
 
-  inline ExternalNames::Binding::Binding(Map const &map) : _map(map) {}
-
   inline BufferWriter &
-  ExternalNames::Binding::operator()(BufferWriter &w, const Spec &spec) const
+  ExternalNames::operator()(BufferWriter &w, const Spec &spec) const
   {
     if (!spec._name.empty()) {
       if (auto spot = _map.find(spec._name); spot != _map.end()) {
@@ -582,10 +559,10 @@ namespace bwf
     return w;
   }
 
-  inline NameBinding &
-  ExternalNames::bind()
+  inline NameBinding const &
+  ExternalNames::bind() const
   {
-    return _binding;
+    return *this;
   }
 
   template <typename T>
@@ -705,9 +682,9 @@ namespace bwf
 } // namespace bwf
 
 // This is the real printing logic, all other variants pack up their arguments and send them here.
-template <typename Extractor, typename... Args>
+template <typename Binding, typename Extractor, typename... Args>
 BufferWriter &
-BufferWriter::print_nfv(bwf::NameBinding const &names, Extractor &&ex, std::tuple<Args...> const &args)
+BufferWriter::print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args)
 {
   using namespace std::literals;
   static constexpr int N = sizeof...(Args); // used as loop limit
@@ -783,15 +760,16 @@ BufferWriter::print_v(const bwf::Format &fmt, const std::tuple<Args...> &args)
   return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), args);
 }
 
-template <typename Extractor>
+template <typename Binding, typename Extractor>
 BufferWriter &
-BufferWriter::print_nfv(const bwf::NameBinding &names, Extractor &&f)
+BufferWriter::print_nfv(Binding const &names, Extractor &&f)
 {
   return print_nfv(names, f, std::make_tuple());
 }
 
-inline BufferWriter &
-BufferWriter::print_n(const bwf::NameBinding &names, TextView const &fmt)
+template <typename Binding>
+BufferWriter &
+BufferWriter::print_n(Binding const &names, TextView const &fmt)
 {
   return print_nfv(names, bwf::Format::bind(fmt), std::make_tuple());
 }

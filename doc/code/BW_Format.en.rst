@@ -40,8 +40,10 @@ Formatted output was added to :class:`BufferWriter` for several reasons.
    in directly.
 
 *  Specialized output functions for complex types, to have the class provide the formatting logic
-   instead of cut and pasted code in multiple locations. This also avoids breaking modularity to
-   get the data needed for good formatting.
+   instead of cut and pasted code in multiple locations. This also avoids breaking modularity to get
+   the data needed for good formatting. This also enables formatting wrappers which can provide
+   generic and simple ways to do specific styles of output beyond formatting codes (e.g.
+   :libswoc:`As_Hex`).
 
 *  Argument naming, both for ordering, repeating, and for "global" names which can be used without
    arguments. This is also intended for use where there are context dependent names, e.g. for
@@ -718,13 +720,28 @@ supports :term:`name binding` which binds names to text generator functors. The 
 expected to write output to a |BW| instance to replace the specifier, rather than a formatting
 argument.
 
-The base formatting logic is passed an instance of a subclass of :libswoc:`NameBinding`. As the
-format string is processed, if a format specifier has a name that is not numeric, the formatting
-logic passes the :libswoc:`format specifier <Spec>` (which includes the :libswoc:`name
-<Spec::_name>`) and a |BW| instance to the name binding. The binding is expected to generate text on
-the |BW| instance in accordance with the format specifier. Generally this involves looking up a
-functor based on the name and calling that in turn to generate the text. |BWF| provides support for
-two use cases.
+The base formatting logic is passed a functor by constant reference which provides the name binding
+service. The functor is expected to have the signature ::
+
+   unspecified_type (BufferWriter & w, bwf::Spec const& spec) const
+
+As the format string is processed, if a format specifier has a name that is not numeric, the
+formatting logic calls the functor, ignoring the return value (which can therefore be of any type,
+including :code:`void`). :arg:`w` is the output buffer and :arg:`spec` is the specifier that caused
+the functor to be invoked. The binding functor is expected to generate text in :arg:`w` in
+accordance with the format specifier :arg:`spec`. Generally this involves looking up a functor based
+on the name and calling that in turn to generate the text. The name for the binding is contained in
+the :libswoc:`Spec::_name` member of :arg:`spec`.
+
+The class :libswoc:`NameBinding` is provided as a base class for supporting name binding. It
+
+*  Forces a virtual destructor.
+*  Provides a pure virtual declaration to ensure the correct function operator is implemented.
+*  Provides a standardized :libswoc:`"missing name" method <NameBinding::err_invalid_name>`.
+
+This class is handy but not required.
+
+|BWF| provides support for two use cases.
 
 External Generators
 -------------------
@@ -742,13 +759,13 @@ Context Generators
 ------------------
 
 The second is a "context generator" which generates text based on a context object. This use case
-presumes a set of generaorrs which access parts of a context object for text generation such that
+presumes a set of generators which access parts of a context object for text generation such that
 the output of the generator depends on the state of the context object. For example, the context
 object might be an HTTP request and the generators field accessors, each of which outputs the value
 for a specific field of the request. Because the name is handed to the name binding object, an
-implementation could subclass :libswoc:`NameBinding` and override the function operator to check the
+implementation could subclass :libswoc:`ContextNames` and override the function operator to check the
 name first against fields in the request, and only if that doesn't match, do a lookup for a
-generator.
+generator. :libswoc:`ContextNames` provides an implementation for storing and using name bindings.
 
 Global Names
 ------------
