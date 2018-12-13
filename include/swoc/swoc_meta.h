@@ -88,11 +88,36 @@ namespace meta
    */
   static constexpr CaseTag<9> CaseArg{};
 
-  // A function to provide a @c void type for use in cases.
-  // Other types can use the default constructor, e.g. "int()" for @c int.
-  inline void
-  CaseVoidFunc()
-  {
-  }
+  /** A typed function for use in @c decltype.
+   *
+   * @tparam T The desired type.
+   * @return @a T
+   *
+   * This function has no implementation. It should be used only inside @c decltype when a specific
+   * type (rather than the type of an expression) is needed. For a type @a T that has a expression
+   * default constructor this can be used.
+   *
+   * @code
+   * decltype(T())
+   * @endcode
+   *
+   * But if there is no default constructor this will not compile. This is a work around, so the
+   * previous expression would be
+   *
+   * @code
+   * decltype(meta::TypeFunc<T>())
+   * @endcode
+   *
+   * Note this can also be a problem for even built in types like @c unsigned @c long for which
+   * the expression
+   *
+   * @code
+   * decltype(unsigned long())
+   * @endcode
+   *
+   * does not compile.
+   */
+  template <typename T> T TypeFunc();
+
 } // namespace meta
 } // namespace swoc

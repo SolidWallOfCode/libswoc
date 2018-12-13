@@ -901,7 +901,7 @@ namespace detail
 
   template <typename T>
   auto
-  tag_label(std::ostream &w, const meta::CaseTag<1> &) -> decltype(T::label, meta::CaseVoidFunc())
+  tag_label(std::ostream &w, const meta::CaseTag<1> &) -> decltype(T::label, meta::TypeFunc<void>())
   {
     w << T::label;
   }

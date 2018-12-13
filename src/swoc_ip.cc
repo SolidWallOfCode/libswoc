@@ -35,13 +35,13 @@ namespace
 // member if it exists.
 template <typename T>
 auto
-Set_Sockaddr_Len_Case(T *, swoc::meta::CaseTag<0>) -> decltype(swoc::meta::CaseVoidFunc())
+Set_Sockaddr_Len_Case(T *, swoc::meta::CaseTag<0>) -> decltype(swoc::meta::TypeFunc<void>())
 {
 }
 
 template <typename T>
 auto
-Set_Sockaddr_Len_Case(T *addr, swoc::meta::CaseTag<1>) -> decltype(T::sin_len, swoc::meta::CaseVoidFunc())
+Set_Sockaddr_Len_Case(T *addr, swoc::meta::CaseTag<1>) -> decltype(T::sin_len, swoc::meta::TypeFunc<void>())
 {
   addr->sin_len = sizeof(T);
 }
