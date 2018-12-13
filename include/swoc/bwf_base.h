@@ -1008,7 +1008,7 @@ namespace detail
 
   template <typename T>
   auto
-  tag_label(BufferWriter &w, const bwf::Spec &, meta::CaseTag<1>) -> decltype(T::label, meta::CaseVoidFunc())
+  tag_label(BufferWriter &w, const bwf::Spec &, meta::CaseTag<1>) -> decltype(T::label, meta::TypeFunc<void>())
   {
     w.print("{}", T::label);
   }

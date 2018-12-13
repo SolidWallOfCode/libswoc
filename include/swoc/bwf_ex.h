@@ -27,6 +27,7 @@
 #include <string_view>
 
 #include "swoc/bwf_base.h"
+#include "swoc/swoc_meta.h"
 
 namespace swoc
 {
@@ -41,6 +42,7 @@ namespace bwf
     int _n;                 ///< # of instances of @a pattern.
     std::string_view _text; ///< output text.
   };
+
   /** Format wrapper for @c errno.
    * This stores a copy of the argument or @c errno if an argument isn't provided. The output
    * is then formatted with the short, long, and numeric value of @c errno. If the format specifier
@@ -80,6 +82,7 @@ namespace bwf
       return t;
     }
   } // namespace detail
+
   /// Print the first of a list of strings that is not an empty string.
   /// All arguments must be convertible to @c std::string.
   template <typename... Args>
@@ -93,35 +96,129 @@ namespace bwf
     }
     return std::string_view{};
   };
-  /** For optional printing strings along with suffixes and prefixes.
-   *  If the wrapped string is null or empty, nothing is printed. Otherwise the prefix, string,
-   *  and suffix are printed. The default are a single space for suffix and nothing for the prefix.
+
+  /** Wrapper for a sub-text, where the @a args are output according to @a fmt.
+   *
+   * @tparam Args Argument types.
    */
-  struct OptionalAffix {
-    std::string_view _text;
-    std::string_view _suffix;
-    std::string_view _prefix;
+  template <typename... Args> struct SubText {
+    using arg_pack = std::tuple<Args...>; ///< The pack of arguments for format string.
+    TextView _fmt;                        ///< Format string. If empty, do not generate output.
+    arg_pack _args;                       ///< Arguments to format string.
 
-    OptionalAffix(const char *text, std::string_view suffix = " "sv, std::string_view prefix = ""sv)
-      : OptionalAffix(std::string_view(text ? text : ""), suffix, prefix)
-    {
-    }
+    /// Construct with a specific @a fmt and @a args.
+    SubText(TextView fmt, arg_pack const &args) : _fmt(fmt), _args(args){};
 
-    OptionalAffix(std::string_view text, std::string_view suffix = " "sv, std::string_view prefix = ""sv)
-    {
-      // If text is null or empty, leave the members empty too.
-      if (!text.empty()) {
-        _text   = text;
-        _prefix = prefix;
-        _suffix = suffix;
-      }
-    }
+    /// Check for output not enabled.
+    bool operator!() const;
+
+    /// Check for output enabled.
+    explicit operator bool() const;
   };
+
+  template <typename... Args> SubText<Args...>::operator bool() const { return !_fmt.empty(); }
+
+  template <typename... Args> bool SubText<Args...>::operator!() const { return _fmt.empty(); }
+
+  /** Optional printing wrapper.
+   *
+   * @tparam Args Arguments for output.
+   * @param flag Generate output flag.
+   * @param fmt Format for output and args.
+   * @param args The arguments.
+   * @return A wrapper for the optional text.
+   *
+   * This function is passed a @a, a printing format @a fmt, and a set of arguments @a args to be
+   * used by the format. Output is generated if @a flag is @c true, otherwise the empty string
+   * (no output) is generated. For example, if in a function there was a flag to determine if an
+   * extra tag with delimiters, e.g. "[tag]", was to be generated, this could be done with
+   * @code
+   *   w.print("Some other text{}.", bwf::Optional(flag, " [{}]", tag));
+   * @endcode
+   *
+   * @internal To disambiguate overloads, this is enabled only if there is at least one argument
+   * to be passed to the format string.
+   */
+  template <typename... Args>
+  auto
+  Optional(bool flag, TextView const &fmt, Args &&... args) -> typename std::enable_if<sizeof...(Args), SubText<Args...>>::type
+  {
+    return SubText<Args...>(flag ? fmt : TextView{}, std::forward_as_tuple(args...));
+  }
+
+  namespace detail
+  {
+    // @a T has the @c empty() method.
+    template <typename T>
+    auto Optional(meta::CaseTag<2>, TextView fmt, T &&t) -> decltype(void(t.empty()), meta::TypeFunc<SubText<T>>())
+    {
+      return SubText<T>(t.empty() ? TextView{} : fmt, std::forward_as_tuple(t));
+    }
+
+    // @a T is convertible to @c bool.
+    template <typename T> auto Optional(meta::CaseTag<1>, TextView fmt, T &&t) -> decltype(bool(t), meta::TypeFunc<SubText<T>>())
+    {
+      return SubText<T>(bool(t) ? fmt : TextView{}, std::forward_as_tuple(t));
+    }
+
+    // @a T is not optional, always print.
+    template <typename T> auto Optional(meta::CaseTag<0>, TextView fmt, T &&t) -> SubText<T>
+    {
+      return SubText<T>(fmt, std::forward_as_tuple(t));
+    }
+  } // namespace detail
+
+  /** Simplified optional text wrapper.
+   *
+   * @tparam T the type of the (single) argument.
+   * @param fmt Format string.
+   * @param arg Argument to format string.
+   * @return An optional text wrapper.
+   *
+   * This generates output iff @a arg is not empty. @a fmt is required to take only a single
+   * argument, which will be @a arg. This is a convenience overload, to handle the common case
+   * where the argument and the conditional are the same. The argument must have one of the
+   * following properties in order to serve as the conditional. These are checked in order.
+   *
+   * - The @c empty() method which returns @c true if the argument is empty and should not be printed.
+   *   This handles the case of C++ string types.
+   *
+   * - Conversion to @c bool which is @c false if the argument should not be printed. This covers the
+   *   case of pointers.
+   *
+   * As an example, if an output function had three strings @a alpha, @a bravo, and
+   * @a charlie, each of which could be null, which should be output with space separators,
+   * this would be
+   * @code
+   * w.print("Leading text{}{}{}.", Optiona(" {}", alpha)
+   *                              , Optional(" {}", bravo)
+   *                              , Optional(" {}", charlie));
+   * @endcode
+   *
+   * Because of the property handling, these strings can be C styles strings ( @c char* ) or C++
+   * string types (such as @c std::string_view ).
+   *
+   */
+  template <typename T>
+  SubText<T>
+  Optional(TextView fmt, T &&t)
+  {
+    return detail::Optional(meta::CaseArg, fmt, std::forward<T>(t));
+  }
 } // namespace bwf
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::OptionalAffix const &opts);
+
+template <typename... Args>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::SubText<Args...> const &subtext)
+{
+  if (!subtext._fmt.empty()) {
+    w.print_v(subtext._fmt, subtext._args);
+  }
+  return w;
+}
 
 } // namespace swoc

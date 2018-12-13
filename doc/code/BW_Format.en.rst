@@ -643,33 +643,49 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
 
    :libswoc:`Reference <FirstOf>`.
 
-.. class:: OptionalAffix
+.. class:: Optional
 
-   Affix support for printing optional strings. This enables printing a string such that the affixes
-   are printed only if the string is not empty. An empty string (or :code:`nullptr`) yields no
-   output. A common situation in which is this is useful is code like ::
+   A wrapper for optional output generation. This wraps a format string and a set of arguments and
+   generates output conditional, either the format string with the arguments applied, or nothing.
+   This is useful for output data that requires additional delimiters if present, but nothing
+   if not. A common pattern for this is something like ::
 
-      printf("%s%s", data ? data : "", data ? " " : "");
+      printf("Text: %d%s%s", count, data ? data : "", data ? " " : "");
 
    or something like ::
 
+      printf("Text: %d");
       if (data) {
-         printf("%s ", data);
+         printf(" %s", data);
       }
 
-   Instead :libswoc:`OptionalAffix` can be used in line, which is easier if there are multiple
-   items. E.g.
+   In both cases, the leading space separating :arg:`data` from the previous output is printed iff
+   :arg:`data` is not :code:`nullptr`. Using :code:`Optional` with |BWF| this is done with something
+   like ::
 
-      // use default of a single trailing space.
-      w.print("Checking {} {}{}", name, swoc::bwf::OptionalAffix(subfield), result);
+      w.print("Text: {}{}", count, swoc:bwf::Optional(data != nullptr, " {}", data);
 
-   which avoids complex ternary operators, spurious format specifiers, or having to split the format
-   string across multiple calls. The arguments are the base string, then the suffix, then the
-   prefix. The suffix and prefix are optional and default to a single space and nothing. Therefore
-   in the previous example, if the :code:`subfield` isn't empty, there will be s space between it
-   and :code:`result`, but not space if :code:`subfield` is empty.
+   The first argument is a conditional, which determines if output is generated, followed by a
+   format string and then arguments for the format string. The number of specifiers in the format
+   string and the number of arguments must agree.
 
-   :libswoc:`Reference <OptionalAffix>`.
+   Because the case where the argument and the conditional are effective the same is so common, there
+   is a specialization of :code:`Optional` which takes just a format string and an argument. This
+   requires the format string to have take only one parameter, and the argument to either
+
+   *  Have the method :code:`empty` which returns :code:`false` if there is content.
+
+   *  Be convertible to :code:`bool` such that the argument converts to :code:`true` if there
+      is content.
+
+   This enables the example to be further reduced to ::
+
+      w.print("Text: {}{}", count, swoc:bwf::Optional(" {}", data);
+
+   Note this works with raw C strings, the STL string classes, and :code:`TextView`. The more general
+   form can be used if this specialization doesn't suffice.
+
+   :libswoc:`Reference <Optional>`.
 
 .. namespace-pop::
 

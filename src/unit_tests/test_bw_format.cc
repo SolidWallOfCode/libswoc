@@ -136,6 +136,10 @@ TEST_CASE("bwprint basics", "[bwprint]")
 
   bw.clear().print(fmt2, 956);
   REQUIRE(bw.view() == "left >956      < right >      956< center >   956   <");
+
+  // Check leading space printing.
+  bw.clear().print(" {}", fmt1);
+  REQUIRE(bw.view() == " Some text");
 }
 
 TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
@@ -561,7 +565,24 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   REQUIRE(w.view() == "Lower - |0123456789abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz|");
   w.clear().print("Upper - |{:S}|", text);
   REQUIRE(w.view() == "Upper - |0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ|");
-}
+
+  w.clear().print("Leading{}{}{}.", swoc::bwf::Optional(" | {}  |", s1), swoc::bwf::Optional(" <{}>", empty),
+                  swoc::bwf::Optional(!s3.empty(), " [{}]", s3));
+  REQUIRE(w.view() == "Leading | Persia  | [Leif].");
+  // Do it again, but this time as C strings (char * variants).
+  w.clear().print("Leading{}{}{}.", swoc::bwf::Optional(" | {}  |", s3.data()), swoc::bwf::Optional(" <{}>", empty),
+                  swoc::bwf::Optional(!s3.empty(), " [{}]", s1.c_str()));
+  REQUIRE(w.view() == "Leading | Leif  | [Persia].");
+  // Play with string_view
+  w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
+  REQUIRE(w.view() == "Clone? #. Evil Dave #. Evil Dave.");
+  s2 = "";
+  w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
+  REQUIRE(w.view() == "Clone?.");
+  s2 = std::string_view{};
+  w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
+  REQUIRE(w.view() == "Clone?.");
+};
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code
 // for when additional testing needs to be done.

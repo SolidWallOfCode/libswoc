@@ -900,12 +900,6 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date)
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::OptionalAffix const &opts)
-{
-  return w.write(opts._prefix).write(opts._text).write(opts._suffix);
-}
-
-BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern)
 {
   auto limit        = std::min<size_t>(spec._max, pattern._text.size() * pattern._n);
