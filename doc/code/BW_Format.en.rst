@@ -712,7 +712,7 @@ defined directly as an argument.
 That's all that is strictly required - this code now works as expected.
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 670-674
+   :lines: 677-681
 
 Note the universal initializer must be used because there is no constructor. That is easily fixed.
 
@@ -722,14 +722,14 @@ Note the universal initializer must be used because there is no constructor. Tha
 and now this works as expected.
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 676-678
+   :lines: 683-684
 
 Obviously other constructors can be provided for different ways to use the wrapper.
 
 An optional third step is to use free functions, rather than constructors, to access the wrapper.
-This is useful in more obscure circumstances, such as when the wrapper class is used by multiple
-wrappers through shared functionality in the wrapper class. In this case, a wrapper function
-could be done as
+This is useful in some circumstances, one example being that it is desirable other classes can
+overload the format class construction, which is not possible using only constructors. In this case,
+a wrapper function could be done as
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
    :lines: 666
@@ -737,10 +737,27 @@ could be done as
 and used
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 679-680
+   :lines: 686-687
+
+Now, if there was a struct that needed Rot13 support
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 668-671
+
+then the wrapper could be overloaded with
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 673
+
+and used
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 689-691
 
 In general, provide wrapper class constructors unless there is a specific need for using free
-functions instead.
+functions instead. Care should be used with the content of the format class to avoid expensive
+copies. In this case a :code:`std::string_view` is very cheap to copy and the style of the wrapper
+takes advantage of `return value optimization <https://en.wikipedia.org/wiki/Copy_elision>`__.
 
 .. namespace-pop::
 

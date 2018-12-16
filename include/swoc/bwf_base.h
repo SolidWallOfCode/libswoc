@@ -621,11 +621,39 @@ namespace bwf
   /// as needed without moving data in the output buffer.
   void Adjust_Alignment(BufferWriter &aux, Spec const &spec);
 
-  /// Generic integral conversion.
+  /** Format @a n as an integral value.
+   *
+   * @param w Output buffer.
+   * @param spec Format specifier.
+   * @param n Input value to format.
+   * @param negative_p Input value should be treated as a negative value.
+   * @return @a w
+   *
+   * A leading sign character will be output based on @a spec and @a negative_p.
+   */
   BufferWriter &Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t n, bool negative_p);
 
-  /// Generic floating point conversion.
+  /** Format @a n as a floating point value.
+   *
+   * @param w Output buffer.
+   * @param spec Format specifier.
+   * @param n Input value to format.
+   * @param negative_p Input value shoudl be treated as a negative value.
+   * @return @a w
+   *
+   * A leading sign character will be output based on @a spec and @a negative_p.
+   */
   BufferWriter &Format_Float(BufferWriter &w, Spec const &spec, double n, bool negative_p);
+
+  /** Format output as a hexadecimal dump.
+   *
+   * @param w Output buffer.
+   * @param data Input data.
+   * @param digits Digit array for hexadecimal digits.
+   *
+   * This dumps the memory in the @a view as a hexadecimal string.
+   */
+  void Format_As_Hex(BufferWriter &w, std::string_view view, const char *digits);
 
   /* Capture support, which allows format extractors to capture arguments and consume them.
    * This was built in order to support C style formatting, which needs to capture arguments
@@ -1032,5 +1060,48 @@ operator<<(BufferWriter &w, V &&v)
 {
   return bwformat(w, bwf::Spec::DEFAULT, std::forward<V>(v));
 }
+
+// Basic format wrappers - these are here because they're used internally.
+namespace bwf
+{
+  /** Hex dump wrapper.
+   *
+   * This wrapper indicates the contained view should be dumped as raw memory in hexadecimal format.
+   * This is intended primarily for internal use by other formatting logic.
+   *
+   * @see As_Hex
+   */
+  struct HexDump {
+    std::string_view _view;
+
+    /** Dump @a n bytes starting at @a mem as hex.
+     *
+     * @param mem First byte of memory to dump.
+     * @param n Number of bytes.
+     */
+    HexDump(void const *mem, size_t n) : _view(static_cast<char const *>(mem), n) {}
+  };
+
+  /** Treat @a t as raw memory and dump the memory as hexadecimal.
+   *
+   * @tparam T Type of argument.
+   * @param t Object to dump.
+   * @return @a A wrapper to do a hex dump.
+   *
+   * This is the standard way to do a hexadecimal memory dump of an object.
+   *
+   * @internal This function exists so that other types can overload it for special processing,
+   * which would not be possible with just @c HexDump.
+   */
+  template <typename T>
+  HexDump
+  As_Hex(T const &t)
+  {
+    return HexDump(&t, sizeof(T));
+  }
+
+} // namespace bwf
+
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex);
 
 } // namespace swoc

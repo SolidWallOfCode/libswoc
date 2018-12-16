@@ -22,6 +22,8 @@
 #include <iostream>
 #include <variant>
 
+#include <netinet/in.h>
+
 #include "swoc/MemSpan.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_std.h"
@@ -527,6 +529,27 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   REQUIRE(w.view() == "1528484137 is 2018 Jun 08 12:55:37");
   w.clear().print("{} is {::local}", t, swoc::bwf::Date(t, "%a, %d %b %Y at %H.%M.%S"));
   REQUIRE(w.view() == "1528484137 is Fri, 08 Jun 2018 at 12.55.37");
+
+  unsigned v = htonl(0xdeadbeef);
+  w.clear().print("{}", swoc::bwf::As_Hex(v));
+  REQUIRE(w.view() == "deadbeef");
+  w.clear().print("{:x}", swoc::bwf::As_Hex(v));
+  REQUIRE(w.view() == "deadbeef");
+  w.clear().print("{:X}", swoc::bwf::As_Hex(v));
+  REQUIRE(w.view() == "DEADBEEF");
+  w.clear().print("{:#X}", swoc::bwf::As_Hex(v));
+  REQUIRE(w.view() == "0XDEADBEEF");
+  w.clear().print("{} bytes {} digits {}", sizeof(double), std::numeric_limits<double>::digits10, swoc::bwf::As_Hex(2.718281828));
+  REQUIRE(w.view() == "8 bytes 15 digits 9b91048b0abf0540");
+
+  #if 0
+  INK_MD5 md5;
+  w.clear().print("{}", swoc::bwf::As_Hex(md5));
+  REQUIRE(w.view() == "00000000000000000000000000000000");
+  CryptoContext().hash_immediate(md5, s2.data(), s2.size());
+  w.clear().print("{}", swoc::bwf::As_Hex(md5));
+  REQUIRE(w.view() == "f240ccd7a95c7ec66d6c111e2925b23e");
+  #endif
 
   // Verify these compile and run, not really much hope to check output.
   w.clear().print("|{}|   |{}|", swoc::bwf::Date(), swoc::bwf::Date("%a, %d %b %Y"));
