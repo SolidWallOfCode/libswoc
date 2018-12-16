@@ -687,6 +687,61 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
 
    :libswoc:`Reference <Optional>`.
 
+Writing a Format Class
+----------------------
+
+Writing addtional format classes is designed to be easy, taking two or three steps. For example,
+consider a wrapper to output a string in `rot13 <https://en.wikipedia.org/wiki/ROT13>`__.
+
+The first step is to declare the wrapper class.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 651-652,655
+
+This class simply stores the :code:`std::string_view` for later use.
+
+Next the formatting for the wrapper class must be provided by overloading :code:`bwformat`.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 657-664
+
+This uses :libswoc:`transform_view_of` to do the character rotation. The lambda to perform the per
+character transform is defined separate for code cleanliness, it could just as easily have been
+defined directly as an argument.
+
+That's all that is strictly required - this code now works as expected.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 670-674
+
+Note the universal initializer must be used because there is no constructor. That is easily fixed.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 651-655
+
+and now this works as expected.
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 676-678
+
+Obviously other constructors can be provided for different ways to use the wrapper.
+
+An optional third step is to use free functions, rather than constructors, to access the wrapper.
+This is useful in more obscure circumstances, such as when the wrapper class is used by multiple
+wrappers through shared functionality in the wrapper class. In this case, a wrapper function
+could be done as
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 666
+
+and used
+
+.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   :lines: 679-680
+
+In general, provide wrapper class constructors unless there is a specific need for using free
+functions instead.
+
 .. namespace-pop::
 
 Working with standard I/O

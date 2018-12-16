@@ -577,8 +577,10 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
   REQUIRE(w.view() == "Clone? #. Evil Dave #. Evil Dave.");
   s2 = "";
-  w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
-  REQUIRE(w.view() == "Clone?.");
+  // Differentiate because the C string variant will generate output, as it's not nullptr,
+  // but is a pointer to an empty string.
+  w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" 1. {}", s2), swoc::bwf::Optional(" 2. {}", s2.data()));
+  REQUIRE(w.view() == "Clone? 2. .");
   s2 = std::string_view{};
   w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
   REQUIRE(w.view() == "Clone?.");

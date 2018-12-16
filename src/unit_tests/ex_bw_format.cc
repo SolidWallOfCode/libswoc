@@ -645,3 +645,41 @@ TEST_CASE("bwf printf", "[libswoc][bwf][printf]")
   bwprintf(w.clear(), "Chars |%*.*s|", 12, 5, digits);
   REQUIRE(w.view() == "Chars |       01234|");
 }
+
+// --- Format classes
+
+struct As_Rot13 {
+  std::string_view _src;
+
+  As_Rot13(std::string_view src) : _src{src} {}
+};
+
+BufferWriter &
+bwformat(BufferWriter &w, Spec const &spec, As_Rot13 const &wrap)
+{
+  static constexpr auto rot13 = [](char c) -> char {
+    return islower(c) ? (c + 13 - 'a') % 26 + 'a' : isupper(c) ? (c + 13 - 'A') % 26 + 'A' : c;
+  };
+  return bwformat(w, spec, swoc::transform_view_of(rot13, wrap._src));
+}
+
+As_Rot13 Rotter(std::string_view const& sv) { return As_Rot13(sv); }
+
+TEST_CASE("bwf wrapper", "[libswoc][bwf][wrapper]")
+{
+  LocalBufferWriter<256> w;
+  std::string_view s1{"Frcvqru"};
+
+  w.clear().print("Rot {}.", As_Rot13{s1});
+  REQUIRE(w.view() == "Rot Sepideh.");
+
+  w.clear().print("Rot {}.", As_Rot13(s1));
+  REQUIRE(w.view() == "Rot Sepideh.");
+
+  w.clear().print("Rot {}.", Rotter(s1));
+  REQUIRE(w.view() == "Rot Sepideh.");
+
+  // Verify symmetry.
+  w.clear().print("Rot {}.", As_Rot13("Sepideh"));
+  REQUIRE(w.view() == "Rot Frcvqru.");
+};
