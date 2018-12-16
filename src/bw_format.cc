@@ -596,12 +596,17 @@ namespace bwf
     return w;
   }
 
-  /// Write out the @a data as hexadecimal, using @a digits as the conversion.
+  /** Format output as a hexadecimal dump.
+   *
+   * @param w Output buffer.
+   * @param view Input data.
+   * @param digits Digit array for hexadecimal digits.
+   */
   void
-  Hex_Dump(BufferWriter &w, std::string_view data, const char *digits)
+  Format_As_Hex(BufferWriter &w, std::string_view view, const char *digits)
   {
-    const char *ptr = data.data();
-    for (auto n = data.size(); n > 0; --n) {
+    const char *ptr = view.data();
+    for (auto n = view.size(); n > 0; --n) {
       char c = *ptr++;
       w.write(digits[(c >> 4) & 0xF]);
       w.write(digits[c & 0xf]);
@@ -650,14 +655,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv)
     sv = sv.substr(0, spec._prec);
   }
   if ('x' == spec._type || 'X' == spec._type) {
-    const char *digits = 'x' == spec._type ? bwf::LOWER_DIGITS : bwf::UPPER_DIGITS;
-    width -= sv.size() * 2;
-    if (spec._radix_lead_p) {
-      w.write('0');
-      w.write(spec._type);
-      width -= 2;
-    }
-    bwf::Write_Aligned(w, [&w, &sv, digits]() { bwf::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill, 0);
+    return bwformat(w, spec, bwf::HexDump(sv.data(), sv.size()));
   } else if ('s' == spec._type) {
     bwformat(w, spec, transform_view_of(&tolower, sv));
   } else if ('S' == spec._type) {
@@ -666,6 +664,27 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv)
     width -= sv.size();
     bwf::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
   }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex)
+{
+  char fmt_type      = spec._type;
+  const char *digits = bwf::UPPER_DIGITS;
+
+  if ('X' != fmt_type) {
+    fmt_type = 'x';
+    digits   = bwf::LOWER_DIGITS;
+  }
+
+  int width = int(spec._min) - hex._view.size() * 2; // amount left to fill.
+  if (spec._radix_lead_p) {
+    w.write('0');
+    w.write(fmt_type);
+    width -= 2;
+  }
+  bwf::Write_Aligned(w, [&w, &hex, digits]() { bwf::Format_As_Hex(w, hex._view, digits); }, spec._align, width, spec._fill, 0);
   return w;
 }
 
@@ -682,10 +701,9 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span)
         w.write(' ');
       space_p = true;
       if (spec._radix_lead_p) {
-        w.write('0');
-        w.write(digits[33]);
+        w.write('0').write(digits[33]);
       }
-      bwf::Hex_Dump(w, view.prefix(block), digits);
+      bwf::Format_As_Hex(w, view.prefix(block), digits);
       view.remove_prefix(block);
     }
   } else {

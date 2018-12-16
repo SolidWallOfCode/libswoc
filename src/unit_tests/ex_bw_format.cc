@@ -663,7 +663,22 @@ bwformat(BufferWriter &w, Spec const &spec, As_Rot13 const &wrap)
   return bwformat(w, spec, swoc::transform_view_of(rot13, wrap._src));
 }
 
-As_Rot13 Rotter(std::string_view const& sv) { return As_Rot13(sv); }
+As_Rot13
+Rotter(std::string_view const &sv)
+{
+  return As_Rot13(sv);
+}
+
+struct Thing {
+  std::string _name;
+  unsigned _n{0};
+};
+
+As_Rot13
+Rotter(Thing const &thing)
+{
+  return As_Rot13(thing._name);
+}
 
 TEST_CASE("bwf wrapper", "[libswoc][bwf][wrapper]")
 {
@@ -678,6 +693,10 @@ TEST_CASE("bwf wrapper", "[libswoc][bwf][wrapper]")
 
   w.clear().print("Rot {}.", Rotter(s1));
   REQUIRE(w.view() == "Rot Sepideh.");
+
+  Thing thing{"Rivy Qnir", 20};
+  w.clear().print("Rot {}.", Rotter(thing));
+  REQUIRE(w.view() == "Rot Evil Dave.");
 
   // Verify symmetry.
   w.clear().print("Rot {}.", As_Rot13("Sepideh"));
