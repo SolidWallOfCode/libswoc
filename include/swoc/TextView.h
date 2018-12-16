@@ -1493,11 +1493,20 @@ TransformView<X, V>::operator!=(self_type const &that) const
   return _spot != that._spot || _limit != that._limit;
 }
 
+
+/** Create a transformed view of a source.
+ *
+ * @tparam X The transform functor type.
+ * @tparam V The source type.
+ * @param xf The transform.
+ * @param src The view source.
+ * @return A @c TransformView that applies @a xf to @a src.
+ */
 template <typename X, typename V>
 TransformView<X, V>
-transform_view_of(X const &xf, V const &v)
+transform_view_of(X const &xf, V const &src)
 {
-  return TransformView<X, V>(xf, v);
+  return TransformView<X, V>(xf, src);
 }
 
 // Specialization for identity transform.

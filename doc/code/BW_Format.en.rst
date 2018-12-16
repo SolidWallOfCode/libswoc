@@ -712,7 +712,7 @@ defined directly as an argument.
 That's all that is strictly required - this code now works as expected.
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 677-681
+   :lines: 685-689
 
 Note the universal initializer must be used because there is no constructor. That is easily fixed.
 
@@ -722,7 +722,7 @@ Note the universal initializer must be used because there is no constructor. Tha
 and now this works as expected.
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 683-684
+   :lines: 691-692
 
 Obviously other constructors can be provided for different ways to use the wrapper.
 
@@ -732,27 +732,27 @@ overload the format class construction, which is not possible using only constru
 a wrapper function could be done as
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 666
+   :lines: 666-670
 
 and used
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 686-687
+   :lines: 694-695
 
 Now, if there was a struct that needed Rot13 support
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 668-671
+   :lines: 672-675
 
 then the wrapper could be overloaded with
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 673
+   :lines: 677-681
 
 and used
 
 .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
-   :lines: 689-691
+   :lines: 697-699
 
 In general, provide wrapper class constructors unless there is a specific need for using free
 functions instead. Care should be used with the content of the format class to avoid expensive
