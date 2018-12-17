@@ -3,11 +3,9 @@
    Spans of memory. This is similar but independently developed from @c std::span. The goal is
    to provide convenient handling for chunks of memory. These chunks can be treated as arrays
    of arbitrary types via template methods.
+*/
 
-
-   @section license License
-
-   Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+/* Licensed to the Apache Software Foundation (ASF) under one or more contributor license
    agreements.  See the NOTICE file distributed with this work for additional information regarding
    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
    (the "License"); you may not use this file except in compliance with the License.  You may obtain
@@ -444,21 +442,35 @@ memcmp(MemSpan<T> const &lhs, MemSpan<T> const &rhs)
   return zret;
 }
 
-template <typename T>
-inline T *
-memcpy(MemSpan<T> &dst, T *src)
-{
-  return memcpy(dst.data(), src, dst.size());
-}
-// need to bring memcmp in so this is an overload, not an override.
 using std::memcmp;
 
 template <typename T>
-inline T *
+T *
+memcpy(MemSpan<T> &dst, MemSpan<T> const &src)
+{
+  return static_cast<T *>(std::memcpy(dst.data(), src.data(), std::min(dst.size(), src.size())));
+}
+
+template <typename T>
+T *
+memcpy(MemSpan<T> &dst, T *src)
+{
+  return static_cast<T *>(std::memcpy(dst.data(), src, dst.size()));
+}
+
+template <typename T>
+T *
 memcpy(T *dst, MemSpan<T> &src)
 {
-  return memcpy(dst, src.data(), src.size());
+  return static_cast<T *>(std::memcpy(dst, src.data(), src.size()));
 }
+
+inline char *
+memcpy(MemSpan<char> &span, std::string_view view)
+{
+  return static_cast<char *>(std::memcpy(span.data(), view.data(), std::min(view.size(), view.size())));
+}
+
 using std::memcpy;
 
 template <typename T>

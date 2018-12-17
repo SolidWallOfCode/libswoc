@@ -59,6 +59,7 @@ add_executable(test_libswoc
 
     src/unit_tests/ex_bw_format.cc
     src/unit_tests/ex_IntrusiveDList.cc
+    src/unit_tests/ex_MemArena.cc
     src/unit_tests/ex_TextView.cc)
 
 target_link_libraries(test_libswoc swoc++)

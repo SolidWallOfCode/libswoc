@@ -1014,28 +1014,28 @@ bwprint(std::string &s, TextView fmt, Args &&... args)
 }
 
 template <typename... Args>
-inline auto
+auto
 FixedBufferWriter::print(TextView fmt, Args &&... args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, std::forward_as_tuple(args...)));
 }
 
 template <typename... Args>
-inline auto
+auto
 FixedBufferWriter::print_v(TextView fmt, std::tuple<Args...> const &args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, args));
 }
 
 template <typename... Args>
-inline auto
+auto
 FixedBufferWriter::print(bwf::Format const &fmt, Args &&... args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, std::forward_as_tuple(args...)));
 }
 
 template <typename... Args>
-inline auto
+auto
 FixedBufferWriter::print_v(bwf::Format const &fmt, std::tuple<Args...> const &args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, args));

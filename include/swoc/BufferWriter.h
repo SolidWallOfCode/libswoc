@@ -286,6 +286,9 @@ public:
   FixedBufferWriter(char *buffer, size_t capacity);
 
   /// Construct using the memory @a span as the buffer.
+  FixedBufferWriter(MemSpan<void> const &span);
+
+  /// Construct using the memory @a span as the buffer.
   FixedBufferWriter(MemSpan<char> const &span);
 
   /** Constructor an empty buffer with no capacity.
@@ -459,6 +462,11 @@ inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _bu
   if (_capacity != 0 && buffer == nullptr) {
     throw(std::invalid_argument{"FixedBufferWriter created with null buffer and non-zero size."});
   };
+}
+
+inline FixedBufferWriter::FixedBufferWriter(MemSpan<void> const &span)
+  : _buf{static_cast<char *>(span.data())}, _capacity{span.size()}
+{
 }
 
 inline FixedBufferWriter::FixedBufferWriter(MemSpan<char> const &span) : _buf{span.begin()}, _capacity{span.size()} {}

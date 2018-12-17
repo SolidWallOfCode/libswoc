@@ -551,14 +551,14 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   w.clear().print("{} bytes {} digits {}", sizeof(double), std::numeric_limits<double>::digits10, swoc::bwf::As_Hex(2.718281828));
   REQUIRE(w.view() == "8 bytes 15 digits 9b91048b0abf0540");
 
-  #if 0
+#if 0
   INK_MD5 md5;
   w.clear().print("{}", swoc::bwf::As_Hex(md5));
   REQUIRE(w.view() == "00000000000000000000000000000000");
   CryptoContext().hash_immediate(md5, s2.data(), s2.size());
   w.clear().print("{}", swoc::bwf::As_Hex(md5));
   REQUIRE(w.view() == "f240ccd7a95c7ec66d6c111e2925b23e");
-  #endif
+#endif
 
   // Verify these compile and run, not really much hope to check output.
   w.clear().print("|{}|   |{}|", swoc::bwf::Date(), swoc::bwf::Date("%a, %d %b %Y"));
