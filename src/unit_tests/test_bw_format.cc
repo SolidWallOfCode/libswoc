@@ -33,6 +33,7 @@
 
 using namespace std::literals;
 using swoc::TextView;
+using swoc::bwprint;
 
 TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
 {
@@ -261,14 +262,14 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
   swoc::TextView fmt("{} -- {}");
   std::string_view text{"e99a18c428cb38d5f260853678922e03"};
 
-  swoc::bwprint(s, fmt, "string", 956);
+  bwprint(s, fmt, "string", 956);
   REQUIRE(s.size() == 13);
   REQUIRE(s == "string -- 956");
 
-  swoc::bwprint(s, fmt, 99999, text);
+  bwprint(s, fmt, 99999, text);
   REQUIRE(s == "99999 -- e99a18c428cb38d5f260853678922e03");
 
-  swoc::bwprint(s, "{} .. |{:,20}|", 32767, text);
+  bwprint(s, "{} .. |{:,20}|", 32767, text);
   REQUIRE(s == "32767 .. |e99a18c428cb38d5f260|");
 
   swoc::LocalBufferWriter<128> bw;
@@ -282,25 +283,33 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
   // those can break functionality.
   fmt = "Did you know? {}{} is {}"sv;
   s.resize(0);
-  swoc::bwprint(s, fmt, "Lady "sv, "Persia"sv, "not mean");
+  bwprint(s, fmt, "Lady "sv, "Persia"sv, "not mean");
   REQUIRE(s == "Did you know? Lady Persia is not mean");
   s.resize(0);
-  swoc::bwprint(s, fmt, ""sv, "Phil", "correct");
+  bwprint(s, fmt, ""sv, "Phil", "correct");
   REQUIRE(s == "Did you know? Phil is correct");
   s.resize(0);
-  swoc::bwprint(s, fmt, std::string_view(), "Leif", "confused");
+  bwprint(s, fmt, std::string_view(), "Leif", "confused");
   REQUIRE(s == "Did you know? Leif is confused");
 
   {
     std::string out;
-    swoc::bwprint(out, fmt, ""sv, "Phil", "correct");
+    bwprint(out, fmt, ""sv, "Phil", "correct");
     REQUIRE(out == "Did you know? Phil is correct");
   }
   {
     std::string out;
-    swoc::bwprint(out, fmt, std::string_view(), "Leif", "confused");
+    bwprint(out, fmt, std::string_view(), "Leif", "confused");
     REQUIRE(out == "Did you know? Leif is confused");
   }
+
+  char const *null_string{nullptr};
+  bwprint(s, "Null {0:x}.{0}", null_string);
+  REQUIRE(s == "Null 0x0.");
+  bwprint(s, "Null {0:X}.{0}", nullptr);
+  REQUIRE(s == "Null 0X0.");
+  bwprint(s, "Null {0:p}.{0:P}.{0:s}.{0:S}", null_string);
+  REQUIRE(s == "Null 0x0.0X0.null.NULL");
 }
 
 TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
