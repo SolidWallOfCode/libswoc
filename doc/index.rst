@@ -23,16 +23,20 @@ had become useful enough there were requests to be able to use them in ATS plugi
 unrelated projects. Hence this library. I hope you find it as useful as I have.
 
 .. toctree::
-  :maxdepth: 1
+   :maxdepth: 1
 
-  preface.en
-  code/BufferWriter.en
-  code/BW_Format.en
-  code/meta.en
-  code/IntrusiveDList.en
-  code/MemArena.en
-  code/TextView.en
-  code/Scalar.en
+   preface.en
+   code/BufferWriter.en
+   code/BW_Format.en
+   code/meta.en
+   code/MemSpan.en
+   code/TextView.en
+   code/MemArena.en
+   code/IntrusiveDList.en
+   code/IntrusiveHashMap.en
+   code/Scalar.en
+   code/Lexicon.en
+   code/Errata.en
 
 Indices and tables
 ******************

@@ -33,6 +33,37 @@ MemArena::Block::operator delete(void *ptr)
   ::free(ptr);
 }
 
+// Need to break these out because the default implementation doesn't clear the
+// integral values in @a that.
+
+MemArena::MemArena(swoc::MemArena::self_type &&that)
+  : _active_allocated(that._active_allocated),
+    _active_reserved(that._active_reserved),
+    _frozen_allocated(that._frozen_allocated),
+    _frozen_reserved(that._frozen_reserved),
+    _reserve_hint(that._reserve_hint),
+    _frozen(std::move(that._frozen)),
+    _active(std::move(that._active))
+{
+  that._active_allocated = that._active_reserved = 0;
+  that._frozen_allocated = that._frozen_reserved = 0;
+  that._reserve_hint                             = 0;
+}
+
+MemArena &
+MemArena::operator=(swoc::MemArena::self_type &&that)
+{
+  this->clear();
+  std::swap(_active_allocated, that._active_allocated);
+  std::swap(_active_reserved, that._active_reserved);
+  std::swap(_frozen_allocated, that._frozen_allocated);
+  std::swap(_frozen_reserved, that._frozen_reserved);
+  std::swap(_reserve_hint, that._reserve_hint);
+  _active = std::move(that._active);
+  _frozen = std::move(that._frozen);
+  return *this;
+}
+
 MemArena::Block *
 MemArena::make_block(size_t n)
 {
@@ -66,23 +97,17 @@ MemArena::make_block(size_t n)
 MemSpan<void>
 MemArena::alloc(size_t n)
 {
-  Block *block = _active.head();
-
-  if (nullptr == block) {
-    block = this->make_block(n);
-    _active.prepend(block);
-  } else if (n > block->remaining()) { // too big, need another block
-    block = this->make_block(n);
-    // For the resulting active allocation block, pick the block which will have the most free space
-    // after taking the request space out of the new block.
-    if (block->remaining() - n > _active.head()->remaining()) {
-      _active.prepend(block);
-    } else {
-      _active.insert_after(_active.head(), block);
-    }
-  }
+  MemSpan<void> zret;
+  this->require(n);
+  auto block = _active.head();
+  zret       = block->alloc(n);
   _active_allocated += n;
-  return block->alloc(n);
+  // If this block is now full, move it to the back.
+  if (block->full() && block != _active.tail()) {
+    _active.erase(block);
+    _active.append(block);
+  }
+  return zret;
 }
 
 MemArena &
@@ -115,6 +140,36 @@ MemArena::contains(const void *ptr) const
   auto pred = [ptr](const Block &b) -> bool { return b.contains(ptr); };
 
   return std::any_of(_active.begin(), _active.end(), pred) || std::any_of(_frozen.begin(), _frozen.end(), pred);
+}
+
+MemArena &
+MemArena::require(size_t n)
+{
+  auto spot = _active.begin();
+  Block *block{nullptr};
+
+  if (spot == _active.end()) {
+    block = this->make_block(n);
+    _active.prepend(block);
+  } else {
+    // Search back through the list until a full block is hit, which is a miss.
+    while (spot != _active.end() && n > spot->remaining()) {
+      if (spot->full())
+        spot = _active.end();
+      else
+        ++spot;
+    }
+    if (spot == _active.end()) { // no block has enough free space
+      block = this->make_block(n);
+      _active.prepend(block);
+    } else if (spot != _active.begin()) {
+      // big enough space, if it's not at the head, move it there.
+      block = spot;
+      _active.erase(block);
+      _active.prepend(block);
+    }
+  }
+  return *this;
 }
 
 void

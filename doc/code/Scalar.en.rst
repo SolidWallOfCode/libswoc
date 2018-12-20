@@ -49,6 +49,8 @@ quantizes the values that can be represented by an instance.
 
 .. class:: template < intmax_t SCALE, typename C, typename TAG > Scalar
 
+   :libswoc:`Reference documentation <Scalar>`.
+
    A quantized integral with a distinct type.
 
    :tparam SCALE: Scaling factor.
@@ -98,12 +100,13 @@ In normal use a scalar evaluates to its value rather than its count. The goal is
 instance that appears to store unscaled values in a quantized way. The count is accessible if
 needed.
 
-Assigment
-=========   
+Assignment
+==========
 
-Assigning values to, from, and between :class:`Scalar` instances is usually straightforward with a few simple rules.
+Assigning values to, from, and between :class:`Scalar` instances is usually straightforward with a
+few simple rules.
 
-*  The :func:`Scalar::assign` is used to directly assign a count.
+*  The :libswoc:`Scalar::assign` is used to directly assign a count.
 *  The increment and decrement operators, and the :code:`inc` and :code:`dec` methods, operate on the count.
 *  All other contexts use the value.
 *  The assignment operator will scale if this can be done without loss, otherwise it is a compile error.
@@ -148,7 +151,7 @@ The opposite is not implicit because the value of a :code:`deka` can be one not 
 
 .. function:: unspecified_type round_up(intmax_t)
 
-Note this is very different from using :func:`Scalar::assign`. The latter sets the *count* of
+Note this is very different from using :libswoc:`Scalar::assign`. The latter sets the *count* of
 the scalar instance. :code:`round_up` and :code:`round_down` set the *value* of the scalar, dividing
 the provided value by the scale to set the count to make the value match the assignment as closesly
 as possible.

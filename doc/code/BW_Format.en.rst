@@ -350,22 +350,22 @@ critical. In the latter case the formatter should make sure to use at least the 
 width <bwf::Spec::_min>` in order to disable any framework alignment operation.
 
 It is important to note a formatter can call another formatter. For example, the formatter for
-pointers looks like
+:code:`std::string` looks like
 
 .. literalinclude:: ../../include/swoc/bwf_base.h
-   :lines: 819-830
+   :lines: 811-833
 
-The code first copies the format specification and forces a leading radix. Then it checks if the
-type ``p`` or ``P`` was used in order to select the appropriate case, then delegates the actual
-rendering to the :libswoc:`integer formatter <Format_Integer>` with a type of ``x`` or ``X`` as
-appropriate. In turn other formatters, if given the type ``p`` or ``P`` can cast the value to
-:code:`const void*` and call :code:`bwformat` on that to output the value as a pointer. The
-difference between calling :code:`bwformat` vs. :libswoc:`BufferWriter::write` is the ability to
-pass the format specifier instance. If all of the formatting is handled directly, then direct |BW|
-methods are a good choice. If the formatter wants to use the built in formatting then
-:code:`bwformat` is the right choice. This is what is done with the pointer example above - the
-format specifier is copied and tweaked, and then passed on so that any formatting provided from the
-original format string remains valid.
+The code first copies the format specification and forces a leading radix. Next it does special
+handling for :code:`nullptr`. If the pointer is valid, the code checks if the type ``p`` or ``P``
+was used in order to select the appropriate case, then delegates the actual rendering to the
+:libswoc:`integer formatter <Format_Integer>` with a type of ``x`` or ``X`` as appropriate. In turn
+other formatters, if given the type ``p`` or ``P`` can cast the value to :code:`const void*` and
+call :code:`bwformat` on that to output the value as a pointer. The difference between calling
+:code:`bwformat` vs. :libswoc:`BufferWriter::write` is the ability to pass the format specifier
+instance. If all of the formatting is handled directly, then direct |BW| methods are a good choice.
+If the formatter wants to use the built in formatting then :code:`bwformat` is the right choice.
+This is what is done with the pointer example above - the format specifier is copied and tweaked,
+and then passed on so that any formatting provided from the original format string remains valid.
 
 To help reduce duplication, the output stream operator :code:`operator<<` on a :code:`BufferWriter` is defined to call :code:`bwformat` with a default constructed :libswoc:`bwf::Spec` instance. This makes ::
 

@@ -19,11 +19,13 @@
 */
 
 #include <string_view>
+#include <random>
 #include "swoc/MemArena.h"
 #include "swoc/ext/catch.hpp"
 
 using swoc::MemSpan;
 using swoc::MemArena;
+using std::string_view;
 using namespace std::literals;
 
 TEST_CASE("MemArena generic", "[libswoc][MemArena]")
@@ -263,4 +265,61 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
   }
   REQUIRE(a1.contains(span.data()));
   REQUIRE(a1.remaining() >= 384);
+}
+
+// --- temporary allocation
+TEST_CASE("MemArena temporary", "[libswoc][MemArena][tmp]")
+{
+  MemArena arena;
+  static constexpr std::string_view CHARS{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/."};
+  std::vector<std::string_view> strings;
+
+  static constexpr short MAX{8000};
+  static constexpr int N{100};
+
+  std::uniform_int_distribution<short> char_gen{0, short(CHARS.size() - 1)};
+  std::uniform_int_distribution<unsigned> length_gen{100, MAX};
+  std::minstd_rand randu;
+  std::array<char, MAX> url;
+
+  REQUIRE(arena.remaining() == 0);
+  int i;
+  unsigned max{0};
+  for (i = 0; i < N; ++i) {
+    auto n = length_gen(randu);
+    max    = std::max(max, n);
+    arena.require(n);
+    auto span = arena.remnant().rebind<char>();
+    if (span.size() < n)
+      break;
+    for (auto j = n; j > 0; --j) {
+      span[j - 1] = url[j - 1] = CHARS[char_gen(randu)];
+    }
+    if (string_view{span.data(), n} != string_view{url.data(), n})
+      break;
+  }
+  REQUIRE(i == N);            // did all the loops.
+  REQUIRE(arena.size() == 0); // nothing actually allocated.
+  // Hard to get a good value, but shouldn't be more than twice.
+  REQUIRE(arena.reserved_size() < 2 * MAX);
+  // Should be able to allocate at least the longest string without increasing the reserve size.
+  unsigned rsize = arena.reserved_size();
+  auto count     = max;
+  std::uniform_int_distribution<unsigned> alloc_size{32, 128};
+  while (count >= 128) { // at least the max distribution value
+    auto k = alloc_size(randu);
+    arena.alloc(k);
+    count -= k;
+  }
+  REQUIRE(arena.reserved_size() == rsize);
+
+  // Check for switching full blocks - calculate something like the total free space
+  // and then try to allocate most of it without increasing the reserved size.
+  count = rsize - (max - count);
+  while (count >= 128) {
+    auto k = alloc_size(randu);
+    arena.alloc(k);
+    count -= k;
+  }
+  REQUIRE(arena.reserved_size() == rsize);
 }

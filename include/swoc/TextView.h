@@ -1493,7 +1493,6 @@ TransformView<X, V>::operator!=(self_type const &that) const
   return _spot != that._spot || _limit != that._limit;
 }
 
-
 /** Create a transformed view of a source.
  *
  * @tparam X The transform functor type.

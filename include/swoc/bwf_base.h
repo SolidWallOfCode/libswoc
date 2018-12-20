@@ -804,12 +804,26 @@ BufferWriter::print_n(Binding const &names, TextView const &fmt)
 
 // ---- Formatting for specific types.
 
+// Must be first because it is used by other formatters, and is not inline.
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv);
+
 // Pointers that are not specialized.
 inline BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr)
 {
   bwf::Spec ptr_spec{spec};
   ptr_spec._radix_lead_p = true;
+
+  if (ptr == nullptr) {
+    if (spec._type == 's' || spec._type == 'S') {
+      ptr_spec._type = bwf::Spec::DEFAULT_TYPE;
+      ptr_spec._ext  = ""_sv; // clear any extension.
+      return bwformat(w, spec, spec._type == 's' ? "null"_sv : "NULL"_sv);
+    } else if (spec._type == bwf::Spec::DEFAULT_TYPE) {
+      return w; // print nothing if there is no format character override.
+    }
+  }
+
   if (ptr_spec._type == bwf::Spec::DEFAULT_TYPE || ptr_spec._type == 'p') {
     ptr_spec._type = 'x'; // if default or 'p;, switch to lower hex.
   } else if (ptr_spec._type == 'P') {
@@ -818,7 +832,6 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr)
   return bwf::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
 }
 
-// MemSpan
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span);
 
 template <typename T>
@@ -833,9 +846,6 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<T> const &span)
   }
   return bwformat(w, s, span.template rebind<void>());
 };
-// -- Common formatters --
-
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv);
 
 template <size_t N>
 BufferWriter &
@@ -844,13 +854,22 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, const char (&a)[N])
   return bwformat(w, spec, std::string_view(a, N - 1));
 }
 
+// Capture this explicitly so it doesn't go to any other pointer type.
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::nullptr_t)
+{
+  return bwformat(w, spec, static_cast<void *>(nullptr));
+}
+
 inline BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, const char *v)
 {
-  if (spec._type == 'x' || spec._type == 'X') {
+  if (spec._type == 'x' || spec._type == 'X' || spec._type == 'p' || spec._type == 'P') {
     bwformat(w, spec, static_cast<const void *>(v));
-  } else {
+  } else if (v != nullptr) {
     bwformat(w, spec, std::string_view(v));
+  } else {
+    bwformat(w, spec, nullptr);
   }
   return w;
 }
@@ -995,28 +1014,28 @@ bwprint(std::string &s, TextView fmt, Args &&... args)
 }
 
 template <typename... Args>
-inline auto
+auto
 FixedBufferWriter::print(TextView fmt, Args &&... args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, std::forward_as_tuple(args...)));
 }
 
 template <typename... Args>
-inline auto
+auto
 FixedBufferWriter::print_v(TextView fmt, std::tuple<Args...> const &args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, args));
 }
 
 template <typename... Args>
-inline auto
+auto
 FixedBufferWriter::print(bwf::Format const &fmt, Args &&... args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, std::forward_as_tuple(args...)));
 }
 
 template <typename... Args>
-inline auto
+auto
 FixedBufferWriter::print_v(bwf::Format const &fmt, std::tuple<Args...> const &args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, args));

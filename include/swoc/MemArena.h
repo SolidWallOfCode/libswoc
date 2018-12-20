@@ -2,8 +2,6 @@
 
     Memory arena for allocations
 
-    @section license License
-
     Licensed to the Apache Software Foundation (ASF) under one or more contributor license
     agreements.  See the NOTICE file distributed with this work for additional information regarding
     copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
@@ -46,6 +44,9 @@ class MemArena
 public:
   /// Simple internal arena block of memory. Maintains the underlying memory.
   struct Block {
+    /// A block must have at least this much free space to not be "full".
+    static constexpr size_t MIN_FREE_SPACE = 16;
+
     /// Get the start of the data in this block.
     char *data();
 
@@ -71,6 +72,9 @@ public:
      * @return @c true if @a ptr is in this block, @c false otherwise.
      */
     bool contains(const void *ptr) const;
+
+    /// @return @c true if the block has at least @c MIN_FREE_SPACE bytes free.
+    bool full() const;
 
     /** Override standard delete.
      *
@@ -124,13 +128,14 @@ public:
 
   /// no copying
   MemArena(self_type const &that) = delete;
-  MemArena(self_type &&that)      = default;
+  /// Allow moving the arena.
+  MemArena(self_type &&that);
 
   /// Destructor.
   ~MemArena();
 
   self_type &operator=(self_type const &that) = delete;
-  self_type &operator=(self_type &&that) = default;
+  self_type &operator                         =(self_type &&that);
 
   /** Allocate @a n bytes of storage.
 
@@ -145,25 +150,28 @@ public:
 
   /** Allocate and initialize a block of memory.
 
-      The template type specifies the type to create and any arguments are forwarded to the constructor. Example:
+      The template type specifies the type to create and any arguments are forwarded to the
+      constructor. Example:
+
       @code
       struct Thing { ... };
       Thing* thing = arena.make<Thing>(...constructor args...);
       @endcode
 
-      Do @b not call @c delete an object created this way - that will attempt to free the memory and break. A
-      destructor may be invoked explicitly but the point of this class is that no object in it needs to be
-      deleted, the memory will all be reclaimed when the Arena is destroyed. In general it is a bad idea
-      to make objects in the Arena that own memory that is not also in the Arena.
+      Do @b not call @c delete an object created this way - that will attempt to free the memory and
+      break. A destructor may be invoked explicitly but the point of this class is that no object in
+      it needs to be deleted, the memory will all be reclaimed when the Arena is destroyed. In
+      general it is a bad idea to make objects in the Arena that own memory that is not also in the
+      Arena.
   */
   template <typename T, typename... Args> T *make(Args &&... args);
 
   /** Freeze reserved memory.
 
-      All internal memory blocks are frozen and will not be involved in future allocations. Subsequent
-      allocation will reserve new internal blocks. By default the first reserved block will be large
-      enough to contain all frozen memory. If this is not correct a different target can be
-      specified as @a n.
+      All internal memory blocks are frozen and will not be involved in future allocations.
+      Subsequent allocation will reserve new internal blocks. By default the first reserved block
+      will be large enough to contain all frozen memory. If this is not correct a different target
+      can be specified as @a n.
 
       @param n Target number of available bytes in the next reserved internal block.
       @return @c *this
@@ -188,14 +196,24 @@ public:
    */
   MemArena &clear(size_t n = 0);
 
-  /// @returns the memory allocated in the generation.
+  /// @return The amount of memory allocated.
   size_t size() const;
 
-  /// @returns the @c remaining space within the generation.
+  /// @return The amount of free space.
   size_t remaining() const;
 
-  /// @returns the remaining contiguous space in the active generation.
+  /// @return Contiguous free space in the current internal block.
   MemSpan<void> remnant();
+
+  /** Require @a n bytes of contiguous memory.
+   *
+   * @param n Number of bytes.
+   * @return @a this
+   *
+   * This forces the @c remnant to be at least @a n bytes of contiguous memory. A subsequent
+   * @c alloc will use this space if the allocation size is at most the remnant size.
+   */
+  self_type &require(size_t n);
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -230,8 +248,10 @@ protected:
    * @return
    */
   Block *make_block(size_t n);
+
   /// Clean up the frozen list.
   void destroy_frozen();
+
   /// Clean up the active list
   void destroy_active();
 
@@ -255,6 +275,10 @@ protected:
 
   BlockList _frozen; ///< Previous generation, frozen memory.
   BlockList _active; ///< Current generation. Allocate here.
+
+  // Note on _active block list - blocks that become full are moved to the end of the list.
+  // This means that when searching for a block with space, the first full block encountered
+  // marks the last block to check. This keeps the set of blocks to check short.
 };
 
 // Implementation
@@ -296,6 +320,12 @@ inline size_t
 MemArena::Block::remaining() const
 {
   return size - allocated;
+}
+
+inline bool
+MemArena::Block::full() const
+{
+  return this->remaining() < MIN_FREE_SPACE;
 }
 
 inline MemSpan<void>

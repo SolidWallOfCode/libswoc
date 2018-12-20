@@ -154,7 +154,7 @@ Advanced
 --------
 
 The :libswoc:`BufferWriter::restrict` and :libswoc:`BufferWriter::restore` methods can be used to
-reserve space in the buffer. A common use case for this is to guarantee matching delimiters in
+require space in the buffer. A common use case for this is to guarantee matching delimiters in
 output if buffer space is exhausted. :libswoc:`BufferWriter::restrict` can be used to temporarily
 reduce the buffer capacity by an amount large enough to hold the terminal delimiter. After writing
 the contained output, :libswoc:`BufferWriter::restore` can be used to restore the capacity and then

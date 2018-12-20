@@ -13,7 +13,7 @@
 
 .. include:: ../common-defs.rst
 
-.. _lib-intrusive-list:
+.. _swoc-intrusive-list:
 .. highlight:: cpp
 .. default-domain:: cpp
 
