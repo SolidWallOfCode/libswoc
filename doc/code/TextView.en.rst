@@ -16,6 +16,7 @@
 .. default-domain:: cpp
 .. highlight:: cpp
 .. |TV| replace:: :code:`TextView`
+.. |SV| replace:: :code:`std::string_view`.
 
 .. _string-view: https://en.cppreference.com/w/cpp/string/basic_string_view
 
@@ -39,14 +40,15 @@ manipulation that is safer than raw pointers and much faster than duplicating st
 Description
 ===========
 
-|TV| is a subclass of `std::string_view <string-view>`_ and inherits all of those methods.
-The additional functionality of |TV| is for easy string manipulation, with an emphasis
-on fast parsing of string data. As noted, an instance of |TV| is a pointer and needs to be handled
-as such. It does not own the memory and therefore, like a pointer, care must be taken that the
-memory is not deallocated while the |TV| still references it.
+|TV| is a subclass of `std::string_view <string-view>`_ and inherits all of its methods. The
+additional functionality of |TV| is for easy string manipulation, with an emphasis on fast parsing
+of string data. As noted, an instance of |TV| is a pointer and needs to be handled as such. It does
+not own the memory and therefore, like a pointer, care must be taken that the memory is not
+deallocated while the |TV| still references it. The advantage of this is creating new views and
+modifying existing ones is very cheap.
 
 Any place that passes a :code:`char *` and a size is an excellent candidate for using a |TV|. Code
-that uses functions like :code:`strtok` or tracks pointers and offsets internall is an excellent
+that uses functions such as :code:`strtok` or tracks pointers and offsets internally is an excellent
 candidate for using |TV| instead.
 
 Because |TV| is a subclass of :code:`std::string_view` it can be unclear which is a better choice.
@@ -55,7 +57,9 @@ at most as expensive as a copy of the same type, and in cases of constant refere
 general if the string is treated as a block of data, :code:`std::string_view` is a better choice. If
 the contents of the string are to be examined / parsed then |TV| is better. For example, if the
 string is used simply as a key or a hash source, use :code:`std::string_view`. Contrariwise if the
-string may contain substrings of interest such as key / value pairs, then use a |TV|.
+string may contain substrings of interest such as key / value pairs, then use a |TV|. I do sometimes
+use |TV| because of the lack of support for instance reuse in |SV| - e.g. no :code:`assign` or
+:code:`clear` methods.
 
 When passing |TV| as an argument, it is very debatable whether passing by value or passing by
 reference is more efficient, therefore it's not likely to matter in production code. My personal
@@ -66,7 +70,7 @@ same code at the call site will work in either case.
 
 As noted, |TV| is designed as a pointer style class. Therefore it has an increment operator which is
 equivalent to :code:`std::string_view::remove_prefix`. |TV| also has  a dereference operator, which
-act the same way as on a pointer. The difference is the view knows where the end of the view is.
+acts the same way as on a pointer. The difference is the view knows where the end of the view is.
 This provides a comfortably familiar way of iterating through a view, the main difference being
 checking the view itself rather than a dereference of it (like a C-style string) or a range limit.
 E.g. the code to write a simple hash function [#]_ could be
@@ -167,9 +171,10 @@ A secondary distinction is what is done to the view by the methods.
 
 This is a table of the affix oriented methods, grouped by the properties of the methods. "Bounded"
 indicates whether the operation requires the target character, however specified, to be within the
-bounds of the view. On this note, the :code:`remove_prefix` and :code:`remove_suffix` are differently
-implement in |TV| compared to :code:`std::string_view`. Rather than being undefined, the methods will
-clear the view if the size specified is larger than the contents of the view.
+bounds of the view. A bounded method does nothing if the target character is not in the view. On
+this note, the :code:`remove_prefix` and :code:`remove_suffix` are differently implement in |TV|
+compared to :code:`std::string_view`. Rather than being undefined, the methods will clear the view
+if the size specified is larger than the contents of the view.
 
 +-----------------+--------+---------+------------------------------------------+
 | Operation       | Affix  | Bounded | Method                                   |
@@ -272,12 +277,12 @@ separated by commas.
    `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/master/src/unit_tests/ex_TextView.cc#L66>`__.
 
 If :arg:`value` was :literal:`bob  ,dave, sam` then :arg:`token` would be successively
-:literal:`bob`, :literal:`dave, :literal:`sam`. After :literal:`sam` was extracted :arg:`value`
+:literal:`bob`, :literal:`dave`, :literal:`sam`. After :literal:`sam` was extracted :arg:`value`
 would be empty and the loop would exit. :arg:`token` can be empty in the case of adjacent commas, a
-trailing comma, or commas separated only by whitespasce. Note that no memory allocation is done
-because each view is a pointer in to :arg:`value`. Because the size is contained in the view there
-is no need to put nul characters in the source string as would be done by :code:`strtok` and
-therefore this can be used on constant source strings.
+trailing comma, or commas separated only by whitespasce. Note no memory allocation is done because
+each view is a pointer in to :arg:`value`. Because the size is contained in the view there is no
+need to put nul characters in the source string as would be done by :code:`strtok` and therefore
+this can be used on constant source strings.
 
 Key / Value Example
 -------------------

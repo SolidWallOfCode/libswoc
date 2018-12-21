@@ -7,9 +7,6 @@
 
    This class is based on @c std::string_view and is easily and cheaply converted to and from that class.
 
-
-   @section license License
-
    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
    agreements.  See the NOTICE file distributed with this work for additional information regarding
    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
@@ -63,22 +60,17 @@ using ::memcmp; // Make this an overload, not an override.
 int strcmp(TextView const &lhs, TextView const &rhs);
 using ::strcmp; // Make this an overload, not an override.
 
-/** A read only view of contiguous piece of memory.
+/** A read only view of a contiguous piece of memory.
 
     A @c TextView does not own the memory to which it refers, it is simply a view of part of some
     (presumably) larger memory object. The purpose is to allow working in a read only way a specific
     part of the memory. A classic example for ATS is working with HTTP header fields and values
-    which need to be accessed independently but preferably without copying. A @c TextView supports this style.
+    which need to be accessed independently but preferably without copying. A @c TextView supports
+    this style.
 
-    @c TextView is based on an earlier classes @c ConstBuffer, @c StringView and influenced by @c
-    Boost.string_ref and @c std::string_view. None of these were adequate for how use of @c
-    ConstBuffer evolved with regard to text based manipulations. @c TextView is a super set of @c
-    std::string_view (and therefore our local implementation, @c std::string_view). It is designed
-    to be a drop in replacement.
-
-    @note To simplify the interface there is no constructor just a character pointer. Constructors require
-    either a literal string or an explicit length. This avoid ambiguities which are much more annoying that
-    explicitly calling @c strlen on a character pointer.
+    @note To simplify the interface there is no constructor taking only a character pointer.
+    Constructors require either a literal string or an explicit length. This avoid ambiguities which
+    are much more annoying that explicitly calling @c strlen on a character pointer.
  */
 class TextView : public std::string_view
 {
@@ -105,7 +97,7 @@ public:
    */
   constexpr TextView(char const *first, char const *last);
 
-  /** Construct from constant string.
+  /** Construct from literal string.
 
       Construct directly from an array of characters. All elements of the array are included in the
       view unless the last element is nul, in which case it is elided. If this is inapropriate then
@@ -198,16 +190,22 @@ public:
   template <typename F> size_t rfind_if(F const &pred) const;
 
   /** Remove bytes that match @a c from the start of the view.
+   *
+   * @return @a this
    */
   self_type &ltrim(char c);
 
   /** Remove bytes from the start of the view that are in @a delimiters.
+   *
+   * @return @a this
    */
   self_type &ltrim(std::string_view const &delimiters);
 
   /** Remove bytes from the start of the view that are in @a delimiters.
-      @internal This is needed to avoid collisions with the templated predicate style.
-      @return @c *this
+   *
+   * @internal This is needed to avoid collisions with the templated predicate style.
+   *
+   * @return @c *this
   */
   self_type &ltrim(const char *delimiters);
 
@@ -218,30 +216,40 @@ public:
   template <typename F> self_type &ltrim_if(F const &pred);
 
   /** Remove bytes that match @a c from the end of the view.
+   *
+   * @return @a this
    */
   self_type &rtrim(char c);
 
   /** Remove bytes from the end of the view that are in @a delimiters.
+   * @return @a this
    */
   self_type &rtrim(std::string_view const &delimiters);
 
   /** Remove bytes from the end of the view that are in @a delimiters.
-      @internal This is needed to avoid collisions with the templated predicate style.
-      @return @c *this
+   *
+   * @return @c *this
+   *
+   * @internal This is needed to avoid collisions with the templated predicate style.
    */
   self_type &rtrim(const char *delimiters);
 
-  /** Remove bytes from the start and end of the view for which @a pred is @c true.
-      @a pred must be a functor taking a @c char argument and returning @c bool.
-      @return @c *this
+  /** Remove bytes from the end of the view for which @a pred is @c true.
+   *
+   * @a pred must be a functor taking a @c char argument and returning @c bool.
+   *
+   * @return @c *this
   */
   template <typename F> self_type &rtrim_if(F const &pred);
 
-  /** Remove bytes that match @a c from the end of the view.
+  /** Remove bytes that match @a c from the start and end of this view.
+   *
+   * @return @a this
    */
   self_type &trim(char c);
 
   /** Remove bytes from the start and end of the view that are in @a delimiters.
+   * @return @a this
    */
   self_type &trim(std::string_view const &delimiters);
 
@@ -257,7 +265,7 @@ public:
   */
   template <typename F> self_type &trim_if(F const &pred);
 
-  /** Get a view of a prefix.
+  /** Get a view of the first @a n bytes.
    *
    * @param n Number of chars in the prefix.
    * @return A view of the first @a n characters in @a this, bounded by the size of @a this.
@@ -433,7 +441,7 @@ public:
    */
   template <typename F> self_type take_prefix_if(F const &pred);
 
-  /** Get a view of a suffix.
+  /** Get a view of the last @a n bytes.
    *
    * @param n Number of chars in the prefix.
    * @return A view of the last @a n characters in @a this, bounded by the size of @a this.
@@ -689,8 +697,8 @@ protected:
   static void init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set);
 };
 
-// Internal character conversion table.
-// Converts a character to the numeric digit value, or negative if the character is not a valid digit.
+/// Internal table of digit values for characters.
+/// This is -1 for characters that are not valid digits.
 extern const int8_t svtoi_convert[256];
 
 /** Convert the text in @c TextView @a src to a signed numeric value.
@@ -723,13 +731,15 @@ uintmax_t svtou(TextView src, TextView *parsed = nullptr, int base = 0);
  * @param src The source text. Updated during parsing.
  * @return The converted numeric value.
  *
- * This is a specialized function useful only where conversion performance is critical. It is used
- * inside @c svtoi and @c svtou for the common cases of 8, 10, and 16, therefore normally this isn't
- * much more performant than @c svtoi. Because of this only positive values are parsed. If
- * determining the radix from the text or signed value parsing is needed, used @c svtoi.
+ * This is a specialized function useful only where conversion performance is critical. The
+ * performance gains comes from templating the divisor which enables the compiler to optimize the
+ * multiplication (e.g., for powers of 2 shifts is used). It is used inside @c svtoi and @c svtou
+ * for the common cases of 8, 10, and 16, therefore normally this isn't much more performant than @c
+ * svtoi. Because of this only positive values are parsed. If determining the radix from the text or
+ * signed value parsing is needed, used @c svtoi.
  *
- * @a src is updated in place bhy removing parsed characters. Parsing stops on the first invalid digit, so any leading non-digit
- * characters (e.g. whitespace) must already be removed.
+ * @a src is updated in place by removing parsed characters. Parsing stops on the first invalid
+ * digit, so any leading non-digit characters (e.g. whitespace) must already be removed.
  */
 template <uintmax_t N>
 uintmax_t
@@ -748,6 +758,9 @@ svto_radix(swoc::TextView &src)
 
 // ----------------------------------------------------------
 // Inline implementations.
+// Note: Why, you may ask, do I use @c TextView::self_type for return type instead of the
+// simpler plain @c TextView ? Because otherwise Doxygen can't match up the declaration and
+// definition and the reference documentation is messed up. Sigh.
 
 // === TextView Implementation ===
 inline constexpr TextView::TextView(const char *ptr, size_t n) : super_type(ptr, n) {}
@@ -811,7 +824,7 @@ TextView::operator+=(size_t n)
 }
 
 template <size_t N>
-inline TextView &
+inline TextView::self_type &
 TextView::operator=(const char (&s)[N])
 {
   return *this = self_type{s, s[N - 1] ? N : N - 1};
@@ -885,7 +898,7 @@ TextView::prefix_at(std::string_view const &delimiters) const
 }
 
 template <typename F>
-inline TextView
+TextView::self_type
 TextView::prefix_if(F const &pred) const
 {
   self_type zret; // default to empty return.
@@ -895,8 +908,8 @@ TextView::prefix_if(F const &pred) const
   return zret;
 }
 
-inline TextView &
-TextView::remove_prefix(size_t n)
+inline auto
+TextView::remove_prefix(size_t n) -> self_type &
 {
   this->super_type::remove_prefix(std::min(n, this->size()));
   return *this;
@@ -921,7 +934,7 @@ TextView::remove_prefix_at(std::string_view const &delimiters)
 }
 
 template <typename F>
-TextView &
+TextView::self_type &
 TextView::remove_prefix_if(F const &pred)
 {
   if (auto n = this->find_if(pred); n != npos) {
@@ -960,7 +973,7 @@ TextView::split_prefix_at(std::string_view const &delimiters)
 }
 
 template <typename F>
-inline TextView
+TextView::self_type
 TextView::split_prefix_if(F const &pred)
 {
   return this->split_prefix(this->find_if(pred));
@@ -988,7 +1001,7 @@ TextView::take_prefix_at(std::string_view const &delimiters)
 }
 
 template <typename F>
-inline TextView
+TextView::self_type
 TextView::take_prefix_if(F const &pred)
 {
   return this->take_prefix(this->find_if(pred));
@@ -1030,7 +1043,7 @@ TextView::suffix_at(std::string_view const &delimiters) const
 }
 
 template <typename F>
-inline TextView
+TextView::self_type
 TextView::suffix_if(F const &pred) const
 {
   self_type zret;
@@ -1067,7 +1080,7 @@ TextView::remove_suffix_at(std::string_view const &delimiters)
 }
 
 template <typename F>
-TextView &
+TextView::self_type &
 TextView::remove_suffix_if(F const &pred)
 {
   if (auto n = this->rfind_if(pred); n != npos) {
@@ -1086,8 +1099,8 @@ TextView::split_suffix(size_t n)
   return zret;
 }
 
-inline TextView
-TextView::split_suffix(int n)
+inline auto
+TextView::split_suffix(int n) -> self_type
 {
   return this->split_suffix(size_t(n));
 }
@@ -1099,15 +1112,15 @@ TextView::split_suffix_at(char c)
   return npos == idx ? self_type{} : this->split_suffix(this->size() - (idx + 1));
 }
 
-inline TextView
-TextView::split_suffix_at(std::string_view const &delimiters)
+inline auto
+TextView::split_suffix_at(std::string_view const &delimiters) -> self_type
 {
   auto idx = this->find_last_of(delimiters);
   return npos == idx ? self_type{} : this->split_suffix(this->size() - (idx + 1));
 }
 
 template <typename F>
-inline TextView
+TextView::self_type
 TextView::split_suffix_if(F const &pred)
 {
   return this->split_suffix(this->rfind_if(pred));
@@ -1140,7 +1153,7 @@ TextView::take_suffix_at(std::string_view const &delimiters)
 }
 
 template <typename F>
-inline TextView
+TextView::self_type
 TextView::take_suffix_if(F const &pred)
 {
   return this->take_suffix_at(this->rfind_if(pred));
@@ -1250,7 +1263,7 @@ TextView::trim(const char *delimiters)
 }
 
 template <typename F>
-inline TextView &
+TextView::self_type &
 TextView::ltrim_if(F const &pred)
 {
   const char *spot;
@@ -1262,7 +1275,7 @@ TextView::ltrim_if(F const &pred)
 }
 
 template <typename F>
-inline TextView &
+TextView:self_type &
 TextView::rtrim_if(F const &pred)
 {
   const char *spot;
@@ -1274,7 +1287,7 @@ TextView::rtrim_if(F const &pred)
 }
 
 template <typename F>
-inline TextView &
+TextView::self_type &
 TextView::trim_if(F const &pred)
 {
   return this->ltrim_if(pred).rtrim_if(pred);
@@ -1573,19 +1586,23 @@ protected:
   iter _limit;
 };
 
+/// @cond INTERNAL_DETAIL
 template <typename V>
 TransformView<void, V>
 transform_view_of(V const &v)
 {
   return TransformView<void, V>(v);
 }
+/// @endcond
 
 }; // namespace swoc
 
 namespace std
 {
-ostream &operator<<(ostream &os, const swoc::TextView &b);
+/// Write the contents of @a view to the stream @a os.
+ostream &operator<<(ostream &os, const swoc::TextView &view);
 
+/// @cond INTERNAL_DETAIL
 /* For interaction with specific STL interfaces, primarily std::filesystem. Along with the
  * dereference operator, this enables a @c TextView to act as a character iterator to a C string
  * even if the internal view is not nul terminated.
@@ -1606,13 +1623,19 @@ template <typename X, typename V> struct iterator_traits<swoc::TransformView<X, 
   using difference_type   = ssize_t;
   using iterator_category = forward_iterator_tag;
 };
+/// @endcond
+
 } // namespace std
 
-// @c constexpr literal constructor for @c std::string_view
-// For unknown reasons, this enables creating @c constexpr constructs using @c std::string_view while the standard
-// one (""sv) does not.
-// I couldn't think of any better place to put this, so it's here. At least @c TextView is strongly related
-// to @c std::string_view.
+/** Literal constructor for @c std::string_view.
+ *
+ * @param s The source string.
+ * @param n Size of the source string.
+ * @return A @c string_view
+ *
+ * @internal This is provided because the STL one does not support @c constexpr which seems
+ * rather bizarre to me, but there it is.
+ */
 constexpr std::string_view operator"" _sv(const char *s, size_t n)
 {
   return {s, n};
