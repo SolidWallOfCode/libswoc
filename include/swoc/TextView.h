@@ -206,7 +206,7 @@ public:
    * @internal This is needed to avoid collisions with the templated predicate style.
    *
    * @return @c *this
-  */
+   */
   self_type &ltrim(const char *delimiters);
 
   /** Remove bytes from the start of the view for which @a pred is @c true.
@@ -239,7 +239,7 @@ public:
    * @a pred must be a functor taking a @c char argument and returning @c bool.
    *
    * @return @c *this
-  */
+   */
   template <typename F> self_type &rtrim_if(F const &pred);
 
   /** Remove bytes that match @a c from the start and end of this view.
@@ -1275,7 +1275,7 @@ TextView::ltrim_if(F const &pred)
 }
 
 template <typename F>
-TextView:self_type &
+TextView::self_type &
 TextView::rtrim_if(F const &pred)
 {
   const char *spot;

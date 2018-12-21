@@ -534,7 +534,7 @@ namespace bwf
   NameMap<F>::localize(std::string_view const &name)
   {
     auto span = _arena.alloc(name.size());
-    memcpy(span.data(), name.data(), name.size());
+    memcpy(span, name);
     return span.view();
   }
 
@@ -581,6 +581,7 @@ namespace bwf
     super_type::assign(name, g);
     return *this;
   }
+
   /// --- Formatting ---
 
   /// Internal signature for template generated formatting.
@@ -663,7 +664,7 @@ namespace bwf
    * @c std::any.
    *
    * Note: Much of this was originally in the meta support but it caused problems in use if
-   * the tuple header wasn't also included. I was unable to determine why, as this code doesn't
+   * the tuple header wasn't also included. I was unable to determine why, so this code doesn't
    * depend on tuple explicitly.
    */
   /// The signature for accessing an element of a tuple.
@@ -715,7 +716,7 @@ BufferWriter &
 BufferWriter::print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args)
 {
   using namespace std::literals;
-  static constexpr int N = sizeof...(Args); // used as loop limit
+  static constexpr int N = sizeof...(Args); // Check argument indices against this.
   static const auto fa   = bwf::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
   int arg_idx            = 0; // the next argument index to be processed.
 
@@ -724,6 +725,8 @@ BufferWriter::print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...
     std::string_view lit_v;
     bwf::Spec spec;
     bool spec_p = ex(lit_v, spec);
+
+    // If there's a literal, just ship it.
     if (lit_v.size()) {
       this->write(lit_v);
     }

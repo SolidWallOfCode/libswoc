@@ -471,6 +471,13 @@ memcpy(MemSpan<char> &span, std::string_view view)
   return static_cast<char *>(std::memcpy(span.data(), view.data(), std::min(view.size(), view.size())));
 }
 
+inline void *
+memcpy(MemSpan<void> &span, std::string_view view)
+{
+  return std::memcpy(span.data(), view.data(), std::min(view.size(), view.size()));
+}
+
+using std::memcpy;
 using std::memcpy;
 
 template <typename T>
