@@ -20,11 +20,12 @@
 
 .. _string-view: https://en.cppreference.com/w/cpp/string/basic_string_view
 
+********
 TextView
-*************
+********
 
 Synopsis
-========
+********
 
 :code:`#include <swoc/TextView.h>`
 
@@ -37,8 +38,8 @@ characters. It is in effect a pointer and should be treated as such (e.g. care m
 avoid dangling references by knowing where the memory really is). The purpose is to provide string
 manipulation that is safer than raw pointers and much faster than duplicating strings.
 
-Description
-===========
+Usage
+*****
 
 |TV| is a subclass of `std::string_view <string-view>`_ and inherits all of its methods. The
 additional functionality of |TV| is for easy string manipulation, with an emphasis on fast parsing
@@ -360,7 +361,7 @@ piece of code that does non-trivial parsing and conversion on a source string, w
 complex parsing state, and no memory allocation.
 
 History
-=======
+*******
 
 The first attempt at this functionality was in the TSConfig library in the :code:`ts::Buffer` and
 :code:`ts::ConstBuffer` classes. Originally intended just as raw memory views,

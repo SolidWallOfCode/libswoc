@@ -22,6 +22,15 @@
 MemArena
 ********
 
+Synopsis
+********
+
+:code:`#include <swoc/MemArena.h>`
+
+.. class:: template < typename T > MemArena
+
+   :libswoc:`Reference documentation <MemArena>`.
+
 |MemArena| provides a memory arena or pool for allocating memory. Internally |MemArena| reserves
 memory in large blocks and allocates pieces of those blocks when memory is requested. Upon
 destruction all of the reserved memory is released which also destroys all of the allocated memory.
@@ -38,13 +47,6 @@ in the |MemArena| then no specific cleanup is needed beyond destroying the |MemA
 A |MemArena| can also be `inverted <arena-inversion>`_. This means placing the |MemArena| instance
 in its own memory pool so that the |MemArena| and associated objects can be created with a single
 base library memory allocation and cleaned up with a single :code:`delete`.
-
-Definition
-**********
-
-.. class:: template < typename T > MemArena
-
-   :libswoc:`Reference documentation <MemArena>`.
 
 Usage
 *****

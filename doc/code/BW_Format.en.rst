@@ -26,12 +26,7 @@ BufferWriter Formatting
 Synopsis
 ********
 
-.. code-block:: cpp
-
-   #include <swoc/bwf_base.h>
-
-Description
-***********
+:code:`#include <swoc/bwf_base.h>`
 
 Formatted output was added to :class:`BufferWriter` for several reasons.
 

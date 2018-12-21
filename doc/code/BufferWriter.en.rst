@@ -18,18 +18,14 @@
 
 .. _BufferWriter:
 
+************
 BufferWriter
-*************
+************
 
 Synopsis
-++++++++
+********
 
-.. code-block:: cpp
-
-   #include <swoc/BufferWriter.h>
-
-Description
-+++++++++++
+:code:`#include <swoc/BufferWriter.h>`
 
 .. class:: BufferWriter
 
@@ -57,7 +53,7 @@ The former is bounded by the buffer size to prevent overruns. The latter provide
 to detect the clipping done to prevent overruns, and the amount of space needed to avoid it.
 
 Usage
-+++++
+*****
 
 Consider a common case of code like ::
 
@@ -128,7 +124,7 @@ eliminating the need to separately declare the buffer. It also makes :class:`Loc
 in line
 
 Writing
--------
+=======
 
 The primary method for sending output to a |BW| is :libswoc:`BufferWriter::write`. This is an
 overloaded method with overloads for a character (:code:`char`), a buffer (:code:`void *, size_t`),
@@ -137,7 +133,7 @@ both of those implicitly convert to :code:`std::string_view`. For :code:`snprint
 see `buffer writer formatting <bw-format>`_.
 
 Reading
--------
+=======
 
 Data in the buffer can be extracted using :libswoc:`BufferWriter::data`, along with
 :libswoc:`BufferWriter::size`. Together these return a pointer to the start of the buffer and the
@@ -151,7 +147,7 @@ data written to the |BW|. This can be used in a two pass style with a null / siz
 determine the buffer size required for the full output.
 
 Advanced
---------
+========
 
 The :libswoc:`BufferWriter::restrict` and :libswoc:`BufferWriter::restore` methods can be used to
 require space in the buffer. A common use case for this is to guarantee matching delimiters in
@@ -197,7 +193,7 @@ While this can be used in a manner similar to using :libswoc:`BufferWriter::rest
 a bit risky because the return value is unsigned and underflow would be problematic.
 
 Examples
-++++++++
+========
 
 For example, error prone code that looks like
 
