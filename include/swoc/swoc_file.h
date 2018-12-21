@@ -153,9 +153,11 @@ namespace file
   /** Load the file at @a p into a @c std::string.
    *
    * @param p Path to file
+   * @param ec Error code result of the file operation.
    * @return The contents of the file.
    */
   std::string load(const path &p, std::error_code &ec);
+
   /* ------------------------------------------------------------------- */
 
   inline path::path(char const *src) : _path(src) {}

@@ -502,7 +502,7 @@ namespace bwf
   /// format: whole.fraction
   ///     or: left.right
   BufferWriter &
-  Format_Float(BufferWriter &w, Spec const &spec, double f, bool neg_p)
+  Format_Float(BufferWriter &w, Spec const &spec, double f, bool negative_p)
   {
     static const std::string_view infinity_bwf{"Inf"};
     static const std::string_view nan_bwf{"NaN"};
@@ -536,7 +536,7 @@ namespace bwf
 
     uint64_t whole_part = static_cast<uint64_t>(f);
     if (whole_part == f || spec._prec == 0) { // integral
-      return Format_Integer(w, spec, whole_part, neg_p);
+      return Format_Integer(w, spec, whole_part, negative_p);
     }
 
     static constexpr char dec = '.';
@@ -551,7 +551,7 @@ namespace bwf
 
     frac = f - whole_part; // split the number
 
-    if (neg_p) {
+    if (negative_p) {
       neg = '-';
     } else if (spec._sign != '-') {
       neg = spec._sign;

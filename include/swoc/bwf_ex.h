@@ -128,10 +128,11 @@ namespace bwf
    * @param args The arguments.
    * @return A wrapper for the optional text.
    *
-   * This function is passed a @a, a printing format @a fmt, and a set of arguments @a args to be
-   * used by the format. Output is generated if @a flag is @c true, otherwise the empty string
+   * This function is passed a @a flag, a printing format @a fmt, and a set of arguments @a args to
+   * be used by the format. Output is generated if @a flag is @c true, otherwise the empty string
    * (no output) is generated. For example, if in a function there was a flag to determine if an
    * extra tag with delimiters, e.g. "[tag]", was to be generated, this could be done with
+   *
    * @code
    *   w.print("Some other text{}.", bwf::Optional(flag, " [{}]", tag));
    * @endcode
@@ -170,9 +171,9 @@ namespace bwf
 
   /** Simplified optional text wrapper.
    *
-   * @tparam T the type of the (single) argument.
+   * @tparam ARG the type of the (single) argument.
    * @param fmt Format string.
-   * @param arg Argument to format string.
+   * @param arg The single argument to the format string and predicate.
    * @return An optional text wrapper.
    *
    * This generates output iff @a arg is not empty. @a fmt is required to take only a single
@@ -199,11 +200,11 @@ namespace bwf
    * string types (such as @c std::string_view ).
    *
    */
-  template <typename T>
-  SubText<T>
-  Optional(TextView fmt, T &&t)
+  template <typename ARG>
+  SubText<ARG>
+  Optional(TextView fmt, ARG &&arg)
   {
-    return detail::Optional(meta::CaseArg, fmt, std::forward<T>(t));
+    return detail::Optional(meta::CaseArg, fmt, std::forward<ARG>(arg));
   }
 } // namespace bwf
 

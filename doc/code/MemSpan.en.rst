@@ -22,6 +22,15 @@
 MemSpan
 ********
 
+Synopsis
+********
+
+:code:`#include <swoc/MemSpan.h>`
+
+.. class:: template < typename T > MemSpan
+
+   :libswoc:`Reference documentation <MemSpan>`.
+
 |MemSpan| is a view on *writable* memory. This distinguishes it from classes like :code:`TextView`.
 The purpose of the class is to provide a compact description of a contiguous writeable block of
 memory, carrying both location and size information to (hopefully) prevent these from becoming
@@ -31,10 +40,8 @@ separated.
 internal structure. The "typed" style treats the memory as an array of a specific type. These
 can be inter-converted, in the equivalent of type casting.
 
-:libswoc:`Reference <MemSpan>`.
-
-Description
-***********
+Usage
+*****
 
 |MemSpan| is a templated class with special handling for :code:`void`. This special case will be
 described first, and then the typed cases.

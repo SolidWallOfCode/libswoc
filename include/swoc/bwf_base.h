@@ -634,22 +634,22 @@ namespace bwf
    */
   BufferWriter &Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t n, bool negative_p);
 
-  /** Format @a n as a floating point value.
+  /** Format @a f as a floating point value.
    *
    * @param w Output buffer.
    * @param spec Format specifier.
-   * @param n Input value to format.
+   * @param f Input value to format.
    * @param negative_p Input value shoudl be treated as a negative value.
    * @return @a w
    *
    * A leading sign character will be output based on @a spec and @a negative_p.
    */
-  BufferWriter &Format_Float(BufferWriter &w, Spec const &spec, double n, bool negative_p);
+  BufferWriter &Format_Float(BufferWriter &w, Spec const &spec, double f, bool negative_p);
 
   /** Format output as a hexadecimal dump.
    *
    * @param w Output buffer.
-   * @param data Input data.
+   * @param view Input view.
    * @param digits Digit array for hexadecimal digits.
    *
    * This dumps the memory in the @a view as a hexadecimal string.
