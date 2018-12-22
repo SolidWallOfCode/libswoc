@@ -5,21 +5,20 @@
   In many situations it is desirable to define scaling factors or base units (a "metric"). This template
   enables this to be done in a type and scaling safe manner where the defined factors carry their scaling
   information as part of the type.
+*/
 
-  @section license License
-
-  Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
-  See the NOTICE file distributed with this work for additional information regarding copyright
-  ownership.  The ASF licenses this file to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance with the License.  You may obtain a
-  copy of the License at
+/* Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
+   See the NOTICE file distributed with this work for additional information regarding copyright
+   ownership.  The ASF licenses this file to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance with the License.  You may obtain a
+   copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software distributed under the License
-  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-  or implied. See the License for the specific language governing permissions and limitations under
-  the License.
+   Unless required by applicable law or agreed to in writing, software distributed under the License
+   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+   or implied. See the License for the specific language governing permissions and limitations under
+   the License.
  */
 
 #pragma once
@@ -42,7 +41,9 @@ template <intmax_t N, typename C, typename T> class Scalar;
 
 namespace detail
 {
-  // @internal - althought these conversion methods look bulky, in practice they compile down to
+/// @cond INTERNAL_DETAIL
+
+  // @internal - although these conversion methods look bulky, in practice they compile down to
   // very small amounts of code due to dead code elimination and that all of the conditions are
   // compile time constants.
 
@@ -51,7 +52,7 @@ namespace detail
   // only do 1 division to get both the quotient and remainder for (n/N) and (n%N). In cases where
   // N,S are powers of 2 I have verified recent GNU compilers will optimize to bit operations.
 
-  /// Convert a count @a c that is scale @a S to scale @c N
+  // Convert a count @a c that is scale @a S to scale @c N
   template <intmax_t N, intmax_t S>
   intmax_t
   scale_conversion_round_up(intmax_t c)
@@ -68,7 +69,7 @@ namespace detail
     }
   }
 
-  /// Convert a count @a c that is scale @a S to scale @c N
+  // Convert a count @a c that is scale @a S to scale @c N
   template <intmax_t N, intmax_t S>
   intmax_t
   scale_conversion_round_down(intmax_t c)
@@ -99,10 +100,11 @@ namespace detail
 
      Conversions between scales and types for the scalar helpers is done inside the helper classes
      and a user type conversion operator exists so the helper can be converted by the compiler to
-     the correct type. For the units bases conversion this is done in @c Scalar because the
+     the correct type. For the units base conversion this is done in @c Scalar because the
      generality of the needed conversion is too broad to be easily used. It can be done but there is
-     some ugliness due to the fact that in some cases two user conversions which is difficult to
-     deal with. I have tried it both ways and overall this seems a cleaner implementation.
+     some ugliness due to the fact that in some cases two user conversions are needed, which is
+     difficult to deal with. I have tried it both ways and overall this seems a cleaner
+     implementation.
 
      Much of this is driven by the fact that the assignment operator, in some cases, can not be
      templated and therefore to have a nice interface for assignment this split is needed.
@@ -119,6 +121,7 @@ namespace detail
       return static_cast<I>(_n / N + (0 != (_n % N)));
     }
   };
+
   // Unit value, to be rounded down.
   template <typename C> struct scalar_unit_round_down_t {
     C _n;
@@ -130,6 +133,7 @@ namespace detail
       return static_cast<I>(_n / N);
     }
   };
+
   // Scalar value, to be rounded up.
   template <intmax_t N, typename C, typename T> struct scalar_round_up_t {
     C _n;
@@ -138,6 +142,7 @@ namespace detail
       return Scalar<S, I, T>(scale_conversion_round_up<S, N>(_n));
     }
   };
+
   // Scalar value, to be rounded down.
   template <intmax_t N, typename C, typename T> struct scalar_round_down_t {
     C _n;
@@ -146,39 +151,8 @@ namespace detail
       return Scalar<S, I, T>(scale_conversion_round_down<S, N>(_n));
     }
   };
+/// @endcond
 } // namespace detail
-
-/// Mark a unit value to be scaled, rounding down.
-template <typename C>
-constexpr detail::scalar_unit_round_up_t<C>
-round_up(C n)
-{
-  return {n};
-}
-
-/// Mark a @c Scalar value to be scaled, rounding up.
-template <intmax_t N, typename C, typename T>
-constexpr detail::scalar_round_up_t<N, C, T>
-round_up(Scalar<N, C, T> v)
-{
-  return {v.count()};
-}
-
-/// Mark a unit value to be scaled, rounding down.
-template <typename C>
-constexpr detail::scalar_unit_round_down_t<C>
-round_down(C n)
-{
-  return {n};
-}
-
-/// Mark a @c Scalar value, to be rounded down.
-template <intmax_t N, typename C, typename T>
-constexpr detail::scalar_round_down_t<N, C, T>
-round_down(Scalar<N, C, T> v)
-{
-  return {v.count()};
-}
 
 /** A class to hold scaled values.
 
@@ -482,6 +456,64 @@ constexpr inline intmax_t
 Scalar<N, C, T>::scale()
 {
   return SCALE;
+}
+
+// --- Functions ---
+
+/** Prepare units @a n to be assigned to a @c Scalar, rounding up as needed.
+ *
+ * @tparam C The type of the value.
+ * @param n The value.
+ * @return An unspecified type suitable to be assigned to a @c Scalar.
+ */
+template <typename C>
+constexpr detail::scalar_unit_round_up_t<C>
+round_up(C n)
+{
+  return {n};
+}
+
+/** Prepare a @c Scalar instance to be assigned to another @c Scalar, rounding up as needed.
+ *
+ * @tparam N @c Scalar scale value.
+ * @tparam C @c Scalar internal storage type.
+ * @tparam T @c Scalar tag.
+ * @param v The @c Scalar value.
+ * @return
+ */
+template <intmax_t N, typename C, typename T>
+constexpr detail::scalar_round_up_t<N, C, T>
+round_up(Scalar<N, C, T> v)
+{
+  return {v.count()};
+}
+
+/** Prepare units @a n to be assigned to a @c Scalar, rounding down as needed.
+ *
+ * @tparam C The type of the value.
+ * @param n The value.
+ * @return An unspecified type suitable to be assigned to a @c Scalar.
+ */
+template <typename C>
+constexpr detail::scalar_unit_round_down_t<C>
+round_down(C n)
+{
+  return {n};
+}
+
+/** Prepare a @c Scalar instance to be assigned to another @c Scalar, rounding down as needed.
+ *
+ * @tparam N @c Scalar scale value.
+ * @tparam C @c Scalar internal storage type.
+ * @tparam T @c Scalar tag.
+ * @param v The @c Scalar value.
+ * @return
+ */
+template <intmax_t N, typename C, typename T>
+constexpr detail::scalar_round_down_t<N, C, T>
+round_down(Scalar<N, C, T> v)
+{
+  return {v.count()};
 }
 
 // --- Compare operators
@@ -919,8 +951,8 @@ namespace detail
 namespace std
 {
 /// Compute common type of two scalars.
-/// In `std` to overload the base definition. This yields a type that has the common type of the
-/// counter type and a scale that is the GCF of the input scales.
+/// This is in `std` to overload the base definition. This yields a type that has the common type of
+/// the counter type and a scale that is the GCF of the input scales.
 template <intmax_t N, typename C, intmax_t S, typename I, typename T>
 struct common_type<swoc::Scalar<N, C, T>, swoc::Scalar<S, I, T>> {
   using R    = std::ratio<N, S>;

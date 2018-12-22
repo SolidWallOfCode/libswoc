@@ -104,7 +104,6 @@ namespace file
   {
     using self_type = file_status;
 
-  public:
   protected:
     struct ::stat _stat; ///< File information.
 
@@ -120,11 +119,11 @@ namespace file
 
   /** Get the status of the file at @a p.
    *
-   * @param p Path to file.
+   * @param file Path to file.
    * @param ec Error code return.
    * @return Status of the file.
    */
-  file_status status(const path &p, std::error_code &ec) noexcept;
+  file_status status(path const &file, std::error_code &ec) noexcept;
 
   // Related free functions.
   // These are separate because they are not part of std::filesystem::path.

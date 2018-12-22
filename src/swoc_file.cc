@@ -46,10 +46,10 @@ namespace file
   }
 
   file_status
-  status(const path &p, std::error_code &ec) noexcept
+  status(path const &file, std::error_code &ec) noexcept
   {
     file_status zret;
-    if (::stat(p.c_str(), &zret._stat) >= 0) {
+    if (::stat(file.c_str(), &zret._stat) >= 0) {
       ec.clear();
     } else {
       ec = std::error_code(errno, std::system_category());

@@ -5,10 +5,9 @@
     buffer without copies. Views are read only as the view doesn't own the
     memory. Along with generic buffer methods are specialized methods to support
     better string parsing, particularly token based parsing.
+*/
 
-    @section license License
-
-    Licensed to the Apache Software Foundation (ASF) under one or more
+/*  Licensed to the Apache Software Foundation (ASF) under one or more
     contributor license agreements.  See the NOTICE file distributed with this
     work for additional information regarding copyright ownership.  The ASF
     licenses this file to you under the Apache License, Version 2.0 (the

@@ -1,8 +1,8 @@
 /** @file
 
-   Spans of memory. This is similar but independently developed from @c std::span. The goal is
-   to provide convenient handling for chunks of memory. These chunks can be treated as arrays
-   of arbitrary types via template methods.
+   Spans of writable memory. This is similar but independently developed from @c std::span. The goal
+   is to provide convenient handling for chunks of memory. These chunks can be treated as arrays of
+   arbitrary types via template methods.
 */
 
 /* Licensed to the Apache Software Foundation (ASF) under one or more contributor license
@@ -29,7 +29,6 @@
 #include <ratio>
 #include <exception>
 
-/// Apache Traffic Server commons.
 namespace swoc
 {
 /** A span of contiguous piece of memory.
@@ -341,7 +340,7 @@ public:
    * @return @c *this
    */
 
-  self_type &remove_prefix(size_t n);
+  self_type &remove_prefix(size_t count);
 
   /** Get the trailing segment of @a n bytes.
    *
@@ -389,12 +388,25 @@ namespace detail
     return last - first;
   }
 
-  /* More void handling. This can't go in @c MemSpan because template specialization is invalid
-   * in class scope.
+  /** Functor to convert span types.
+   *
+   * @tparam T Source span type.
+   * @tparam U Destination span type.
+   *
+   * @internal More void handling. This can't go in @c MemSpan because template specialization is
+   * invalid in class scope and this needs to be specialized for @c void.
    */
-  // Check if the conversion from @a T to @a U is reasonable.
   template <typename T, typename U> struct is_span_compatible {
+    /// @c true if the size of @a T is an integral multiple of the size of @a U or vice versa.
     static constexpr bool value = std::ratio<sizeof(T), sizeof(U)>::num == 1 || std::ratio<sizeof(U), sizeof(T)>::num == 1;
+    /** Compute the new size in units of @c sizeof(U).
+     *
+     * @param size Size in bytes.
+     * @return Size in units of @c sizeof(U).
+     *
+     * The critical part of this is the @c static_assert that guarantees the result is an integral
+     * number of instances of @a U.
+     */
     static size_t
     count(size_t size)
     {
@@ -405,6 +417,7 @@ namespace detail
     }
   };
 
+  /// @cond INTERNAL_DETAIL
   template <typename T> struct is_span_compatible<T, void> {
     static constexpr bool value = true;
     static size_t
@@ -413,6 +426,7 @@ namespace detail
       return size;
     }
   };
+  /// @endcond
 
 } // namespace detail
 

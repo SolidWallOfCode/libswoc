@@ -5,8 +5,11 @@
    only as the view doesn't own the memory. Along with generic buffer methods are specialized
    methods to support better string parsing, particularly token based parsing.
 
-   This class is based on @c std::string_view and is easily and cheaply converted to and from that class.
+   This class is based on @c std::string_view and is easily and cheaply converted to and from that
+   class.
+*/
 
+/*
    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
    agreements.  See the NOTICE file distributed with this work for additional information regarding
    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
@@ -301,6 +304,20 @@ public:
    * @note The deliminting character is not included in the returned view.
    */
   template <typename F> self_type prefix_if(F const &pred) const;
+
+  /** Remove bytes from the start of the view.
+   *
+   * @param n Number of bytes to remove.
+   * @return @a this.
+   */
+  self_type &remove_prefix(size_t n);
+
+  /** Remove bytes from the end of the view.
+   *
+   * @param n Number of bytes to remove.
+   * @return @a this.
+   */
+  self_type &remove_suffix(size_t n);
 
   /** Remove the leading characters of @a this up to and including @a c.
    *
@@ -685,13 +702,6 @@ public:
   self_type split_suffix(int n);
   /// @endcond
 
-  /// @cond COVARY
-  // Methods defined in order to co-vary the return type. All of these chain to the super class
-  // and return @a this as type @c self_type.
-  self_type &remove_prefix(size_t n);
-  self_type &remove_suffix(size_t n);
-  /// @endcond
-
 protected:
   /// Initialize a bit mask to mark which characters are in this view.
   static void init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set);
@@ -764,12 +774,15 @@ svto_radix(swoc::TextView &src)
 
 // === TextView Implementation ===
 inline constexpr TextView::TextView(const char *ptr, size_t n) : super_type(ptr, n) {}
-inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n) {}
 inline constexpr TextView::TextView(char const *first, char const *last) : super_type(first, last - first) {}
 inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) : super_type(that) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1) {}
+
+/// @cond OVERLOAD
+inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n) {}
+/// @endcond
 
 inline void
 TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set)
@@ -1521,10 +1534,17 @@ transform_view_of(X const &xf, V const &src)
   return TransformView<X, V>(xf, src);
 }
 
-// Specialization for identity transform.
+/** Indentity transform view.
+ *
+ * @tparam V The source type.
+ *
+ * This is a transform that returns the input unmodified. This is convenient when a transform is
+ * required in general but not in in all cases.
+ */
 template <typename V> class TransformView<void, V>
 {
   using self_type = TransformView; ///< Self reference type.
+  /// Iterator over source, for internal use.
   using iter      = decltype(static_cast<V *>(nullptr)->begin());
 
 public:
@@ -1582,11 +1602,12 @@ public:
   explicit operator bool() const { return _spot != _limit; }
 
 protected:
-  iter _spot;
-  iter _limit;
+  iter _spot; ///< Current location.
+  iter _limit; ///< End marker.
 };
 
 /// @cond INTERNAL_DETAIL
+// Capture @c void transforms and make them identity transforms.
 template <typename V>
 TransformView<void, V>
 transform_view_of(V const &v)

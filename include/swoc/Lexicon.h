@@ -32,8 +32,15 @@ namespace swoc
 {
 namespace detail
 {
+  /** Create an r-value reference to a temporary formatted string.
+   *
+   * @tparam Args Format string argument types.
+   * @param fmt Format string.
+   * @param args Arguments to format string.
+   * @return r-value reference to a @c std::string containing the formatted string.
+   */
   template <typename... Args>
-  std::string
+  std::string &&
   what(std::string_view const &fmt, Args &&... args)
   {
     std::string zret;
@@ -95,11 +102,19 @@ public:
   /// Construct and verify the number of pairs.
   template <E e> Lexicon(const Require<e> &, const std::array<Pair, static_cast<size_t>(e)> &defines);
 
-  /// Convert a value to a name
+  /** Get the name for a @a value.
+   *
+   * @param value Value to look up.
+   * @return The name for @a value.
+   */
   std::string_view operator[](E value);
 
-  /// Convert a name to a value
-  E operator[](std::string_view name);
+  /** Get the value for a @a name.
+   *
+   * @param name Name to look up.
+   * @return The value for the @a name.
+   */
+  E operator[](std::string_view const& name);
 
   /// Define the @a names for a @a value.
   /// The first name is the primary name. All @a names must be convertible to @c std::string_view.
@@ -201,30 +216,53 @@ protected:
   //  using NameDefault  = std::variant<std::monostate, std::string_view, UnknownValueHandler>;
   //  using ValueDefault = std::variant<std::monostate, E, UnknownNameHandler>;
 
+  /// Type marker for internal variant.
   enum class Content {
     NIL,    ///< Nothing, not set.
     SCALAR, ///< A specific value/name.
     HANDLER ///< A function
   };
 
+  /// Default (no value) struct for variant initialization.
   struct NilValue {
   };
 
+  /// Handler for values that are not in the Lexicon.
   struct NameDefault {
-    using self_type = NameDefault;
+    using self_type = NameDefault; ///< Self reference type.
 
-    NameDefault() = default;
-    ~NameDefault();
+    NameDefault() = default; ///< Default constructor.
+    ~NameDefault(); ///< Destructor.
 
+    /** Set the handler to return a fixed value.
+     *
+     * @param name Name to return.
+     * @return @a this
+     */
     self_type &operator=(std::string_view name);
+
+    /** Set the handler to call a function to compute the default name.
+     *
+     * @param handler Handler called to compute the name.
+     * @return @a this
+     */
     self_type &operator=(const UnknownValueHandler &handler);
 
+    /** Compute the default name for @a value.
+     *
+     * @param value Value without a name.
+     * @return A name for that value.
+     */
     std::string_view operator()(E value);
 
+    /// Internal clean up, needed for assignment and destructor.
     self_type &destroy();
 
+    /// Initialize internal variant to contain nothing.
     Content _content{Content::NIL};
+    /// Compute the required raw storage.
     static constexpr size_t N = std::max<size_t>(sizeof(std::string_view), sizeof(UnknownValueHandler));
+    /// Provide raw storage for the variant.
     char _store[N];
   };
 
@@ -288,7 +326,7 @@ protected:
   };
 
   /// Copy @a name in to local storage.
-  std::string_view localize(std::string_view name);
+  std::string_view localize(std::string_view const& name);
 
   /// Storage for names.
   MemArena _arena{1024};
@@ -429,7 +467,7 @@ Lexicon<E>::NameDefault::operator()(E value)
     return (*(reinterpret_cast<UnknownValueHandler *>(_store)))(value);
     break;
   default:
-    throw std::domain_error(detail::what("Lexicon: unknown enumeration '{}'", static_cast<uintmax_t>(value)));
+    throw std::domain_error(detail::what("Lexicon: unknown enumeration '{}'", uintmax_t(value)));
     break;
   }
 }
@@ -527,14 +565,14 @@ Lexicon<E>::Lexicon(const Require<e> &, const std::array<Pair, static_cast<size_
 
 template <typename E>
 std::string_view
-Lexicon<E>::localize(std::string_view name)
+Lexicon<E>::localize(std::string_view const& name)
 {
   auto span = _arena.alloc(name.size());
   memcpy(span.data(), name.data(), name.size());
   return span.view();
 }
 
-template <typename E> std::string_view Lexicon<E>::Lexicon::operator[](E value)
+template <typename E> std::string_view Lexicon<E>::operator[](E value)
 {
   auto spot = _by_value.find(value);
   if (spot != _by_value.end()) {
@@ -543,7 +581,7 @@ template <typename E> std::string_view Lexicon<E>::Lexicon::operator[](E value)
   return _name_default(value);
 }
 
-template <typename E> E Lexicon<E>::Lexicon::operator[](std::string_view name)
+template <typename E> E Lexicon<E>::operator[](std::string_view const& name)
 {
   auto spot = _by_name.find(name);
   if (spot != _by_name.end()) {
@@ -554,7 +592,7 @@ template <typename E> E Lexicon<E>::Lexicon::operator[](std::string_view name)
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::define(E value, const std::initializer_list<std::string_view> &names) -> self_type &
+Lexicon<E>::define(E value, const std::initializer_list<std::string_view> &names) -> self_type &
 {
   if (names.size() < 1) {
     throw std::invalid_argument("A defined value must have at least a primary name");
@@ -576,7 +614,7 @@ Lexicon<E>::Lexicon::define(E value, const std::initializer_list<std::string_vie
 template <typename E>
 template <typename... Args>
 auto
-Lexicon<E>::Lexicon::define(E value, Args &&... names) -> self_type &
+Lexicon<E>::define(E value, Args &&... names) -> self_type &
 {
   static_assert(sizeof...(Args) > 0, "A defined value must have at least a priamry name");
   return this->define(value, {std::forward<Args>(names)...});
@@ -584,21 +622,21 @@ Lexicon<E>::Lexicon::define(E value, Args &&... names) -> self_type &
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::define(const Pair &pair) -> self_type &
+Lexicon<E>::define(const Pair &pair) -> self_type &
 {
   return this->define(std::get<0>(pair), {std::get<1>(pair)});
 }
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::define(const Definition &init) -> self_type &
+Lexicon<E>::define(const Definition &init) -> self_type &
 {
   return this->define(init.value, init.names);
 }
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::set_default(std::string_view name) -> self_type &
+Lexicon<E>::set_default(std::string_view name) -> self_type &
 {
   _name_default = this->localize(name);
   return *this;
@@ -606,7 +644,7 @@ Lexicon<E>::Lexicon::set_default(std::string_view name) -> self_type &
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::set_default(E value) -> self_type &
+Lexicon<E>::set_default(E value) -> self_type &
 {
   _value_default = value;
   return *this;
@@ -614,7 +652,7 @@ Lexicon<E>::Lexicon::set_default(E value) -> self_type &
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::set_default(const UnknownValueHandler &handler) -> self_type &
+Lexicon<E>::set_default(const UnknownValueHandler &handler) -> self_type &
 {
   _name_default = handler;
   return *this;
@@ -622,7 +660,7 @@ Lexicon<E>::Lexicon::set_default(const UnknownValueHandler &handler) -> self_typ
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::set_default(const UnknownNameHandler &handler) -> self_type &
+Lexicon<E>::set_default(const UnknownNameHandler &handler) -> self_type &
 {
   _value_default = handler;
   return *this;
@@ -630,21 +668,21 @@ Lexicon<E>::Lexicon::set_default(const UnknownNameHandler &handler) -> self_type
 
 template <typename E>
 size_t
-Lexicon<E>::Lexicon::count() const
+Lexicon<E>::count() const
 {
   return _by_value.count();
 }
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::begin() const -> const_iterator
+Lexicon<E>::begin() const -> const_iterator
 {
   return const_iterator{static_cast<const Item *>(_by_value.begin())};
 }
 
 template <typename E>
 auto
-Lexicon<E>::Lexicon::end() const -> const_iterator
+Lexicon<E>::end() const -> const_iterator
 {
   return {};
 }

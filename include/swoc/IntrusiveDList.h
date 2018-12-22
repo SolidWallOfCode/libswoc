@@ -6,10 +6,9 @@
     inside the class and accessor functions for those links.
 
     @note This is a header only library.
+*/
 
-    @section license License
-
-    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+/*  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
     agreements.  See the NOTICE file distributed with this work for additional information regarding
     copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
     (the "License"); you may not use this file except in compliance with the License.  You may
@@ -464,7 +463,7 @@ IntrusiveDList<L>::const_iterator::const_iterator(const list_type *list, value_t
 
 template <typename L> IntrusiveDList<L>::iterator::iterator() {}
 
-template <typename L> IntrusiveDList<L>::iterator::iterator(IntrusiveDList *list, value_type *v) : super_type(list, v) {}
+template <typename L> IntrusiveDList<L>::iterator::iterator(list_type *list, value_type *v) : super_type(list, v) {}
 
 template <typename L>
 auto

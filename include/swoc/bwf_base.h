@@ -239,9 +239,10 @@ namespace bwf
     /** Standardized missing name method.
      *
      * @param w The destination buffer.
+     * @param spec Format specifier, used to determine the invalid name.
      * @return @a w
      */
-    static BufferWriter &err_invalid_name(BufferWriter &w, Spec const &);
+    static BufferWriter &err_invalid_name(BufferWriter &w, Spec const &spec);
   };
 
   /** An explicitly empty set of bound names.
@@ -1016,6 +1017,7 @@ bwprint(std::string &s, TextView fmt, Args &&... args)
   return bwprint_v(s, fmt, std::forward_as_tuple(args...));
 }
 
+/// @cond COVARY
 template <typename... Args>
 auto
 FixedBufferWriter::print(TextView fmt, Args &&... args) -> self_type &
@@ -1043,6 +1045,7 @@ FixedBufferWriter::print_v(bwf::Format const &fmt, std::tuple<Args...> const &ar
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, args));
 }
+/// @endcond
 
 // Special case support for @c Scalar, because @c Scalar is a base utility for some other utilities
 // there can be some unpleasant cirularities if @c Scalar includes BufferWriter formatting. If the

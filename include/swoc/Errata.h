@@ -83,7 +83,10 @@ public:
   /// Severity level at which the instance is a failure of some sort.
   static constexpr Severity FAILURE_SEVERITY{Severity::WARN};
 
-  struct Annotation {             // Forward declaration.
+  /** An annotation to the Errata consisting of a severity and informative text.
+   *
+   */
+  struct Annotation {
     using self_type = Annotation; ///< Self reference type.
 
     /// Default constructor.
@@ -120,9 +123,12 @@ public:
     unsigned _level{0};                           ///< Nesting level.
     std::string_view _text;                       ///< Annotation text.
 
+    /// @{{
     /// Policy and links for intrusive list.
     self_type *_next{nullptr};
     self_type *_prev{nullptr};
+    /// @}}
+    /// Intrusive list link descriptor.
     using Linkage = swoc::IntrusiveLinkage<self_type>;
 
     friend class Errata;
@@ -385,33 +391,45 @@ template <typename R> struct Rv : public std::tuple<R, Errata> {
   */
   Rv();
 
-  /** Construct with copy of @a result and empty Errata.
+  /** Construct with copy of @a result and empty (successful) Errata.
    *
-   * Construct with a specified @a result and a default (successful) @c Errata.
-   * @param result Return value / result.
+   * @param result Result of the operation.
    */
   Rv(result_type const &result);
 
   /** Construct with copy of @a result and move @a errata.
    *
-   * Construct with a specified @a result and a default (successful) @c Errata.
    * @param result Return value / result.
+   * @param errata Source errata to move.
    */
   Rv(result_type const &result, Errata &&errata);
+
+  /** Construct with copy of @a result and @a errata.
+   *
+   * @param result Return value / result.
+   * @param errata Source errata to copy.
+   */
   Rv(result_type const &result, const Errata &errata);
 
-  /** Construct with move of @a result and empty Errata.
+  /** Construct with move of @a result and empty (successful) Errata.
    *
    * @param result The return / result value.
    */
   Rv(result_type &&result);
 
-  /** Construct with result and move of @a errata.
+  /** Construct with a move of result and @a errata.
    *
-   * @param result The return / result value to assign.
+   * @param result The return / result value to move.
    * @param errata Status to move.
    */
   Rv(result_type &&result, Errata &&errata);
+
+  /** Construct with a move of result and a copy of @a errata.
+   *
+   * @param result The return / result value to move.
+   * @param errata Errata to copy.
+   */
+
   Rv(result_type &&result, const Errata &errata);
 
   /** Push a message in to the result.
@@ -424,8 +442,10 @@ template <typename R> struct Rv : public std::tuple<R, Errata> {
 
   /** Push a message in to the result.
    *
+   * @tparam Args Format string argument types.
    * @param level Severity of the message.
-   * @param text Text of the message.
+   * @param fmt Format string.
+   * @param args Arguments for @a fmt.
    * @return @a *this
    */
   template <typename... Args> self_type &note(Severity level, std::string_view fmt, Args &&... args);
