@@ -114,7 +114,7 @@ public:
    * @param name Name to look up.
    * @return The value for the @a name.
    */
-  E operator[](std::string_view const& name);
+  E operator[](std::string_view const &name);
 
   /// Define the @a names for a @a value.
   /// The first name is the primary name. All @a names must be convertible to @c std::string_view.
@@ -232,7 +232,7 @@ protected:
     using self_type = NameDefault; ///< Self reference type.
 
     NameDefault() = default; ///< Default constructor.
-    ~NameDefault(); ///< Destructor.
+    ~NameDefault();          ///< Destructor.
 
     /** Set the handler to return a fixed value.
      *
@@ -326,7 +326,7 @@ protected:
   };
 
   /// Copy @a name in to local storage.
-  std::string_view localize(std::string_view const& name);
+  std::string_view localize(std::string_view const &name);
 
   /// Storage for names.
   MemArena _arena{1024};
@@ -565,7 +565,7 @@ Lexicon<E>::Lexicon(const Require<e> &, const std::array<Pair, static_cast<size_
 
 template <typename E>
 std::string_view
-Lexicon<E>::localize(std::string_view const& name)
+Lexicon<E>::localize(std::string_view const &name)
 {
   auto span = _arena.alloc(name.size());
   memcpy(span.data(), name.data(), name.size());
@@ -581,7 +581,7 @@ template <typename E> std::string_view Lexicon<E>::operator[](E value)
   return _name_default(value);
 }
 
-template <typename E> E Lexicon<E>::operator[](std::string_view const& name)
+template <typename E> E Lexicon<E>::operator[](std::string_view const &name)
 {
   auto spot = _by_name.find(name);
   if (spot != _by_name.end()) {

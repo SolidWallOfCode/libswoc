@@ -71,7 +71,7 @@ namespace meta
    */
 
   /// Case hierarchy.
-  template <unsigned N> struct CaseTag : /** @cond DOXYGEN_FAIL */ public CaseTag<N - 1>  /** @endcond */ {
+  template <unsigned N> struct CaseTag : /** @cond DOXYGEN_FAIL */ public CaseTag<N - 1> /** @endcond */ {
     constexpr CaseTag() {}
     static constexpr unsigned value = N;
   };

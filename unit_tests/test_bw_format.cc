@@ -29,7 +29,7 @@
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
 
-#include "swoc/ext/catch.hpp"
+#include "catch.hpp"
 
 using namespace std::literals;
 using swoc::TextView;

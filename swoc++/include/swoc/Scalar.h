@@ -41,7 +41,7 @@ template <intmax_t N, typename C, typename T> class Scalar;
 
 namespace detail
 {
-/// @cond INTERNAL_DETAIL
+  /// @cond INTERNAL_DETAIL
 
   // @internal - although these conversion methods look bulky, in practice they compile down to
   // very small amounts of code due to dead code elimination and that all of the conditions are
@@ -151,7 +151,7 @@ namespace detail
       return Scalar<S, I, T>(scale_conversion_round_down<S, N>(_n));
     }
   };
-/// @endcond
+  /// @endcond
 } // namespace detail
 
 /** A class to hold scaled values.

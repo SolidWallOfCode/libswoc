@@ -21,7 +21,7 @@
 #include <string_view>
 #include <random>
 #include "swoc/MemArena.h"
-#include "swoc/ext/catch.hpp"
+#include "catch.hpp"
 
 using swoc::MemSpan;
 using swoc::MemArena;
