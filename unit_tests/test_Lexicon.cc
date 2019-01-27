@@ -19,7 +19,7 @@
 */
 
 #include "swoc/Lexicon.h"
-#include "swoc/ext/catch.hpp"
+#include "catch.hpp"
 
 // Example code for documentatoin
 // ---

@@ -23,7 +23,7 @@
 #include "swoc/swoc_meta.h"
 #include "swoc/TextView.h"
 
-#include "swoc/ext/catch.hpp"
+#include "catch.hpp"
 
 struct A {
   int _value;

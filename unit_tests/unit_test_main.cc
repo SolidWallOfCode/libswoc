@@ -21,7 +21,7 @@
  */
 
 #define CATCH_CONFIG_RUNNER
-#include "swoc/ext/catch.hpp"
+#include "catch.hpp"
 
 void EX_BWF_Format_Init();
 

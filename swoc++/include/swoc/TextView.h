@@ -1545,7 +1545,7 @@ template <typename V> class TransformView<void, V>
 {
   using self_type = TransformView; ///< Self reference type.
   /// Iterator over source, for internal use.
-  using iter      = decltype(static_cast<V *>(nullptr)->begin());
+  using iter = decltype(static_cast<V *>(nullptr)->begin());
 
 public:
   using source_view_type  = V; ///< Export source view type.
@@ -1602,7 +1602,7 @@ public:
   explicit operator bool() const { return _spot != _limit; }
 
 protected:
-  iter _spot; ///< Current location.
+  iter _spot;  ///< Current location.
   iter _limit; ///< End marker.
 };
 

@@ -26,7 +26,7 @@
 
 #include "swoc/IntrusiveHashMap.h"
 #include "swoc/bwf_base.h"
-#include "swoc/ext/catch.hpp"
+#include "catch.hpp"
 
 using swoc::IntrusiveHashMap;
 
