@@ -45,8 +45,8 @@ namespace detail
   /// @cond INTERNAL_DETAIL
 
   // @internal - although these conversion methods look bulky, in practice they compile down to
-  // very small amounts of code due to dead code elimination and that all of the conditions are
-  // compile time constants.
+  // very small amounts of code due to the conditions being compile time constant - the non-taken
+  // clauses are dead code and eliminated by the compiler.
 
   // The general case where neither N nor S are a multiple of the other seems a bit long but this
   // minimizes the risk of integer overflow.  I need to validate that under -O2 the compiler will
@@ -54,9 +54,9 @@ namespace detail
   // N,S are powers of 2 I have verified recent GNU compilers will optimize to bit operations.
 
   // Convert a count @a c that is scale @a S to scale @c N
-  template <intmax_t N, intmax_t S>
-  intmax_t
-  scale_conversion_round_up(intmax_t c)
+  template <intmax_t N, intmax_t S, typename C>
+  C
+  scale_conversion_round_up(C c)
   {
     typedef std::ratio<N, S> R;
     if (N == S) {
@@ -71,9 +71,9 @@ namespace detail
   }
 
   // Convert a count @a c that is scale @a S to scale @c N
-  template <intmax_t N, intmax_t S>
-  intmax_t
-  scale_conversion_round_down(intmax_t c)
+  template <intmax_t N, intmax_t S, typename C>
+  C
+  scale_conversion_round_down(C c)
   {
     typedef std::ratio<N, S> R;
     if (N == S) {
@@ -988,10 +988,10 @@ Scalar<N, C, T>::minus(Counter n) const -> self_type
  * @endcode
  */
 template <intmax_t N, typename C>
-constexpr Scalar<N, C, tag::generic>
+C
 round_up(C value)
 {
-  return {round_up(value)};
+  return N * detail::scale_conversion_round_up<N, 1>(value);
 }
 
 /** Explicitly round @a vlue to a multiple of @a N.
@@ -1008,10 +1008,10 @@ round_up(C value)
  * @endcode
  */
 template <intmax_t N, typename C>
-constexpr Scalar<N, C, tag::generic>
+C
 round_down(C value)
 {
-  return {round_down(value)};
+  return N * detail::scale_conversion_round_down<N, 1>(value);
 }
 
 namespace detail
