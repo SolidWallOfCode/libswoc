@@ -102,9 +102,9 @@ public:
 
   /** Construct from literal string.
 
-      Construct directly from an array of characters. All elements of the array are included in the
-      view unless the last element is nul, in which case it is elided. If this is inapropriate then
-      a constructor with an explicit size should be used.
+      Construct directly from a literal string. All elements of the array are included in the view
+      unless the last element is nul, in which case it is elided. If this is inappropriate then a
+      constructor with an explicit size should be used.
 
       @code
         TextView a("A literal string");
@@ -112,6 +112,20 @@ public:
       The last character in @a a will be 'g'.
    */
   template <size_t N> constexpr TextView(const char (&s)[N]);
+
+  /** Construct from character buffer.
+
+      Construct directly from an array of characters with an explicit size. This is useful to
+      - Construct from a temporary buffer which may be larger than the actual string.
+      - To force the inclusion of a terminating null byte.
+
+      @code
+        char buffer[N];
+        // Fill @a k characters in @a buffer.
+        TextView a(buffer, k);
+      @endcode
+   */
+  template <size_t N> constexpr TextView(const char (&s)[N], size_t n);
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -779,6 +793,7 @@ inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) : super_type(that) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1) {}
+template <size_t N> constexpr TextView::TextView(const char (&s)[N], size_t n) : super_type(s, n) {}
 
 /// @cond OVERLOAD
 inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n) {}
