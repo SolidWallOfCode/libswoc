@@ -145,24 +145,24 @@ It is expected that |MemArena| will be used most commonly for string storage, wh
 strings and can't guarantee the lifetime of strings in arguments. A common function that is used is
 a "localize" function that takes a string, allocates a copy in the arena, and returns a view of it. E.g.
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 37-43
 
 This can then be used to create a view inside the arena.
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 187-188
 
 That's about it for putting strings in the arena. Now, consider a class to be put in an arena.
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 147-151,155-164, 185
 
 A key point to note is :arg:`name` is a view, not a :code:`std::string`. This means it requires
 storage elsewhere, i.e. in the arena. The string :arg:`text` has already been localized so instances
 can be created safely
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 190-196
 
 All of these are in the arena and are de-allocated when the arena is cleared or destructed. Note a
@@ -180,18 +180,18 @@ Otherwise the size needed is known and :libswoc:`MemArena::require` is used  to 
 memory needed for the string. :libswoc:`MemArena::alloc` is then used to allocate the already
 initialized memory.
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 201-208
 
 The code is a bit awkward and repetitious due to being example code. Production code would look
 something like
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 132-143
 
 Because this is a function there's no more repetition of the format string and arguments in use.
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 210-212
    :emphasize-lines: 1
 
@@ -207,7 +207,7 @@ total size needed can be made, all of the objects, including the arena, can be p
 single call to :code:`malloc`. This is used in :class:`Errata` for performance reasons. Here is a
 simplified example.
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 65-67
 
 Things of note:
@@ -228,7 +228,7 @@ code:`std::unique_ptr` by overriding the cleanup.
 
 Now for the actual example. This uses the :code:`localize` function from the previous example.
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 79-102
    :emphasize-lines: 1,10
    :linenos:
@@ -237,7 +237,7 @@ In this code, :arg:`ta` is the local bootstrap temporary. The :code:`std::unique
 take as a "deleter" a function taking a :code:`MemArena *`. The actual function is the lambda in
 :arg:`destroyer` declared in line 1. This could have been done directly inline, such as
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 118-121
 
 but I think separating it is better looking code.
@@ -254,7 +254,7 @@ difference for objects that are intended to be very small if no memory is alloca
 
 Two styles of lambda use have been shown, but there is one more of interest.
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 125-128
 
 This requires the separate declaration of the lambda but cuts the :code:`std::unique_ptr` size in half. Note
@@ -264,22 +264,22 @@ it must be passed as an argument, it cannot be omitted. But, hey, it saves 8 byt
 
 Instead of a lambda, one can define a function
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 53-57
 
 and use that
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 112-114
 
 Finally one can define a functor
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 45-51
 
 and use that
 
-.. literalinclude:: ../../src/unit_tests/ex_MemArena.cc
+.. literalinclude:: ../../unit_tests/ex_MemArena.cc
    :lines: 106-108
 
 Note in this case the :code:`std::unqiue_ptr` is only 8 bytes (a single pointer) and doesn't

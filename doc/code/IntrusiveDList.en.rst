@@ -78,7 +78,7 @@ Examples
 In this example the goal is to have a list of :code:`Message` objects. First the class is declared
 along with the internal linkage support.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 37-62
 
 The struct :code:`Linkage` is used both to provide the descriptor to :code:`IntrusiveDList` and to
@@ -88,35 +88,35 @@ used only by a specific container class (:code:`Container`) the struct is made p
 
 The implementation of the link accessor methods.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 64-73
 
 A method to check if the message is in a list.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 75-79
 
 The container class for the messages could be implemented as
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 81-98
 
 The :code:`debug` method takes a format string (:arg:`fmt`) and an arbitrary set of arguments, formats
 the arguments in to the string, and adds the new message to the list.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 122-131
 
 The :code:`print` method demonstrates the use of the range :code:`for` loop on a list.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 142-148
 
 The maximum severity level can also be computed even more easily using :code:`std::max_element`.
 This find the element with the maximum severity and returns that severity, or :code:`LVL_DEBUG` if
 no element is found (which happens if the list is empty).
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 134-140
 
 Other methods for the various severity levels would be implemented in a similar fashion. Because the
@@ -127,7 +127,7 @@ risky. One approach, illustrated here, is to use :libswoc:`IntrusiveDList::take_
 element before destroying it. Another option is to allocation the elements in a :class:`MemArena` to
 avoid the need for any explicit cleanup.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 106-114
 
 There is a method specifically for this situation as well, :libswoc:`IntrusiveDList::apply` which
@@ -138,13 +138,13 @@ In some cases the elements of the list are subclasses and the links are declared
 and are therefore of the super class type. For instance, in the unit test a class :code:`Thing` is
 defined for testing.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 158
 
 Later on, to validate use on a subclass, :code:`PrivateThing` is defined as a subclass of
 :code:`Thing`.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 168
 
 However, the link members :code:`_next` and :code:`_prev` are of type :code:`Thing*` but the
@@ -153,7 +153,7 @@ descriptor for a list of :code:`PrivateThing` must have link accessors that retu
 :code:`ts::ptr_ref_cast<X, T>` that converts a member of type :code:`T*` to a reference to a pointer
 to :code:`X`, e.g. :code:`X*&`. This is used in the setup for testing :code:`PrivateThing`.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 176-187
 
 While this can be done directly with :code:`reinterpret_cast<>`, use of :code:`ts::ptr_cast` avoids
@@ -163,7 +163,7 @@ For convenience there are two helper templates provided. The first is :code:`Int
 link members, creates the linkage structure required for :code:`IntrusiveDList`. For the :code:`Thing` class
 above, this looks like
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 158-165
 
 For subclasses, there is :code:`IntrusiveLinkageRebind<T,L>` which rebinds the superclass links to
@@ -171,7 +171,7 @@ the subclass. The first template argument is the class to which to rebind (the s
 second template argument is the linkage structure to rebind. For :code:`PrivateThing2`, which is
 identical to :code:`PrivateThing` except for using this helper template, the result is
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 196-211
 
 The :code:`friend` is required because :code:`Thing` is a non-public superclass and therefore is not

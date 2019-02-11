@@ -252,7 +252,7 @@ When no other useful result can be returned, |TV| methods return a reference to 
 makes chaining methods easy. If a list consisted of colon separated elements, each of which was
 of the form "A.B.old" and just the "A.B" part was needed, sans leading white space:
 
-.. literalinclude:: ../../src/unit_tests/ex_TextView.cc
+.. literalinclude:: ../../unit_tests/ex_TextView.cc
    :lines: 223-227
 
 Parsing with TextView
@@ -270,7 +270,7 @@ CSV Example
 For example, assume :arg:`value` contains a null terminated string which is possibly several tokens
 separated by commas.
 
-.. literalinclude:: ../../src/unit_tests/ex_TextView.cc
+.. literalinclude:: ../../unit_tests/ex_TextView.cc
    :lines: 26,40-50
 
 .. sidebar:: Verification
@@ -292,7 +292,7 @@ A similar case is parsing a list of key / value pairs in a comma separated list.
 "key=value" where white space is ignored. In this case it is also permitted to have just a keyword
 for values that are boolean.
 
-.. literalinclude:: ../../src/unit_tests/ex_TextView.cc
+.. literalinclude:: ../../unit_tests/ex_TextView.cc
    :lines: 26,52-62
 
 .. sidebar:: Verification
@@ -316,7 +316,7 @@ minimal memory allocations.
 
 This example counts the number of code lines in the documenations ``conf.py`` file.
 
-.. literalinclude:: ../../src/unit_tests/ex_TextView.cc
+.. literalinclude:: ../../unit_tests/ex_TextView.cc
    :lines: 203-217
 
 The |TV| :arg:`src` is constructed from the :code:`std::string` :arg:`content` which contains the
@@ -342,7 +342,7 @@ the tokens are pulled off in a streaming style with the source :code:`TextView` 
 reference in order to be updated by the tokenizer. Further, some callers want the quotes, and some
 do not, so a flag to strip quotes from the resulting elements is needed. The final result looks like
 
-.. literalinclude:: ../../src/unit_tests/ex_TextView.cc
+.. literalinclude:: ../../unit_tests/ex_TextView.cc
    :lines: 91-123
 
 .. sidebar:: Verification

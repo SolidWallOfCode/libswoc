@@ -26,9 +26,11 @@ Scalar
 
    :libswoc:`Reference documentation <swoc::Scalar>`.
 
-Scalar is a header only library that provides scaled and typed numerical values. Using Scalar
-starts with defining types which have a *scale factor* and optionally a *tag*. Values in an instance
-of Scalar are always multiples of the scale factor.
+Scalar is a header only library that provides scaled and typed numerical values. This can be used to
+create data types that are restricted to being multiples of integral value, or for creating types
+that act like integers but are a distinct type (thus making overloads and argument ordering simpler
+and more robust). Generally using Scalar starts with defining types which have a *scale factor* and
+optionally a *tag*. Values in an instance of Scalar are always multiples of the scale factor.
 
 The tag is used to create categories of related types, the same underlying "metric" at different
 scales. To enforce this Scalar does not allow assignment between instances with different tags. If
@@ -246,13 +248,25 @@ vs. the original code with magic constants and the hope that the value is scaled
 Esoteric Uses
 --------------
 
-Scalar type can be useful even with only temporaries. For instance, to round to the nearest 100.
+In theory Scalar types can be useful even with only temporaries. For instance, to round to the
+nearest 100.
 
 .. code-block:: cpp
 
    int round_100(int y) { return Scalar<100>(round_up(y)); }
 
-This could also be done in line just as well avoiding the boiler plate logic.
+This could also be done in line. However, when I tried to use this actual practice it was a bit
+cumbersome and not clearly better than the usual :code:`#define`. Therefore overloads of
+:libswoc:`round_up(C value)` and :libswoc:`round_down(C value)` are provided to do this boilerplace
+automatically. Both of these take a numeric template parameter, which is the scale, and a run time
+argument of a value, which is rounded to a multiple of the scale, as with a Scalar type. With these
+overloads, rounding is fast and simple.
+
+.. literalinclude:: ../../unit_tests/test_Scalar.cc
+   :lines: 76-82
+
+Note these overloads return a Scalar type, which converts to its effective value when used in a
+non Scalar context.
 
 Design Notes
 ============

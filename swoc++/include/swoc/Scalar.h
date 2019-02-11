@@ -923,6 +923,46 @@ Scalar<N, C, T>::minus(Counter n) const -> self
   return {_n - n};
 }
 
+/** Explicitly round @c value up to a multiple of @a N.
+ *
+ * @tparam N [explicit] Rounding unit.
+ * @tparam C [deduced] Base type of @a value.
+ * @param value Value to round.
+ * @return The smallest multiple of @a N that is at least as large as @a value.
+ *
+ * @code
+ * int r = swoc::round_up<10>(119); // r becomes 120.
+ * int r = swoc::round_up<10>(120); // r becomes 120.
+ * int r = swoc::round_up<10>(121); // r becomes 130.
+ * @endcode
+ */
+template <intmax_t N, typename C>
+constexpr Scalar<N, C, tag::generic>
+round_up(C value)
+{
+  return {round_up(value)};
+}
+
+/** Explicitly round @a vlue to a multiple of @a N.
+ *
+ * @tparam N [explicit] Rounding unit.
+ * @tparam C [deduced] Base type of @a value.
+ * @param value Value to round.
+ * @return The largest multiple of @a N that is not greater than @a value.
+ *
+ * @code
+ * int r = swoc::round_down<10>(119); // r becomes 110.
+ * int r = swoc::round_down<10>(120); // r becomes 120.
+ * int r = swoc::round_down<10>(121); // r becomes 120.
+ * @endcode
+ */
+template <intmax_t N, typename C>
+constexpr Scalar<N, C, tag::generic>
+round_down(C value)
+{
+  return {round_down(value)};
+}
+
 namespace detail
 {
   template <typename T>

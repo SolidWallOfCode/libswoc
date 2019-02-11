@@ -44,7 +44,7 @@ TEST_CASE("swoc_file", "[libts][swoc_file]")
 
 TEST_CASE("swoc_file_io", "[libts][swoc_file_io]")
 {
-  path file("src/unit_tests/test_swoc_file.cc");
+  path file("unit_tests/test_swoc_file.cc");
   std::error_code ec;
   std::string content = swoc::file::load(file, ec);
   REQUIRE(ec.value() == 0);

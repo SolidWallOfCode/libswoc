@@ -347,7 +347,7 @@ width <bwf::Spec::_min>` in order to disable any framework alignment operation.
 It is important to note a formatter can call another formatter. For example, the formatter for
 :code:`std::string` looks like
 
-.. literalinclude:: ../../include/swoc/bwf_base.h
+.. literalinclude:: ../../swoc++/include/swoc/bwf_base.h
    :lines: 811-833
 
 The code first copies the format specification and forces a leading radix. Next it does special
@@ -417,18 +417,18 @@ of taking C style variable arguments, these overloads take a reference to a :cod
 arguments. Such as tuple is easily created with `std::forward_as_tuple
 <http://en.cppreference.com/w/cpp/utility/tuple/forward_as_tuple>`__. An example of this is a container of messages. The message class is
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 37-48,62
    :emphasize-lines: 10
 
 The container class has a :code:`debug` method to append :code:`Message` instances using |BWF|.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 81-82,89,98
 
 The implementation is simple.
 
-.. literalinclude:: ../../src/unit_tests/ex_IntrusiveDList.cc
+.. literalinclude:: ../../unit_tests/ex_IntrusiveDList.cc
    :lines: 122-131
    :emphasize-lines: 6
 
@@ -471,13 +471,13 @@ Specific types
    printing the 10th through 20th characters of the view :code:`text` means passing
    :code:`text.substr(9,11)` instead of :code:`text`.
 
-   .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   .. literalinclude:: ../../unit_tests/ex_bw_format.cc
       :lines: 43-44,57-58
 
    However, for those terminally addicted to C style formatting, this can also be done by setting
    the precision.
 
-   .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   .. literalinclude:: ../../unit_tests/ex_bw_format.cc
       :lines: 59-60,44,47-50
 
 :libswoc:`TextView`
@@ -690,14 +690,14 @@ consider a wrapper to output a string in `rot13 <https://en.wikipedia.org/wiki/R
 
 The first step is to declare the wrapper class.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 651-652,655
 
 This class simply stores the :code:`std::string_view` for later use.
 
 Next the formatting for the wrapper class must be provided by overloading :code:`bwformat`.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 657-664
 
 This uses :libswoc:`transform_view_of` to do the character rotation. The lambda to perform the per
@@ -706,17 +706,17 @@ defined directly as an argument.
 
 That's all that is strictly required - this code now works as expected.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 685-689
 
 Note the universal initializer must be used because there is no constructor. That is easily fixed.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 651-655
 
 and now this works as expected.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 691-692
 
 Obviously other constructors can be provided for different ways to use the wrapper.
@@ -726,27 +726,27 @@ This is useful in some circumstances, one example being that it is desirable oth
 overload the format class construction, which is not possible using only constructors. In this case,
 a wrapper function could be done as
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 666-670
 
 and used
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 694-695
 
 Now, if there was a struct that needed Rot13 support
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 672-675
 
 then the wrapper could be overloaded with
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 677-681
 
 and used
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 697-699
 
 In general, provide wrapper class constructors unless there is a specific need for using free
@@ -833,7 +833,7 @@ The first use case is for an "external generator" which generates text based on 
 data. An example would be a "timestamp" generator which generates a timestamp based on the current
 time. This could be associated with the name "timestamp" and used like
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 140
 
 to generate output such as "Nov 16 12:21:05.545 Test Started".
@@ -863,14 +863,14 @@ start by doing that.
 
 First, the generator is defined.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 71-83
 
 This generates a time stamp with the month through seconds, dropping the leading year and clipping
 everything past the seconds. It then adds milliseconds. Sample output looks like "Nov 16
 11:40:20.833". This is then attached to the default global name binding in an initialization function called during process startup.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 125-132
    :emphasize-lines: 4
 
@@ -878,25 +878,25 @@ Because the test code is statically linked to the library, this must be done via
 from :code:`main` to be sure the library statics have been fully initialized. That taken care of,
 using the global name is trivial.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 140
 
 The output from a run is "Nov 16 12:21:05.545 Test Started". Note because this is a format
 specifier, all of the supported format style works without additional work. That's not very useful
 with a timestamp but consider printing the epoch time. Again, the generator is defined.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 85-89
 
 The generator is then assigned to the name "now".
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 128-131
    :emphasize-lines: 2
 
 And used with various styles.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 143
 
 Sample output from a run is "Time is 1542393187 5bef0d63 5BEF0D63 0x5bef0d63".
@@ -917,7 +917,7 @@ To start the example, a *very* simplified context will be used - it is
 hardwired for comprehensibility, in production code the elements would be initialized for each
 transaction.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 105-121
 
 This holds the interesting information. Next up is a context name binding class that binds an
@@ -925,7 +925,7 @@ instance of :code:`Context`. This can be done with the template :libswoc:`Contex
 template class provides both a map of names to generators and the subclass of :libswoc:`NameBinding`
 to pass to the formatter.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 150
 
 For each supported name a function is defined to extract that data. For fields and cookies, the
@@ -937,20 +937,20 @@ production code this might done with lambdas, or file scope functions, or via me
 
 First the field generators, as those are more complex.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 158-165
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 167-174
 
 :code:`NA` is a constant string used to indicate a missing field / cookie.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 67
 
 With the field generators in place, time to hook up the generators. For the direct member ones, just define a lambda in place.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 177-187
 
 In production code, :code:`cb` would be a process static, initialized at process start up, as the
@@ -958,12 +958,12 @@ relationship between the names and the generators doesn't change. Time to try it
 
 This test gets the "YRP" field.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 189-190
 
 This test reconstructs the URL without the query parameters.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 192-193
 
 That's a minimalist approach, using as little additional code as possible. But it's a bit funky to
@@ -1079,20 +1079,20 @@ part of a format specifier.
 
 The first step is to declare a class that will be the extractor functor.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 295-305
 
 This will be used only as a temporary passed to :libswoc:`BufferWriter::print_nfv` and is therefore
 always constructed with the format string. The format string left to parse is kept in :arg:`_fmt` which
 means the empty check is really just a check on that.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 311-314
 
 The function operator, which parses the format string to extract literals and specifiers, is a bit more
 complex.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 316-352
 
 The rough logic is
@@ -1106,30 +1106,30 @@ The rough logic is
    specifier. Because the same style format as the default is used, the parser for :libswoc:`bwf::Spec`
    can be used. Otherwise if something different were needed that parsing logic would replace
 
-   .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   .. literalinclude:: ../../unit_tests/ex_bw_format.cc
       :lines: 336
 
 *  If a specifier was found, check the name for a period. If found, split it and put the prefix in
    the name and the suffix in the extension.
 
-   .. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+   .. literalinclude:: ../../unit_tests/ex_bw_format.cc
       :lines: 341-346
 
 A name binding
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 359-360
 
 is declared and names are assigned in the usual way. In addition to assigning context related names,
 external generators can also be assigned to the name binding, which can be a useful feature to
 inject external names in addition to the context specific ones.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 395
 
 After that, everything is ready to try it out.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 397-408
 
 .. _example-custom-name-dispatch:
@@ -1139,17 +1139,17 @@ Name Binding Example
 
 Another approach is to override how name lookup is done in the binding. Because the field handling will be done in the override, methods are added to the :code:`Context` to do the generation for structured names, rather than placing that logic in the binding.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 204-225
 
 Next a subclass of :libswoc:`ContextNames` is created which binds to a :code:`ExContext` object.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 229-232
 
 Inside the class the function operator is overloaded to handle name look up.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 237-257
 
 The incoming name is taken from the specifier and split on a period. If that yields a non-empty
@@ -1159,12 +1159,12 @@ the direct access generators.
 
 An instance is constructed and the direct access names assigned
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 261-270
 
 and it's time to try it out.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 272-288
 
 This tests structured names, direct access names, external names ("version"), and some formatting.
@@ -1189,14 +1189,14 @@ logic is to keep a :libswoc:`bwf::Spec` in the class to hold the captured values
 indicating the capture state (it may be necessary to do two captures, if both the maximum size and
 precision are variable).
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 421-441
 
 The empty indicator needs to be a bit different in that even if the format is empty, if the last
 part of the format string had a capture (indicated by :arg:`_saved_p` being :code:`true`) a
 non-empty state needs to be returned to get an invocation to output that last specifier.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 446-449
 
 The capture logic takes advantage of the fact that only integers can be captured, and in fact
@@ -1204,7 +1204,7 @@ The capture logic takes advantage of the fact that only integers can be captured
 :code:`unsigned` and :code:`size_t` also, but otherwise is fairly restrictive. It should also
 generate an error instead of silently returning on a bad type, but you can't have everything.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 451-469
 
 The set up for the capture passes the capture element in the extension of the return specifier,
@@ -1213,7 +1213,7 @@ which this logic checks to know where to stash the captured value.
 The actual parsing logic will be skipped - it's in the example file
 :swoc:git:`src/unit_tests/ex_bw_format.cc` around line 471.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 471-472
    :lineno-match:
 
@@ -1228,7 +1228,7 @@ mandatory.
 
 Some example uses, along with verification of the results.
 
-.. literalinclude:: ../../src/unit_tests/ex_bw_format.cc
+.. literalinclude:: ../../unit_tests/ex_bw_format.cc
    :lines: 627-646
 
 Summary
