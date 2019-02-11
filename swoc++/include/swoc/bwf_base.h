@@ -70,6 +70,7 @@ namespace bwf
 
     char _fill = ' ';      ///< Fill character.
     char _sign = SIGN_NEG; ///< Numeric sign style.
+    /// Flag for how to align the output inside a limited width field.
     enum class Align : char {
       NONE,                            ///< No alignment.
       LEFT,                            ///< Left alignment '<'.
@@ -711,7 +712,6 @@ namespace bwf
 
 } // namespace bwf
 
-// This is the real printing logic, all other variants pack up their arguments and send them here.
 template <typename Binding, typename Extractor, typename... Args>
 BufferWriter &
 BufferWriter::print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args)
@@ -1097,7 +1097,7 @@ namespace bwf
    * @see As_Hex
    */
   struct HexDump {
-    std::string_view _view;
+    std::string_view _view; ///< A view of the memory to dump.
 
     /** Dump @a n bytes starting at @a mem as hex.
      *

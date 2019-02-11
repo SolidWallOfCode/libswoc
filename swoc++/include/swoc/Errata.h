@@ -213,7 +213,7 @@ public:
    */
   self_type &note(self_type const &that);
 
-  /** Copy messages from @a that to @a this, then clear @that.
+  /** Copy messages from @a that to @a this, then clear @a that.
    *
    * @param that Source object from which to copy.
    * @return @a *this

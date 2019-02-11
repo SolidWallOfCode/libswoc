@@ -215,6 +215,7 @@ public:
 
   /** Write formatted output of @a args to @a this buffer.
    *
+   * @tparam Binding Type for the name binding instance.
    * @tparam Extractor Format extractor type.
    * @tparam Args Types for format parameters.
    * @param names Name set for specifier names.
@@ -229,7 +230,10 @@ public:
    * as appropriate for the next chunk of format string. No literal is represented by a empty
    * @a lit.
    *
-   * @a names must be a subclass of @c NameBinding overriding methods as appropriate.
+   * The name binding must have a function operator that takes two arguments, a @c BufferWriter&
+   * and a format specifier @c bwf::Spec. It is expected to generate output to the @c BufferWriter
+   * instance based on data in the format specifier (which contains, among other things, the
+   * name which caused the binding to be invoked).
    *
    * @note This is the base implementation, all of the other variants are wrappers for this.
    *

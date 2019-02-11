@@ -107,7 +107,7 @@ namespace file
   protected:
     struct ::stat _stat; ///< File information.
 
-    friend self_type status(const path &, std::error_code &) noexcept;
+    friend self_type status(const path &file, std::error_code &ec) noexcept;
 
     friend int file_type(const self_type &);
     friend off_t file_size(const self_type &);
@@ -123,7 +123,7 @@ namespace file
    * @param ec Error code return.
    * @return Status of the file.
    */
-  file_status status(path const &file, std::error_code &ec) noexcept;
+  file_status status(const path &file, std::error_code &ec) noexcept;
 
   // Related free functions.
   // These are separate because they are not part of std::filesystem::path.

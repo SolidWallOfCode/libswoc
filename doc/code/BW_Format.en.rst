@@ -1181,7 +1181,7 @@ every detail.
 
 The first step is creating a format extractor, since the format string syntax is completley
 different from the default. This is done by creating a class to perform the extraction and hold
-state, although it will only be used as a temporary passed to :libswoc:`BufferWriter::print_nvf`.
+state, although it will only be used as a temporary passed to :libswoc:`BufferWriter::print_nfv`.
 The state is required to track "captured" arguments. These are used to emulate the '*' marker for
 integers in format specifiers, which indicate their value is in an argument, not the format string.
 This can be done both for maximum size and precision, so both of the must be capturable. The basic
