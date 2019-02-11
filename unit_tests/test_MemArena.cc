@@ -21,12 +21,29 @@
 #include <string_view>
 #include <random>
 #include "swoc/MemArena.h"
+#include "swoc/TextView.h"
 #include "catch.hpp"
 
 using swoc::MemSpan;
 using swoc::MemArena;
 using std::string_view;
+using swoc::TextView;
 using namespace std::literals;
+
+static constexpr std::string_view CHARS{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/."};
+std::uniform_int_distribution<short> char_gen{0, short(CHARS.size() - 1)};
+std::minstd_rand randu;
+
+namespace
+{
+TextView
+localize(MemArena &arena, TextView const &view)
+{
+  auto span = arena.alloc(view.size()).rebind<char>();
+  memcpy(span, view);
+  return span.view();
+}
+} // namespace
 
 TEST_CASE("MemArena generic", "[libswoc][MemArena]")
 {
@@ -265,21 +282,38 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
   }
   REQUIRE(a1.contains(span.data()));
   REQUIRE(a1.remaining() >= 384);
+
+  {
+    MemArena *arena = MemArena::make();
+    arena->~MemArena();
+  }
+
+  {
+    std::unique_ptr<MemArena, void (*)(MemArena *)> arena(MemArena::make(), [](MemArena *arena) -> void { arena->~MemArena(); });
+    static constexpr unsigned MAX = 512;
+    std::uniform_int_distribution<unsigned> length_gen{6, MAX};
+    char buffer[MAX];
+    for (unsigned i = 0; i < 50; ++i) {
+      auto n = length_gen(randu);
+      for (unsigned k = 0; k < n; ++k) {
+        buffer[k] = CHARS[char_gen(randu)];
+      }
+      localize(*arena, {buffer, n});
+    }
+    // Really, at this point just make sure there's no memory corruption on destruction.
+  }
 }
 
 // --- temporary allocation
 TEST_CASE("MemArena temporary", "[libswoc][MemArena][tmp]")
 {
   MemArena arena;
-  static constexpr std::string_view CHARS{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/."};
   std::vector<std::string_view> strings;
 
   static constexpr short MAX{8000};
   static constexpr int N{100};
 
-  std::uniform_int_distribution<short> char_gen{0, short(CHARS.size() - 1)};
   std::uniform_int_distribution<unsigned> length_gen{100, MAX};
-  std::minstd_rand randu;
   std::array<char, MAX> url;
 
   REQUIRE(arena.remaining() == 0);

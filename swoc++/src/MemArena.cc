@@ -46,6 +46,13 @@ MemArena::MemArena(swoc::MemArena::self_type &&that)
   that._reserve_hint                             = 0;
 }
 
+MemArena *
+MemArena::make(size_t n)
+{
+  MemArena tmp;
+  return tmp.make<MemArena>(std::move(tmp));
+}
+
 MemArena &
 MemArena::operator=(swoc::MemArena::self_type &&that)
 {

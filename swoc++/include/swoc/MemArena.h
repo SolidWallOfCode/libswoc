@@ -128,6 +128,7 @@ public:
 
   /// no copying
   MemArena(self_type const &that) = delete;
+
   /// Allow moving the arena.
   MemArena(self_type &&that);
 
@@ -136,6 +137,29 @@ public:
 
   self_type &operator=(self_type const &that) = delete;
   self_type &operator                         =(self_type &&that);
+
+  /** Make a self-contained instance.
+   *
+   * @param n The initial memory size hint.
+   * @return A new, self contained instance.
+   *
+   * Create an instance of @c MemArena that is stored in its own memory pool. The size hint @a n
+   * is adjusted to account for the space consumed by the @c MemArena instance. This instance
+   * will therefore always have done its initial internal memory allocation to provide space
+   * for itself.
+   *
+   * This is most useful for smaller objects that need to strongly minimize their size when not
+   * allocating memory. In that context, this enables being able to have a memory pool as needed
+   * at the cost of a only single pointer in the instance.
+   *
+   * @note This requires careful attention to detail for freezing and thawing, as the @c MemArena
+   * itself will be in the frozen memory and must be moved to the fresh allocation.
+   *
+   * @note @c delete must not be called on the returned pointer. Instead the @c MemArena destructor
+   * must be explicitly called, which will clean up all of the allocated memory. See the
+   * documentation for further details.
+   */
+  static self_type *make(size_t n = DEFAULT_BLOCK_SIZE);
 
   /** Allocate @a n bytes of storage.
 
