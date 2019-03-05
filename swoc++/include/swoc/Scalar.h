@@ -109,6 +109,10 @@ namespace detail
 
      Much of this is driven by the fact that the assignment operator, in some cases, can not be
      templated and therefore to have a nice interface for assignment this split is needed.
+
+     Note - the key point is the actual conversion is not done when the wrapper instance is created
+     but when the wrapper instance is assigned. That is what enables the conversion to be done in
+     the context of the destination, which is not otherwise possible.
    */
 
   // Unit value, to be rounded up.
@@ -994,7 +998,7 @@ round_up(C value)
   return N * detail::scale_conversion_round_up<N, 1>(value);
 }
 
-/** Explicitly round @a vlue to a multiple of @a N.
+/** Explicitly round @a value to a multiple of @a N.
  *
  * @tparam N [explicit] Rounding unit.
  * @tparam C [deduced] Base type of @a value.
