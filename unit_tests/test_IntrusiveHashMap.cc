@@ -93,7 +93,8 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   // Need to be bit careful cleaning up, since the link pointers are in the objects and deleting
   // the object makes it unsafe to use an iterator referencing that object. For a full cleanup,
   // the best option is to first delete everything, then clean up the map.
-  map.apply([](Thing *thing) { delete thing; });  map.clear();
+  map.apply([](Thing *thing) { delete thing; });
+  map.clear();
   REQUIRE(map.count() == 0);
 
   size_t nb = map.bucket_count();

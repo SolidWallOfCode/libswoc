@@ -78,12 +78,11 @@ namespace bwf
   Spec::parse(TextView fmt)
   {
     TextView num; // temporary for number parsing.
-    intmax_t n;
 
     _name = fmt.take_prefix_at(':');
     // if it's parsable as a number, treat it as an index.
-    num = _name;
-    n   = svto_radix<10>(num);
+    num    = _name;
+    auto n = svto_radix<10>(num);
     if (num.empty()) {
       _idx = static_cast<decltype(_idx)>(n);
     }
