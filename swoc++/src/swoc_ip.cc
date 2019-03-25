@@ -28,6 +28,7 @@
 using swoc::TextView;
 using swoc::svtoi;
 using swoc::svtou;
+using namespace swoc::literals;
 
 namespace
 {

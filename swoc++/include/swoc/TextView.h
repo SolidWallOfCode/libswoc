@@ -1643,20 +1643,21 @@ transform_view_of(V const &v)
 }
 /// @endcond
 
-/** Literal constructor for @c std::string_view.
- *
- * @param s The source string.
- * @param n Size of the source string.
- * @return A @c string_view
- *
- * @internal This is provided because the STL one does not support @c constexpr which seems
- * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
- * so hopefully someday this can be removed.
- */
-constexpr std::string_view operator"" _sv(const char *s, size_t n)
+namespace literals
 {
-  return {s, n};
-}
+  /** Literal constructor for @c std::string_view.
+   *
+   * @param s The source string.
+   * @param n Size of the source string.
+   * @return A @c string_view
+   *
+   * @internal This is provided because the STL one does not support @c constexpr which seems
+   * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
+   * so hopefully someday this can be removed.
+   */
+  constexpr std::string_view operator"" _sv(const char *s, size_t n) { return {s, n}; }
+} // namespace literals
+
 }; // namespace swoc
 
 namespace std

@@ -30,7 +30,7 @@
 #include "catch.hpp"
 
 using swoc::TextView;
-using namespace std::literals;
+using namespace swoc::literals;
 
 // CSV parsing.
 namespace
