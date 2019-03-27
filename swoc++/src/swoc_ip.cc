@@ -141,6 +141,19 @@ IpAddr::fill(sockaddr *sa, in_port_t port) const
   return sa;
 }
 
+socklen_t
+IpEndpoint::size() const
+{
+  switch (sa.sa_family) {
+  case AF_INET:
+    return sizeof(sockaddr_in);
+  case AF_INET6:
+    return sizeof(sockaddr_in6);
+  default:
+    return sizeof(sockaddr);
+  }
+}
+
 std::string_view
 IpEndpoint::family_name(uint16_t family)
 {

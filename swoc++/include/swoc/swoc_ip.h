@@ -113,6 +113,12 @@ union IpEndpoint {
   /// Test for IPv6.
   bool is_ip6() const;
 
+  /** Effectively size of the address.
+   *
+   * @return The size of the structure appropriate for the address family of the stored address.
+   */
+  socklen_t size() const;
+
   sa_family_t family() const;
 
   /// Set to be any address for family @a family.
