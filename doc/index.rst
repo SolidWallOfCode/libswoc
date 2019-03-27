@@ -37,6 +37,7 @@ unrelated projects. Hence this library. I hope you find it as useful as I have.
    code/Scalar.en
    code/Lexicon.en
    code/Errata.en
+   code/IPSpace.en
 
 Indices and tables
 ******************
