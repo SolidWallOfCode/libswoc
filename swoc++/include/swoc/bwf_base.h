@@ -710,6 +710,27 @@ namespace bwf
     return f.capture(w, spec, value);
   }
 
+  /** Extract the specifier type from an Extractor.
+   *
+   * @tparam EXTRACTOR Format extractor functor type.
+   * @tparam VIEW String view argument type.
+   * @tparam SPEC Specifier argument type.
+   * @param m The extractor method.
+   * @return A value of type @a SPEC
+   *
+   * This is never called - it exists to extract @a SPEC from a format extractor functor to be used
+   * to declare the specifier instance passed to the format extractor. When used in this fashion
+   * with @c decltype the extracted type is a reference and that must be removed for the actual
+   * declaration type. The purpose is to enable format extractors to subclass @c bwf::Spec to
+   * pass additional information along, particulary to a name binding without interfering with
+   * the base use case.
+   */
+  template <typename EXTRACTOR, typename VIEW, typename SPEC>
+  auto
+  extractor_spec_type(bool (EXTRACTOR::*m)(VIEW, SPEC)) -> SPEC
+  {
+  }
+
 } // namespace bwf
 
 template <typename Binding, typename Extractor, typename... Args>
@@ -717,6 +738,11 @@ BufferWriter &
 BufferWriter::print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args)
 {
   using namespace std::literals;
+  // This gets the actual specifier type from the Extractor - it must be a subclass of @c bwf::Spec
+  // but this enables format extractors to use a subclass if additional data needs to be passed
+  // via the specifier.
+  using spec_type =
+    typename std::remove_reference<decltype(bwf::extractor_spec_type(&std::remove_reference<Extractor>::type::operator()))>::type;
   static constexpr int N = sizeof...(Args); // Check argument indices against this.
   static const auto fa   = bwf::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
   int arg_idx            = 0; // the next argument index to be processed.
