@@ -896,17 +896,19 @@ IpMask::width() const
   return _mask;
 }
 
-bool
+inline bool
 operator==(IpMask const &lhs, IpMask const &rhs)
 {
   return lhs.width() == rhs.width();
 }
-bool
+
+inline bool
 operator!=(IpMask const &lhs, IpMask const &rhs)
 {
   return lhs.width() != rhs.width();
 }
-bool
+
+inline bool
 operator<(IpMask const &lhs, IpMask const &rhs)
 {
   return lhs.width() < rhs.width();
