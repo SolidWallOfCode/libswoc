@@ -29,9 +29,11 @@ set(EXTERNAL_HEADER_FILES
 
 set(CC_FILES
     src/bw_format.cc
+    src/bw_ip_format.cc
     src/Errata.cc
     src/swoc_ip.cc
     src/MemArena.cc
+    src/RBTree.cc
     src/swoc_file.cc
     src/TextView.cc
     )

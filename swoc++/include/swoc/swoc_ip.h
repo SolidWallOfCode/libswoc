@@ -970,13 +970,4 @@ IpNet::mask() const
   return _mask;
 }
 
-// BufferWriter formatting support.
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPAddr const &addr);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);
-inline BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, IPEndpoint const &addr)
-{
-  return bwformat(w, spec, &addr.sa);
-}
-
 } // namespace swoc

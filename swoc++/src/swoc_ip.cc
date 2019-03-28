@@ -388,9 +388,9 @@ IPAddr::parse(const std::string_view &str)
   TextView src{str};
   src.ltrim_if(&isspace);
 
-  if (src.prefix(5).find_first_of('.')) {
+  if (TextView::npos != src.prefix(5).find_first_of('.')) {
     _family = AF_INET;
-  } else if (src.prefix(6).find_first_of(':')) {
+  } else if (TextView::npos != src.prefix(6).find_first_of(':')) {
     _family = AF_INET6;
   } else {
     _family = AF_UNSPEC;

@@ -253,14 +253,14 @@ bwformat(BufferWriter &w, Spec const &spec, sockaddr const *addr)
     bool bracket_p = false;
     switch (addr->sa_family) {
     case AF_INET:
-      bwformat(w, spec, reinterpret_cast<sockaddr_in const *>(addr));
+      bwformat(w, spec, reinterpret_cast<sockaddr_in const *>(addr)->sin_addr.s_addr);
       break;
     case AF_INET6:
       if (port_p) {
         w.write('[');
         bracket_p = true; // take a note - put in the trailing bracket.
       }
-      bwformat(w, spec, reinterpret_cast<sockaddr_in6 const *>(addr));
+      bwformat(w, spec, reinterpret_cast<sockaddr_in6 const *>(addr)->sin6_addr);
       break;
     default:
       w.print("*Not IP address [{}]*", addr->sa_family);

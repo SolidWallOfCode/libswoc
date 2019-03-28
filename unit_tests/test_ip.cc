@@ -19,6 +19,7 @@
 */
 
 #include "swoc/swoc_ip.h"
+#include "swoc/bwf_ip.h"
 #include "catch.hpp"
 
 using namespace std::literals;
@@ -141,10 +142,11 @@ TEST_CASE("ats_ip_pton", "[libswoc][inet][ink_inet]")
   addr.load("c000::ffff:ffff:ffff:ffff:ffff:ffff");
   REQUIRE(addr == upper);
 }
+#endif
 
-TEST_CASE("inet formatting", "[libswoc][ink_inet][bwformat]")
+TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]")
 {
-  IpEndpoint ep;
+  IPEndpoint ep;
   std::string_view addr_1{"[ffee::24c3:3349:3cee:143]:8080"};
   std::string_view addr_2{"172.17.99.231:23995"};
   std::string_view addr_3{"[1337:ded:BEEF::]:53874"};
@@ -153,11 +155,12 @@ TEST_CASE("inet formatting", "[libswoc][ink_inet][bwformat]")
   std::string_view addr_6{"[1337:0:0:ded:BEEF:0:0:0]:53874"};
   std::string_view addr_7{"172.19.3.105:4951"};
   std::string_view addr_null{"[::]:53874"};
-  ts::LocalBufferWriter<1024> w;
+  swoc::LocalBufferWriter<1024> w;
 
-  REQUIRE(0 == ats_ip_pton(addr_1, &ep.sa));
+  REQUIRE(ep.parse(addr_1) == true);
   w.print("{}", ep);
   REQUIRE(w.view() == addr_1);
+#if 0
   w.reset().print("{::p}", ep);
   REQUIRE(w.view() == "8080");
   w.reset().print("{::a}", ep);
@@ -249,5 +252,5 @@ TEST_CASE("inet formatting", "[libswoc][ink_inet][bwformat]")
   ats_ip_pton(addr_1, &ep.sa);
   w.reset().print("{}", ts::bwf::Hex_Dump(ep));
   REQUIRE(w.view() == "ffee00000000000024c333493cee0143");
-}
 #endif
+}
