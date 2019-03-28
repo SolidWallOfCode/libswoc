@@ -279,7 +279,7 @@ bwformat(BufferWriter &w, Spec const &spec, sockaddr const *addr)
     } else {
       local_spec._min = 0;
     }
-    bwformat(w, local_spec, static_cast<uintmax_t>(IPEndpoint::port(addr)));
+    bwformat(w, local_spec, static_cast<uintmax_t>(IPEndpoint::host_order_port(addr)));
   }
   if (family_p) {
     local_spec._min = 0;

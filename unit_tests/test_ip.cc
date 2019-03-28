@@ -160,19 +160,19 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]")
   REQUIRE(ep.parse(addr_1) == true);
   w.print("{}", ep);
   REQUIRE(w.view() == addr_1);
-#if 0
-  w.reset().print("{::p}", ep);
+  w.clear().print("{::p}", ep);
   REQUIRE(w.view() == "8080");
-  w.reset().print("{::a}", ep);
+  w.clear().print("{::a}", ep);
   REQUIRE(w.view() == addr_1.substr(1, 24)); // check the brackets are dropped.
-  w.reset().print("[{::a}]", ep);
+  w.clear().print("[{::a}]", ep);
   REQUIRE(w.view() == addr_1.substr(0, 26)); // check the brackets are dropped.
-  w.reset().print("[{0::a}]:{0::p}", ep);
+  w.clear().print("[{0::a}]:{0::p}", ep);
   REQUIRE(w.view() == addr_1); // check the brackets are dropped.
-  w.reset().print("{::=a}", ep);
+  w.clear().print("{::=a}", ep);
   REQUIRE(w.view() == "ffee:0000:0000:0000:24c3:3349:3cee:0143");
-  w.reset().print("{:: =a}", ep);
+  w.clear().print("{:: =a}", ep);
   REQUIRE(w.view() == "ffee:   0:   0:   0:24c3:3349:3cee: 143");
+#if 0
   ep.setToLoopback(AF_INET6);
   w.reset().print("{::a}", ep);
   REQUIRE(w.view() == "::1");
@@ -194,33 +194,35 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]")
   REQUIRE(0 == ats_ip_pton(addr_null, &ep.sa));
   w.reset().print("{::a}", ep);
   REQUIRE(w.view() == "::");
-
-  REQUIRE(0 == ats_ip_pton(addr_2, &ep.sa));
-  w.reset().print("{::a}", ep);
+#endif
+  
+  REQUIRE(ep.parse(addr_2) == true);
+  w.clear().print("{::a}", ep);
   REQUIRE(w.view() == addr_2.substr(0, 13));
-  w.reset().print("{0::a}", ep);
+  w.clear().print("{0::a}", ep);
   REQUIRE(w.view() == addr_2.substr(0, 13));
-  w.reset().print("{::ap}", ep);
+  w.clear().print("{::ap}", ep);
   REQUIRE(w.view() == addr_2);
-  w.reset().print("{::f}", ep);
-  REQUIRE(w.view() == IP_PROTO_TAG_IPV4);
-  w.reset().print("{::fpa}", ep);
+  w.clear().print("{::f}", ep);
+  REQUIRE(w.view() == "ipv4");
+  w.clear().print("{::fpa}", ep);
   REQUIRE(w.view() == "172.17.99.231:23995 ipv4");
-  w.reset().print("{0::a} .. {0::p}", ep);
+  w.clear().print("{0::a} .. {0::p}", ep);
   REQUIRE(w.view() == "172.17.99.231 .. 23995");
-  w.reset().print("<+> {0::a} <+> {0::p}", ep);
+  w.clear().print("<+> {0::a} <+> {0::p}", ep);
   REQUIRE(w.view() == "<+> 172.17.99.231 <+> 23995");
-  w.reset().print("<+> {0::a} <+> {0::p} <+>", ep);
+  w.clear().print("<+> {0::a} <+> {0::p} <+>", ep);
   REQUIRE(w.view() == "<+> 172.17.99.231 <+> 23995 <+>");
-  w.reset().print("{:: =a}", ep);
+  w.clear().print("{:: =a}", ep);
   REQUIRE(w.view() == "172. 17. 99.231");
-  w.reset().print("{::=a}", ep);
+  w.clear().print("{::=a}", ep);
   REQUIRE(w.view() == "172.017.099.231");
-  w.reset().print("{}", ts::bwf::Hex_Dump(ep));
-  REQUIRE(w.view() == "ac1163e7");
-  w.reset().print("{:#X}", ts::bwf::Hex_Dump(ep));
-  REQUIRE(w.view() == "0XAC1163E7");
-
+//  w.clear().print("{}", swoc::bwf::Hex_Dump(ep));
+//  REQUIRE(w.view() == "ac1163e7");
+//  w.clear().print("{:#X}", swoc::bwf::Hex_Dump(ep));
+//  REQUIRE(w.view() == "0XAC1163E7");
+  
+#if 0
   // Documentation examples
   REQUIRE(0 == ats_ip_pton(addr_7, &ep.sa));
   w.reset().print("To {}", ep);
@@ -250,7 +252,7 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]")
   REQUIRE(w.view() == "0x1337beef");
 
   ats_ip_pton(addr_1, &ep.sa);
-  w.reset().print("{}", ts::bwf::Hex_Dump(ep));
+  w.reset().print("{}", swoc::bwf::Hex_Dump(ep));
   REQUIRE(w.view() == "ffee00000000000024c333493cee0143");
 #endif
 }
