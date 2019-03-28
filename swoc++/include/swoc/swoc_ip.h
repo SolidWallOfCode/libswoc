@@ -282,7 +282,7 @@ class IPAddr
   friend class IPRange;
   using self_type = IPAddr; ///< Self reference type.
 public:
-  IPAddr(); ///< Default constructor - invalid result.
+  IPAddr() = default; ///< Default constructor - invalid result.
 
   /// Construct using IPv4 @a addr.
   explicit constexpr IPAddr(in_addr_t addr);
@@ -321,7 +321,7 @@ public:
 
   /** Parse a string for an IP address.
 
-      The address resuling from the parse is copied to this object if the conversion is successful,
+      The address resulting from the parse is copied to this object if the conversion is successful,
       otherwise this object is invalidated.
 
       @return @c true on success, @c false otherwise.
@@ -766,6 +766,12 @@ IPEndpoint::invalidate()
   return *this;
 }
 
+inline void
+IPEndpoint::invalidate(sockaddr *addr)
+{
+  addr->sa_family = AF_UNSPEC;
+}
+
 inline bool
 IPEndpoint::is_valid() const
 {
@@ -856,9 +862,33 @@ IPEndpoint::host_order_port(sockaddr const *addr)
 
 // --- IPAddr variants ---
 
-constexpr IP4Addr::IP4Addr(in_addr_t addr) : _addr(addr) {}
+inline constexpr IP4Addr::IP4Addr(in_addr_t addr) : _addr(addr) {}
 
-constexpr IP6Addr::IP6Addr(in6_addr addr) : _addr(addr) {}
+inline IP4Addr::operator in_addr_t() const
+{
+  return _addr;
+}
+
+inline auto
+IP4Addr::operator=(in_addr_t ip) -> self_type &
+{
+  _addr = ip;
+  return *this;
+}
+
+inline constexpr IP6Addr::IP6Addr(in6_addr addr) : _addr(addr) {}
+
+inline auto
+IP6Addr::operator=(in6_addr ip) -> self_type &
+{
+  _addr = ip;
+  return *this;
+}
+
+inline IP6Addr::operator in6_addr const &() const
+{
+  return _addr;
+}
 
 // +++ IPRange +++
 
