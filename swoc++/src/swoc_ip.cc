@@ -186,7 +186,7 @@ IPEndpoint::parse(std::string_view const &str)
       if (addr.parse(addr_str)) {
         auto n{swoc::svto_radix<10>(port_str)};
         if (port_str.empty() && 0 < n && n <= std::numeric_limits<in_port_t>::max()) {
-          this->assign(addr, n);
+          this->assign(addr, htons(n));
           return true;
         }
       }
