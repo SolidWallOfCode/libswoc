@@ -195,7 +195,7 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]")
   w.reset().print("{::a}", ep);
   REQUIRE(w.view() == "::");
 #endif
-  
+
   REQUIRE(ep.parse(addr_2) == true);
   w.clear().print("{::a}", ep);
   REQUIRE(w.view() == addr_2.substr(0, 13));
@@ -217,11 +217,11 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]")
   REQUIRE(w.view() == "172. 17. 99.231");
   w.clear().print("{::=a}", ep);
   REQUIRE(w.view() == "172.017.099.231");
-//  w.clear().print("{}", swoc::bwf::Hex_Dump(ep));
-//  REQUIRE(w.view() == "ac1163e7");
-//  w.clear().print("{:#X}", swoc::bwf::Hex_Dump(ep));
-//  REQUIRE(w.view() == "0XAC1163E7");
-  
+  //  w.clear().print("{}", swoc::bwf::Hex_Dump(ep));
+  //  REQUIRE(w.view() == "ac1163e7");
+  //  w.clear().print("{:#X}", swoc::bwf::Hex_Dump(ep));
+  //  REQUIRE(w.view() == "0XAC1163E7");
+
 #if 0
   // Documentation examples
   REQUIRE(0 == ats_ip_pton(addr_7, &ep.sa));

@@ -861,7 +861,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e)
     "EHWPOISON: ",
   }};
   // This provides convenient safe access to the errno short name array.
-  auto short_name = [](int n) { return n < int(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
+  auto short_name = [](int n) { return 0 < n && n < int(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
   static const bwf::Format number_fmt{"[{}]"sv}; // numeric value format.
   if (spec.has_numeric_type()) {                 // if numeric type, print just the numeric
                                                  // part.
