@@ -27,7 +27,7 @@
 namespace swoc
 {
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, in_addr_t addr);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, in_addr const &addr);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, in6_addr const &addr);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPAddr const &addr);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);

@@ -49,9 +49,9 @@ namespace swoc
 using bwf::Spec;
 
 BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, in_addr_t addr)
+bwformat(BufferWriter &w, Spec const &spec, in_addr const &addr)
 {
-  auto *ptr = reinterpret_cast<uint8_t *>(&addr);
+  auto *ptr = reinterpret_cast<uint8_t const *>(&addr.s_addr);
   Spec local_spec{spec}; // Format for address elements.
   bool align_p = false;
 
@@ -182,7 +182,7 @@ bwformat(BufferWriter &w, Spec const &spec, IPAddr const &addr)
 
   if (addr_p) {
     if (addr.is_ip4()) {
-      swoc::bwformat(w, spec, addr.raw_ip4());
+      swoc::bwformat(w, spec, in_addr{addr.raw_ip4()});
     } else if (addr.is_ip6()) {
       swoc::bwformat(w, spec, addr.raw_ip6());
     } else {
@@ -253,7 +253,7 @@ bwformat(BufferWriter &w, Spec const &spec, sockaddr const *addr)
     bool bracket_p = false;
     switch (addr->sa_family) {
     case AF_INET:
-      bwformat(w, spec, reinterpret_cast<sockaddr_in const *>(addr)->sin_addr.s_addr);
+      bwformat(w, spec, reinterpret_cast<sockaddr_in const *>(addr)->sin_addr);
       break;
     case AF_INET6:
       if (port_p) {
