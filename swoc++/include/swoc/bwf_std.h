@@ -24,6 +24,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include "swoc/bwf_base.h"
 
 namespace std

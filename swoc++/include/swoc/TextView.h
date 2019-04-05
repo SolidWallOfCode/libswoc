@@ -708,7 +708,6 @@ public:
   /// @cond OVERLOAD
   // These methods are all overloads of other methods, defined in order to make the API more
   // convenient to use. Mostly these overload @c int for @c size_t so naked numbers work as expected.
-  constexpr TextView(const char *ptr, int n);
   self_type prefix(int n) const;
   self_type take_suffix(int n);
   self_type split_prefix(int n);
@@ -806,10 +805,6 @@ inline TextView::TextView(std::string const &str) : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) : super_type(that) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N], size_t n) : super_type(s, n) {}
-
-/// @cond OVERLOAD
-inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n) {}
-/// @endcond
 
 inline void
 TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set)

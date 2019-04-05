@@ -119,8 +119,8 @@ namespace file
           ec = std::error_code(errno, std::system_category());
         }
       }
+      ::close(fd);
     }
-    ::close(fd);
     return zret;
   }
 
