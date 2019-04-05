@@ -134,15 +134,15 @@ namespace bwf
    * extra tag with delimiters, e.g. "[tag]", was to be generated, this could be done with
    *
    * @code
-   *   w.print("Some other text{}.", bwf::Optional(flag, " [{}]", tag));
+   *   w.print("Some other text{}.", bwf::If(flag, " [{}]", tag));
    * @endcode
    *
    * @internal To disambiguate overloads, this is enabled only if there is at least one argument
    * to be passed to the format string.
    */
   template <typename... Args>
-  auto
-  Optional(bool flag, TextView const &fmt, Args &&... args) -> typename std::enable_if<sizeof...(Args), SubText<Args...>>::type
+  SubText<Args...>
+  If(bool flag, TextView const &fmt, Args &&... args)
   {
     return SubText<Args...>(flag ? fmt : TextView{}, std::forward_as_tuple(args...));
   }

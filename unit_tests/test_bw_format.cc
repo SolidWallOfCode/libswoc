@@ -599,16 +599,18 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   REQUIRE(w.view() == "Upper - |0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ|");
 
   w.clear().print("Leading{}{}{}.", swoc::bwf::Optional(" | {}  |", s1), swoc::bwf::Optional(" <{}>", empty),
-                  swoc::bwf::Optional(!s3.empty(), " [{}]", s3));
+                  swoc::bwf::If(!s3.empty(), " [{}]", s3));
   REQUIRE(w.view() == "Leading | Persia  | [Leif].");
   // Do it again, but this time as C strings (char * variants).
   w.clear().print("Leading{}{}{}.", swoc::bwf::Optional(" | {}  |", s3.data()), swoc::bwf::Optional(" <{}>", empty),
-                  swoc::bwf::Optional(!s3.empty(), " [{}]", s1.c_str()));
+                  swoc::bwf::If(!s3.empty(), " [{}]", s1.c_str()));
   REQUIRE(w.view() == "Leading | Leif  | [Persia].");
   // Play with string_view
   w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
   REQUIRE(w.view() == "Clone? #. Evil Dave #. Evil Dave.");
   s2 = "";
+  w.clear().print("Leading{}{}{}", swoc::bwf::If(true, " true"), swoc::bwf::If(false, " false"), swoc::bwf::If(true, " Persia"));
+  REQUIRE(w.view() == "Leading true Persia");
   // Differentiate because the C string variant will generate output, as it's not nullptr,
   // but is a pointer to an empty string.
   w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" 1. {}", s2), swoc::bwf::Optional(" 2. {}", s2.data()));

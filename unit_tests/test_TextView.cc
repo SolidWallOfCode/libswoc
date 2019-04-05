@@ -32,7 +32,7 @@ using namespace std::literals;
 TEST_CASE("TextView Constructor", "[libswoc][TextView]")
 {
   static std::string base = "Evil Dave Rulez!";
-  unsigned ux = base.size();
+  unsigned ux             = base.size();
   TextView tv(base);
   TextView a{"Evil Dave Rulez"};
   TextView b{base.data(), base.size()};
