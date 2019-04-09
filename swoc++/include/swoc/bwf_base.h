@@ -832,6 +832,12 @@ BufferWriter::print_n(Binding const &names, TextView const &fmt)
   return print_nfv(names, bwf::Format::bind(fmt), std::make_tuple());
 }
 
+inline MemSpan<char>
+BufferWriter::aux_span()
+{
+  return {this->aux_data(), this->remaining()};
+}
+
 // ---- Formatting for specific types.
 
 // Must be first because it is used by other formatters, and is not inline.

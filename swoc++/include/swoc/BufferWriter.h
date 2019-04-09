@@ -109,6 +109,19 @@ public:
   /// @return The number of bytes which have not yet been written.
   size_t remaining() const;
 
+  /** A memory span of the unused bytes.
+   *
+   * @return A span of the unused bytes.
+   *
+   * This is a convenience method that is identical to
+   * @code
+   *   BufferWriter w;
+   *   // ...
+   *   MemSpan<char>{ w.aux_data(), w.remaining() };
+   * @endcode
+   */
+  MemSpan<char> aux_span();
+
   /** Increase the extent by @a n bytes.
    *
    * @param n Number of bytes to consume.
