@@ -89,6 +89,8 @@ namespace file
     /// Check if the path is not absolute.
     bool is_relative() const;
 
+    self_type parent_path() const;
+
     /// Access the path explicitly.
     char const *c_str() const;
 

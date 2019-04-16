@@ -22,10 +22,20 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+using namespace swoc::literals;
+
 namespace swoc
 {
 namespace file
 {
+  path
+  path::parent_path() const
+  {
+    TextView parent{_path};
+    parent.split_suffix_at(SEPARATOR);
+    return parent ? parent : "/"_tv;
+  };
+
   path &
   path::operator/=(std::string_view that)
   {

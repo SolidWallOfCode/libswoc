@@ -1638,6 +1638,11 @@ transform_view_of(V const &v)
 }
 /// @endcond
 
+/** User literals for TextView.
+ *
+ * - _tv : TextView
+ * - _sv : std::string_view
+ */
 namespace literals
 {
   /** Literal constructor for @c std::string_view.
@@ -1651,6 +1656,18 @@ namespace literals
    * so hopefully someday this can be removed.
    */
   constexpr std::string_view operator"" _sv(const char *s, size_t n) { return {s, n}; }
+
+  /** Literal constructor for @c swoc::TextView.
+   *
+   * @param s The source string.
+   * @param n Size of the source string.
+   * @return A @c string_view
+   *
+   * @internal This is provided because the STL one does not support @c constexpr which seems
+   * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
+   * so hopefully someday this can be removed.
+   */
+  constexpr swoc::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
 } // namespace literals
 
 }; // namespace swoc

@@ -40,6 +40,9 @@ TEST_CASE("swoc_file", "[libts][swoc_file]")
   REQUIRE(p2.string() == "/home/dave");
   path p3 = path("/home/dave") / "git/tools";
   REQUIRE(p3.string() == "/home/dave/git/tools");
+  REQUIRE(p3.parent_path().string() == "/home/dave/git");
+  REQUIRE(p3.parent_path().parent_path().string() == "/home/dave");
+  REQUIRE(p1.parent_path().string() == "/");
 }
 
 TEST_CASE("swoc_file_io", "[libts][swoc_file_io]")
