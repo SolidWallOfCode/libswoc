@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 include(GNUInstallDirs)
 
 set(HEADER_FILES
+    include/swoc/swoc_version.h
     include/swoc/BufferWriter.h
     include/swoc/bwf_base.h
     include/swoc/bwf_std.h
@@ -20,7 +21,8 @@ set(HEADER_FILES
     include/swoc/TextView.h
     include/swoc/swoc_file.h
     include/swoc/swoc_meta.h
-    include/swoc/bwf_ip.h include/swoc/swoc_version.h)
+    include/swoc/bwf_ip.h
+    )
 
 # These are external but required.
 set(EXTERNAL_HEADER_FILES
