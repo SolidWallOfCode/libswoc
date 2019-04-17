@@ -1,0 +1,4 @@
+from parts import *
+
+Part("swoc++/swoc++.part")
+Part("unit_tests/unit_tests.part")

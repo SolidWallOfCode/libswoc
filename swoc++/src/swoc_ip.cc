@@ -18,7 +18,6 @@
   the License.
  */
 
-#include <fstream>
 #include "swoc/swoc_ip.h"
 #include "swoc/swoc_meta.h"
 
@@ -116,6 +115,86 @@ IPAddr::assign(sockaddr const *addr)
   return *this;
 }
 
+bool
+IPEndpoint::tokenize(std::string_view str, std::string_view *addr, std::string_view *port, std::string_view *rest)
+{
+  TextView src(str); /// Easier to work with for parsing.
+  // In case the incoming arguments are null, set them here and only check for null once.
+  // it doesn't matter if it's all the same, the results will be thrown away.
+  std::string_view local;
+  if (!addr) {
+    addr = &local;
+  }
+  if (!port) {
+    port = &local;
+  }
+  if (!rest) {
+    rest = &local;
+  }
+
+  *addr = std::string_view{};
+  *port = std::string_view{};
+  *rest = std::string_view{};
+
+  // Let's see if we can find out what's in the address string.
+  if (src) {
+    bool colon_p = false;
+    src.ltrim_if(&isspace);
+    // Check for brackets.
+    if ('[' == *src) {
+      ++src; // skip bracket.
+      *addr = src.take_prefix_at(']');
+      if (':' == *src) {
+        colon_p = true;
+        ++src;
+      }
+    } else {
+      TextView::size_type last = src.rfind(':');
+      if (last != TextView::npos && last == src.find(':')) {
+        // Exactly one colon - leave post colon stuff in @a src.
+        *addr   = src.take_prefix(last);
+        colon_p = true;
+      } else { // presume no port, use everything.
+        *addr = src;
+        src.clear();
+      }
+    }
+    if (colon_p) {
+      TextView tmp{src};
+      src.ltrim_if(&isdigit);
+
+      if (tmp.data() == src.data()) {               // no digits at all
+        src.assign(tmp.data() - 1, tmp.size() + 1); // back up to include colon
+      } else {
+        *port = std::string_view(tmp.data(), src.data() - tmp.data());
+      }
+    }
+    *rest = src;
+  }
+  return !addr->empty(); // true if we found an address.
+}
+
+bool
+IPEndpoint::parse(std::string_view const &str)
+{
+  TextView addr_str, port_str, rest;
+  TextView src{TextView{str}.trim_if(&isspace)};
+
+  if (this->tokenize(src, &addr_str, &port_str, &rest)) {
+    if (rest.empty()) {
+      IPAddr addr;
+      if (addr.parse(addr_str)) {
+        auto n{swoc::svto_radix<10>(port_str)};
+        if (port_str.empty() && 0 < n && n <= std::numeric_limits<in_port_t>::max()) {
+          this->assign(addr, htons(n));
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 sockaddr *
 IPAddr::fill(sockaddr *sa, in_port_t port) const
 {
@@ -199,6 +278,140 @@ IPEndpoint::set_to_loopback(int family)
   return *this;
 }
 
+bool
+IP4Addr::parse(std::string_view const &text)
+{
+  TextView src{text};
+  unsigned int n = 0; /// # of octets
+  bool bracket_p = false;
+
+  if (src && '[' == *src) {
+    ++src;
+    src.ltrim_if(&isspace);
+    bracket_p = true;
+  }
+
+  uint8_t *octet = reinterpret_cast<uint8_t *>(&_addr);
+  while (n < SIZE && !src.empty()) {
+    TextView token{src.take_prefix_at('.')};
+    auto x = svto_radix<10>(token);
+    if (token.empty() && 0 <= x && x <= std::numeric_limits<uint8_t>::max()) {
+      octet[n++] = x;
+    } else {
+      break;
+    }
+  }
+
+  if (bracket_p) {
+    src.ltrim_if(&isspace);
+    if (']' != *src) {
+      n = 0; // pretend failure.
+    }
+  }
+
+  if (n == SIZE && src.empty()) {
+    return true;
+  }
+  _addr = INADDR_ANY;
+  return false;
+}
+
+bool
+IP6Addr::parse(std::string_view const &str)
+{
+  TextView src{str};
+  int n          = 0;
+  int empty_idx  = -1; // index of empty quad, -1 if not found yet.
+  bool bracket_p = false;
+  QUAD *quad     = reinterpret_cast<QUAD *>(&_addr);
+
+  if (src && '[' == *src) {
+    ++src;
+    src.ltrim_if(&isspace);
+    bracket_p = true;
+  }
+
+  while (n < N_QUADS && !src.empty()) {
+    TextView token{src.take_prefix_at(':')};
+    if (token.empty()) {
+      if (empty_idx > 0 || (empty_idx == 0 && n > 1)) {
+        // two empty slots OK iff it's the first two (e.g. "::1"), otherwise invalid.
+        break;
+      }
+      empty_idx = n;
+    } else {
+      TextView r;
+      auto x = svtoi(token, &r, 16);
+      if (r.size() == token.size()) {
+        quad[n++] = htons(x);
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Handle empty quads - invalid if empty and still had a full set of quads
+  if (empty_idx >= 0 && n < N_QUADS) {
+    if (static_cast<int>(n) <= empty_idx) {
+      while (empty_idx < static_cast<int>(N_QUADS)) {
+        quad[empty_idx++] = 0;
+      }
+    } else {
+      int k = 1;
+      for (; n - k >= empty_idx; ++k) {
+        quad[N_QUADS - k] = quad[n - k];
+      }
+      for (; N_QUADS - k >= empty_idx; ++k) {
+        quad[N_QUADS - k] = 0;
+        ++n; // track this so the validity check does the right thing.
+      }
+    }
+  }
+
+  if (bracket_p) {
+    src.ltrim_if(&isspace);
+    if (']' != *src) {
+      n = 0; // pretend failure.
+    }
+  }
+
+  if (n == N_QUADS && src.empty()) {
+    return true;
+  }
+  memset(&_addr, 0, sizeof(_addr));
+  return false;
+}
+
+bool
+IPAddr::parse(const std::string_view &str)
+{
+  TextView src{str};
+  src.ltrim_if(&isspace);
+
+  if (TextView::npos != src.prefix(5).find_first_of('.')) {
+    _family = AF_INET;
+  } else if (TextView::npos != src.prefix(6).find_first_of(':')) {
+    _family = AF_INET6;
+  } else {
+    _family = AF_UNSPEC;
+  }
+
+  // Do the real parse now
+  switch (_family) {
+  case AF_INET:
+    if (!_addr._ip4.parse(src)) {
+      _family = AF_UNSPEC;
+    }
+    break;
+  case AF_INET6:
+    if (!_addr._ip6.parse(src)) {
+      _family = AF_UNSPEC;
+    }
+    break;
+  }
+  return this->is_valid();
+}
+
 #if 0
 bool
 operator==(IPAddr const &lhs, sockaddr const *rhs)
@@ -272,99 +485,6 @@ IPAddr::cmp(self_type const &that) const
   return zret;
 }
 
-bool
-IPAddr::parse(const std::string_view &str)
-{
-  bool bracket_p  = false;
-  uint16_t family = AF_UNSPEC;
-  TextView src(str);
-  _family = AF_UNSPEC; // invalidate until/unless success.
-  src.trim_if(&isspace);
-  if (*src == '[') {
-    bracket_p = true;
-    family    = AF_INET6;
-    ++src;
-  } else { // strip leading (hex) digits and see what the delimiter is.
-    auto tmp = src;
-    tmp.ltrim_if(&isxdigit);
-    if (':' == *tmp) {
-      family = AF_INET6;
-    } else if ('.' == *tmp) {
-      family = AF_INET;
-    }
-  }
-  // Do the real parse now
-  switch (family) {
-  case AF_INET: {
-    unsigned int n = 0; /// # of octets
-    while (n < IP4_SIZE && !src.empty()) {
-      TextView token{src.take_prefix_at('.')};
-      TextView r;
-      auto x = svtoi(token, &r, 10);
-      if (r.size() == token.size()) {
-        _addr._octet[n++] = x;
-      } else {
-        break;
-      }
-    }
-    if (n == IP4_SIZE && src.empty()) {
-      _family = AF_INET;
-    }
-  } break;
-  case AF_INET6: {
-    int n         = 0;
-    int empty_idx = -1; // index of empty quad, -1 if not found yet.
-    while (n < IP6_QUADS && !src.empty()) {
-      TextView token{src.take_prefix_at(':')};
-      if (token.empty()) {
-        if (empty_idx > 0 || (empty_idx == 0 && n > 1)) {
-          // two empty slots OK iff it's the first two (e.g. "::1"), otherwise invalid.
-          break;
-        }
-        empty_idx = n;
-      } else {
-        TextView r;
-        auto x = svtoi(token, &r, 16);
-        if (r.size() == token.size()) {
-          _addr._quad[n++] = htons(x);
-        } else {
-          break;
-        }
-      }
-    }
-    if (bracket_p) {
-      src.ltrim_if(&isspace);
-      if (']' != *src) {
-        break;
-      } else {
-        ++src;
-      }
-    }
-    // Handle empty quads - invalid if empty and still had a full set of quads
-    if (empty_idx >= 0 && n < IP6_QUADS) {
-      if (static_cast<int>(n) <= empty_idx) {
-        while (empty_idx < static_cast<int>(IP6_QUADS)) {
-          _addr._quad[empty_idx++] = 0;
-        }
-      } else {
-        int k = 1;
-        for (; n - k >= empty_idx; ++k) {
-          _addr._quad[IP6_QUADS - k] = _addr._quad[n - k];
-        }
-        for (; IP6_QUADS - k >= empty_idx; ++k) {
-          _addr._quad[IP6_QUADS - k] = 0;
-          ++n; // track this so the validity check does the right thing.
-        }
-      }
-    }
-    if (n == IP6_QUADS && src.empty()) {
-      _family = AF_INET6;
-    }
-  } break;
-  }
-  return this->is_valid();
-}
-
 #endif
 
 bool
@@ -375,77 +495,8 @@ IPAddr::is_multicast() const
 
 IPEndpoint::IPEndpoint(std::string_view const &text)
 {
-  std::string_view addr, port;
-
   this->invalidate();
-  if (this->tokenize(text, &addr, &port)) {
-    IPAddr a(addr);
-    if (a.is_valid()) {
-      auto p = svtou(port);
-      if (0 <= p && p < 65536) {
-        this->assign(a, p);
-      }
-    }
-  }
-}
-
-bool
-IPEndpoint::tokenize(std::string_view str, std::string_view *addr, std::string_view *port, std::string_view *rest)
-{
-  TextView src(str); /// Easier to work with for parsing.
-  // In case the incoming arguments are null, set them here and only check for null once.
-  // it doesn't matter if it's all the same, the results will be thrown away.
-  std::string_view local;
-  if (!addr) {
-    addr = &local;
-  }
-  if (!port) {
-    port = &local;
-  }
-  if (!rest) {
-    rest = &local;
-  }
-
-  *addr = std::string_view{};
-  *port = std::string_view{};
-  *rest = std::string_view{};
-
-  // Let's see if we can find out what's in the address string.
-  if (src) {
-    bool colon_p = false;
-    src.ltrim_if(&isspace);
-    // Check for brackets.
-    if ('[' == *src) {
-      ++src; // skip bracket.
-      *addr = src.take_prefix_at(']');
-      if (':' == *src) {
-        colon_p = true;
-        ++src;
-      }
-    } else {
-      TextView::size_type last = src.rfind(':');
-      if (last != TextView::npos && last == src.find(':')) {
-        // Exactly one colon - leave post colon stuff in @a src.
-        *addr   = src.take_prefix_at(last);
-        colon_p = true;
-      } else { // presume no port, use everything.
-        *addr = src;
-        src.clear();
-      }
-    }
-    if (colon_p) {
-      TextView tmp{src};
-      src.ltrim_if(&isdigit);
-
-      if (tmp.data() == src.data()) {               // no digits at all
-        src.assign(tmp.data() - 1, tmp.size() + 1); // back up to include colon
-      } else {
-        *port = std::string_view(tmp.data(), src.data() - tmp.data());
-      }
-    }
-    *rest = src;
-  }
-  return !addr->empty(); // true if we found an address.
+  this->parse(text);
 }
 
 #if 0

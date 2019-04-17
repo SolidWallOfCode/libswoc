@@ -265,8 +265,8 @@ namespace bwf
    *  @tparam F The function signature for generators in this container.
    *
    * This is a base class used by different types of name containers. It is not expected to be used
-   * directly. The subclass should provide a function type @a F that is suitable for its particular
-   * generators.
+   * directly. A subclass should inherit from this by providing a function type @a F that is
+   * suitable for the subclass generators.
    */
   template <typename F> class NameMap
   {
@@ -340,15 +340,8 @@ namespace bwf
    * @a context will be the context for the binding passed to the formatter.
    *
    * This is used by the formatting logic by calling the @c bind method with a context object.
-   *
-   * This class doubles as a @c NameBinding, such that it passes itself to the formatting logic.
-   * In actual use that is more convenient for external code to overload name dispatch, which can
-   * then be done by subclassing this class and overriding the function operator. Otherwise most
-   * of the class would need to be duplicated in order to override a nested or associated binding
-   * class.
-   *
    */
-  template <typename T> class ContextNames : public NameMap<BufferWriter &(BufferWriter &, const Spec &, T &)>, public NameBinding
+  template <typename T> class ContextNames : public NameMap<BufferWriter &(BufferWriter &, const Spec &, T &)>
   {
   private:
     using self_type  = ContextNames; ///< self reference type.
@@ -363,6 +356,33 @@ namespace bwf
     using ExternalGenerator = std::function<ExternalGeneratorSignature>;
 
     using super_type::super_type; // inherit @c super_type constructors.
+
+    class Binding : public NameBinding
+    {
+    public:
+      /** Override of virtual method to provide an implementation.
+       *
+       * @param w Output.
+       * @param spec Format specifier for output.
+       * @return @a w
+       *
+       * This is called from the formatting logic to generate output for a named specifier. Subclasses
+       * that need to handle name dispatch differently need only override this method.
+       */
+      BufferWriter &
+      operator()(BufferWriter &w, const Spec &spec) const override
+      {
+        return _names(w, spec, _ctx);
+      }
+
+    protected:
+      Binding(ContextNames const &names, context_type &ctx) : _names(names), _ctx(ctx) {}
+
+      context_type &_ctx;         ///< Context for generators.
+      ContextNames const &_names; ///< Base set of names.
+
+      friend ContextNames;
+    };
 
     /** Assign the external generator @a bg to @a name.
      *
@@ -391,21 +411,21 @@ namespace bwf
      *
      * This is used when passing the context name map to the formatter.
      */
-    const NameBinding &bind(context_type &context);
+    Binding bind(context_type &context);
 
   protected:
-    /** Override of virtual method to provide an implementation.
+    /** Generate output based on the name in @a spec.
      *
      * @param w Output.
      * @param spec Format specifier for output.
+     * @param ctx The context object.
      * @return @a w
      *
      * This is called from the formatting logic to generate output for a named specifier. Subclasses
-     * that need to handle name dispatch differently need only override this method.
+     * that need to handle name dispatch differently should override this method. This method
+     * performs a name lookup in the local nameset.
      */
-    BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
-
-    context_type *_ctx = nullptr; ///< Context for generators.
+    virtual BufferWriter &operator()(BufferWriter &w, const Spec &spec, context_type &ctx) const;
   };
 
   /** Default global names.
@@ -501,22 +521,21 @@ namespace bwf
   }
 
   template <typename T>
-  inline const NameBinding &
-  ContextNames<T>::bind(context_type &ctx)
+  inline auto
+  ContextNames<T>::bind(context_type &ctx) -> Binding
   {
-    _ctx = &ctx;
-    return *this;
+    return {*this, ctx};
   }
 
   template <typename T>
   BufferWriter &
-  ContextNames<T>::operator()(BufferWriter &w, const Spec &spec) const
+  ContextNames<T>::operator()(BufferWriter &w, const Spec &spec, context_type &ctx) const
   {
     if (!spec._name.empty()) {
       if (auto spot = super_type::_map.find(spec._name); spot != super_type::_map.end()) {
-        spot->second(w, spec, *_ctx);
+        spot->second(w, spec, ctx);
       } else {
-        this->err_invalid_name(w, spec);
+        NameBinding::err_invalid_name(w, spec);
       }
     }
     return w;
@@ -830,6 +849,12 @@ BufferWriter &
 BufferWriter::print_n(Binding const &names, TextView const &fmt)
 {
   return print_nfv(names, bwf::Format::bind(fmt), std::make_tuple());
+}
+
+inline MemSpan<char>
+BufferWriter::aux_span()
+{
+  return {this->aux_data(), this->remaining()};
 }
 
 // ---- Formatting for specific types.

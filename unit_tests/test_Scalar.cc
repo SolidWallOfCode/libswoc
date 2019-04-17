@@ -27,7 +27,7 @@ using Paragraphs = swoc::Scalar<16, off_t>;
 using KB         = swoc::Scalar<1024, off_t>;
 using MB         = swoc::Scalar<KB::SCALE * 1024, off_t>;
 
-TEST_CASE("Scalar", "[libts][Scalar]")
+TEST_CASE("Scalar", "[libswoc][Scalar]")
 {
   constexpr static int SCALE   = 4096;
   constexpr static int SCALE_1 = 8192;
@@ -91,7 +91,7 @@ TEST_CASE("Scalar", "[libts][Scalar]")
   REQUIRE(1200 == swoc::round_down<100>(1200));
   REQUIRE(1200 == swoc::round_down<100>(1210));
 }
-TEST_CASE("Scalar Factors", "[libts][Scalar][factors]")
+TEST_CASE("Scalar Factors", "[libswoc][Scalar][factors]")
 {
   constexpr static int SCALE_1 = 30;
   constexpr static int SCALE_2 = 20;
@@ -134,7 +134,7 @@ TEST_CASE("Scalar Factors", "[libts][Scalar][factors]")
   REQUIRE(m_test.count() == 213);
 }
 
-TEST_CASE("Scalar Arithmetic", "[libts][Scalar][arithmetic]")
+TEST_CASE("Scalar Arithmetic", "[libswoc][Scalar][arithmetic]")
 {
   using KBytes  = swoc::Scalar<1024>;
   using KiBytes = swoc::Scalar<1024, long int>;
@@ -245,7 +245,7 @@ struct KBytes_tag {
   static constexpr std::string_view label{" bytes"};
 };
 
-TEST_CASE("Scalar Formatting", "[libts][Scalar][bwf]")
+TEST_CASE("Scalar Formatting", "[libswoc][Scalar][bwf]")
 {
   using KBytes  = swoc::Scalar<1024, long int, KBytes_tag>;
   using KiBytes = swoc::Scalar<1000, int>;

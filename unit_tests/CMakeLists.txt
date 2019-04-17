@@ -10,6 +10,7 @@ add_executable(test_libswoc
     test_Errata.cc
     test_IntrusiveDList.cc
     test_IntrusiveHashMap.cc
+    test_ip.cc
     test_Lexicon.cc
     test_MemSpan.cc
     test_MemArena.cc

@@ -708,7 +708,6 @@ public:
   /// @cond OVERLOAD
   // These methods are all overloads of other methods, defined in order to make the API more
   // convenient to use. Mostly these overload @c int for @c size_t so naked numbers work as expected.
-  constexpr TextView(const char *ptr, int n);
   self_type prefix(int n) const;
   self_type take_suffix(int n);
   self_type split_prefix(int n);
@@ -806,10 +805,6 @@ inline TextView::TextView(std::string const &str) : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) : super_type(that) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N], size_t n) : super_type(s, n) {}
-
-/// @cond OVERLOAD
-inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n) {}
-/// @endcond
 
 inline void
 TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set)
@@ -1643,6 +1638,11 @@ transform_view_of(V const &v)
 }
 /// @endcond
 
+/** User literals for TextView.
+ *
+ * - _tv : TextView
+ * - _sv : std::string_view
+ */
 namespace literals
 {
   /** Literal constructor for @c std::string_view.
@@ -1656,6 +1656,18 @@ namespace literals
    * so hopefully someday this can be removed.
    */
   constexpr std::string_view operator"" _sv(const char *s, size_t n) { return {s, n}; }
+
+  /** Literal constructor for @c swoc::TextView.
+   *
+   * @param s The source string.
+   * @param n Size of the source string.
+   * @return A @c string_view
+   *
+   * @internal This is provided because the STL one does not support @c constexpr which seems
+   * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
+   * so hopefully someday this can be removed.
+   */
+  constexpr swoc::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
 } // namespace literals
 
 }; // namespace swoc

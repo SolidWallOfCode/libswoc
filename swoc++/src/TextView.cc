@@ -29,6 +29,11 @@
 int
 swoc::memcmp(TextView const &lhs, TextView const &rhs)
 {
+  // Fast check - if the views are to the same memory, obviously equal.
+  if (lhs.data() == rhs.data() && lhs.size() == rhs.size()) {
+    return 0;
+  }
+
   int zret;
   size_t n;
 
@@ -51,6 +56,11 @@ swoc::memcmp(TextView const &lhs, TextView const &rhs)
 int
 strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
 {
+  // Fast check - if the views are to the same memory, obviously equal.
+  if (lhs.data() == rhs.data() && lhs.size() == rhs.size()) {
+    return 0;
+  }
+
   size_t len = std::min(lhs.size(), rhs.size());
   int zret   = strncasecmp(lhs.data(), rhs.data(), len);
   if (0 == zret) {

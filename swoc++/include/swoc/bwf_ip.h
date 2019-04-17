@@ -21,12 +21,20 @@
 #pragma once
 
 #include "swoc/bwf_base.h"
+#include "swoc/swoc_ip.h"
 #include <netinet/in.h>
 
 namespace swoc
 {
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, in_addr_t addr);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, in_addr const &addr);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, in6_addr const &addr);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPAddr const &addr);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, IPEndpoint const &addr)
+{
+  return bwformat(w, spec, &addr.sa);
+}
 
 } // namespace swoc

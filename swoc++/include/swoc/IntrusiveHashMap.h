@@ -342,6 +342,8 @@ IntrusiveHashMap<H>::Bucket::clear()
   _v       = nullptr;
   _count   = 0;
   _mixed_p = false;
+  // Need to clear these, or they persist after an expansion which breaks the active bucket list.
+  _link._next = _link._prev = nullptr;
 }
 
 template <typename H>

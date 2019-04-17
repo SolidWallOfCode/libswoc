@@ -236,7 +236,7 @@ TEST_CASE("BufferWriter Context 2", "[bufferwriter][example][context]")
     // Intercept name dispatch to check for structured names and handle those. If not structured,
     // chain up to super class to dispatch normally.
     BufferWriter &
-    operator()(BufferWriter &w, Spec const &spec) const
+    operator()(BufferWriter &w, Spec const &spec, ExContext const &ctx) const override
     {
       // Structured name prefixes.
       static constexpr TextView FIELD_TAG{"field"};
@@ -245,14 +245,14 @@ TEST_CASE("BufferWriter Context 2", "[bufferwriter][example][context]")
       TextView name{spec._name};
       TextView key = name.split_prefix_at('.');
       if (key == FIELD_TAG) {
-        _ctx->field_gen(w, spec, name);
+        ctx.field_gen(w, spec, name);
       } else if (key == COOKIE_TAG) {
-        _ctx->cookie_gen(w, spec, name);
+        ctx.cookie_gen(w, spec, name);
       } else if (!key.empty()) {
         // error case - unrecognized prefix
         w.print("!{}!", name);
       } else { // direct name, do normal dispatch.
-        this->super_type::operator()(w, spec);
+        this->super_type::operator()(w, spec, ctx);
       }
       return w;
     }
