@@ -697,6 +697,7 @@ namespace bwf
   {
     return std::any(&std::get<IDX>(t));
   }
+
   /// Create and return an array of specialized accessors, indexed by tuple index.
   template <typename T, size_t... N>
   std::array<TupleAccessorSignature<T>, sizeof...(N)> &
@@ -705,6 +706,7 @@ namespace bwf
     static std::array<TupleAccessorSignature<T>, sizeof...(N)> accessors = {&TupleAccessor<N>...};
     return accessors;
   }
+
   /// Get the Nth element of the tuple as @c std::any.
   template <typename T>
   std::any
@@ -712,6 +714,7 @@ namespace bwf
   {
     return Tuple_Accessor_Array<T>(std::make_index_sequence<std::tuple_size<T>::value>())[idx](t);
   }
+
   /// If capture is used, the format extractor must provide a @c capture method. This isn't required
   /// so make it compile time optional, but throw if the extractor sets up for capture and didn't
   /// provide one.
@@ -741,7 +744,7 @@ namespace bwf
    * to declare the specifier instance passed to the format extractor. When used in this fashion
    * with @c decltype the extracted type is a reference and that must be removed for the actual
    * declaration type. The purpose is to enable format extractors to subclass @c bwf::Spec to
-   * pass additional information along, particulary to a name binding without interfering with
+   * pass additional information along, particularly to a name binding without interfering with
    * the base use case.
    */
   template <typename EXTRACTOR, typename VIEW, typename SPEC>

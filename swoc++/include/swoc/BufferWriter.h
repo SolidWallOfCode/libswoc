@@ -254,6 +254,7 @@ public:
    */
   template <typename Binding, typename Extractor, typename... Args>
   BufferWriter &print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args);
+  BufferWriter &print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args);
 
   /** Write formatted output of @a args to @a this buffer.
    *
