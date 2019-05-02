@@ -52,6 +52,8 @@ public:
   /// Default constructor (empty buffer).
   constexpr MemSpan() = default;
 
+  constexpr MemSpan(self_type const &that) = default;
+
   /** Construct from a first element @a start and a @a count of elements.
    *
    * @param start First element.
@@ -101,7 +103,7 @@ public:
   bool operator!=(self_type const &that) const;
 
   /// Assignment - the span is copied, not the content.
-  self_type &operator=(self_type const &that);
+  self_type &operator=(self_type const &that) = default;
 
   /// Access element at index @a idx.
   T &operator[](size_t idx) const;
@@ -231,6 +233,8 @@ public:
 
   /// Default constructor (empty buffer).
   constexpr MemSpan() = default;
+
+  constexpr MemSpan(self_type const &that) = default;
 
   /** Construct from a pointer @a start and a size @a n bytes.
    *
@@ -640,15 +644,6 @@ size_t
 MemSpan<T>::size() const
 {
   return _count * sizeof(T);
-}
-
-template <typename T>
-auto
-MemSpan<T>::operator=(self_type const &that) -> self_type &
-{
-  _ptr   = that._ptr;
-  _count = that._count;
-  return *this;
 }
 
 template <typename T>
