@@ -690,7 +690,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex)
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span)
 {
-  if (spec._ext.size() && 'd' == spec._ext.front()) {
+  if ('x' == spec._type || 'X' == spec._type) {
     const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
     size_t block       = spec._prec > 0 ? spec._prec : span.size();
     TextView view{span.view()};

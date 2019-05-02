@@ -34,9 +34,13 @@ namespace swoc
 /** A span of contiguous piece of memory.
 
     A @c MemSpan does not own the memory to which it refers, it is simply a span of part of some
-    (presumably) larger memory object. The purpose is that frequently code needs to work on a specific
-    part of the memory. This can avoid copying or allocation by allocating all needed memory at once
-    and then working with it via instances of this class.
+    (presumably) larger memory object. It acts as a pointer, not a container - copy and assignment
+    change the span, not the memory to which the span refers.
+
+    The purpose is that frequently code needs to work on a specific part of the memory. This can
+    avoid copying or allocation by allocating all needed memory at once and then working with it via
+    instances of this class.
+
  */
 template <typename T> class MemSpan
 {
@@ -52,6 +56,7 @@ public:
   /// Default constructor (empty buffer).
   constexpr MemSpan() = default;
 
+  /// Copy constructor.
   constexpr MemSpan(self_type const &that) = default;
 
   /** Construct from a first element @a start and a @a count of elements.
@@ -137,10 +142,10 @@ public:
   /// Pointer to memory in the span.
   T *data() const;
 
-  /** Create a new span for a different type @a V on the same memory.
+  /** Make a copy of @a this span on the same memory but of type @a U.
    *
-   * @tparam V Type for the created span.
-   * @return A @c MemSpan which contains the same memory as instances of @a V.
+   * @tparam U Type for the created span.
+   * @return A @c MemSpan which contains the same memory as instances of @a U.
    */
   template <typename U = void> MemSpan<U> rebind() const;
 
@@ -199,12 +204,6 @@ public:
    */
   std::string_view view() const;
 
-  /** Support automatic conversion to string_view.
-   *
-   * @return A view of the memory in this span.
-   */
-  operator std::string_view() const;
-
   template <typename U> friend class MemSpan;
 };
 
@@ -214,6 +213,7 @@ public:
  *
  * - No subscript operator.
  * - No array initialization.
+ * - All other @c MemSpan types implicitly convert to this type.
  *
  * @internal I tried to be clever about the base template but there were too many differences
  * One major issue was the array initialization did not work at all if the @c void case didn't
@@ -224,17 +224,29 @@ template <> class MemSpan<void>
   using self_type = MemSpan; ///< Self reference type.
   template <typename U> friend class MemSpan;
 
+public:
+  using value_type = void; /// Export base type.
+
 protected:
-  void *_ptr   = nullptr; ///< Pointer to base of memory chunk.
-  size_t _size = 0;       ///< Number of elements.
+  value_type *_ptr = nullptr; ///< Pointer to base of memory chunk.
+  size_t _size     = 0;       ///< Number of elements.
 
 public:
-  using value_type = void;
-
   /// Default constructor (empty buffer).
   constexpr MemSpan() = default;
 
+  /// Copy constructor.
   constexpr MemSpan(self_type const &that) = default;
+
+  /** Cross type copy constructor.
+   *
+   * @tparam U Type for source span.
+   * @param that Source span.
+   *
+   * This enables any @c MemSpan to be automatically converted to a void span, just as any pointer
+   * can convert to a void pointer.
+   */
+  template <typename U> constexpr MemSpan(MemSpan<U> const &that);
 
   /** Construct from a pointer @a start and a size @a n bytes.
    *
@@ -365,12 +377,6 @@ public:
    * @return A @c string_view covering the span contents.
    */
   std::string_view view() const;
-
-  /** Support automatic conversion to string_view.
-   *
-   * @return A view of the memory in this span.
-   */
-  operator std::string_view() const;
 };
 
 // -- Implementation --
@@ -411,25 +417,33 @@ namespace detail
      * The critical part of this is the @c static_assert that guarantees the result is an integral
      * number of instances of @a U.
      */
-    static size_t
-    count(size_t size)
-    {
-      if (size % sizeof(U)) {
-        throw std::invalid_argument("MemSpan rebind where span size is not a multiple of the element size");
-      }
-      return size / sizeof(U);
-    }
+    static size_t count(size_t size);
   };
 
+  template <typename T, typename U>
+  size_t
+  is_span_compatible<T, U>::count(size_t size)
+  {
+    if (size % sizeof(U)) {
+      throw std::invalid_argument("MemSpan rebind where span size is not a multiple of the element size");
+    }
+    return size / sizeof(U);
+  }
+
   /// @cond INTERNAL_DETAIL
+  // Must specialize for rebinding to @c void because @c sizeof doesn't work. Rebinding from @c void
+  // is handled by the @c MemSpan<void>::rebind specialization and doesn't use this mechanism.
   template <typename T> struct is_span_compatible<T, void> {
     static constexpr bool value = true;
-    static size_t
-    count(size_t size)
-    {
-      return size;
-    }
+    static size_t count(size_t size);
   };
+
+  template <typename T>
+  size_t
+  is_span_compatible<T, void>::count(size_t size)
+  {
+    return size;
+  }
   /// @endcond
 
 } // namespace detail
@@ -703,12 +717,9 @@ MemSpan<T>::view() const
   return {static_cast<const char *>(_ptr), this->size()};
 }
 
-template <typename T> MemSpan<T>::operator std::string_view() const
-{
-  return this->view();
-}
-
 // --- void specialization ---
+
+template <typename U> constexpr MemSpan<void>::MemSpan(MemSpan<U> const &that) : _ptr(that._ptr), _size(that.size()) {}
 
 inline constexpr MemSpan<void>::MemSpan(value_type *ptr, size_t n) : _ptr{ptr}, _size{n} {}
 
@@ -840,18 +851,21 @@ template <typename U>
 MemSpan<U>
 MemSpan<void>::rebind() const
 {
-  return {static_cast<U *>(_ptr), detail::is_span_compatible<void, U>::count(_size)};
+  return {static_cast<U *>(_ptr), _size / sizeof(U)};
+}
+
+// Specialize so that @c void -> @c void rebinding compiles and works as expected.
+template <>
+inline MemSpan<void>
+MemSpan<void>::rebind() const
+{
+  return *this;
 }
 
 inline std::string_view
 MemSpan<void>::view() const
 {
   return {static_cast<char const *>(_ptr), _size};
-}
-
-inline MemSpan<void>::operator std::string_view() const
-{
-  return this->view();
 }
 
 } // namespace swoc

@@ -173,13 +173,13 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "0x200@0xbadd0956");
 
   swoc::MemSpan cspan{char_ptr, 6};
-  bw.clear().print("{::d}", cspan);
+  bw.clear().print("{:x}", cspan);
   REQUIRE(bw.view() == "64 65 6c 61 69 6e");
-  bw.clear().print("{:#:d}", cspan);
+  bw.clear().print("{:#x}", cspan);
   REQUIRE(bw.view() == "0x64 0x65 0x6c 0x61 0x69 0x6e");
-  bw.clear().print("{:#.2:d}", cspan);
+  bw.clear().print("{:#.2x}", cspan);
   REQUIRE(bw.view() == "0x6465 0x6c61 0x696e");
-  bw.clear().print("{::d}", cspan.rebind());
+  bw.clear().print("{:x}", cspan.rebind());
   REQUIRE(bw.view() == "64656c61696e");
 
   TextView sv{"abc123"};

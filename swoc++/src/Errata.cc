@@ -48,7 +48,7 @@ Errata::Data::localize(string_view src)
 {
   auto span = _arena.alloc(src.size());
   memcpy(span.data(), src.data(), src.size());
-  return span;
+  return span.view();
 }
 
 /* ----------------------------------------------------------------------- */

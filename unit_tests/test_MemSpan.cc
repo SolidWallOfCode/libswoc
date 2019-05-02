@@ -67,6 +67,7 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   auto vs = span.rebind<void>();
   REQUIRE_THROWS_AS(span.rebind<uint32_t>(), std::invalid_argument);
   REQUIRE_THROWS_AS(vs.rebind<uint32_t>(), std::invalid_argument);
+  vs.rebind<void>(); // check for void -> void rebinding.
 
   // Check for defaulting to a void rebind.
   vs = span.rebind();
