@@ -38,6 +38,7 @@ namespace bwf
   struct Spec;
   class Format;
   class NameBinding;
+  class ArgPack;
 } // namespace bwf
 
 /** Wrapper for operations on a buffer.
@@ -230,10 +231,9 @@ public:
    *
    * @tparam Binding Type for the name binding instance.
    * @tparam Extractor Format extractor type.
-   * @tparam Args Types for format parameters.
    * @param names Name set for specifier names.
    * @param ex Format processor instance, which parse the format piecewise.
-   * @param args The format parameters in a tuple.
+   * @param args The format parameters.
    *
    * @a Extractor must have at least two methods
    * - A conversion to @c bool that indicates if there is data left.
@@ -252,9 +252,8 @@ public:
    *
    * @see NameBinding
    */
-  template <typename Binding, typename Extractor, typename... Args>
-  BufferWriter &print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args);
-  BufferWriter &print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args);
+  template <typename Binding, typename Extractor>
+  BufferWriter &print_nfv(Binding const &names, Extractor &&ex, bwf::ArgPack const &args);
 
   /** Write formatted output of @a args to @a this buffer.
    *

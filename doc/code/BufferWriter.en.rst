@@ -40,17 +40,18 @@ Synopsis
    :libswoc:`Reference documentation <LocalBufferWriter>`.
 
 |BW| is designed for use in the common circumstance of generating formatted output strings in fixed
-buffers. The goal is to replace usage that is a mixture of :code:`snprintf` and :code:`memcpy`. |BW|
-automates buffer size checking and clipping for better reliability.
+buffers. The goal is to replace usage that is a mixture of :code:`snprintf`, :code:`strcpy`, and
+:code:`memcpy`. |BW| automates buffer size checking and clipping for better reliability.
 
 |BW| itself is an abstract class to describe the base interface to wrappers for various types of
 output buffers. As a common example, :libswoc:`FixedBufferWriter` is a subclass that wraps a fixed
 size buffer. An instance is constructed by passing it a buffer and a size, which it then tracks as
 data is written. Writing past the end of the buffer is automatically clipped to prevent overruns.
 
-|BW| tracks two sizes - the actual amount of space used in the buffer and the amount of data written.
-The former is bounded by the buffer size to prevent overruns. The latter provides a mechanism both
-to detect the clipping done to prevent overruns, and the amount of space needed to avoid it.
+|BW| tracks two sizes - the actual amount of space used in the buffer and the amount of data
+written. The former is bounded by the buffer size to prevent overruns. The latter provides a
+mechanism both to detect the clipping done to prevent overruns, and the amount of space needed to
+avoid it.
 
 Usage
 *****
@@ -106,9 +107,12 @@ vs. ::
 
    bw.commit(snprintf(bw.aux_data(), bw.remaining(), "blah blah", arg1, ...));
 
-As before, the buffer limits are updated and checked, discarding as needed.
+As before, the buffer limits are updated and checked, discarding as needed. Although
+:code:`snprintf` can be used in this way, |BW| provides its own `print formatting <bw-format>`_
+which is more flexible and powerful than C style printing.
 
-|BW| itself is an abstract class and can't be constructed. Use is provided through concrete subclasses.
+|BW| itself is an abstract class and can't be constructed. Use is provided through concrete
+subclasses.
 
 :class:`FixedBufferWriter`
    This operates on an externally defined buffer of a fixed size. The constructor requires providing
@@ -120,8 +124,13 @@ As before, the buffer limits are updated and checked, discarding as needed.
 
 :class:`FixedBufferWriter` is used where the buffer is pre-existing or externally supplied. If the
 buffer is only accessed by the output generation then :class:`LocalBufferWriter` is more convenient,
-eliminating the need to separately declare the buffer. It also makes :class:`LocalBufferWriter` usable
-in line
+eliminating the need to separately declare the buffer. It also makes :class:`LocalBufferWriter`
+usable in line, such as ::
+
+   std::cout << swoc::LocalBufferWriter<1024>{}.write(...).write(...).view();
+
+which writes output to the |BW| instance, then gets a view of the content which is written to
+:code:`std::cout`.
 
 Writing
 =======

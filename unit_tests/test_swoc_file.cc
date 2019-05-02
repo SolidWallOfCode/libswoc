@@ -47,7 +47,7 @@ TEST_CASE("swoc_file", "[libts][swoc_file]")
 
 TEST_CASE("swoc_file_io", "[libts][swoc_file_io]")
 {
-  path file("unit_tests/test_swoc_file.cc");
+  path file("../unit_tests/test_swoc_file.cc");
   std::error_code ec;
   std::string content = swoc::file::load(file, ec);
   REQUIRE(ec.value() == 0);
@@ -62,7 +62,7 @@ TEST_CASE("swoc_file_io", "[libts][swoc_file_io]")
   REQUIRE(swoc::file::is_regular_file(fs) == true);
 
   // Failure case.
-  file    = "unit-tests/no_such_file.txt";
+  file    = "../unit-tests/no_such_file.txt";
   content = swoc::file::load(file, ec);
   REQUIRE(ec.value() == 2);
   REQUIRE(swoc::file::is_readable(file) == false);

@@ -753,11 +753,92 @@ namespace bwf
   {
   }
 
-} // namespace bwf
+  /** A pack of arguments for formatting.
+   *
+   * @internal After much consideration, I decided this was the correct choice, to enable type
+   * erasure of the arguments to the base formatting logic. This costs a virtual function dispatch
+   * but prevents the formatting logic from being dpulicated for every permutation of arguments.
+   * Overall, for any reasonably sized project, I think this is the better option.
+   *
+   * This also supports passing arguments in other than a tuple, which is necessary in order to
+   * pass arguments in various containers such as a vector.
+   */
+  class ArgPack
+  {
+  public:
+    /** Get argument at index @a idx.
+     *
+     * @param idx Argument index.
+     * @return The argument value.
+     *
+     * In general the arguments will be stored by reference and so the returned @c std::any
+     * instance will be a reference type.
+     */
+    virtual std::any capture(unsigned idx) const = 0;
 
-template <typename Binding, typename Extractor, typename... Args>
+    /** Generate formatted output for an argument.
+     *
+     * @param idx Argument index.
+     * @param w Output.
+     * @param spec Formatting specifier.
+     * @return @a w
+     */
+    virtual BufferWriter &print(unsigned idx, BufferWriter &w, Spec const &spec) const = 0;
+
+    /// Number of arguments in the pack.
+    virtual unsigned count() const = 0;
+  };
+
+  /** An argument pack based on a reference tuple.
+   *
+   * @tparam Args Type of arguments in the tuple.
+   *
+   * This contains a reference to the tuple, and so is only suitable for passing as a temporary.
+   *
+   */
+  template <typename... Args> class ArgTuple : public ArgPack
+  {
+  public:
+    /// Construct from a tuple.
+    ArgTuple(std::tuple<Args...> const &tuple) : _tuple(tuple) {}
+
+  protected:
+    unsigned count() const override;
+
+    BufferWriter &print(unsigned idx, BufferWriter &w, Spec const &spec) const override;
+
+    std::any capture(unsigned idx) const override;
+
+    std::tuple<Args...> const &_tuple;
+  };
+
+  template <typename... Args>
+  unsigned
+  ArgTuple<Args...>::count() const
+  {
+    return sizeof...(Args);
+  }
+
+  template <typename... Args>
+  BufferWriter &
+  ArgTuple<Args...>::print(unsigned idx, BufferWriter &w, Spec const &spec) const
+  {
+    static const auto _fa{bwf::Get_Arg_Formatter_Array<std::tuple<Args...>>(std::index_sequence_for<Args...>{})};
+    return _fa[idx](w, spec, _tuple);
+  }
+
+  template <typename... Args>
+  std::any
+  ArgTuple<Args...>::capture(unsigned idx) const
+  {
+    return {Tuple_Nth(_tuple, idx)};
+  }
+
+}; // namespace bwf
+
+template <typename Binding, typename Extractor>
 BufferWriter &
-BufferWriter::print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...> const &args)
+BufferWriter::print_nfv(Binding const &names, Extractor &&ex, bwf::ArgPack const &args)
 {
   using namespace std::literals;
   // This gets the actual specifier type from the Extractor - it must be a subclass of @c bwf::Spec
@@ -765,9 +846,8 @@ BufferWriter::print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...
   // via the specifier.
   using spec_type =
     typename std::remove_reference<decltype(bwf::extractor_spec_type(&std::remove_reference<Extractor>::type::operator()))>::type;
-  static constexpr int N = sizeof...(Args); // Check argument indices against this.
-  static const auto fa   = bwf::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
-  int arg_idx            = 0; // the next argument index to be processed.
+  size_t N    = args.count();
+  int arg_idx = 0; // the next argument index to be processed.
 
   // Parser is required to return @c false if there's no more data, @c true if something was parsed.
   while (ex) {
@@ -793,9 +873,9 @@ BufferWriter::print_nfv(Binding const &names, Extractor &&ex, std::tuple<Args...
       if (0 <= spec._idx) {
         if (spec._idx < N) {
           if (spec._type == bwf::Spec::CAPTURE_TYPE) {
-            bwf::arg_capture(ex, lw, spec, bwf::Tuple_Nth(args, static_cast<size_t>(spec._idx)), swoc::meta::CaseArg);
+            bwf::arg_capture(ex, lw, spec, args.capture(spec._idx), swoc::meta::CaseArg);
           } else {
-            fa[spec._idx](lw, spec, args);
+            args.print(spec._idx, lw, spec);
           }
         } else {
           bwf::Err_Bad_Arg_Index(lw, spec._idx, N);
@@ -816,42 +896,42 @@ template <typename... Args>
 BufferWriter &
 BufferWriter::print(const TextView &fmt, Args &&... args)
 {
-  return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), std::forward_as_tuple(args...));
+  return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), bwf::ArgTuple{std::forward_as_tuple(args...)});
 }
 
 template <typename... Args>
 BufferWriter &
 BufferWriter::print(bwf::Format const &fmt, Args &&... args)
 {
-  return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), std::forward_as_tuple(args...));
+  return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), bwf::ArgTuple{std::forward_as_tuple(args...)});
 }
 
 template <typename... Args>
 BufferWriter &
 BufferWriter::print_v(TextView const &fmt, std::tuple<Args...> const &args)
 {
-  return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), args);
+  return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), bwf::ArgTuple{args});
 }
 
 template <typename... Args>
 BufferWriter &
 BufferWriter::print_v(const bwf::Format &fmt, const std::tuple<Args...> &args)
 {
-  return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), args);
+  return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), bwf::ArgTuple{args});
 }
 
 template <typename Binding, typename Extractor>
 BufferWriter &
 BufferWriter::print_nfv(Binding const &names, Extractor &&f)
 {
-  return print_nfv(names, f, std::make_tuple());
+  return print_nfv(names, f, bwf::ArgTuple{std::make_tuple()});
 }
 
 template <typename Binding>
 BufferWriter &
 BufferWriter::print_n(Binding const &names, TextView const &fmt)
 {
-  return print_nfv(names, bwf::Format::bind(fmt), std::make_tuple());
+  return print_nfv(names, bwf::Format::bind(fmt), bwf::ArgTuple{std::make_tuple()});
 }
 
 inline MemSpan<char>

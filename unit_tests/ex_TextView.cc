@@ -202,7 +202,7 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
 
 TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
 {
-  swoc::file::path path{"doc/conf.py"};
+  swoc::file::path path{"../doc/conf.py"};
   std::error_code ec;
 
   auto content   = swoc::file::load(path, ec);

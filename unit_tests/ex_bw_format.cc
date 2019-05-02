@@ -615,7 +615,7 @@ int
 bwprintf(BufferWriter &w, TextView const &fmt, Args &&... args)
 {
   size_t n = w.size();
-  w.print_nfv(swoc::bwf::NilBinding(), C_Format(fmt), std::forward_as_tuple(args...));
+  w.print_nfv(swoc::bwf::NilBinding(), C_Format(fmt), swoc::bwf::ArgTuple{std::forward_as_tuple(args...)});
   return static_cast<int>(w.size() - n);
 }
 
