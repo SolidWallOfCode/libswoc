@@ -27,50 +27,44 @@
 #include <sstream>
 
 int
-swoc::memcmp(TextView const &lhs, TextView const &rhs)
+memcmp(std::string_view const &lhs, std::string_view const &rhs)
 {
-  // Fast check - if the views are to the same memory, obviously equal.
-  if (lhs.data() == rhs.data() && lhs.size() == rhs.size()) {
-    return 0;
-  }
-
-  int zret;
-  size_t n;
+  int zret = 0;
+  size_t n = rhs.size();
 
   // Seems a bit ugly but size comparisons must be done anyway to get the memcmp args.
   if (lhs.size() < rhs.size()) {
-    zret = 1, n = lhs.size();
-  } else {
-    n    = rhs.size();
-    zret = rhs.size() < lhs.size() ? -1 : 0;
+    zret = 1;
+    n    = lhs.size();
+  } else if (lhs.size() > rhs.size()) {
+    zret = -1;
+  } else if (lhs.data() == rhs.data()) { // same memory, obviously equal.
+    return 0;
   }
 
   int r = ::memcmp(lhs.data(), rhs.data(), n);
-  if (0 != r) { // If we got a not-equal, override the size based result.
-    zret = r;
-  }
-
-  return zret;
+  return r ? r : zret;
 }
 
 int
 strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
 {
-  // Fast check - if the views are to the same memory, obviously equal.
-  if (lhs.data() == rhs.data() && lhs.size() == rhs.size()) {
+  int zret = 0;
+  size_t n = rhs.size();
+
+  // Seems a bit ugly but size comparisons must be done anyway to get the @c strncasecmp args.
+  if (lhs.size() < rhs.size()) {
+    zret = 1;
+    n    = lhs.size();
+  } else if (lhs.size() > rhs.size()) {
+    zret = -1;
+  } else if (lhs.data() == rhs.data()) { // the same memory, obviously equal.
     return 0;
   }
 
-  size_t len = std::min(lhs.size(), rhs.size());
-  int zret   = strncasecmp(lhs.data(), rhs.data(), len);
-  if (0 == zret) {
-    if (lhs.size() < rhs.size()) {
-      zret = -1;
-    } else if (lhs.size() > rhs.size()) {
-      zret = 1;
-    }
-  }
-  return zret;
+  int r = ::strncasecmp(lhs.data(), rhs.data(), n);
+
+  return r ? r : zret;
 }
 
 /// @cond INTERNAL_DETAIL
