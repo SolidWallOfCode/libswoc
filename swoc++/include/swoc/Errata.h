@@ -385,14 +385,18 @@ extern std::ostream &operator<<(std::ostream &os, Errata const &stat);
     of @c errata rather than having to remember it (and the order) each time - Enable assignment
     directly to @a R for ease of use and compatibility so clients can upgrade asynchronously.
  */
-template <typename R> struct Rv : public std::tuple<R, Errata> {
-  using self_type   = Rv; ///< Standard self reference type.
-  using super_type  = std::tuple<R, Errata>;
+template <typename R> class Rv
+{
+public:
   using result_type = R; ///< Type of result value.
 
-  static constexpr int RESULT = 0; ///< Tuple index for result.
-  static constexpr int ERRATA = 1; ///< Tuple index for Errata.
+protected:
+  using self_type = Rv; ///< Standard self reference type.
 
+  result_type _r; ///< The result.
+  Errata _errata; ///< The errata.
+
+public:
   /** Default constructor.
       The default constructor for @a R is used.
       The status is initialized to SUCCESS.
@@ -784,73 +788,73 @@ template <typename R>
 inline bool
 Rv<R>::is_ok() const
 {
-  return std::get<ERRATA>(*this).is_ok();
+  return _errata.is_ok();
 }
 
 template <typename R>
 inline auto
 Rv<R>::clear() -> self_type &
 {
-  std::get<ERRATA>(*this).clear();
+  errata().clear();
 }
 
 template <typename T> Rv<T>::Rv() {}
 
-template <typename T> Rv<T>::Rv(result_type const &r) : super_type(r, Errata()) {}
+template <typename T> Rv<T>::Rv(result_type const &r) : _r(r) {}
 
-template <typename T> Rv<T>::Rv(result_type const &r, Errata &&errata) : super_type(r, std::move(errata)) {}
+template <typename T> Rv<T>::Rv(result_type const &r, Errata &&errata) : _r(r), _errata(std::move(errata)) {}
 
-template <typename T> Rv<T>::Rv(result_type const &r, const Errata &errata) : super_type(r, errata) {}
+template <typename T> Rv<T>::Rv(result_type const &r, const Errata &errata) : _r(r), _errata(errata) {}
 
-template <typename R> Rv<R>::Rv(R &&r) : super_type(std::move(r), Errata()) {}
+template <typename R> Rv<R>::Rv(R &&r) : _r(std::move(r)) {}
 
-template <typename R> Rv<R>::Rv(R &&r, Errata &&errata) : super_type(std::move(r), std::move(errata)) {}
+template <typename R> Rv<R>::Rv(R &&r, Errata &&errata) : _r(std::move(r)), _errata(std::move(errata)) {}
 
-template <typename R> Rv<R>::Rv(R &&r, const Errata &errata) : super_type(std::move(r), errata) {}
+template <typename R> Rv<R>::Rv(R &&r, const Errata &errata) : _r(std::move(r)), _errata(errata) {}
 
 template <typename T> Rv<T>::operator result_type const &() const
 {
-  return std::get<RESULT>(*this);
+  return _r;
 }
 
-template <typename T>
-T const &
-Rv<T>::result() const
+template <typename R>
+R const &
+Rv<R>::result() const
 {
-  return std::get<RESULT>(*this);
+  return _r;
 }
 
-template <typename T>
-T &
-Rv<T>::result()
+template <typename R>
+R &
+Rv<R>::result()
 {
-  return std::get<RESULT>(*this);
+  return _r;
 }
 
-template <typename T>
+template <typename R>
 Errata const &
-Rv<T>::errata() const
+Rv<R>::errata() const
 {
-  return std::get<ERRATA>(*this);
+  return _errata;
 }
 
-template <typename T>
+template <typename R>
 Errata &
-Rv<T>::errata()
+Rv<R>::errata()
 {
-  return std::get<ERRATA>(*this);
+  return _errata;
 }
 
-template <typename T> Rv<T>::operator Errata &()
+template <typename R> Rv<R>::operator Errata &()
 {
-  return std::get<ERRATA>(*this);
+  return _errata;
 }
 
-template <typename T>
-Rv<T> &
-Rv<T>::assign(result_type const &r)
+template <typename R>
+Rv<R> &
+Rv<R>::assign(result_type const &r)
 {
-  std::get<RESULT>(*this) = r;
+  _r = r;
   return *this;
 }
 
@@ -858,7 +862,7 @@ template <typename R>
 Rv<R> &
 Rv<R>::assign(R &&r)
 {
-  std::get<RESULT>(*this) = std::forward<R>(r);
+  _r = std::move(r);
   return *this;
 }
 
@@ -866,7 +870,7 @@ template <typename R>
 auto
 Rv<R>::operator=(Errata &&errata) -> self_type &
 {
-  std::get<ERRATA>(*this) = std::move(errata);
+  _errata = std::move(errata);
   return *this;
 }
 
@@ -874,7 +878,7 @@ template <typename R>
 auto
 Rv<R>::note(Severity level, std::string_view text) -> self_type &
 {
-  std::get<ERRATA>(*this).note(level, text);
+  _errata.note(level, text);
   return *this;
 }
 
@@ -883,7 +887,7 @@ template <typename... Args>
 Rv<R> &
 Rv<R>::note(Severity level, std::string_view fmt, Args &&... args)
 {
-  std::get<ERRATA>(*this).note_v(level, fmt, std::forward_as_tuple(args...));
+  _errata.note_v(level, fmt, std::forward_as_tuple(args...));
   return *this;
 }
 
@@ -891,16 +895,16 @@ template <typename R>
 auto
 Rv<R>::operator=(result_type const &r) -> result_type &
 {
-  std::get<RESULT>(*this) = r;
-  return r;
+  _r = r;
+  return _r;
 }
 
 template <typename R>
 auto
 Rv<R>::operator=(result_type &&r) -> result_type &
 {
-  std::get<RESULT>(*this) = std::move(r);
-  return r;
+  _r = std::move(r);
+  return _r;
 }
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Severity);
@@ -908,5 +912,74 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Severity);
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata::Annotation const &);
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata const &);
+
+} // namespace swoc
+
+// Tuple / structured binding support.
+namespace std
+{
+template <size_t IDX, typename R> class tuple_element<IDX, swoc::Rv<R>>
+{
+  static_assert("swoc:Rv tuple index out of range");
+};
+
+template <typename R> class tuple_element<0, swoc::Rv<R>>
+{
+public:
+  using type = typename swoc::Rv<R>::result_type;
+};
+
+template <typename R> class tuple_element<1, swoc::Rv<R>>
+{
+public:
+  using type = swoc::Errata;
+};
+
+template <typename R> class tuple_size<swoc::Rv<R>> : public std::integral_constant<size_t, 2>
+{
+};
+
+} // namespace std
+
+namespace swoc
+{
+// Not sure how much of this is needed, but experimentally all of these were needed in one
+// use case or another of structured binding. I wasn't able to make this work if this was
+// defined in namespace @c std. Also, because functions can't be partially specialized, it is
+// necessary to use @c constexpr @c if to handle the case. This should roll up nicely when
+// compiled.
+
+template <size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type &
+get(swoc::Rv<R> &&rv)
+{
+  if constexpr (IDX == 0) {
+    return rv.result();
+  } else if constexpr (IDX == 1) {
+    return rv.errata();
+  }
+}
+
+template <size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type &
+get(swoc::Rv<R> &rv)
+{
+  if constexpr (IDX == 0) {
+    return rv.result();
+  } else if constexpr (IDX == 1) {
+    return rv.errata();
+  }
+}
+
+template <size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type const &
+get(swoc::Rv<R> const &rv)
+{
+  if constexpr (IDX == 0) {
+    return rv.result();
+  } else if constexpr (IDX == 1) {
+    return rv.errata();
+  }
+}
 
 } // namespace swoc

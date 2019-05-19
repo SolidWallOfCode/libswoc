@@ -22,6 +22,8 @@
 #include "catch.hpp"
 
 using swoc::Errata;
+using swoc::Rv;
+using swoc::Severity;
 using namespace std::literals;
 
 Errata
@@ -76,4 +78,37 @@ TEST_CASE("Errata copy", "[libswoc][Errata]")
     }
   }
   REQUIRE(match_p);
+};
+
+TEST_CASE("Rv", "[libswoc][Errata]")
+{
+  Rv<int> zret;
+
+  zret = 17;
+  zret.note(Severity::ERROR, "This is an error");
+
+  auto [result, erratum] = zret;
+
+  REQUIRE(erratum.count() == 1);
+  REQUIRE(erratum.severity() == Severity::ERROR);
+
+  REQUIRE(result == 17);
+  zret = 38;
+  REQUIRE(result == 17); // Local copy binding, no update.
+
+  auto &[r_result, r_erratum] = zret;
+
+  REQUIRE(r_result == 38);
+  zret = 56;
+  REQUIRE(r_result == 56); // reference binding, update.
+
+  auto const &[cr_result, cr_erratum] = zret;
+  REQUIRE(cr_result == 56);
+
+  auto test = [](Rv<int> const &rvc) {
+    auto const &[cv_result, cv_erratum] = rvc;
+    REQUIRE(cv_result == 56);
+  };
+
+  test(zret);
 };
