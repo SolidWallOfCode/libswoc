@@ -851,7 +851,7 @@ template <typename U>
 MemSpan<U>
 MemSpan<void>::rebind() const
 {
-  return {static_cast<U *>(_ptr), _size / sizeof(U)};
+  return {static_cast<U *>(_ptr), detail::is_span_compatible<void, U>::count(_size)};
 }
 
 // Specialize so that @c void -> @c void rebinding compiles and works as expected.
