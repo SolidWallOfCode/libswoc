@@ -80,7 +80,7 @@ project = u'Solid Wall Of C++'
 copyright = u'{}, amc@apache.org'.format(date.today().year)
 
 # The full version, including alpha/beta/rc tags.
-release = "1.0.5"
+release = "1.0.6"
 # The short X.Y version.
 version = '.'.join(release.split('.', 2)[:2])
 
