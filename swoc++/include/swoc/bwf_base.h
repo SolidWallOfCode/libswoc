@@ -852,7 +852,7 @@ BufferWriter::print_nfv(Binding const &names, Extractor &&ex, bwf::ArgPack const
   // Parser is required to return @c false if there's no more data, @c true if something was parsed.
   while (ex) {
     std::string_view lit_v;
-    bwf::Spec spec;
+    spec_type spec;
     bool spec_p = ex(lit_v, spec);
 
     // If there's a literal, just ship it.
