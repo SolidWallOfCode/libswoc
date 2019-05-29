@@ -137,7 +137,9 @@ namespace file
 
 } // namespace file
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, file::path const& p) {
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, file::path const &p)
+{
   return bwformat(w, spec, p.string());
 }
 

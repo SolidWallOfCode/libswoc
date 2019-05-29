@@ -241,7 +241,10 @@ namespace file
 } // namespace file
 
 class BufferWriter;
-namespace bwf { struct Spec; }
+namespace bwf
+{
+  struct Spec;
+}
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, file::path const& p);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, file::path const &p);
 } // namespace swoc
