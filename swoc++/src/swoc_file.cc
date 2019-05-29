@@ -18,9 +18,10 @@
     limitations under the License.
  */
 
-#include "swoc/swoc_file.h"
 #include <fcntl.h>
 #include <unistd.h>
+#include "swoc/swoc_file.h"
+#include "swoc/bwf_base.h"
 
 using namespace swoc::literals;
 
@@ -135,4 +136,9 @@ namespace file
   }
 
 } // namespace file
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, file::path const& p) {
+  return bwformat(w, spec, p.string());
+}
+
 } // namespace swoc
