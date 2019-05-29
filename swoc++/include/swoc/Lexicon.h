@@ -94,9 +94,9 @@ public:
   /// Construct empty instance.
   Lexicon();
   /// Construct with secondary names.
-  Lexicon(const std::initializer_list<Definition> &items);
+  explicit Lexicon(const std::initializer_list<Definition> &items);
   /// Construct with primary names only.
-  Lexicon(const std::initializer_list<Pair> &items);
+  explicit Lexicon(const std::initializer_list<Pair> &items);
   /// Construct and verify the number of definitions.
   template <E e> Lexicon(const Require<e> &, const std::array<Definition, static_cast<size_t>(e)> &defines);
   /// Construct and verify the number of pairs.
@@ -533,14 +533,14 @@ template <typename E> Lexicon<E>::Lexicon() {}
 
 template <typename E> Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items)
 {
-  for (auto item : items) {
+  for (auto const &item : items) {
     this->define(item.value, item.names);
   }
 }
 
 template <typename E> Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items)
 {
-  for (auto item : items) {
+  for (auto const &item : items) {
     this->define(item);
   }
 }
@@ -549,7 +549,7 @@ template <typename E>
 template <E e>
 Lexicon<E>::Lexicon(const Require<e> &, const std::array<Definition, static_cast<size_t>(e)> &defines)
 {
-  for (auto &def : defines) {
+  for (auto const &def : defines) {
     this->define(def);
   }
 }
@@ -558,7 +558,7 @@ template <typename E>
 template <E e>
 Lexicon<E>::Lexicon(const Require<e> &, const std::array<Pair, static_cast<size_t>(e)> &defines)
 {
-  for (auto &def : defines) {
+  for (auto const &def : defines) {
     this->define(def);
   }
 }

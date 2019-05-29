@@ -28,6 +28,17 @@ enum class Example { INVALID, Value_0, Value_1, Value_2, Value_3 };
 
 using ExampleNames = swoc::Lexicon<Example>;
 
+namespace
+{
+[[maybe_unused]] ExampleNames Static_Names {
+  {Example::Value_0, {"zero", "0"}}, {Example::Value_1, {"one", "1"}}, {Example::Value_2, {"two", "2"}},
+    {Example::Value_3, {"three", "3"}},
+  {
+    Example::INVALID, { "INVALID" }
+  }
+};
+}
+
 TEST_CASE("Lexicon Example", "[libts][Lexicon]")
 {
   ExampleNames exnames{{Example::Value_0, {"zero", "0"}},
