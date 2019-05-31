@@ -95,10 +95,10 @@ public:
 
     /** Construct with severity @a level and @a text.
      *
-     * @param level Severity level.
+     * @param severity Severity level.
      * @param text Annotation content (literal).
      */
-    Annotation(Severity level, std::string_view text);
+    Annotation(Severity severity, std::string_view text);
 
     /// Reset to the message to default state.
     self_type &clear();
@@ -186,25 +186,25 @@ public:
   ~Errata();                                                       ///< Destructor.
 
   /** Add a new message to the top of stack with severity @a level and @a text.
-   * @param level Severity of the message.
+   * @param severity Severity of the message.
    * @param text Text of the message.
    * @return *this
    */
-  self_type &note(Severity level, std::string_view text);
+  self_type &note(Severity severity, std::string_view text);
 
   /** Push a constructed @c Annotation.
       The @c Annotation is set to have the @a id and @a code. The other arguments are converted
       to strings and concatenated to form the messsage text.
       @return A reference to this object.
   */
-  template <typename... Args> self_type &note(Severity level, std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &note(Severity severity, std::string_view fmt, Args &&... args);
 
   /** Push a constructed @c Annotation.
       The @c Annotation is set to have the @a id and @a code. The other arguments are converted
       to strings and concatenated to form the messsage text.
       @return A reference to this object.
   */
-  template <typename... Args> self_type &note_v(Severity level, std::string_view fmt, std::tuple<Args...> const &args);
+  template <typename... Args> self_type &note_v(Severity severity, std::string_view fmt, std::tuple<Args...> const &args);
 
   /** Copy messages from @a that to @a this.
    *
@@ -586,7 +586,7 @@ MakeRv(R &&r,           ///< The function result
 
 inline Errata::Annotation::Annotation() {}
 
-inline Errata::Annotation::Annotation(Severity level, std::string_view text) : _severity(level), _text(text) {}
+inline Errata::Annotation::Annotation(Severity severity, std::string_view text) : _severity(severity), _text(text) {}
 
 inline Errata::Annotation &
 Errata::Annotation::clear()
@@ -716,9 +716,9 @@ Errata::front() const
 
 template <typename... Args>
 Errata &
-Errata::note(Severity level, std::string_view fmt, Args &&... args)
+Errata::note(Severity severity, std::string_view fmt, Args &&... args)
 {
-  return this->note_v(level, fmt, std::forward_as_tuple(args...));
+  return this->note_v(severity, fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
@@ -759,7 +759,7 @@ Errata::note(self_type &&that)
 
 template <typename... Args>
 Errata &
-Errata::note_v(Severity level, std::string_view fmt, std::tuple<Args...> const &args)
+Errata::note_v(Severity severity, std::string_view fmt, std::tuple<Args...> const &args)
 {
   Data *data = this->writeable_data();
   auto span  = data->remnant();
@@ -772,7 +772,7 @@ Errata::note_v(Severity level, std::string_view fmt, std::tuple<Args...> const &
     span = this->alloc(bw.extent());
     FixedBufferWriter{span}.print_v(fmt, args);
   }
-  this->note_localized(level, span.view());
+  this->note_localized(severity, span.view());
   return *this;
 }
 

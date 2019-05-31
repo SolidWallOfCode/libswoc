@@ -131,23 +131,23 @@ Errata::severity() const
 }
 
 Errata &
-Errata::note(Severity level, std::string_view text)
+Errata::note(Severity severity, std::string_view text)
 {
   auto d        = this->writeable_data();
-  Annotation *n = d->_arena.make<Annotation>(level, d->localize(text));
+  Annotation *n = d->_arena.make<Annotation>(severity, d->localize(text));
   d->_notes.prepend(n);
-  _data->_severity = std::max(_data->_severity, level);
+  _data->_severity = std::max(_data->_severity, severity);
   return *this;
 }
 
 Errata &
-Errata::note_localized(Severity level, std::string_view const &text)
+Errata::note_localized(Severity severity, std::string_view const &text)
 {
   auto d        = this->writeable_data();
-  Annotation *n = d->_arena.make<Annotation>(level, text);
+  Annotation *n = d->_arena.make<Annotation>(severity, text);
   n->_level     = d->_level;
   d->_notes.prepend(n);
-  _data->_severity = std::max(_data->_severity, level);
+  _data->_severity = std::max(_data->_severity, severity);
   return *this;
 }
 
