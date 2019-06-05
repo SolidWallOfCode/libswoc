@@ -167,7 +167,7 @@ public:
    * must be explicitly called, which will clean up all of the allocated memory. See the
    * documentation for further details.
    */
-  static self_type *make(size_t n = DEFAULT_BLOCK_SIZE);
+  static self_type *construct_self_contained(size_t n = DEFAULT_BLOCK_SIZE);
 
   /** Allocate @a n bytes of storage.
 

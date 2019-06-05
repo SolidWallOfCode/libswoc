@@ -284,12 +284,12 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
   REQUIRE(a1.remaining() >= 384);
 
   {
-    MemArena *arena = MemArena::make();
+    MemArena *arena = MemArena::construct_self_contained();
     arena->~MemArena();
   }
 
   {
-    std::unique_ptr<MemArena, void (*)(MemArena *)> arena(MemArena::make(), [](MemArena *arena) -> void { arena->~MemArena(); });
+    std::unique_ptr<MemArena, void (*)(MemArena *)> arena(MemArena::construct_self_contained(), [](MemArena *arena) -> void { arena->~MemArena(); });
     static constexpr unsigned MAX = 512;
     std::uniform_int_distribution<unsigned> length_gen{6, MAX};
     char buffer[MAX];
