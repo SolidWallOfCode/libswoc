@@ -18,6 +18,7 @@
     limitations under the License.
 */
 
+#include <memory>
 #include "swoc/Errata.h"
 #include "catch.hpp"
 
@@ -83,6 +84,8 @@ TEST_CASE("Errata copy", "[libswoc][Errata]")
 TEST_CASE("Rv", "[libswoc][Errata]")
 {
   Rv<int> zret;
+  struct Thing { char const * s = "thing"; };
+  using ThingHandle = std::unique_ptr<Thing>;
 
   zret = 17;
   zret.note(Severity::ERROR, "This is an error");
@@ -110,5 +113,31 @@ TEST_CASE("Rv", "[libswoc][Errata]")
     REQUIRE(cv_result == 56);
   };
 
-  test(zret);
+  test(zret); // invoke it.
+
+  // Now try it on a non-copyable object.
+  ThingHandle handle { new Thing };
+  Rv<ThingHandle> thing_rv;
+
+  handle->s = "other"; // mark it.
+  thing_rv = std::move(handle);
+  thing_rv.note(Severity::WARN, "This is a warning");
+
+  auto && [ tr1, te1 ] { thing_rv };
+  REQUIRE(te1.count() == 1);
+  REQUIRE(te1.severity() == Severity::WARN);
+
+  ThingHandle other { std::move(tr1) };
+  REQUIRE(tr1.get() == nullptr);
+  REQUIRE(thing_rv.result().get() == nullptr);
+  REQUIRE(other->s == "other"sv);
+
+  auto maker = []() -> Rv<ThingHandle> {
+    ThingHandle handle = std::make_unique<Thing>();
+    handle->s = "made";
+    return {std::move(handle)};
+  };
+
+  auto && [ tr2, te2 ] { maker() };
+  REQUIRE(tr2->s == "made"sv);
 };
