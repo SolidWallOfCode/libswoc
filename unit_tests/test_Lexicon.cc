@@ -74,6 +74,10 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]")
                                                {Radio::BRAVO, {"Bravo", "Beta"}},
                                                {Radio::CHARLIE, {"Charlie"}},
                                                {Radio::DELTA, {"Delta"}}}});
+
+  // test structured binding for iteration.
+  for ( auto const& [ key, name ] : lex ) {
+  }
 };
 
 // ---
