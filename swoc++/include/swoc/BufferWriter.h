@@ -253,7 +253,7 @@ public:
    * @see NameBinding
    */
   template <typename Binding, typename Extractor>
-  BufferWriter &print_nfv(Binding const &names, Extractor &&ex, bwf::ArgPack const &args);
+  BufferWriter &print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &args);
 
   /** Write formatted output of @a args to @a this buffer.
    *

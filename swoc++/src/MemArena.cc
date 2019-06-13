@@ -47,7 +47,7 @@ MemArena::MemArena(swoc::MemArena::self_type &&that)
 }
 
 MemArena *
-MemArena::make(size_t n)
+MemArena::construct_self_contained(size_t n)
 {
   MemArena tmp;
   return tmp.make<MemArena>(std::move(tmp));

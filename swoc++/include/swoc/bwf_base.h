@@ -838,7 +838,7 @@ namespace bwf
 
 template <typename Binding, typename Extractor>
 BufferWriter &
-BufferWriter::print_nfv(Binding const &names, Extractor &&ex, bwf::ArgPack const &args)
+BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &args)
 {
   using namespace std::literals;
   // This gets the actual specifier type from the Extractor - it must be a subclass of @c bwf::Spec
