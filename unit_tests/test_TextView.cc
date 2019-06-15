@@ -28,6 +28,7 @@
 
 using swoc::TextView;
 using namespace std::literals;
+using namespace swoc::literals;
 
 TEST_CASE("TextView Constructor", "[libswoc][TextView]")
 {
@@ -80,6 +81,18 @@ TEST_CASE("TextView Trimming", "[libswoc][TextView]")
   REQUIRE("More Text" == TextView{tv2}.rtrim_if(&isdigit));
   REQUIRE("  Evil Dave Rulz   " == TextView(tv).rtrim('.'));
   REQUIRE("Evil Dave Rulz" == TextView(tv).trim(" ."));
+
+  tv.assign("\r\n");
+  tv.rtrim_if([](char c) -> bool { return c == '\r' || c == '\n'; });
+  REQUIRE(tv.size() == 0);
+
+  tv.assign("...");
+  tv.rtrim('.');
+  REQUIRE(tv.size() == 0);
+
+  tv.assign(".,,.;.");
+  tv.rtrim(";,."_tv);
+  REQUIRE(tv.size() == 0);
 }
 
 TEST_CASE("TextView Find", "[libswoc][TextView]")

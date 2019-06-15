@@ -24,7 +24,7 @@ namespace swoc
 {
 class BufferWriter;
 class FixedBufferWriter;
-template < size_t N > class LocalBufferWriter;
+template <size_t N> class LocalBufferWriter;
 
 namespace bwf
 {
