@@ -142,6 +142,26 @@ public:
   /// Pointer to memory in the span.
   T *data() const;
 
+  /** Access the first element in the span.
+   *
+   * @return A reference to the first element in the span.
+   */
+  T& front();
+
+  /** Access the last element in the span.
+   *
+   * @return A reference to the last element in the span.
+   */
+  T& back();
+
+  /** Apply a function @a f to every element of the span.
+   *
+   * @tparam F Functor type.
+   * @param f Functor instance.
+   * @return @a this
+   */
+  template < typename F > self_type & apply(F && f);
+
   /** Make a copy of @a this span on the same memory but of type @a U.
    *
    * @tparam U Type for the created span.
@@ -809,6 +829,21 @@ MemSpan<void>::operator=(MemSpan<U> const &that) -> self_type &
 {
   _ptr  = that._ptr;
   _size = that.size();
+  return *this;
+}
+
+template<typename T>
+T &MemSpan<T>::front() { return *_ptr; }
+
+template<typename T>
+T &MemSpan<T>::back() { return _ptr[_count - 1]; }
+
+template<typename T>
+template<typename F>
+MemSpan<T> &MemSpan<T>::apply(F &&f) {
+  for ( auto & item : *this ) {
+    f(item);
+  }
   return *this;
 }
 

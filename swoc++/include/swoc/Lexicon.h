@@ -40,7 +40,7 @@ namespace detail
    * @return r-value reference to a @c std::string containing the formatted string.
    */
   template <typename... Args>
-  std::string &&
+  std::string
   what(std::string_view const &fmt, Args &&... args)
   {
     std::string zret;
