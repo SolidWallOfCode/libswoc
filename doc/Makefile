@@ -1,6 +1,6 @@
 # Makefile for Sphinx documentation
 
-.PHONY: help html
+.PHONY: help html publish
 
 srcdir        ?= .
 SPHINXBUILD    = python3 -m sphinx
@@ -39,8 +39,7 @@ clean:
 	-rm -rf html warn.log
 	-rm -rf $(BUILDDIR)/doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml
 
-publish: clean html
-	$(SHELL) ./publish.sh
+publish: clean doxygen html
 
 ext/local-config.py : Makefile
 	@echo "plantuml = '$(JAVA) -jar $(PLANTUML_JAR)'" > ext/local-config.py

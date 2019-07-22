@@ -50,14 +50,14 @@ Void Span
 =========
 
 A :code:`MemSpan<void>` describes an undifferentiated contiguous block of memory. It can be
-constructed from either a :libswoc:`pointer and length <MemSpan\< void \>::MemSpan(value_type *,
-size_t)>` or :libswoc:`a half open range of two pointers <MemSpan\< void \>::MemSpan(value_type *,
-value_type * )>`. A default constructed instance, or one constructed from :code:`nullptr` has no
+constructed from either a pointer and length :libswoc:`MemSpan\< void >::MemSpan(value_type *,
+size_t)` or a half open range of two pointers :libswoc:`MemSpan\< void >::MemSpan(value_type *, value_type * )`.
+A default constructed instance, or one constructed from :code:`nullptr` has no
 memory and zero size.
 
 The memory described by the instance can be obtained with the
-:libswoc:`data method <MemSpan\< void \>::data>` and the size with the
-:libswoc:`size method <MemSpan\< void \>::size>`.
+data method :libswoc:`MemSpan\< void \>::data` and the size with the
+size method :libswoc:`MemSpan\< void \>::size`.
 
 Typed Span
 ==========

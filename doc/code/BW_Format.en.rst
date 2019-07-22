@@ -481,7 +481,7 @@ Specific types
       :lines: 59-60,44,47-50
 
 :libswoc:`TextView`
-   Because this is a subclass of :code:`std::string_view`, all of the formatting for that works the same for this class. 
+   Because this is a subclass of :code:`std::string_view`, all of the formatting for that works the same for this class.
 
 .. _ip_addr_fmt:
 
@@ -1190,14 +1190,14 @@ indicating the capture state (it may be necessary to do two captures, if both th
 precision are variable).
 
 .. literalinclude:: ../../unit_tests/ex_bw_format.cc
-   :lines: 421-441
+   :lines: 422-442
 
 The empty indicator needs to be a bit different in that even if the format is empty, if the last
 part of the format string had a capture (indicated by :arg:`_saved_p` being :code:`true`) a
 non-empty state needs to be returned to get an invocation to output that last specifier.
 
 .. literalinclude:: ../../unit_tests/ex_bw_format.cc
-   :lines: 446-449
+   :lines: 447-450
 
 The capture logic takes advantage of the fact that only integers can be captured, and in fact
 :code:`printf` itself requires exactly an :code:`int`. This logic is a bit more flexible, accepting
