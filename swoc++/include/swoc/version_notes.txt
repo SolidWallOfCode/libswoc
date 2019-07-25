@@ -1,0 +1,5 @@
+Places to update version: (should script this some day).
+swoc++/include/swoc/swoc_version.h
+doc/conf.py
+doc/Doxyfile
+swoc++/swoc++.part
