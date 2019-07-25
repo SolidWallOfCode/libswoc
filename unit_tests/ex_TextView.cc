@@ -218,6 +218,9 @@ TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
   REQUIRE(n_lines == 86);
 };
 
+#include <set>
+#include <swoc/swoc_ip.h>
+
 TEST_CASE("TextView misc", "[libswoc][example][textview][misc]")
 {
   TextView src = "  alpha.bravo.old:charlie.delta.old  :  echo.foxtrot.old  ";
@@ -226,3 +229,65 @@ TEST_CASE("TextView misc", "[libswoc][example][textview][misc]")
   REQUIRE("echo.foxtrot" == src.take_prefix_at(':').remove_suffix_at('.').ltrim_if(&isspace));
   REQUIRE(src.empty());
 }
+
+TEST_CASE("TextView parsing", "[libswoc][example][text][parsing]") {
+  static const std::set<std::string_view> DC_TAGS {
+      "amb", "ata", "aue", "bga", "bra", "cha", "coa", "daa", "dca", "deb", "dnb", "esa", "fra", "frb"
+    , "hkb", "inc", "ir2", "jpa", "laa", "lob", "mib"
+    , "nya", "rob", "seb", "sgb", "sja", "swb", "tpb", "twb", "via", "waa"
+  };
+  TextView parsed;
+  swoc::IP4Addr addr;
+
+  std::error_code ec;
+  auto data { swoc::file::load("../unit_tests/examples/resolver.txt"_tv, ec) };
+  REQUIRE(data.size() > 2); // if this fails, there's something wrong with the path or current directory.
+
+  TextView content { data };
+  while (content) {
+    auto line { content.take_prefix_at('\n').trim_if(&isspace) }; // get the next line.
+    if (line.empty() || *line == '#') { // skip empty and lines starting with '#'
+      continue;
+    }
+    auto addr_txt = line.take_prefix_at(';');
+    auto conf_txt = line.ltrim_if(&isspace).take_prefix_if(&isspace);
+    auto dcnum_txt = line.ltrim_if(&isspace).take_prefix_if(&isspace);
+    auto dc_txt = line.ltrim_if(&isspace).take_prefix_if(&isspace);
+
+    // First element must be a valid IPv4 address.
+    REQUIRE(addr.load(addr_txt) == true);
+
+    // Confidence value must be an unsigned integer after the '='.
+    auto conf_value {conf_txt.split_suffix_at('=')};
+    swoc::svtou(conf_value, &parsed);
+    REQUIRE(conf_value == parsed); // valid integer
+
+    // Number of elements in @a dc_txt - verify it's an integer.
+    auto dcnum_value {dcnum_txt.split_suffix_at('=')};
+    auto dc_n = swoc::svtou(dcnum_value, &parsed);
+    REQUIRE(dcnum_value == parsed); // valid integer
+
+    // Verify the expected prefix for the DC list.
+    static constexpr TextView DC_PREFIX { "dc=[" };
+    if (!dc_txt.starts_with(DC_PREFIX) ||
+      dc_txt.remove_prefix(DC_PREFIX.size()).empty() ||
+      dc_txt.back() != ']'
+    ) {
+      continue;
+    }
+
+    dc_txt.rtrim("], \t"); // drop trailing brackets, commas, spaces, tabs.
+    // walk the comma separated tokens
+    unsigned dc_count = 0;
+    while (dc_txt) {
+      auto key   = dc_txt.take_prefix_at(',');
+      auto value = key.take_suffix_at('=');
+      auto n = swoc::svtou(value, &parsed);
+      // Each element must be one of the known tags, followed by '=' and an integer.
+      REQUIRE(parsed == value); // value integer.
+      REQUIRE(DC_TAGS.find(key) != DC_TAGS.end());
+      ++dc_count;
+    }
+    REQUIRE(dc_count == dc_n);
+  };
+};

@@ -19,8 +19,7 @@ namespace swoc
  * the output without overflow. Because it uses the remnant, if there is an error or resizing,
  * no arena memory will be lost.
  */
-class ArenaWriter : public FixedBufferWriter
-{
+class ArenaWriter : public FixedBufferWriter {
   using self_type  = ArenaWriter;       ///< Self reference type.
   using super_type = FixedBufferWriter; ///< Parent type.
 public:

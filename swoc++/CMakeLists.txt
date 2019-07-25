@@ -10,8 +10,10 @@ set(HEADER_FILES
     include/swoc/ArenaWriter.h
     include/swoc/BufferWriter.h
     include/swoc/bwf_base.h
-    include/swoc/bwf_std.h
     include/swoc/bwf_ex.h
+    include/swoc/bwf_ip.h
+    include/swoc/bwf_std.h
+    include/swoc/DiscreteRange.h
     include/swoc/Errata.h
     include/swoc/IntrusiveDList.h
     include/swoc/IntrusiveHashMap.h
@@ -23,7 +25,6 @@ set(HEADER_FILES
     include/swoc/TextView.h
     include/swoc/swoc_file.h
     include/swoc/swoc_meta.h
-    include/swoc/bwf_ip.h
     )
 
 # These are external but required.

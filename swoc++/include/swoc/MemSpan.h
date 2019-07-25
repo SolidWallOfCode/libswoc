@@ -43,8 +43,7 @@ namespace swoc
     instances of this class.
 
  */
-template <typename T> class MemSpan
-{
+template <typename T> class MemSpan {
   using self_type = MemSpan; ///< Self reference type.
 
 protected:
@@ -268,8 +267,7 @@ public:
  * One major issue was the array initialization did not work at all if the @c void case didn't
  * exclude that. Once separate there are a number of useful tweaks available.
  */
-template <> class MemSpan<void>
-{
+template <> class MemSpan<void> {
   using self_type = MemSpan; ///< Self reference type.
   template <typename U> friend class MemSpan;
 
@@ -446,21 +444,18 @@ namespace detail
   /// pointer distance calculations for all types, @b including @c <void*>.
   /// This is useful in templates.
   inline size_t
-  ptr_distance(void const *first, void const *last)
-  {
+  ptr_distance(void const *first, void const *last) {
     return static_cast<const char *>(last) - static_cast<const char *>(first);
   }
 
   template <typename T>
   size_t
-  ptr_distance(T const *first, T const *last)
-  {
+  ptr_distance(T const *first, T const *last) {
     return last - first;
   }
 
   inline void *
-  ptr_add(void *ptr, size_t count)
-  {
+  ptr_add(void *ptr, size_t count) {
     return static_cast<char *>(ptr) + count;
   }
 
@@ -488,9 +483,9 @@ namespace detail
 
   template <typename T, typename U>
   size_t
-  is_span_compatible<T, U>::count(size_t size)
-  {
-    if (size % sizeof(U)) {
+  is_span_compatible<T, U>::count(size_t size) {
+    if (size % sizeof(U))
+    {
       throw std::invalid_argument("MemSpan rebind where span size is not a multiple of the element size");
     }
     return size / sizeof(U);
@@ -506,8 +501,7 @@ namespace detail
 
   template <typename T>
   size_t
-  is_span_compatible<T, void>::count(size_t size)
-  {
+  is_span_compatible<T, void>::count(size_t size) {
     return size;
   }
   /// @endcond
@@ -518,22 +512,24 @@ namespace detail
 
 template <typename T>
 int
-memcmp(MemSpan<T> const &lhs, MemSpan<T> const &rhs)
-{
+memcmp(MemSpan<T> const &lhs, MemSpan<T> const &rhs) {
   int zret = 0;
   size_t n = lhs.size();
 
   // Seems a bit ugly but size comparisons must be done anyway to get the memcmp args.
-  if (lhs.count() < rhs.count()) {
+  if (lhs.count() < rhs.count())
+  {
     zret = 1;
-  } else if (lhs.count() > rhs.count()) {
+  } else if (lhs.count() > rhs.count())
+  {
     zret = -1;
     n    = rhs.size();
   }
   // else the counts are equal therefore @a n and @a zret are already correct.
 
   int r = std::memcmp(lhs.data(), rhs.data(), n);
-  if (0 != r) { // If we got a not-equal, override the size based result.
+  if (0 != r)
+  { // If we got a not-equal, override the size based result.
     zret = r;
   }
 
@@ -544,34 +540,29 @@ using std::memcmp;
 
 template <typename T>
 T *
-memcpy(MemSpan<T> &dst, MemSpan<T> const &src)
-{
+memcpy(MemSpan<T> &dst, MemSpan<T> const &src) {
   return static_cast<T *>(std::memcpy(dst.data(), src.data(), std::min(dst.size(), src.size())));
 }
 
 template <typename T>
 T *
-memcpy(MemSpan<T> &dst, T *src)
-{
+memcpy(MemSpan<T> &dst, T *src) {
   return static_cast<T *>(std::memcpy(dst.data(), src, dst.size()));
 }
 
 template <typename T>
 T *
-memcpy(T *dst, MemSpan<T> &src)
-{
+memcpy(T *dst, MemSpan<T> &src) {
   return static_cast<T *>(std::memcpy(dst, src.data(), src.size()));
 }
 
 inline char *
-memcpy(MemSpan<char> &span, std::string_view view)
-{
+memcpy(MemSpan<char> &span, std::string_view view) {
   return static_cast<char *>(std::memcpy(span.data(), view.data(), std::min(view.size(), view.size())));
 }
 
 inline void *
-memcpy(MemSpan<void> &span, std::string_view view)
-{
+memcpy(MemSpan<void> &span, std::string_view view) {
   return std::memcpy(span.data(), view.data(), std::min(view.size(), view.size()));
 }
 
@@ -580,31 +571,28 @@ using std::memcpy;
 
 template <typename T>
 inline MemSpan<T> const &
-memset(MemSpan<T> const &dst, T const &t)
-{
-  for (auto &e : dst) {
+memset(MemSpan<T> const &dst, T const &t) {
+  for (auto &e : dst)
+  {
     e = t;
   }
   return dst;
 }
 
 inline MemSpan<char> const &
-memset(MemSpan<char> const &dst, char c)
-{
+memset(MemSpan<char> const &dst, char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
 
 inline MemSpan<unsigned char> const &
-memset(MemSpan<unsigned char> const &dst, unsigned char c)
-{
+memset(MemSpan<unsigned char> const &dst, unsigned char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
 
 inline MemSpan<void> const &
-memset(MemSpan<void> const &dst, char c)
-{
+memset(MemSpan<void> const &dst, char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
@@ -623,8 +611,7 @@ template <typename T> constexpr MemSpan<T>::MemSpan(std::nullptr_t) {}
 
 template <typename T>
 MemSpan<T> &
-MemSpan<T>::assign(T *ptr, size_t count)
-{
+MemSpan<T>::assign(T *ptr, size_t count) {
   _ptr   = ptr;
   _count = count;
   return *this;
@@ -632,8 +619,7 @@ MemSpan<T>::assign(T *ptr, size_t count)
 
 template <typename T>
 MemSpan<T> &
-MemSpan<T>::assign(T *first, T const *last)
-{
+MemSpan<T>::assign(T *first, T const *last) {
   _ptr   = first;
   _count = detail::ptr_distance(first, last);
   return *this;
@@ -641,8 +627,7 @@ MemSpan<T>::assign(T *first, T const *last)
 
 template <typename T>
 MemSpan<T> &
-MemSpan<T>::clear()
-{
+MemSpan<T>::clear() {
   _ptr   = nullptr;
   _count = 0;
   return *this;
@@ -650,107 +635,91 @@ MemSpan<T>::clear()
 
 template <typename T>
 bool
-MemSpan<T>::is_same(self_type const &that) const
-{
+MemSpan<T>::is_same(self_type const &that) const {
   return _ptr == that._ptr && _count == that._count;
 }
 
 template <typename T>
 bool
-MemSpan<T>::operator==(self_type const &that) const
-{
+MemSpan<T>::operator==(self_type const &that) const {
   return _count == that._count && (_ptr == that._ptr || 0 == memcmp(_ptr, that._ptr, this->size()));
 }
 
 template <typename T>
 bool
-MemSpan<T>::operator!=(self_type const &that) const
-{
+MemSpan<T>::operator!=(self_type const &that) const {
   return !(*this == that);
 }
 
-template <typename T> bool MemSpan<T>::operator!() const
-{
+template <typename T> bool MemSpan<T>::operator!() const {
   return _count == 0;
 }
 
-template <typename T> MemSpan<T>::operator bool() const
-{
+template <typename T> MemSpan<T>::operator bool() const {
   return _count != 0;
 }
 
 template <typename T>
 bool
-MemSpan<T>::empty() const
-{
+MemSpan<T>::empty() const {
   return _count == 0;
 }
 
 template <typename T>
 T *
-MemSpan<T>::begin() const
-{
+MemSpan<T>::begin() const {
   return _ptr;
 }
 
 template <typename T>
 T *
-MemSpan<T>::data() const
-{
+MemSpan<T>::data() const {
   return _ptr;
 }
 
 template <typename T>
 T *
-MemSpan<T>::end() const
-{
+MemSpan<T>::end() const {
   return _ptr + _count;
 }
 
-template <typename T> T &MemSpan<T>::operator[](size_t idx) const
-{
+template <typename T> T &MemSpan<T>::operator[](size_t idx) const {
   return _ptr[idx];
 }
 
 template <typename T>
 size_t
-MemSpan<T>::count() const
-{
+MemSpan<T>::count() const {
   return _count;
 }
 
 template <typename T>
 size_t
-MemSpan<T>::size() const
-{
+MemSpan<T>::size() const {
   return _count * sizeof(T);
 }
 
 template <typename T>
 bool
-MemSpan<T>::contains(T const *ptr) const
-{
+MemSpan<T>::contains(T const *ptr) const {
   return _ptr <= ptr && ptr < _ptr + _count;
 }
 
 template <typename T>
 constexpr auto
-MemSpan<T>::prefix(size_t count) const -> self_type
-{
+MemSpan<T>::prefix(size_t count) const -> self_type {
   return {_ptr, std::min(count, _count)};
 }
 
 template <typename T>
 constexpr auto
-MemSpan<T>::first(size_t count) const -> self_type
-{
+MemSpan<T>::first(size_t count) const -> self_type {
   return this->prefix(count);
 }
 
 template <typename T>
 auto
-MemSpan<T>::remove_prefix(size_t count) -> self_type &
-{
+MemSpan<T>::remove_prefix(size_t count) -> self_type & {
   count = std::min(_count, count);
   _count -= count;
   _ptr += count;
@@ -759,54 +728,48 @@ MemSpan<T>::remove_prefix(size_t count) -> self_type &
 
 template <typename T>
 constexpr auto
-MemSpan<T>::suffix(size_t count) const -> self_type
-{
+MemSpan<T>::suffix(size_t count) const -> self_type {
   count = std::min(_count, count);
   return {(_ptr + _count) - count, count};
 }
 
 template <typename T>
 constexpr MemSpan<T>
-MemSpan<T>::last(size_t count) const
-{
+MemSpan<T>::last(size_t count) const {
   return this->suffix(count);
 }
 
 template <typename T>
 MemSpan<T> &
-MemSpan<T>::remove_suffix(size_t count)
-{
+MemSpan<T>::remove_suffix(size_t count) {
   _count -= std::min(count, _count);
   return *this;
 }
 
 template <typename T>
 constexpr MemSpan<T>
-MemSpan<T>::subspan(size_t offset, size_t count) const
-{
+MemSpan<T>::subspan(size_t offset, size_t count) const {
   return offset <= _count ? self_type{this->data() + offset, std::min(count, _count - offset)} : self_type{};
 }
 
 template <typename T>
 T &
-MemSpan<T>::front()
-{
+MemSpan<T>::front() {
   return *_ptr;
 }
 
 template <typename T>
 T &
-MemSpan<T>::back()
-{
+MemSpan<T>::back() {
   return _ptr[_count - 1];
 }
 
 template <typename T>
 template <typename F>
 MemSpan<T> &
-MemSpan<T>::apply(F &&f)
-{
-  for (auto &item : *this) {
+MemSpan<T>::apply(F &&f) {
+  for (auto &item : *this)
+  {
     f(item);
   }
   return *this;
@@ -815,8 +778,7 @@ MemSpan<T>::apply(F &&f)
 template <typename T>
 template <typename U>
 MemSpan<U>
-MemSpan<T>::rebind() const
-{
+MemSpan<T>::rebind() const {
   static_assert(detail::is_span_compatible<T, U>::value,
                 "MemSpan only allows rebinding between types who sizes are integral multiples.");
   return {static_cast<U *>(static_cast<void *>(_ptr)), detail::is_span_compatible<T, U>::count(this->size())};
@@ -824,8 +786,7 @@ MemSpan<T>::rebind() const
 
 template <typename T>
 std::string_view
-MemSpan<T>::view() const
-{
+MemSpan<T>::view() const {
   return {static_cast<const char *>(_ptr), this->size()};
 }
 
@@ -840,111 +801,94 @@ inline MemSpan<void>::MemSpan(value_type *first, value_type *last) : _ptr{first}
 inline constexpr MemSpan<void>::MemSpan(std::nullptr_t) {}
 
 inline MemSpan<void> &
-MemSpan<void>::assign(value_type *ptr, size_t n)
-{
+MemSpan<void>::assign(value_type *ptr, size_t n) {
   _ptr  = ptr;
   _size = n;
   return *this;
 }
 
 inline MemSpan<void> &
-MemSpan<void>::assign(value_type *first, value_type const *last)
-{
+MemSpan<void>::assign(value_type *first, value_type const *last) {
   _ptr  = first;
   _size = detail::ptr_distance(first, last);
   return *this;
 }
 
 inline MemSpan<void> &
-MemSpan<void>::clear()
-{
+MemSpan<void>::clear() {
   _ptr  = nullptr;
   _size = 0;
   return *this;
 }
 
 inline bool
-MemSpan<void>::is_same(self_type const &that) const
-{
+MemSpan<void>::is_same(self_type const &that) const {
   return _ptr == that._ptr && _size == that._size;
 }
 
 inline bool
-MemSpan<void>::operator==(self_type const &that) const
-{
+MemSpan<void>::operator==(self_type const &that) const {
   return _size == that._size && (_ptr == that._ptr || 0 == memcmp(_ptr, that._ptr, _size));
 }
 
 inline bool
-MemSpan<void>::operator!=(self_type const &that) const
-{
+MemSpan<void>::operator!=(self_type const &that) const {
   return !(*this == that);
 }
 
-inline bool MemSpan<void>::operator!() const
-{
+inline bool MemSpan<void>::operator!() const {
   return _size == 0;
 }
 
-inline MemSpan<void>::operator bool() const
-{
+inline MemSpan<void>::operator bool() const {
   return _size != 0;
 }
 
 inline bool
-MemSpan<void>::empty() const
-{
+MemSpan<void>::empty() const {
   return _size == 0;
 }
 
 inline void *
-MemSpan<void>::data() const
-{
+MemSpan<void>::data() const {
   return _ptr;
 }
 
 inline void *
-MemSpan<void>::data_end() const
-{
+MemSpan<void>::data_end() const {
   return detail::ptr_add(_ptr, _size);
 }
 
 inline size_t
-MemSpan<void>::size() const
-{
+MemSpan<void>::size() const {
   return _size;
 }
 
 template <typename U>
 auto
-MemSpan<void>::operator=(MemSpan<U> const &that) -> self_type &
-{
+MemSpan<void>::operator=(MemSpan<U> const &that) -> self_type & {
   _ptr  = that._ptr;
   _size = that.size();
   return *this;
 }
 
 inline constexpr MemSpan<void>
-MemSpan<void>::subspan(size_t offset, size_t count) const
-{
+MemSpan<void>::subspan(size_t offset, size_t count) const {
   return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(count, _size - offset)} : self_type{};
 }
 
 inline bool
-MemSpan<void>::contains(value_type const *ptr) const
-{
+MemSpan<void>::contains(value_type const *ptr) const {
   return _ptr <= ptr && ptr < this->data_end();
 }
 
 inline MemSpan<void>
-MemSpan<void>::prefix(size_t n) const
-{
+MemSpan<void>::prefix(size_t n) const {
   return {_ptr, std::min(n, _size)};
 }
 
 inline MemSpan<void> &
-MemSpan<void>::remove_prefix(size_t n)
-{
+MemSpan<void>::remove_prefix(size_t n) {
   n = std::max(_size, n);
   _size -= n;
   _ptr = static_cast<char *>(_ptr) + n;
@@ -952,37 +896,32 @@ MemSpan<void>::remove_prefix(size_t n)
 }
 
 inline MemSpan<void>
-MemSpan<void>::suffix(size_t count) const
-{
+MemSpan<void>::suffix(size_t count) const {
   count = std::max(count, _size);
   return {static_cast<char *>(this->data_end()) - count, count};
 }
 
 inline MemSpan<void> &
-MemSpan<void>::remove_suffix(size_t count)
-{
+MemSpan<void>::remove_suffix(size_t count) {
   _size -= std::max(count, _size);
   return *this;
 }
 
 template <typename U>
 MemSpan<U>
-MemSpan<void>::rebind() const
-{
+MemSpan<void>::rebind() const {
   return {static_cast<U *>(_ptr), detail::is_span_compatible<void, U>::count(_size)};
 }
 
 // Specialize so that @c void -> @c void rebinding compiles and works as expected.
 template <>
 inline MemSpan<void>
-MemSpan<void>::rebind() const
-{
+MemSpan<void>::rebind() const {
   return *this;
 }
 
 inline std::string_view
-MemSpan<void>::view() const
-{
+MemSpan<void>::view() const {
   return {static_cast<char const *>(_ptr), _size};
 }
 
@@ -993,26 +932,21 @@ MemSpan<void>::view() const
 // and size.
 namespace std
 {
-template <size_t IDX, typename R> class tuple_element<IDX, swoc::MemSpan<R>>
-{
+template <size_t IDX, typename R> class tuple_element<IDX, swoc::MemSpan<R>> {
   static_assert("swoc::MemSpan tuple index out of range");
 };
 
-template <typename R> class tuple_element<0, swoc::MemSpan<R>>
-{
+template <typename R> class tuple_element<0, swoc::MemSpan<R>> {
 public:
   using type = R *;
 };
 
-template <typename R> class tuple_element<1, swoc::MemSpan<R>>
-{
+template <typename R> class tuple_element<1, swoc::MemSpan<R>> {
 public:
   using type = size_t;
 };
 
-template <typename R> class tuple_size<swoc::MemSpan<R>> : public std::integral_constant<size_t, 2>
-{
-};
+template <typename R> class tuple_size<swoc::MemSpan<R>> : public std::integral_constant<size_t, 2> {};
 
 }; // namespace std
 

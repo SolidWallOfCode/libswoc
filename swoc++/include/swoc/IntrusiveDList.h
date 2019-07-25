@@ -80,8 +80,7 @@ namespace swoc
     between item pointers and iterators.
 
   */
-template <typename L> class IntrusiveDList
-{
+template <typename L> class IntrusiveDList {
   friend class iterator;
 
 public:
@@ -94,8 +93,7 @@ public:
     typename std::remove_reference<typename std::invoke_result<decltype(L::next_ptr), nullptr_t>::type>::type>::type;
 
   /// Const iterator.
-  class const_iterator
-  {
+  class const_iterator {
     using self_type = const_iterator; ///< Self reference type.
     friend class IntrusiveDList;
 
@@ -161,8 +159,7 @@ public:
   };
 
   /// Iterator for the list.
-  class iterator : public const_iterator
-  {
+  class iterator : public const_iterator {
     using self_type  = iterator;       ///< Self reference type.
     using super_type = const_iterator; ///< Super class type.
 
@@ -364,14 +361,12 @@ template <typename T, T *(T::*NEXT) = &T::_next, T *(T::*PREV) = &T::_prev> stru
 
 template <typename T, T *(T::*NEXT), T *(T::*PREV)>
 T *&
-IntrusiveLinkage<T, NEXT, PREV>::next_ptr(T *thing)
-{
+IntrusiveLinkage<T, NEXT, PREV>::next_ptr(T *thing) {
   return thing->*NEXT;
 }
 template <typename T, T *(T::*NEXT), T *(T::*PREV)>
 T *&
-IntrusiveLinkage<T, NEXT, PREV>::prev_ptr(T *thing)
-{
+IntrusiveLinkage<T, NEXT, PREV>::prev_ptr(T *thing) {
   return thing->*PREV;
 }
 
@@ -403,8 +398,7 @@ IntrusiveLinkage<T, NEXT, PREV>::prev_ptr(T *thing)
  */
 template <typename T, typename P>
 T *&
-ptr_ref_cast(P *&p)
-{
+ptr_ref_cast(P *&p) {
   union {
     P **_p;
     T **_t;
@@ -439,15 +433,13 @@ template <typename T, typename L> struct IntrusiveLinkageRebind {
 
 template <typename T, typename L>
 T *&
-IntrusiveLinkageRebind<T, L>::next_ptr(T *thing)
-{
+IntrusiveLinkageRebind<T, L>::next_ptr(T *thing) {
   return ptr_ref_cast<T>(L::next_ptr(thing));
 }
 
 template <typename T, typename L>
 T *&
-IntrusiveLinkageRebind<T, L>::prev_ptr(T *thing)
-{
+IntrusiveLinkageRebind<T, L>::prev_ptr(T *thing) {
   return ptr_ref_cast<T>(L::prev_ptr(thing));
 }
 
@@ -457,9 +449,7 @@ template <typename L> IntrusiveDList<L>::const_iterator::const_iterator() {}
 
 template <typename L>
 IntrusiveDList<L>::const_iterator::const_iterator(const list_type *list, value_type *v)
-  : _list(const_cast<list_type *>(list)), _v(const_cast<typename list_type::value_type *>(v))
-{
-}
+  : _list(const_cast<list_type *>(list)), _v(const_cast<typename list_type::value_type *>(v)) {}
 
 template <typename L> IntrusiveDList<L>::iterator::iterator() {}
 
@@ -467,24 +457,21 @@ template <typename L> IntrusiveDList<L>::iterator::iterator(list_type *list, val
 
 template <typename L>
 auto
-IntrusiveDList<L>::const_iterator::operator++() -> self_type &
-{
+IntrusiveDList<L>::const_iterator::operator++() -> self_type & {
   _v = L::next_ptr(_v);
   return *this;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::iterator::operator++() -> self_type &
-{
+IntrusiveDList<L>::iterator::operator++() -> self_type & {
   this->super_type::operator++();
   return *this;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::const_iterator::operator++(int) -> self_type
-{
+IntrusiveDList<L>::const_iterator::operator++(int) -> self_type {
   self_type tmp(*this);
   ++*this;
   return tmp;
@@ -492,8 +479,7 @@ IntrusiveDList<L>::const_iterator::operator++(int) -> self_type
 
 template <typename L>
 auto
-IntrusiveDList<L>::iterator::operator++(int) -> self_type
-{
+IntrusiveDList<L>::iterator::operator++(int) -> self_type {
   self_type tmp(*this);
   ++*this;
   return tmp;
@@ -501,28 +487,25 @@ IntrusiveDList<L>::iterator::operator++(int) -> self_type
 
 template <typename L>
 auto
-IntrusiveDList<L>::const_iterator::operator--() -> self_type &
-{
-  if (_v) {
+IntrusiveDList<L>::const_iterator::operator--() -> self_type & {
+  if (_v)
+  {
     _v = L::prev_ptr(_v);
-  } else if (_list) {
-    _v = _list->_tail;
-  }
+  } else if (_list)
+  { _v = _list->_tail; }
   return *this;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::iterator::operator--() -> self_type &
-{
+IntrusiveDList<L>::iterator::operator--() -> self_type & {
   this->super_type::operator--();
   return *this;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::const_iterator::operator--(int) -> self_type
-{
+IntrusiveDList<L>::const_iterator::operator--(int) -> self_type {
   self_type tmp(*this);
   --*this;
   return tmp;
@@ -530,63 +513,54 @@ IntrusiveDList<L>::const_iterator::operator--(int) -> self_type
 
 template <typename L>
 auto
-IntrusiveDList<L>::iterator::operator--(int) -> self_type
-{
+IntrusiveDList<L>::iterator::operator--(int) -> self_type {
   self_type tmp(*this);
   --*this;
   return tmp;
 }
 
-template <typename L> auto IntrusiveDList<L>::const_iterator::operator-> () const -> value_type *
-{
+template <typename L> auto IntrusiveDList<L>::const_iterator::operator-> () const -> value_type * {
   return _v;
 }
 
-template <typename L> auto IntrusiveDList<L>::iterator::operator-> () const -> value_type *
-{
+template <typename L> auto IntrusiveDList<L>::iterator::operator-> () const -> value_type * {
   return super_type::_v;
 }
 
-template <typename L> IntrusiveDList<L>::const_iterator::operator value_type *() const
-{
+template <typename L> IntrusiveDList<L>::const_iterator::operator value_type *() const {
   return _v;
 }
 
-template <typename L> auto IntrusiveDList<L>::const_iterator::operator*() const -> value_type &
-{
+template <typename L> auto IntrusiveDList<L>::const_iterator::operator*() const -> value_type & {
   return *_v;
 }
 
-template <typename L> auto IntrusiveDList<L>::iterator::operator*() const -> value_type &
-{
+template <typename L> auto IntrusiveDList<L>::iterator::operator*() const -> value_type & {
   return *super_type::_v;
 }
 
-template <typename L> IntrusiveDList<L>::iterator::operator value_type *() const
-{
+template <typename L> IntrusiveDList<L>::iterator::operator value_type *() const {
   return super_type::_v;
 }
 
 /// --- Main class
 
 template <typename L>
-IntrusiveDList<L>::IntrusiveDList(self_type &&that) : _head(that._head), _tail(that._tail), _count(that._count)
-{
+IntrusiveDList<L>::IntrusiveDList(self_type &&that) : _head(that._head), _tail(that._tail), _count(that._count) {
   that.clear();
 }
 
 template <typename L>
 bool
-IntrusiveDList<L>::empty() const
-{
+IntrusiveDList<L>::empty() const {
   return _head == nullptr;
 }
 
 template <typename L>
 bool
-IntrusiveDList<L>::contains(const value_type *v) const
-{
-  for (auto thing = _head; thing; thing = L::next_ptr(thing)) {
+IntrusiveDList<L>::contains(const value_type *v) const {
+  for (auto thing = _head; thing; thing = L::next_ptr(thing))
+  {
     if (thing == v)
       return true;
   }
@@ -595,26 +569,25 @@ IntrusiveDList<L>::contains(const value_type *v) const
 
 template <typename L>
 bool
-IntrusiveDList<L>::const_iterator::operator==(self_type const &that) const
-{
+IntrusiveDList<L>::const_iterator::operator==(self_type const &that) const {
   return this->_v == that._v;
 }
 
 template <typename L>
 bool
-IntrusiveDList<L>::const_iterator::operator!=(self_type const &that) const
-{
+IntrusiveDList<L>::const_iterator::operator!=(self_type const &that) const {
   return this->_v != that._v;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::prepend(value_type *v) -> self_type &
-{
+IntrusiveDList<L>::prepend(value_type *v) -> self_type & {
   L::prev_ptr(v) = nullptr;
-  if (nullptr != (L::next_ptr(v) = _head)) {
+  if (nullptr != (L::next_ptr(v) = _head))
+  {
     L::prev_ptr(_head) = v;
-  } else {
+  } else
+  {
     _tail = v; // transition empty -> non-empty
   }
   _head = v;
@@ -624,12 +597,13 @@ IntrusiveDList<L>::prepend(value_type *v) -> self_type &
 
 template <typename L>
 auto
-IntrusiveDList<L>::append(value_type *v) -> self_type &
-{
+IntrusiveDList<L>::append(value_type *v) -> self_type & {
   L::next_ptr(v) = nullptr;
-  if (nullptr != (L::prev_ptr(v) = _tail)) {
+  if (nullptr != (L::prev_ptr(v) = _tail))
+  {
     L::next_ptr(_tail) = v;
-  } else {
+  } else
+  {
     _head = v; // transition empty -> non-empty
   }
   _tail = v;
@@ -639,15 +613,15 @@ IntrusiveDList<L>::append(value_type *v) -> self_type &
 
 template <typename L>
 auto
-IntrusiveDList<L>::take_head() -> value_type *
-{
+IntrusiveDList<L>::take_head() -> value_type * {
   value_type *zret = _head;
-  if (_head) {
-    if (nullptr == (_head = L::next_ptr(_head))) {
+  if (_head)
+  {
+    if (nullptr == (_head = L::next_ptr(_head)))
+    {
       _tail = nullptr; // transition non-empty -> empty
-    } else {
-      L::prev_ptr(_head) = nullptr;
-    }
+    } else
+    { L::prev_ptr(_head) = nullptr; }
     L::next_ptr(zret) = L::prev_ptr(zret) = nullptr;
     --_count;
   }
@@ -656,15 +630,15 @@ IntrusiveDList<L>::take_head() -> value_type *
 
 template <typename L>
 auto
-IntrusiveDList<L>::take_tail() -> value_type *
-{
+IntrusiveDList<L>::take_tail() -> value_type * {
   value_type *zret = _tail;
-  if (_tail) {
-    if (nullptr == (_tail = L::prev_ptr(_tail))) {
+  if (_tail)
+  {
+    if (nullptr == (_tail = L::prev_ptr(_tail)))
+    {
       _head = nullptr; // transition non-empty -> empty
-    } else {
-      L::next_ptr(_tail) = nullptr;
-    }
+    } else
+    { L::next_ptr(_tail) = nullptr; }
     L::next_ptr(zret) = L::prev_ptr(zret) = nullptr;
     --_count;
   }
@@ -673,75 +647,74 @@ IntrusiveDList<L>::take_tail() -> value_type *
 
 template <typename L>
 auto
-IntrusiveDList<L>::insert_after(value_type *target, value_type *v) -> self_type &
-{
-  if (target) {
-    if (nullptr != (L::next_ptr(v) = L::next_ptr(target))) {
+IntrusiveDList<L>::insert_after(value_type *target, value_type *v) -> self_type & {
+  if (target)
+  {
+    if (nullptr != (L::next_ptr(v) = L::next_ptr(target)))
+    {
       L::prev_ptr(L::next_ptr(v)) = v;
-    } else if (_tail == target) {
-      _tail = v;
-    }
+    } else if (_tail == target)
+    { _tail = v; }
     L::prev_ptr(v)      = target;
     L::next_ptr(target) = v;
 
     ++_count;
-  } else {
-    this->append(v);
-  }
+  } else
+  { this->append(v); }
   return *this;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::insert_after(iterator const &target, value_type *v) -> self_type &
-{
+IntrusiveDList<L>::insert_after(iterator const &target, value_type *v) -> self_type & {
   return this->insert_after(target._v, v);
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::insert_before(value_type *target, value_type *v) -> self_type &
-{
-  if (target) {
-    if (nullptr != (L::prev_ptr(v) = L::prev_ptr(target))) {
+IntrusiveDList<L>::insert_before(value_type *target, value_type *v) -> self_type & {
+  if (target)
+  {
+    if (nullptr != (L::prev_ptr(v) = L::prev_ptr(target)))
+    {
       L::next_ptr(L::prev_ptr(v)) = v;
-    } else if (target == _head) {
-      _head = v;
-    }
+    } else if (target == _head)
+    { _head = v; }
     L::next_ptr(v)      = target;
     L::prev_ptr(target) = v;
 
     ++_count;
-  } else {
-    this->append(v);
-  }
+  } else
+  { this->append(v); }
   return *this;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::insert_before(iterator const &target, value_type *v) -> self_type &
-{
+IntrusiveDList<L>::insert_before(iterator const &target, value_type *v) -> self_type & {
   return this->insert_before(target._v, v);
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::erase(value_type *v) -> value_type *
-{
+IntrusiveDList<L>::erase(value_type *v) -> value_type * {
   value_type *zret{nullptr};
 
-  if (L::prev_ptr(v)) {
+  if (L::prev_ptr(v))
+  {
     L::next_ptr(L::prev_ptr(v)) = L::next_ptr(v);
   }
-  if (L::next_ptr(v)) {
+  if (L::next_ptr(v))
+  {
     zret                        = L::next_ptr(v);
     L::prev_ptr(L::next_ptr(v)) = L::prev_ptr(v);
   }
-  if (v == _head) {
+  if (v == _head)
+  {
     _head = L::next_ptr(v);
   }
-  if (v == _tail) {
+  if (v == _tail)
+  {
     _tail = L::prev_ptr(v);
   }
   L::prev_ptr(v) = L::next_ptr(v) = nullptr;
@@ -752,31 +725,32 @@ IntrusiveDList<L>::erase(value_type *v) -> value_type *
 
 template <typename L>
 auto
-IntrusiveDList<L>::erase(const iterator &loc) -> iterator
-{
+IntrusiveDList<L>::erase(const iterator &loc) -> iterator {
   return this->iterator_for(this->erase(loc._v));
 };
 
 template <typename L>
 auto
-IntrusiveDList<L>::erase(const iterator &first, const iterator &limit) -> iterator
-{
+IntrusiveDList<L>::erase(const iterator &first, const iterator &limit) -> iterator {
   value_type *spot = first;
   value_type *prev{L::prev_ptr(spot)};
-  if (prev) {
+  if (prev)
+  {
     L::next_ptr(prev) = limit;
   }
-  if (spot == _head) {
+  if (spot == _head)
+  {
     _head = limit;
   }
   // tail is only updated if @a limit is @a end (e.g., @c nullptr).
-  if (nullptr == limit) {
+  if (nullptr == limit)
+  {
     _tail = prev;
-  } else {
-    L::prev_ptr(limit) = prev;
-  }
+  } else
+  { L::prev_ptr(limit) = prev; }
   // Clear links in removed elements.
-  while (spot != limit) {
+  while (spot != limit)
+  {
     value_type *target{spot};
     spot                = L::next_ptr(spot);
     L::prev_ptr(target) = L::next_ptr(target) = nullptr;
@@ -787,9 +761,9 @@ IntrusiveDList<L>::erase(const iterator &first, const iterator &limit) -> iterat
 
 template <typename L>
 auto
-IntrusiveDList<L>::operator=(self_type &&that) -> self_type &
-{
-  if (this != &that) {
+IntrusiveDList<L>::operator=(self_type &&that) -> self_type & {
+  if (this != &that)
+  {
     this->_head  = that._head;
     this->_tail  = that._tail;
     this->_count = that._count;
@@ -800,85 +774,73 @@ IntrusiveDList<L>::operator=(self_type &&that) -> self_type &
 
 template <typename L>
 size_t
-IntrusiveDList<L>::count() const
-{
+IntrusiveDList<L>::count() const {
   return _count;
 };
 
 template <typename L>
 auto
-IntrusiveDList<L>::begin() const -> const_iterator
-{
+IntrusiveDList<L>::begin() const -> const_iterator {
   return const_iterator{this, _head};
 };
 
 template <typename L>
 auto
-IntrusiveDList<L>::begin() -> iterator
-{
+IntrusiveDList<L>::begin() -> iterator {
   return iterator{this, _head};
 };
 
 template <typename L>
 auto
-IntrusiveDList<L>::end() const -> const_iterator
-{
+IntrusiveDList<L>::end() const -> const_iterator {
   return const_iterator{this, nullptr};
 };
 
 template <typename L>
 auto
-IntrusiveDList<L>::end() -> iterator
-{
+IntrusiveDList<L>::end() -> iterator {
   return iterator{this, nullptr};
 };
 
 template <typename L>
 auto
-IntrusiveDList<L>::iterator_for(value_type *v) -> iterator
-{
+IntrusiveDList<L>::iterator_for(value_type *v) -> iterator {
   return iterator{this, v};
 };
 
 template <typename L>
 auto
-IntrusiveDList<L>::iterator_for(const value_type *v) const -> const_iterator
-{
+IntrusiveDList<L>::iterator_for(const value_type *v) const -> const_iterator {
   return const_iterator{this, v};
 };
 
 template <typename L>
 auto
-IntrusiveDList<L>::tail() -> value_type *
-{
+IntrusiveDList<L>::tail() -> value_type * {
   return _tail;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::tail() const -> const value_type *
-{
+IntrusiveDList<L>::tail() const -> const value_type * {
   return _tail;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::head() -> value_type *
-{
+IntrusiveDList<L>::head() -> value_type * {
   return _head;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::head() const -> const value_type *
-{
+IntrusiveDList<L>::head() const -> const value_type * {
   return _head;
 }
 
 template <typename L>
 auto
-IntrusiveDList<L>::clear() -> self_type &
-{
+IntrusiveDList<L>::clear() -> self_type & {
   _head = _tail = nullptr;
   _count        = 0;
   return *this;
@@ -896,19 +858,18 @@ namespace detail
   template <typename L, typename F>
   auto
   Intrusive_DList_Apply(IntrusiveDList<L> &list, F &&f)
-    -> decltype(f(*static_cast<typename IntrusiveDList<L>::value_type *>(nullptr)), list)
-  {
+    -> decltype(f(*static_cast<typename IntrusiveDList<L>::value_type *>(nullptr)), list) {
     return list.apply([&f](typename IntrusiveDList<L>::value_type *v) { return f(*v); });
   }
 
   template <typename L, typename F>
   auto
   Intrusive_DList_Apply(IntrusiveDList<L> &list, F &&f)
-    -> decltype(f(static_cast<typename IntrusiveDList<L>::value_type *>(nullptr)), list)
-  {
+    -> decltype(f(static_cast<typename IntrusiveDList<L>::value_type *>(nullptr)), list) {
     auto spot{list.begin()};
     auto limit{list.end()};
-    while (spot != limit) {
+    while (spot != limit)
+    {
       f(spot++); // post increment means @a spot is updated before @a f is applied.
     }
     return list;
@@ -918,8 +879,7 @@ namespace detail
 template <typename L>
 template <typename F>
 auto
-IntrusiveDList<L>::apply(F &&f) -> self_type &
-{
+IntrusiveDList<L>::apply(F &&f) -> self_type & {
   return detail::Intrusive_DList_Apply(*this, f);
 };
 
