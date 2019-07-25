@@ -84,7 +84,9 @@ TEST_CASE("Errata copy", "[libswoc][Errata]")
 TEST_CASE("Rv", "[libswoc][Errata]")
 {
   Rv<int> zret;
-  struct Thing { char const * s = "thing"; };
+  struct Thing {
+    char const *s = "thing";
+  };
   using ThingHandle = std::unique_ptr<Thing>;
 
   zret = 17;
@@ -116,28 +118,28 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   test(zret); // invoke it.
 
   // Now try it on a non-copyable object.
-  ThingHandle handle { new Thing };
+  ThingHandle handle{new Thing};
   Rv<ThingHandle> thing_rv;
 
   handle->s = "other"; // mark it.
-  thing_rv = std::move(handle);
+  thing_rv  = std::move(handle);
   thing_rv.note(Severity::WARN, "This is a warning");
 
-  auto && [ tr1, te1 ] { thing_rv };
+  auto &&[tr1, te1]{thing_rv};
   REQUIRE(te1.count() == 1);
   REQUIRE(te1.severity() == Severity::WARN);
 
-  ThingHandle other { std::move(tr1) };
+  ThingHandle other{std::move(tr1)};
   REQUIRE(tr1.get() == nullptr);
   REQUIRE(thing_rv.result().get() == nullptr);
   REQUIRE(other->s == "other"sv);
 
   auto maker = []() -> Rv<ThingHandle> {
     ThingHandle handle = std::make_unique<Thing>();
-    handle->s = "made";
+    handle->s          = "made";
     return {std::move(handle)};
   };
 
-  auto && [ tr2, te2 ] { maker() };
+  auto &&[tr2, te2]{maker()};
   REQUIRE(tr2->s == "made"sv);
 };

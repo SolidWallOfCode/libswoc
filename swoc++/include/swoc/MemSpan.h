@@ -146,13 +146,13 @@ public:
    *
    * @return A reference to the first element in the span.
    */
-  T& front();
+  T &front();
 
   /** Access the last element in the span.
    *
    * @return A reference to the last element in the span.
    */
-  T& back();
+  T &back();
 
   /** Apply a function @a f to every element of the span.
    *
@@ -160,7 +160,7 @@ public:
    * @param f Functor instance.
    * @return @a this
    */
-  template < typename F > self_type & apply(F && f);
+  template <typename F> self_type &apply(F &&f);
 
   /** Make a copy of @a this span on the same memory but of type @a U.
    *
@@ -832,16 +832,26 @@ MemSpan<void>::operator=(MemSpan<U> const &that) -> self_type &
   return *this;
 }
 
-template<typename T>
-T &MemSpan<T>::front() { return *_ptr; }
+template <typename T>
+T &
+MemSpan<T>::front()
+{
+  return *_ptr;
+}
 
-template<typename T>
-T &MemSpan<T>::back() { return _ptr[_count - 1]; }
+template <typename T>
+T &
+MemSpan<T>::back()
+{
+  return _ptr[_count - 1];
+}
 
-template<typename T>
-template<typename F>
-MemSpan<T> &MemSpan<T>::apply(F &&f) {
-  for ( auto & item : *this ) {
+template <typename T>
+template <typename F>
+MemSpan<T> &
+MemSpan<T>::apply(F &&f)
+{
+  for (auto &item : *this) {
     f(item);
   }
   return *this;

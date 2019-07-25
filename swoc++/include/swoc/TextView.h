@@ -815,7 +815,12 @@ svto_radix(swoc::TextView &src)
   return zret;
 };
 
-template <int N> uintmax_t svto_radix(swoc::TextView &&src) { return svto_radix<N>(src); }
+template <int N>
+uintmax_t
+svto_radix(swoc::TextView &&src)
+{
+  return svto_radix<N>(src);
+}
 // ----------------------------------------------------------
 // Inline implementations.
 // Note: Why, you may ask, do I use @c TextView::self_type for return type instead of the
