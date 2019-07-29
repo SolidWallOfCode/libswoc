@@ -195,7 +195,15 @@ public:
 
       @return An instance that contains the leading @a count elements of @a this.
   */
-  self_type prefix(size_t count) const;
+  constexpr self_type prefix(size_t count) const;
+
+  /** Get the initial segment of @a count elements.
+
+      @return An instance that contains the leading @a count elements of @a this.
+
+     @note Synonymn for @c prefix for STL compatibility.
+  */
+  constexpr self_type first(size_t count) const;
 
   /** Shrink the span by removing @a count leading elements.
    *
@@ -209,7 +217,16 @@ public:
    * @param count Number of elements to retrieve.
    * @return An instance that contains the trailing @a count elements of @a this.
    */
-  self_type suffix(size_t count) const;
+  constexpr self_type suffix(size_t count) const;
+
+  /** Get the trailing segment of @a count elements.
+   *
+   * @param count Number of elements to retrieve.
+   * @return An instance that contains the trailing @a count elements of @a this.
+   *
+   * @note Synonymn for @c suffix for STL compatibility.
+   */
+  constexpr self_type last(size_t count) const;
 
   /** Shrink the span by removing @a count trailing elements.
    *
@@ -217,6 +234,17 @@ public:
    * @return @c *this
    */
   self_type &remove_suffix(size_t count);
+
+  /** Return a sub span of @a this span.
+   *
+   * @param offset Offset (index) of first element in subspan.
+   * @param count Number of elements in the subspan.
+   * @return A subspan starting at @a offset for @a count elements.
+   *
+   * The result is clipped by @a this - if @a offset is out of range an empty span is returned.
+   * Otherwise @c count is clipped by the number of elements available in @a this.
+   */
+  constexpr self_type subspan(size_t offset, size_t count) const;
 
   /** Return a view of the memory.
    *
@@ -249,7 +277,7 @@ public:
 
 protected:
   value_type *_ptr = nullptr; ///< Pointer to base of memory chunk.
-  size_t _size     = 0;       ///< Number of elements.
+  size_t _size     = 0;       ///< Number of bytes in the chunk.
 
 public:
   /// Default constructor (empty buffer).
@@ -392,6 +420,17 @@ public:
    */
   self_type &remove_suffix(size_t n);
 
+  /** Return a sub span of @a this span.
+   *
+   * @param offset Offset (index) of first element in subspan.
+   * @param count Number of elements in the subspan.
+   * @return A subspan starting at @a offset for @a count elements.
+   *
+   * The result is clipped by @a this - if @a offset is out of range an empty span is returned.
+   * Otherwise @c count is clipped by the number of elements available in @a this.
+   */
+  constexpr self_type subspan(size_t offset, size_t count) const;
+
   /** Return a view of the memory.
    *
    * @return A @c string_view covering the span contents.
@@ -403,7 +442,7 @@ public:
 
 namespace detail
 {
-  /// Suport pointer distance calculations for all types, @b include @c <void*>.
+  /// pointer distance calculations for all types, @b including @c <void*>.
   /// This is useful in templates.
   inline size_t
   ptr_distance(void const *first, void const *last)
@@ -416,6 +455,12 @@ namespace detail
   ptr_distance(T const *first, T const *last)
   {
     return last - first;
+  }
+
+  inline void *
+  ptr_add(void *ptr, size_t count)
+  {
+    return static_cast<char *>(ptr) + count;
   }
 
   /** Functor to convert span types.
@@ -688,10 +733,17 @@ MemSpan<T>::contains(T const *ptr) const
 }
 
 template <typename T>
-auto
+constexpr auto
 MemSpan<T>::prefix(size_t count) const -> self_type
 {
   return {_ptr, std::min(count, _count)};
+}
+
+template <typename T>
+constexpr auto
+MemSpan<T>::first(size_t count) const -> self_type
+{
+  return this->prefix(count);
 }
 
 template <typename T>
@@ -705,7 +757,7 @@ MemSpan<T>::remove_prefix(size_t count) -> self_type &
 }
 
 template <typename T>
-auto
+constexpr auto
 MemSpan<T>::suffix(size_t count) const -> self_type
 {
   count = std::min(_count, count);
@@ -713,10 +765,49 @@ MemSpan<T>::suffix(size_t count) const -> self_type
 }
 
 template <typename T>
+constexpr MemSpan<T>
+MemSpan<T>::last(size_t count) const
+{
+  return this->suffix(count);
+}
+
+template <typename T>
 MemSpan<T> &
 MemSpan<T>::remove_suffix(size_t count)
 {
   _count -= std::min(count, _count);
+  return *this;
+}
+
+template <typename T>
+constexpr MemSpan<T>
+MemSpan<T>::subspan(size_t offset, size_t count) const
+{
+  return offset <= _count ? self_type{this->data() + offset, std::min(count, _count - offset)} : self_type{};
+}
+
+template <typename T>
+T &
+MemSpan<T>::front()
+{
+  return *_ptr;
+}
+
+template <typename T>
+T &
+MemSpan<T>::back()
+{
+  return _ptr[_count - 1];
+}
+
+template <typename T>
+template <typename F>
+MemSpan<T> &
+MemSpan<T>::apply(F &&f)
+{
+  for (auto &item : *this) {
+    f(item);
+  }
   return *this;
 }
 
@@ -814,7 +905,7 @@ MemSpan<void>::data() const
 inline void *
 MemSpan<void>::data_end() const
 {
-  return static_cast<char *>(_ptr) + _size;
+  return detail::ptr_add(_ptr, _size);
 }
 
 inline size_t
@@ -832,29 +923,10 @@ MemSpan<void>::operator=(MemSpan<U> const &that) -> self_type &
   return *this;
 }
 
-template <typename T>
-T &
-MemSpan<T>::front()
+inline constexpr MemSpan<void>
+MemSpan<void>::subspan(size_t offset, size_t count) const
 {
-  return *_ptr;
-}
-
-template <typename T>
-T &
-MemSpan<T>::back()
-{
-  return _ptr[_count - 1];
-}
-
-template <typename T>
-template <typename F>
-MemSpan<T> &
-MemSpan<T>::apply(F &&f)
-{
-  for (auto &item : *this) {
-    f(item);
-  }
-  return *this;
+  return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(count, _size - offset)} : self_type{};
 }
 
 inline bool
@@ -882,7 +954,7 @@ inline MemSpan<void>
 MemSpan<void>::suffix(size_t count) const
 {
   count = std::max(count, _size);
-  return {static_cast<char *>(this->data_end()) - count, size_t(count)};
+  return {static_cast<char *>(this->data_end()) - count, count};
 }
 
 inline MemSpan<void> &
