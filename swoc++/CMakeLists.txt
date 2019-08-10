@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(lib-swoc++ CXX)
+set(LIBSWOC_VERSION "1.0.8")
 set(CMAKE_CXX_STANDARD 17)
 include(GNUInstallDirs)
 
@@ -62,6 +63,10 @@ install(EXPORT swoc++-config
     NAMESPACE swoc++::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/swoc++
     )
+
+set(PKG_CONFIG_FILE ${CMAKE_BINARY_DIR}/libswoc++.pc)
+configure_file("libswoc++.pc.cmake" ${PKG_CONFIG_FILE} @ONLY)
+install(FILES ${PKG_CONFIG_FILE} DESTINATION ${LIB_INSTALL_DIR}/pkgconfig)
 
 # Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.
 # AFAICT the file isn't created at all even with this enabled.
