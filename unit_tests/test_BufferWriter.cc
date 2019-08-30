@@ -79,7 +79,7 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     }
     X &restrict(size_t) override { return *this; }
     X &restore(size_t) override { return *this; }
-    X &commit(size_t) override { return *this; }
+    bool commit(size_t) override { return true; }
     X &discard(size_t) override { return *this; }
     X &copy(size_t, size_t, size_t) { return *this; }
     std::ostream &

@@ -125,14 +125,19 @@ public:
 
   /** Increase the extent by @a n bytes.
    *
-   * @param n Number of bytes to consume.
-   * @return @a this.
+   * @param n Number of bytes.
+   * @return @c true if the commit is final, @c false if it should be retried.
    *
    * This is used to add data written in the @c aux_data to the written data in the buffer.
    *
+   * The return value should be @c true unless the write operation proceeding the call to @c commit
+   * along with the @c commit call should be retried. That is only reasonable if some state in the
+   * concrete implementation has changed to make success possible on the next try. Generally this
+   * will be because the implementation increased capacity.
+   *
    * @internal Concrete subclasses @b must override this in a way consistent with the specific buffer type.
    */
-  virtual BufferWriter &commit(size_t n) = 0;
+  virtual bool commit(size_t n) = 0;
 
   /** Decrease the extent by @a n.
    *
@@ -348,7 +353,7 @@ public:
   size_t extent() const override;
 
   /// Advance the used part of the output buffer.
-  self_type &commit(size_t n) override;
+  bool commit(size_t n) override;
 
   /// Drop @a n characters from the end of the buffer.
   self_type &discard(size_t n) override;
@@ -537,12 +542,12 @@ FixedBufferWriter::aux_data()
   return error() ? nullptr : _buf + _attempted;
 }
 
-inline auto
-FixedBufferWriter::commit(size_t n) -> self_type &
+inline bool
+FixedBufferWriter::commit(size_t n)
 {
   _attempted += n;
 
-  return *this;
+  return true;
 }
 
 inline size_t

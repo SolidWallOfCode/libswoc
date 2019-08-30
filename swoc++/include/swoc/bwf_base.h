@@ -865,27 +865,33 @@ BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &arg
       if (spec._max < width) {
         width = spec._max;
       }
-      FixedBufferWriter lw{this->aux_data(), width};
 
-      if (spec._name.size() == 0) {
-        spec._idx = arg_idx++;
-      }
-      if (0 <= spec._idx) {
-        if (spec._idx < N) {
-          if (spec._type == bwf::Spec::CAPTURE_TYPE) {
-            bwf::arg_capture(ex, lw, spec, args.capture(spec._idx), swoc::meta::CaseArg);
-          } else {
-            args.print(spec._idx, lw, spec);
-          }
-        } else {
-          bwf::Err_Bad_Arg_Index(lw, spec._idx, N);
+      while (true) {
+        FixedBufferWriter lw { this->aux_data(), width };
+
+        if (spec._name.size() == 0) {
+          spec._idx = arg_idx++;
         }
-      } else if (spec._name.size()) {
-        names(lw, spec);
-      }
-      if (lw.extent()) {
-        bwf::Adjust_Alignment(lw, spec);
-        this->commit(lw.extent());
+        if (0 <= spec._idx) {
+          if (spec._idx < N) {
+            if (spec._type == bwf::Spec::CAPTURE_TYPE) {
+              bwf::arg_capture(ex, lw, spec, args.capture(spec._idx), swoc::meta::CaseArg);
+            } else {
+              args.print(spec._idx, lw, spec);
+            }
+          } else {
+            bwf::Err_Bad_Arg_Index(lw, spec._idx, N);
+          }
+        } else if (spec._name.size()) {
+          names(lw, spec);
+        }
+        if (lw.extent()) {
+          bwf::Adjust_Alignment(lw, spec);
+          if (! this->commit(lw.extent())) {
+            continue;
+          }
+        }
+        break;
       }
     }
   }

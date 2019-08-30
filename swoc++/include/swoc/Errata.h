@@ -62,7 +62,7 @@
 namespace swoc
 {
 /// Severity levels for Errata.
-enum class Severity {
+enum class Severity : uint8_t {
   DIAG,  ///< Diagnostic (internal use).
   INFO,  ///< User visible but not a problem.
   WARN,  ///< Warning.
@@ -416,13 +416,6 @@ public:
    */
   Rv(result_type const &result, Errata &&errata);
 
-  /** Construct with copy of @a result and @a errata.
-   *
-   * @param result Return value / result.
-   * @param errata Source errata to copy.
-   */
-  Rv(result_type const &result, const Errata &errata);
-
   /** Construct with move of @a result and empty (successful) Errata.
    *
    * @param result The return / result value.
@@ -435,13 +428,6 @@ public:
    * @param errata Status to move.
    */
   Rv(result_type &&result, Errata &&errata);
-
-  /** Construct with a move of result and a copy of @a errata.
-   *
-   * @param result The return / result value to move.
-   * @param errata Errata to copy.
-   */
-  Rv(result_type &&result, const Errata &errata);
 
   /** Construct only from @a errata
    *
@@ -823,13 +809,9 @@ template <typename T> Rv<T>::Rv(result_type const &r) : _r(r) {}
 
 template <typename T> Rv<T>::Rv(result_type const &r, Errata &&errata) : _r(r), _errata(std::move(errata)) {}
 
-template <typename T> Rv<T>::Rv(result_type const &r, const Errata &errata) : _r(r), _errata(errata) {}
-
 template <typename R> Rv<R>::Rv(R &&r) : _r(std::move(r)) {}
 
 template <typename R> Rv<R>::Rv(R &&r, Errata &&errata) : _r(std::move(r)), _errata(std::move(errata)) {}
-
-template <typename R> Rv<R>::Rv(R &&r, const Errata &errata) : _r(std::move(r)), _errata(errata) {}
 
 template<typename R> Rv<R>::Rv(Errata &&errata) : _errata{std::move(errata)} {}
 
