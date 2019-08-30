@@ -861,18 +861,17 @@ BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &arg
     }
 
     if (spec_p) {
-      if (spec._name.size() == 0) {
-        spec._idx = arg_idx++;
+      size_t width = this->remaining();
+      if (spec._max < width) {
+        width = spec._max;
       }
 
       while (true) {
-        size_t width = this->remaining();
-        if (spec._max < width) {
-          width = spec._max;
+        FixedBufferWriter lw { this->aux_data(), width };
+
+        if (spec._name.size() == 0) {
+          spec._idx = arg_idx++;
         }
-
-        FixedBufferWriter lw{this->aux_data(), width};
-
         if (0 <= spec._idx) {
           if (spec._idx < N) {
             if (spec._type == bwf::Spec::CAPTURE_TYPE) {
@@ -888,7 +887,7 @@ BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &arg
         }
         if (lw.extent()) {
           bwf::Adjust_Alignment(lw, spec);
-          if (!this->commit(lw.extent())) {
+          if (! this->commit(lw.extent())) {
             continue;
           }
         }

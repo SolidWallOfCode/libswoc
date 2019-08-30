@@ -95,7 +95,7 @@ namespace file
     char const *c_str() const;
 
     /// The path as a string.
-    std::string const &string() const;
+    std::string const& string() const;
 
     /// A view of the path.
     swoc::TextView view() const;
@@ -183,7 +183,7 @@ namespace file
     return _path.c_str();
   }
 
-  inline std::string const &
+  inline std::string const&
   path::string() const
   {
     return _path;
@@ -195,7 +195,7 @@ namespace file
     return _path;
   }
 
-  inline bool
+inline bool
   path::empty() const
   {
     return _path.empty();

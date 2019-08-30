@@ -447,26 +447,6 @@ public:
    * }
    * @endcode
    */
-  Rv(Errata &&errata);
-
-  /** Construct only from @a errata
-   *
-   * @param errata Errata instance.
-   *
-   * This is useful for error conditions. The result is default constructed and the @a errata
-   * consumed by the return value. If @c result_type is a smart pointer or other cheaply default
-   * constructed class this can make the code much cleaner;
-   *
-   * @code
-   * // Assume Thing can be default constructed cheaply.
-   * Rv<Thing> func(...) {
-   *   if (something_bad) {
-   *     return Errata().error("Bad thing happen!");
-   *   }
-   *   return new Thing{arg1, arg2};
-   * }
-   * @endcode
-   */
   Rv(Errata && errata);
 
   /** Push a message in to the result.
@@ -834,8 +814,6 @@ template <typename R> Rv<R>::Rv(R &&r) : _r(std::move(r)) {}
 template <typename R> Rv<R>::Rv(R &&r, Errata &&errata) : _r(std::move(r)), _errata(std::move(errata)) {}
 
 template <typename R> Rv<R>::Rv(Errata &&errata) : _errata{std::move(errata)} {}
-
-template<typename R> Rv<R>::Rv(Errata &&errata) : _errata{std::move(errata)} {}
 
 template <typename T> Rv<T>::operator result_type const &() const
 {
