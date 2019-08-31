@@ -986,3 +986,27 @@ MemSpan<void>::view() const
 }
 
 } // namespace swoc
+
+/// @cond NO_DOXYGEN
+// STL tuple support - this allows the @c MemSpan to be used as a tuple of a pointer
+// and size.
+namespace std {
+template < size_t IDX, typename R > class tuple_element<IDX, swoc::MemSpan<R>> {
+  static_assert("swoc::MemSpan tuple index out of range");
+};
+
+template < typename R > class tuple_element<0, swoc::MemSpan<R>> {
+public:
+using type = R *;
+};
+
+template < typename R > class tuple_element<1, swoc::MemSpan<R>> {
+public:
+using type = size_t;
+};
+
+template < typename R > class tuple_size<swoc::MemSpan<R>> : public std::integral_constant<size_t, 2> {};
+
+}; // namespace std
+
+/// @endcond
