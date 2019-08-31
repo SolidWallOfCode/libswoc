@@ -65,7 +65,7 @@ namespace bwf
     /// Construct by parsing @a fmt.
     Spec(const TextView &fmt);
     /// Parse a specifier.
-    /// @a this is reset to default and then updated in accordance with @a fmt.
+    /// State is not reset, @a this should be default constructed before calling.
     bool parse(TextView fmt);
 
     char _fill = ' ';      ///< Fill character.
@@ -861,17 +861,18 @@ BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &arg
     }
 
     if (spec_p) {
-      size_t width = this->remaining();
-      if (spec._max < width) {
-        width = spec._max;
+      if (spec._name.size() == 0) {
+        spec._idx = arg_idx++;
       }
 
       while (true) {
+        size_t width = this->remaining();
+        if (spec._max < width) {
+          width = spec._max;
+        }
+
         FixedBufferWriter lw { this->aux_data(), width };
 
-        if (spec._name.size() == 0) {
-          spec._idx = arg_idx++;
-        }
         if (0 <= spec._idx) {
           if (spec._idx < N) {
             if (spec._type == bwf::Spec::CAPTURE_TYPE) {
@@ -1186,6 +1187,7 @@ FixedBufferWriter::print_v(bwf::Format const &fmt, std::tuple<Args...> const &ar
 {
   return static_cast<self_type &>(this->super_type::print_v(fmt, args));
 }
+
 /// @endcond
 
 // Special case support for @c Scalar, because @c Scalar is a base utility for some other utilities

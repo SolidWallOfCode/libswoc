@@ -27,6 +27,7 @@
 #include <string_view>
 #include <type_traits>
 #include <ratio>
+#include <tuple>
 #include <exception>
 
 namespace swoc
