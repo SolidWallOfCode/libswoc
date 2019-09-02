@@ -447,7 +447,7 @@ public:
    * }
    * @endcode
    */
-  Rv(Errata && errata);
+  Rv(Errata &&errata);
 
   /** Push a message in to the result.
    *
@@ -813,7 +813,7 @@ template <typename R> Rv<R>::Rv(R &&r) : _r(std::move(r)) {}
 
 template <typename R> Rv<R>::Rv(R &&r, Errata &&errata) : _r(std::move(r)), _errata(std::move(errata)) {}
 
-template<typename R> Rv<R>::Rv(Errata &&errata) : _errata{std::move(errata)} {}
+template <typename R> Rv<R>::Rv(Errata &&errata) : _errata{std::move(errata)} {}
 
 template <typename T> Rv<T>::operator result_type const &() const
 {

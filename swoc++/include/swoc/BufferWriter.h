@@ -323,13 +323,13 @@ public:
   FixedBufferWriter &operator=(const FixedBufferWriter &) = delete;
 
   /// Move constructor.
-  FixedBufferWriter(FixedBufferWriter && that);
+  FixedBufferWriter(FixedBufferWriter &&that);
 
   /// Move assignment.
-  FixedBufferWriter &operator=(FixedBufferWriter && that);
+  FixedBufferWriter &operator=(FixedBufferWriter &&that);
 
   /// Reset buffer.
-  self_type & assign(MemSpan<char> const& span);
+  self_type &assign(MemSpan<char> const &span);
 
   /// Write a single character @a c to the buffer.
   FixedBufferWriter &write(char c) override;
@@ -399,9 +399,9 @@ public:
   /// @endcond
 
 protected:
-  char *const _buffer;        ///< Output buffer.
-  size_t _capacity;        ///< Size of output buffer.
-  size_t _attempted   = 0; ///< Number of characters written, including those discarded due error condition.
+  char *const _buffer;   ///< Output buffer.
+  size_t _capacity;      ///< Size of output buffer.
+  size_t _attempted = 0; ///< Number of characters written, including those discarded due error condition.
 };
 
 /** A @c BufferWriter that has an internal buffer.
@@ -498,30 +498,36 @@ inline FixedBufferWriter::FixedBufferWriter(MemSpan<char> const &span) : _buffer
 
 inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buffer(nullptr), _capacity(0) {}
 
-
-inline FixedBufferWriter::self_type &FixedBufferWriter::detach() {
-  const_cast<char*&>(_buffer) = nullptr;
-  _capacity = 0;
-  _attempted = 0;
+inline FixedBufferWriter::self_type &
+FixedBufferWriter::detach()
+{
+  const_cast<char *&>(_buffer) = nullptr;
+  _capacity                    = 0;
+  _attempted                   = 0;
   return *this;
 }
 
-inline FixedBufferWriter::FixedBufferWriter(FixedBufferWriter &&that) : _buffer(that._buffer), _capacity(that._capacity), _attempted(that._attempted) {
+inline FixedBufferWriter::FixedBufferWriter(FixedBufferWriter &&that)
+  : _buffer(that._buffer), _capacity(that._capacity), _attempted(that._attempted)
+{
   that.detach();
 }
 
-inline FixedBufferWriter::self_type &FixedBufferWriter::assign(MemSpan<char> const &span) {
-  const_cast<char*&>(_buffer) = span.data();
-  _capacity = span.size();
-  _attempted = 0;
+inline FixedBufferWriter::self_type &
+FixedBufferWriter::assign(MemSpan<char> const &span)
+{
+  const_cast<char *&>(_buffer) = span.data();
+  _capacity                    = span.size();
+  _attempted                   = 0;
   return *this;
 }
 
-
-inline FixedBufferWriter &FixedBufferWriter::operator=(FixedBufferWriter &&that) {
-  const_cast<char*&>(_buffer) = that._buffer;
-  _capacity = that._capacity;
-  _attempted = that._attempted;
+inline FixedBufferWriter &
+FixedBufferWriter::operator=(FixedBufferWriter &&that)
+{
+  const_cast<char *&>(_buffer) = that._buffer;
+  _capacity                    = that._capacity;
+  _attempted                   = that._attempted;
   that.detach();
   return *this;
 }

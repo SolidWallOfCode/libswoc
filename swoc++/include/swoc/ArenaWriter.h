@@ -10,8 +10,8 @@
 #include "swoc/bwf_base.h"
 #include "swoc/MemArena.h"
 
-namespace swoc {
-
+namespace swoc
+{
 /** Buffer writer for a @c MemArena.
  *
  * This provides formatted output to the remnant of a @c MemArena. The output resides in uncommitted
@@ -19,15 +19,16 @@ namespace swoc {
  * the output without overflow. Because it uses the remnant, if there is an error or resizing,
  * no arena memory will be lost.
  */
-class ArenaWriter : public FixedBufferWriter {
-  using self_type = ArenaWriter; ///< Self reference type.
+class ArenaWriter : public FixedBufferWriter
+{
+  using self_type  = ArenaWriter;       ///< Self reference type.
   using super_type = FixedBufferWriter; ///< Parent type.
 public:
   /** Constructor.
    *
    * @param arena Arena to use for storage.
    */
-  ArenaWriter(MemArena & arena);
+  ArenaWriter(MemArena &arena);
 
   /** Write data to the buffer.
    *
@@ -35,7 +36,7 @@ public:
    * @param n Amount of data in bytes.
    * @return @a this
    */
-  ArenaWriter& write(void const * data, size_t n) override;
+  ArenaWriter &write(void const *data, size_t n) override;
 
   /// Write a single character @a c to the buffer.
   ArenaWriter &write(char c) override;
@@ -50,7 +51,7 @@ public:
   bool commit(size_t n) override;
 
 protected:
-  MemArena & _arena; ///< Arena for the buffer.
+  MemArena &_arena; ///< Arena for the buffer.
 
   /** Reallocate the buffer to increase the capacity.
    *
