@@ -447,7 +447,7 @@ public:
    * }
    * @endcode
    */
-  Rv(Errata && errata);
+  Rv(Errata &&errata);
 
   /** Push a message in to the result.
    *

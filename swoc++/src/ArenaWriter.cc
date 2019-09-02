@@ -20,7 +20,8 @@ ArenaWriter::write(char c)
 }
 
 ArenaWriter &
-ArenaWriter::write(void const *data, size_t n) {
+ArenaWriter::write(void const *data, size_t n)
+{
   if (n + _attempted > _capacity) {
     this->realloc(n + _attempted);
   }
@@ -28,7 +29,9 @@ ArenaWriter::write(void const *data, size_t n) {
   return *this;
 }
 
-bool ArenaWriter::commit(size_t n) {
+bool
+ArenaWriter::commit(size_t n)
+{
   if (_attempted + n > _capacity) {
     this->realloc(_attempted + n);
     return false;
@@ -36,11 +39,13 @@ bool ArenaWriter::commit(size_t n) {
   return this->super_type::commit(n);
 }
 
-void ArenaWriter::realloc(size_t n) {
-  auto text = this->view(); // Current data.
-  auto span = _arena.require(n).remnant().rebind<char>();
+void
+ArenaWriter::realloc(size_t n)
+{
+  auto text                    = this->view(); // Current data.
+  auto span                    = _arena.require(n).remnant().rebind<char>();
   const_cast<char *&>(_buffer) = span.data();
-  _capacity = span.size();
+  _capacity                    = span.size();
   memcpy(_buffer, text.data(), text.size());
 }
 

@@ -871,7 +871,7 @@ BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &arg
           width = spec._max;
         }
 
-        FixedBufferWriter lw { this->aux_data(), width };
+        FixedBufferWriter lw{this->aux_data(), width};
 
         if (0 <= spec._idx) {
           if (spec._idx < N) {
@@ -888,7 +888,7 @@ BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &arg
         }
         if (lw.extent()) {
           bwf::Adjust_Alignment(lw, spec);
-          if (! this->commit(lw.extent())) {
+          if (!this->commit(lw.extent())) {
             continue;
           }
         }
