@@ -19,11 +19,15 @@
  */
 
 #include <cstring>
+#include <variant>
 
 #include "swoc/swoc_meta.h"
 #include "swoc/TextView.h"
 
 #include "catch.hpp"
+
+using swoc::TextView;
+using namespace swoc::literals;
 
 struct A {
   int _value;
@@ -104,4 +108,18 @@ TEST_CASE("Meta", "[meta]")
   REQUIRE(detect(B()) == "value");
   REQUIRE(detect(C()) == "none");
   REQUIRE(detect(AA()) == "value");
+}
+
+TEST_CASE("Meta vary", "[meta][vary]")
+{
+  std::variant<int, bool, TextView> v;
+  auto visitor = swoc::meta::vary{[](int &i) -> int { return i; }, [](bool &b) -> int { return b ? -1 : -2; },
+                                  [](TextView &tv) -> int { return swoc::svtou(tv); }};
+
+  v = 37;
+  REQUIRE(std::visit(visitor, v) == 37);
+  v = true;
+  REQUIRE(std::visit(visitor, v) == -1);
+  v = "956"_tv;
+  REQUIRE(std::visit(visitor, v) == 956);
 }

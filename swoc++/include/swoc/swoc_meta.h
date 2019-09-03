@@ -119,5 +119,27 @@ namespace meta
    */
   template <typename T> T TypeFunc();
 
+  /** Support for variable parameter lambdas.
+   *
+   * @tparam Args Lambdas to combine.
+   *
+   * This creates a class that has an overloaded function operator, with each overload corresponding
+   * to one of the provided lambdas. The original use case is with @c std::visit where this can be
+   * used to construct the @a visitor from a collection of lambdas.
+   *
+   * @code
+   * std::variant<int, bool> v;
+   * std::visit(swoc::meta::vary{
+   *   [] (int & i) { ... },
+   *   [] (bool & b) { ... }
+   *   }, v);
+   * @endcode
+   */
+  template <typename... Args> struct vary : public Args... {
+    using Args::operator()...;
+  };
+  /// Template argument deduction guide (C++17 required).
+  template <typename... Args> vary(Args...)->vary<Args...>;
+
 } // namespace meta
 } // namespace swoc
