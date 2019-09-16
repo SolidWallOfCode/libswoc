@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 namespace swoc
 {
 namespace meta
@@ -141,5 +143,63 @@ namespace meta
   /// Template argument deduction guide (C++17 required).
   template <typename... Args> vary(Args...)->vary<Args...>;
 
-} // namespace meta
+  /** Check if a type is any of a set of types.
+   *
+   * @tparam T Type to check.
+   * @tparam Types Type list to match against.
+   *
+   * @a value is @c true if @a T is the same as any of @a Types. This is commonly used with
+   * @c enable_if to enable a function / method only if the argument type is one of a fixed set.
+   * @code
+   *   template < typename T > auto f(T const& t)
+   *     -> std::enable_if_t<swoc::meta::is_any_of<T, int, float, bool>::value, void>
+   *   { ... }
+   */
+  template <typename T, typename... Types> struct is_any_of {
+    static constexpr bool value = std::disjunction<std::is_same<T, Types>...>::value;
+  };
+
+  /** Type list support class.
+   *
+   * @tparam Types List of types.
+   *
+   * The examples for the nested meta functions presume a type list has been defined like
+   * @code
+   * using TL = swoc::meta::type_list<int, bool, float, double>;
+   * @endcode
+   */
+  template <typename... Types> struct type_list {
+    /// Length of the type list.
+    static constexpr size_t size = sizeof...(Types);
+
+    /** Define a type using the types in the list.
+     * Give a type list, defining a variant that has those types would be
+     * @code
+     * using v = TL::template apply<std::variant>;
+     * @endcode
+     *
+     * The primary reason to do this is if the type list is needed elsewhere (e.g. to enable
+     * methods only for variant types).
+     *
+     * @see contains
+     */
+    template <template <typename... Pack> typename T> using apply = T<Types...>;
+
+    /** Determine if a type @a T is a member of the type list.
+     *
+     * @tparam T Type to check.
+     *
+     * Frequently used with @c enable_if. This is handy for variants, if the list of variant
+     * types is encoded in the type list.
+     *
+     * @code
+     * template < typename T > auto f(T const& t)
+     *   -> std::enable_if_t<TL::template contains<T>::value, void>
+     * { ... }
+     * @endcode
+     */
+    template <typename T> static constexpr bool contains = is_any_of<T, Types...>::value;
+  };
+
+}; // namespace meta
 } // namespace swoc
