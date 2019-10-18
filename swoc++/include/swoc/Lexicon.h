@@ -23,6 +23,8 @@
 #include <tuple>
 #include <functional>
 #include <array>
+#include <variant>
+
 #include "swoc/IntrusiveHashMap.h"
 #include "swoc/MemArena.h"
 #include "swoc/bwf_base.h"
@@ -38,6 +40,8 @@ namespace detail
    * @param fmt Format string.
    * @param args Arguments to format string.
    * @return r-value reference to a @c std::string containing the formatted string.
+   *
+   * This is used when throwing exceptions.
    */
   template <typename... Args>
   std::string
@@ -62,6 +66,12 @@ namespace detail
     @c TRUE would always be "true", while converting any of "true", "1", "yes", or "enable" would
     yield @c TRUE. This is convenient for parsing configurations to be more tolerant of input.
 
+    The constructors are a bit baroque, but this is necessary in order to be able to declare
+    constant instances of the @c Lexicon. If this isn't necessary, everything that can be done via
+    the constructor can be done with other methods. The implementation of the constructors consists
+    entirely of calls to @c define and @c set_default, the only difference is these methods can
+    be called on a @c const instance from there.
+
     @note All names and value must be unique across the Lexicon. All name comparisons are case
     insensitive.
  */
@@ -73,12 +83,33 @@ protected:
   struct Item;
 
 public:
+  /** A function to be called if a value is not found to provide a default name.
+   * @param value The value.
+   * @return A name for the value.
+   *
+   * The name is return by view and therefore managing the lifetime of the name is problematic.
+   * Generally it should be process lifetime, unless some other shorter lifetime can be managed
+   * without a destructor being called. Unfortunately this can't be done any better without
+   * imposing memory management costs on normal use.
+   */
+  using UnknownValueHandler = std::function<std::string_view(E)>;
+
+  /** A function to be called if a name is not found, to provide a default value.
+   * @param name The name
+   * @return An enumeration value.
+   *
+   * The @a name is provided and a value in the enumeration type is expected.
+   */
+  using UnknownNameHandler = std::function<E(std::string_view)>;
+
+  /** A default handler.
+   *
+   * This handles providing a default value or name for a missing name or value.
+   */
+  using DefaultHandler = std::variant<std::monostate, E, std::string_view, UnknownNameHandler, UnknownValueHandler>;
+
   /// Used for initializer lists that have just a primary value.
   using Pair = std::tuple<E, std::string_view>;
-  /// A function to be called if a value is not found.
-  using UnknownValueHandler = std::function<std::string_view(E)>;
-  /// A function to be called if a name is not found.
-  using UnknownNameHandler = std::function<E(std::string_view)>;
 
   /// Element of an initializer list that contains secondary names.
   struct Definition {
@@ -86,21 +117,42 @@ public:
     const std::initializer_list<std::string_view> &names; ///< Primary then secondary names.
   };
 
-  /// Template argument carrying struct.
-  /// @note Needed to pass a compile time constant to a constructor as compile time constant.
-  template <E e> struct Require {
-  };
-
   /// Construct empty instance.
   Lexicon();
-  /// Construct with secondary names.
-  explicit Lexicon(const std::initializer_list<Definition> &items);
-  /// Construct with primary names only.
-  explicit Lexicon(const std::initializer_list<Pair> &items);
-  /// Construct and verify the number of definitions.
-  template <E e> Lexicon(const Require<e> &, const std::array<Definition, static_cast<size_t>(e)> &defines);
-  /// Construct and verify the number of pairs.
-  template <E e> Lexicon(const Require<e> &, const std::array<Pair, static_cast<size_t>(e)> &defines);
+
+  /** Construct with names, possible secondary values, and optional default handlers.
+   *
+   * @param items A list of initializers, each of which is a name and a list of values.
+   * @param handler_1 A default handler.
+   * @param handler_2 A default hander.
+   *
+   * Each item in the intializers must be a @c Definition, that is a name and a list of values.
+   * The first value is the primary value and is required. Subsequent values are optional
+   * and become secondary values.
+   *
+   * The default handlers are optional can be be omitted. If so, exceptions are thrown when values
+   * or names not in the @c Lexicon are used. See @c set_default for more details.
+   *
+   * @see set_default.
+   */
+  explicit Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1 = DefaultHandler{},
+                   DefaultHandler handler_2 = DefaultHandler{});
+
+  /** Construct with names / value pairs, and optional default handlers.
+   *
+   * @param items A list of initializers, each of which is a name and a list of values.
+   * @param handler_1 A default handler.
+   * @param handler_2 A default hander.
+   *
+   * Each item in the intializers must be a @c Pair, that is a name and a value.
+   *
+   * The default handlers are optional can be be omitted. If so, exceptions are thrown when values
+   * or names not in the @c Lexicon are used. See @c set_default for more details.
+   *
+   * @see set_default.
+   */
+  explicit Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1 = DefaultHandler{},
+                   DefaultHandler handler_2 = DefaultHandler{});
 
   /** Get the name for a @a value.
    *
@@ -124,45 +176,46 @@ public:
   /// Define a value and names.
   /// <tt>lexicon.define(Value, { primary, [secondary, ...] });</tt>
   self_type &define(E value, const std::initializer_list<std::string_view> &names);
+
+  /** Define a name, value pair.
+   *
+   * @param pair A @c Pair of the name and value to define.
+   * @return @a this.
+   */
   self_type &define(const Pair &pair);
+
+  /** Define a name with a primary and secondary values.
+   *
+   * @param init The @c Definition with the name and values.
+   * @return @a this.
+   *
+   * This defines the name, with the first value in the value list becoming the primary value
+   * and subsequent values (if any) being the secondary values. A primary value is required but
+   * secondary values are not. This is to make it possible to define all values in this style
+   * even if some do not have secondary values.
+   */
   self_type &define(const Definition &init);
 
-  /** Set a default @a value.
+  /** Set default handler.
    *
-   * @param value Value to return if a name is not found.
-   * @return @c *this
+   * @param def The handler.
+   * @return @a this.
+   *
+   * The @a handler can be of various types.
+   *
+   * - An enumeration value. This sets the default value handler to return that value for any
+   *   name not found.
+   *
+   * - A @c string_view. The sets the default name handler to return the @c string_view as the
+   *   name for any value not found.
+   *
+   * - A @c DefaultNameHandler. This is a functor that takes an enumeration value parameter and
+   *   returns a @c string_view as the name for any value that is not found.
+   *
+   * - A @c DefaultValueHandler. This is a functor that takes a name as a @c string_view and returns
+   *   an enumeration value as the value for any name that is not found.
    */
-  self_type &set_default(E value);
-
-  /** Set a default @a name.
-   *
-   * @param name Name to return if a value is not found.
-   * @return @c *this
-   *
-   * @note The @a name is copied to local storage.
-   */
-  self_type &set_default(std::string_view name);
-
-  /** Set a default @a handler for names that are not found.
-   *
-   * @param handler Function to call with a name that was not found.
-   * @return @c this
-   *
-   * @a handler is passed the name that was not found as a @c std::string_view and must return a
-   * value which is then returned to the caller.
-   */
-  self_type &set_default(const UnknownNameHandler &handler);
-
-  /** Set a default @a handler for values that are not found.
-   *
-   * @param handler Function to call with a value that was not found.
-   * @return @c *this
-   *
-   * @a handler is passed the value that was not found and must return a name as a @c std::string_view.
-   * Caution must be used because the returned name must not leak and must be thread safe. The most
-   * common use would be for logging bad values.
-   */
-  self_type &set_default(const UnknownValueHandler &handler);
+  self_type &set_default(DefaultHandler const &handler);
 
   /// Get the number of values with definitions.
   size_t count() const;
@@ -205,89 +258,74 @@ public:
     friend Lexicon;
   };
 
-  // There is no modifying elements in the Lexicon so only constant iteration.
+  // Only constant iteratior allowed, values cannot be modified.
   using iterator = const_iterator;
 
   const_iterator begin() const;
   const_iterator end() const;
 
 protected:
-  // Because std::variant is broken up through clang 6, we have to do something uglier.
-  //  using NameDefault  = std::variant<std::monostate, std::string_view, UnknownValueHandler>;
-  //  using ValueDefault = std::variant<std::monostate, E, UnknownNameHandler>;
+  /// Handle providing a default name.
+  using NameDefault = std::variant<std::monostate, std::string_view, UnknownValueHandler>;
+  /// Handle providing a default value.
+  using ValueDefault = std::variant<std::monostate, E, UnknownNameHandler>;
 
-  /// Type marker for internal variant.
-  enum class Content {
-    NIL,    ///< Nothing, not set.
-    SCALAR, ///< A specific value/name.
-    HANDLER ///< A function
+  /// Visitor functor for handling @c NameDefault.
+  struct NameDefaultVisitor {
+    E _value;
+
+    std::string_view
+    operator()(std::monostate const &) const
+    {
+      throw std::domain_error(detail::what("Lexicon: invalid enumeration value {}", static_cast<int>(_value)).data());
+    }
+
+    std::string_view
+    operator()(std::string_view const &name) const
+    {
+      return name;
+    }
+
+    std::string_view
+    operator()(UnknownValueHandler const &handler) const
+    {
+      return handler(_value);
+    }
   };
 
-  /// Default (no value) struct for variant initialization.
-  struct NilValue {
-  };
+  /// Visitor functor for handling @c ValueDefault.
+  struct ValueDefaultVisitor {
+    std::string_view _name;
 
-  /// Handler for values that are not in the Lexicon.
-  struct NameDefault {
-    using self_type = NameDefault; ///< Self reference type.
+    E
+    operator()(std::monostate const &) const
+    {
+      throw std::domain_error(detail::what("Lexicon: Unknown name \"{}\"", _name).data());
+    }
 
-    NameDefault() = default; ///< Default constructor.
-    ~NameDefault();          ///< Destructor.
+    E
+    operator()(E const &value) const
+    {
+      return value;
+    }
 
-    /** Set the handler to return a fixed value.
-     *
-     * @param name Name to return.
-     * @return @a this
-     */
-    self_type &operator=(std::string_view name);
-
-    /** Set the handler to call a function to compute the default name.
-     *
-     * @param handler Handler called to compute the name.
-     * @return @a this
-     */
-    self_type &operator=(const UnknownValueHandler &handler);
-
-    /** Compute the default name for @a value.
-     *
-     * @param value Value without a name.
-     * @return A name for that value.
-     */
-    std::string_view operator()(E value) const;
-
-    /// Internal clean up, needed for assignment and destructor.
-    self_type &destroy();
-
-    /// Initialize internal variant to contain nothing.
-    Content _content{Content::NIL};
-    /// Compute the required raw storage.
-    static constexpr size_t N = std::max<size_t>(sizeof(std::string_view), sizeof(UnknownValueHandler));
-    /// Provide raw storage for the variant.
-    char _store[N];
-  };
-
-  struct ValueDefault {
-    using self_type = ValueDefault;
-
-    ValueDefault() = default;
-    ~ValueDefault();
-
-    self_type &operator=(E value);
-    self_type &operator=(const UnknownNameHandler &handler);
-
-    E operator()(std::string_view name) const;
-
-    self_type &destroy();
-
-    Content _content{Content::NIL};
-    static constexpr size_t N = std::max<size_t>(sizeof(E), sizeof(UnknownNameHandler));
-    char _store[N];
+    E
+    operator()(UnknownNameHandler const &handler) const
+    {
+      return handler(_name);
+    }
   };
 
   /// Each unique pair of value and name is stored as an instance of this class.
   /// The primary is stored first and is therefore found by normal lookup.
   struct Item {
-    Item(E, std::string_view);
+    /** Construct with a @a name and a primary @a value.
+     *
+     * @param value The primary value.
+     * @param name The name.
+     *
+     */
+    Item(E value, std::string_view name);
 
     E _value;               ///< Definition value.
     std::string_view _name; ///< Definition name
@@ -418,148 +456,31 @@ Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs)
 }
 
 // -------
-
-template <typename E>
-auto
-Lexicon<E>::NameDefault::destroy() -> self_type &
-{
-  if (_content == Content::HANDLER) {
-    reinterpret_cast<UnknownValueHandler *>(_store)->~UnknownValueHandler();
-  }
-  _content = Content::NIL;
-  return *this;
-}
-
-template <typename E> Lexicon<E>::NameDefault::~NameDefault()
-{
-  this->destroy();
-}
-
-template <typename E>
-auto
-Lexicon<E>::NameDefault::operator=(std::string_view name) -> self_type &
-{
-  this->destroy();
-  new (_store) std::string_view(name);
-  _content = Content::SCALAR;
-  return *this;
-}
-
-template <typename E>
-auto
-Lexicon<E>::NameDefault::operator=(const UnknownValueHandler &handler) -> self_type &
-{
-  this->destroy();
-  new (_store) UnknownValueHandler(handler);
-  _content = Content::HANDLER;
-  return *this;
-}
-
-template <typename E>
-std::string_view
-Lexicon<E>::NameDefault::operator()(E value) const
-{
-  switch (_content) {
-  case Content::SCALAR:
-    return *reinterpret_cast<std::string_view const *>(_store);
-    break;
-  case Content::HANDLER:
-    return (*(reinterpret_cast<UnknownValueHandler const *>(_store)))(value);
-    break;
-  default:
-    throw std::domain_error(detail::what("Lexicon: unknown enumeration '{}'", uintmax_t(value)));
-    break;
-  }
-}
-
-// -------
-
-template <typename E>
-auto
-Lexicon<E>::ValueDefault::destroy() -> self_type &
-{
-  if (_content == Content::HANDLER) {
-    reinterpret_cast<UnknownNameHandler *>(_store)->~UnknownNameHandler();
-  }
-  _content = Content::NIL;
-  return *this;
-}
-
-template <typename E> Lexicon<E>::ValueDefault::~ValueDefault()
-{
-  this->destroy();
-}
-
-template <typename E>
-auto
-Lexicon<E>::ValueDefault::operator=(E value) -> self_type &
-{
-  this->destroy();
-  *(reinterpret_cast<E *>(_store)) = value;
-  _content                         = Content::SCALAR;
-  return *this;
-}
-
-template <typename E>
-auto
-Lexicon<E>::ValueDefault::operator=(const UnknownNameHandler &handler) -> self_type &
-{
-  this->destroy();
-  new (_store) UnknownNameHandler(handler);
-  _content = Content::HANDLER;
-  return *this;
-}
-
-template <typename E>
-E
-Lexicon<E>::ValueDefault::operator()(std::string_view name) const
-{
-  switch (_content) {
-  case Content::SCALAR:
-    return *(reinterpret_cast<E const *>(_store));
-    break;
-  case Content::HANDLER:
-    return (*(reinterpret_cast<UnknownNameHandler const *>(_store)))(name);
-    break;
-  default:
-    throw std::domain_error(swoc::LocalBufferWriter<128>().print("Lexicon: unknown name '{}'\0", name).data());
-    break;
-  }
-}
-// -------
 // Lexicon
 
 template <typename E> Lexicon<E>::Lexicon() {}
 
-template <typename E> Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items)
+template <typename E>
+Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1, DefaultHandler handler_2)
 {
   for (auto const &item : items) {
     this->define(item.value, item.names);
   }
+
+  for (auto &&h : {handler_1, handler_2}) {
+    this->set_default(h);
+  }
 }
 
-template <typename E> Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items)
+template <typename E>
+Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1, DefaultHandler handler_2)
 {
   for (auto const &item : items) {
     this->define(item);
   }
-}
 
-template <typename E>
-template <E e>
-Lexicon<E>::Lexicon(const Require<e> &, const std::array<Definition, static_cast<size_t>(e)> &defines)
-{
-  for (auto const &def : defines) {
-    this->define(def);
-  }
-}
-
-template <typename E>
-template <E e>
-Lexicon<E>::Lexicon(const Require<e> &, const std::array<Pair, static_cast<size_t>(e)> &defines)
-{
-  for (auto const &def : defines) {
-    this->define(def);
+  for (auto &&h : {handler_1, handler_2}) {
+    this->set_default(h);
   }
 }
 
@@ -578,7 +499,7 @@ template <typename E> std::string_view Lexicon<E>::operator[](E value) const
   if (spot != _by_value.end()) {
     return spot->_name;
   }
-  return _name_default(value);
+  return std::visit(NameDefaultVisitor{value}, _name_default);
 }
 
 template <typename E> E Lexicon<E>::operator[](std::string_view const &name) const
@@ -587,7 +508,7 @@ template <typename E> E Lexicon<E>::operator[](std::string_view const &name) con
   if (spot != _by_name.end()) {
     return spot->_value;
   }
-  return _value_default(name);
+  return std::visit(ValueDefaultVisitor{name}, _value_default);
 }
 
 template <typename E>
@@ -636,33 +557,24 @@ Lexicon<E>::define(const Definition &init) -> self_type &
 
 template <typename E>
 auto
-Lexicon<E>::set_default(std::string_view name) -> self_type &
+Lexicon<E>::set_default(DefaultHandler const &handler) -> self_type &
 {
-  _name_default = this->localize(name);
-  return *this;
-}
-
-template <typename E>
-auto
-Lexicon<E>::set_default(E value) -> self_type &
-{
-  _value_default = value;
-  return *this;
-}
-
-template <typename E>
-auto
-Lexicon<E>::set_default(const UnknownValueHandler &handler) -> self_type &
-{
-  _name_default = handler;
-  return *this;
-}
-
-template <typename E>
-auto
-Lexicon<E>::set_default(const UnknownNameHandler &handler) -> self_type &
-{
-  _value_default = handler;
+  switch (handler.index()) {
+  case 0:
+    break;
+  case 1:
+    _value_default = std::get<1>(handler);
+    break;
+  case 3:
+    _value_default = std::get<3>(handler);
+    break;
+  case 2:
+    _name_default = std::get<2>(handler);
+    break;
+  case 4:
+    _name_default = std::get<4>(handler);
+    break;
+  }
   return *this;
 }
 
