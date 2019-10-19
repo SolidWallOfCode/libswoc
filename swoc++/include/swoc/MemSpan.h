@@ -813,6 +813,38 @@ MemSpan<T>::apply(F &&f)
 }
 
 template <typename T>
+constexpr MemSpan<T>
+MemSpan<T>::subspan(size_t offset, size_t count) const
+{
+  return offset <= _count ? self_type{this->data() + offset, std::min(count, _count - offset)} : self_type{};
+}
+
+template <typename T>
+T &
+MemSpan<T>::front()
+{
+  return *_ptr;
+}
+
+template <typename T>
+T &
+MemSpan<T>::back()
+{
+  return _ptr[_count - 1];
+}
+
+template <typename T>
+template <typename F>
+MemSpan<T> &
+MemSpan<T>::apply(F &&f)
+{
+  for (auto &item : *this) {
+    f(item);
+  }
+  return *this;
+}
+
+template <typename T>
 template <typename U>
 MemSpan<U>
 MemSpan<T>::rebind() const
