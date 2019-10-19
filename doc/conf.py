@@ -80,7 +80,7 @@ project = u'Solid Wall Of C++'
 copyright = u'{}, amc@apache.org'.format(date.today().year)
 
 # The full version, including alpha/beta/rc tags.
-release = "1.0.8"
+release = "1.0.9"
 # The short X.Y version.
 version = '.'.join(release.split('.', 2)[:2])
 
@@ -326,7 +326,7 @@ texinfo_documents = [
 epub_title = u'Solid Wall of C++'
 epub_author = u'amc@apache.org'
 epub_publisher = u'amc@apache.org'
-epub_copyright = u'2018, amc@apache.org'
+epub_copyright = u'2019, amc@apache.org'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

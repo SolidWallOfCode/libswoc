@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
+project("Solid Wall Of C++ Library")
 set(INSTALL_DIR ${CMAKE_HOME_DIRECTORY})
 
 # Fortunately this has no external dependencies so the set up can be simple.
