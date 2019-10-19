@@ -66,14 +66,13 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]")
   REQUIRE(exnames[static_cast<Example>(0xBADD00D)] == "INVALID");
   REQUIRE(exnames[exnames[static_cast<Example>(0xBADD00D)]] == Example::INVALID);
 
-  // Case of an enumeration with a "LAST_VALUE".
-  enum class Radio { INVALID, ALPHA, BRAVO, CHARLIE, DELTA, LAST_VALUE };
+  enum class Radio { INVALID, ALPHA, BRAVO, CHARLIE, DELTA };
   using Lex = swoc::Lexicon<Radio>;
-  Lex lex(Lex::Require<Radio::LAST_VALUE>(), {{{Radio::INVALID, {"Invalid"}},
-                                               {Radio::ALPHA, {"Alpha"}},
-                                               {Radio::BRAVO, {"Bravo", "Beta"}},
-                                               {Radio::CHARLIE, {"Charlie"}},
-                                               {Radio::DELTA, {"Delta"}}}});
+  Lex lex({{Radio::INVALID, {"Invalid"}},
+           {Radio::ALPHA, {"Alpha"}},
+           {Radio::BRAVO, {"Bravo", "Beta"}},
+           {Radio::CHARLIE, {"Charlie"}},
+           {Radio::DELTA, {"Delta"}}});
 
   // test structured binding for iteration.
   for (auto const &[key, name] : lex) {
@@ -87,6 +86,7 @@ enum Values { NoValue, LowValue, HighValue, Priceless };
 enum Hex { A, B, C, D, E, F, INVALID };
 
 using ValueLexicon = swoc::Lexicon<Values>;
+using HexLexicon   = swoc::Lexicon<Hex>;
 
 TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
 {
@@ -162,3 +162,26 @@ TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
   }
   REQUIRE(mark.all());
 };
+
+TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")
+{
+  // Check the various construction cases
+  // No defaults, value default, name default, both, both the other way.
+  const HexLexicon v1({{A, {"A", "ten"}}, {B, {"B", "eleven"}}});
+
+  const HexLexicon v2({{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID);
+
+  const HexLexicon v3({{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, "Invalid");
+
+  const HexLexicon v4({{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, "Invalid", INVALID);
+
+  const HexLexicon v5{{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID, "Invalid"};
+
+  REQUIRE(v1["a"] == A);
+  REQUIRE(v2["q"] == INVALID);
+  REQUIRE(v3[C] == "Invalid");
+  REQUIRE(v4["q"] == INVALID);
+  REQUIRE(v4[C] == "Invalid");
+  REQUIRE(v5["q"] == INVALID);
+  REQUIRE(v5[C] == "Invalid");
+}
