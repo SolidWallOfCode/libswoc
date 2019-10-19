@@ -94,8 +94,11 @@ namespace file
     /// Access the path explicitly.
     char const *c_str() const;
 
-    /// Get a copy of the path.
-    std::string string() const;
+    /// The path as a string.
+    std::string const &string() const;
+
+    /// A view of the path.
+    swoc::TextView view() const;
 
   protected:
     std::string _path; ///< File path.
@@ -180,8 +183,14 @@ namespace file
     return _path.c_str();
   }
 
-  inline std::string
+  inline std::string const &
   path::string() const
+  {
+    return _path;
+  }
+
+  inline swoc::TextView
+  path::view() const
   {
     return _path;
   }

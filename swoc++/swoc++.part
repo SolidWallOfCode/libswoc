@@ -1,8 +1,9 @@
 Import("*")
-PartVersion("1.0.7")
+PartVersion("1.0.8")
 PartName("swoc++")
 
 files = [
+    "src/ArenaWriter.cc",
     "src/bw_format.cc",
     "src/bw_ip_format.cc",
     "src/Errata.cc",
@@ -14,12 +15,12 @@ files = [
 ]
 
 env.AppendUnique(
-    CCFLAGS=['-std=c++17'],
+    CCFLAGS=['-std=c++17', '-fPIC' ],
     CPPPATH=["include"],
 )
 
 # build the library
-out = env.SharedLibrary("${PART_NAME}",files)
+out = env.StaticLibrary("${PART_NAME}",files)
 env.InstallLib(out)
 # export the include directory
 env.InstallInclude(

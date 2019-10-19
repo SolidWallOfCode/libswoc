@@ -125,14 +125,19 @@ public:
 
   /** Increase the extent by @a n bytes.
    *
-   * @param n Number of bytes to consume.
-   * @return @a this.
+   * @param n Number of bytes.
+   * @return @c true if the commit is final, @c false if it should be retried.
    *
    * This is used to add data written in the @c aux_data to the written data in the buffer.
    *
+   * The return value should be @c true unless the write operation proceeding the call to @c commit
+   * along with the @c commit call should be retried. That is only reasonable if some state in the
+   * concrete implementation has changed to make success possible on the next try. Generally this
+   * will be because the implementation increased capacity.
+   *
    * @internal Concrete subclasses @b must override this in a way consistent with the specific buffer type.
    */
-  virtual BufferWriter &commit(size_t n) = 0;
+  virtual bool commit(size_t n) = 0;
 
   /** Decrease the extent by @a n.
    *
@@ -318,10 +323,13 @@ public:
   FixedBufferWriter &operator=(const FixedBufferWriter &) = delete;
 
   /// Move constructor.
-  FixedBufferWriter(FixedBufferWriter &&) = default;
+  FixedBufferWriter(FixedBufferWriter &&that);
 
   /// Move assignment.
-  FixedBufferWriter &operator=(FixedBufferWriter &&) = default;
+  FixedBufferWriter &operator=(FixedBufferWriter &&that);
+
+  /// Reset buffer.
+  self_type &assign(MemSpan<char> const &span);
 
   /// Write a single character @a c to the buffer.
   FixedBufferWriter &write(char c) override;
@@ -348,7 +356,7 @@ public:
   size_t extent() const override;
 
   /// Advance the used part of the output buffer.
-  self_type &commit(size_t n) override;
+  bool commit(size_t n) override;
 
   /// Drop @a n characters from the end of the buffer.
   self_type &discard(size_t n) override;
@@ -362,14 +370,15 @@ public:
   /// Copy data in the buffer.
   FixedBufferWriter &copy(size_t dst, size_t src, size_t n) override;
 
-  /// Clear the buffer, reset to empty (no data).
+  /// Erase the buffer, reset to empty (no valid data).
   /// This is a convenience for reusing a buffer. For instance
   /// @code
-  ///   bw.reset().print("....."); // clear old data and print new data.
+  ///   bw.clear().print("....."); // clear old data and print new data.
   /// @endcode
   /// This is equivalent to @c w.discard(w.size()) but clearer for that case.
   self_type &clear();
 
+  self_type &detach();
   /// @return The used part of the buffer as a @c std::string_view.
   std::string_view view() const;
 
@@ -390,10 +399,9 @@ public:
   /// @endcond
 
 protected:
-  char *const _buf;        ///< Output buffer.
-  size_t _capacity;        ///< Size of output buffer.
-  size_t _attempted   = 0; ///< Number of characters written, including those discarded due error condition.
-  size_t _restriction = 0; ///< Restricted capacity.
+  char *const _buffer;   ///< Output buffer.
+  size_t _capacity;      ///< Size of output buffer.
+  size_t _attempted = 0; ///< Number of characters written, including those discarded due error condition.
 };
 
 /** A @c BufferWriter that has an internal buffer.
@@ -474,7 +482,7 @@ BufferWriter::remaining() const
 }
 
 // --- FixedBufferWriter ---
-inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buf(buffer), _capacity(capacity)
+inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buffer(buffer), _capacity(capacity)
 {
   if (_capacity != 0 && buffer == nullptr) {
     throw(std::invalid_argument{"FixedBufferWriter created with null buffer and non-zero size."});
@@ -482,19 +490,53 @@ inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _bu
 }
 
 inline FixedBufferWriter::FixedBufferWriter(MemSpan<void> const &span)
-  : _buf{static_cast<char *>(span.data())}, _capacity{span.size()}
+  : _buffer{static_cast<char *>(span.data())}, _capacity{span.size()}
 {
 }
 
-inline FixedBufferWriter::FixedBufferWriter(MemSpan<char> const &span) : _buf{span.begin()}, _capacity{span.size()} {}
+inline FixedBufferWriter::FixedBufferWriter(MemSpan<char> const &span) : _buffer{span.begin()}, _capacity{span.size()} {}
 
-inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buf(nullptr), _capacity(0) {}
+inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buffer(nullptr), _capacity(0) {}
+
+inline FixedBufferWriter::self_type &
+FixedBufferWriter::detach()
+{
+  const_cast<char *&>(_buffer) = nullptr;
+  _capacity                    = 0;
+  _attempted                   = 0;
+  return *this;
+}
+
+inline FixedBufferWriter::FixedBufferWriter(FixedBufferWriter &&that)
+  : _buffer(that._buffer), _capacity(that._capacity), _attempted(that._attempted)
+{
+  that.detach();
+}
+
+inline FixedBufferWriter::self_type &
+FixedBufferWriter::assign(MemSpan<char> const &span)
+{
+  const_cast<char *&>(_buffer) = span.data();
+  _capacity                    = span.size();
+  _attempted                   = 0;
+  return *this;
+}
+
+inline FixedBufferWriter &
+FixedBufferWriter::operator=(FixedBufferWriter &&that)
+{
+  const_cast<char *&>(_buffer) = that._buffer;
+  _capacity                    = that._capacity;
+  _attempted                   = that._attempted;
+  that.detach();
+  return *this;
+}
 
 inline FixedBufferWriter &
 FixedBufferWriter::write(char c)
 {
   if (_attempted < _capacity) {
-    _buf[_attempted] = c;
+    _buffer[_attempted] = c;
   }
   ++_attempted;
 
@@ -506,11 +548,11 @@ FixedBufferWriter::write(const void *data, size_t length)
 {
   const size_t newSize = _attempted + length;
 
-  if (_buf) {
+  if (_buffer) {
     if (newSize <= _capacity) {
-      std::memcpy(_buf + _attempted, data, length);
+      std::memcpy(_buffer + _attempted, data, length);
     } else if (_attempted < _capacity) {
-      std::memcpy(_buf + _attempted, data, _capacity - _attempted);
+      std::memcpy(_buffer + _attempted, data, _capacity - _attempted);
     }
   }
   _attempted = newSize;
@@ -522,7 +564,7 @@ FixedBufferWriter::write(const void *data, size_t length)
 inline const char *
 FixedBufferWriter::data() const
 {
-  return _buf;
+  return _buffer;
 }
 
 inline bool
@@ -534,15 +576,15 @@ FixedBufferWriter::error() const
 inline char *
 FixedBufferWriter::aux_data()
 {
-  return error() ? nullptr : _buf + _attempted;
+  return error() ? nullptr : _buffer + _attempted;
 }
 
-inline auto
-FixedBufferWriter::commit(size_t n) -> self_type &
+inline bool
+FixedBufferWriter::commit(size_t n)
 {
   _attempted += n;
 
-  return *this;
+  return true;
 }
 
 inline size_t
@@ -563,10 +605,7 @@ FixedBufferWriter::restrict(size_t n) -> self_type &
   if (n > _capacity) {
     throw(std::invalid_argument{"FixedBufferWriter restrict value more than capacity"});
   }
-
   _capacity -= n;
-  _restriction += n;
-
   return *this;
 }
 
@@ -576,11 +615,7 @@ FixedBufferWriter::restore(size_t n) -> self_type &
   if (error()) {
     _attempted = _capacity;
   }
-  n = std::min(n, _restriction);
-
   _capacity += n;
-  _restriction -= n;
-
   return *this;
 }
 
@@ -602,8 +637,8 @@ inline auto
 FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type &
 {
   auto limit = std::min<size_t>(_capacity, _attempted); // max offset of region possible.
-  MemSpan<char> src_span{_buf + src, std::min(limit, src + n)};
-  MemSpan<char> dst_span{_buf + dst, std::min(limit, dst + n)};
+  MemSpan<char> src_span{_buffer + src, std::min(limit, src + n)};
+  MemSpan<char> dst_span{_buffer + dst, std::min(limit, dst + n)};
   std::memmove(dst_span.data(), src_span.data(), std::min(dst_span.size(), src_span.size()));
   return *this;
 }
@@ -611,7 +646,7 @@ FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type &
 inline std::string_view
 FixedBufferWriter::view() const
 {
-  return {_buf, size()};
+  return {_buffer, size()};
 }
 
 /// Provide a @c string_view of all successfully written characters as a user conversion.

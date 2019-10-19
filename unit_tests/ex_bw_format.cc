@@ -435,20 +435,24 @@ public:
   void capture(BufferWriter &w, Spec const &spec, std::any const &value);
 
 protected:
-  TextView _fmt;
+  TextView _fmt;        // The format string.
   Spec _saved;          // spec for which the width and/or prec is needed.
   bool _saved_p{false}; // flag for having a saved _spec.
   bool _prec_p{false};  // need the precision captured?
 };
+// class C_Format
 
 // ---- Implementation ----
 inline C_Format::C_Format(TextView const &fmt) : _fmt(fmt) {}
 
+// C_Format operator bool
 inline C_Format::operator bool() const
 {
   return _saved_p || !_fmt.empty();
 }
+// C_Format operator bool
 
+// C_Format capture
 void
 C_Format::capture(BufferWriter &, Spec const &spec, std::any const &value)
 {
@@ -468,7 +472,9 @@ C_Format::capture(BufferWriter &, Spec const &spec, std::any const &value)
     _saved._prec = v;
   }
 }
+// C_Format capture
 
+// C_Format parsing
 bool
 C_Format::operator()(std::string_view &literal, Spec &spec)
 {
@@ -623,6 +629,7 @@ bwprintf(BufferWriter &w, TextView const &fmt, Args &&... args)
 
 TEST_CASE("bwf printf", "[libswoc][bwf][printf]")
 {
+  // C_Format tests
   LocalBufferWriter<256> w;
 
   bwprintf(w.clear(), "Fifty Six = %d", 56);
@@ -645,6 +652,7 @@ TEST_CASE("bwf printf", "[libswoc][bwf][printf]")
   REQUIRE(w.view() == "Chars 0123");
   bwprintf(w.clear(), "Chars |%*.*s|", 12, 5, digits);
   REQUIRE(w.view() == "Chars |       01234|");
+  // C_Format tests
 }
 
 // --- Format classes

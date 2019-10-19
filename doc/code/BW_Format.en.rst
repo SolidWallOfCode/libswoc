@@ -481,7 +481,7 @@ Specific types
       :lines: 59-60,44,47-50
 
 :libswoc:`TextView`
-   Because this is a subclass of :code:`std::string_view`, all of the formatting for that works the same for this class. 
+   Because this is a subclass of :code:`std::string_view`, all of the formatting for that works the same for this class.
 
 .. _ip_addr_fmt:
 
@@ -1190,14 +1190,16 @@ indicating the capture state (it may be necessary to do two captures, if both th
 precision are variable).
 
 .. literalinclude:: ../../unit_tests/ex_bw_format.cc
-   :lines: 421-441
+   :start-at: class C_Format
+   :end-before: // class C_Format
 
 The empty indicator needs to be a bit different in that even if the format is empty, if the last
 part of the format string had a capture (indicated by :arg:`_saved_p` being :code:`true`) a
 non-empty state needs to be returned to get an invocation to output that last specifier.
 
 .. literalinclude:: ../../unit_tests/ex_bw_format.cc
-   :lines: 446-449
+   :start-after: C_Format operator bool
+   :end-before: C_Format operator bool
 
 The capture logic takes advantage of the fact that only integers can be captured, and in fact
 :code:`printf` itself requires exactly an :code:`int`. This logic is a bit more flexible, accepting
@@ -1205,16 +1207,18 @@ The capture logic takes advantage of the fact that only integers can be captured
 generate an error instead of silently returning on a bad type, but you can't have everything.
 
 .. literalinclude:: ../../unit_tests/ex_bw_format.cc
-   :lines: 451-469
+   :start-after: C_Format capture
+   :end-before: C_Format capture
 
 The set up for the capture passes the capture element in the extension of the return specifier,
 which this logic checks to know where to stash the captured value.
 
 The actual parsing logic will be skipped - it's in the example file
-:swoc:git:`src/unit_tests/ex_bw_format.cc` around line 471.
+:swoc:git:`src/unit_tests/ex_bw_format.cc` in the function operator method.
 
 .. literalinclude:: ../../unit_tests/ex_bw_format.cc
-   :lines: 471-472
+   :start-after: C_Format parsing
+   :end-before: {
    :lineno-match:
 
 This handles all the basics of C style formatting including sign control, minimum and maximum
@@ -1229,7 +1233,8 @@ mandatory.
 Some example uses, along with verification of the results.
 
 .. literalinclude:: ../../unit_tests/ex_bw_format.cc
-   :lines: 627-646
+   :start-after: C_Format tests
+   :end-before: C_Format tests
 
 Summary
 -------

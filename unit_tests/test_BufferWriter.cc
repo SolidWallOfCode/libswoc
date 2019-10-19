@@ -19,7 +19,9 @@
  */
 
 #include <cstring>
+#include "swoc/MemArena.h"
 #include "swoc/BufferWriter.h"
+#include "swoc/ArenaWriter.h"
 #include "catch.hpp"
 
 namespace
@@ -79,7 +81,7 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     }
     X &restrict(size_t) override { return *this; }
     X &restore(size_t) override { return *this; }
-    X &commit(size_t) override { return *this; }
+    bool commit(size_t) override { return true; }
     X &discard(size_t) override { return *this; }
     X &copy(size_t, size_t, size_t) { return *this; }
     std::ostream &
@@ -303,6 +305,85 @@ TEST_CASE("LocalBufferWriter discard/restore", "[BWD]")
   bw.restore(4);
   bw.commit(static_cast<size_t>(snprintf(bw.aux_data(), bw.remaining(), "ccc")));
   REQUIRE(bw.view() == "aaabbbccc");
+}
+
+TEST_CASE("ArenaWriter write", "[BW][ArenaWriter]")
+{
+  swoc::MemArena arena{256};
+  swoc::ArenaWriter aw{arena};
+  std::array<char, 85> buffer;
+
+  for (char c = 'a'; c <= 'z'; ++c) {
+    memset(buffer.data(), c, buffer.size());
+    aw.write(buffer.data(), buffer.size());
+  }
+
+  auto constexpr N = 26 * buffer.size();
+  REQUIRE(aw.extent() == N);
+  REQUIRE(aw.size() == N);
+  REQUIRE(arena.remaining() >= N);
+
+  // It's all in the remnant, so allocating it shouldn't affect the overall reserved memory.
+  auto k    = arena.reserved_size();
+  auto span = arena.alloc(N);
+  REQUIRE(arena.reserved_size() == k);
+  // The allocated data should be identical to that in the writer.
+  REQUIRE(0 == memcmp(span.data(), aw.data(), span.size()));
+
+  bool valid_p      = true;
+  swoc::TextView tv = span.view();
+  try {
+    for (char c = 'a'; c <= 'z'; ++c) {
+      for (int i = 0; i < buffer.size(); ++i) {
+        if (c != *tv++) {
+          throw std::exception{};
+        }
+      }
+    }
+  } catch (std::exception &ex) {
+    valid_p = false;
+  }
+  REQUIRE(valid_p == true);
+}
+
+TEST_CASE("ArenaWriter print", "[BW][ArenaWriter]")
+{
+  swoc::MemArena arena{256};
+  swoc::ArenaWriter aw{arena};
+  std::array<char, 85> buffer;
+  swoc::TextView view{buffer.data(), buffer.size()};
+
+  for (char c = 'a'; c <= 'z'; ++c) {
+    memset(buffer.data(), c, buffer.size());
+    aw.print("{}{}{}{}{}", view.substr(0, 25), view.substr(25, 15), view.substr(40, 17), view.substr(57, 19), view.substr(76, 9));
+  }
+
+  auto constexpr N = 26 * buffer.size();
+  REQUIRE(aw.extent() == N);
+  REQUIRE(aw.size() == N);
+  REQUIRE(arena.remaining() >= N);
+
+  // It's all in the remnant, so allocating it shouldn't affect the overall reserved memory.
+  auto k    = arena.reserved_size();
+  auto span = arena.alloc(N).rebind<char>();
+  REQUIRE(arena.reserved_size() == k);
+  // The allocated data should be identical to that in the writer.
+  REQUIRE(0 == memcmp(span.data(), aw.data(), span.size()));
+
+  bool valid_p      = true;
+  swoc::TextView tv = span.view();
+  try {
+    for (char c = 'a'; c <= 'z'; ++c) {
+      for (int i = 0; i < buffer.size(); ++i) {
+        if (c != *tv++) {
+          throw std::exception{};
+        }
+      }
+    }
+  } catch (std::exception &ex) {
+    valid_p = false;
+  }
+  REQUIRE(valid_p == true);
 }
 
 #if 0

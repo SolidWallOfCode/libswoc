@@ -662,6 +662,20 @@ public:
    */
   template <typename F> self_type take_suffix_if(F const &pred);
 
+  /** Get a view of part of this view.
+   *
+   * @param pos Offset of first byte in the new view.
+   * @param count Number of bytes in the view.
+   * @return The view starting at @a pos for @a count bytes.
+   *
+   * The returned view is clipped by @a this. @a count is reduced such that it covers only data
+   * in @a this.
+   *
+   * @note This is provided primarily for co-variance, i.e. the returned view is a @c TextView
+   * instead of a @c std::string_view.
+   */
+  self_type substr(size_type pos = 0, size_type count = npos) const;
+
   /** Check if the view begins with a specific @a prefix.
    *
    * @param prefix String to check against @a this.
@@ -815,7 +829,12 @@ svto_radix(swoc::TextView &src)
   return zret;
 };
 
-template <int N> uintmax_t svto_radix(swoc::TextView &&src) { return svto_radix<N>(src); }
+template <int N>
+uintmax_t
+svto_radix(swoc::TextView &&src)
+{
+  return svto_radix<N>(src);
+}
 // ----------------------------------------------------------
 // Inline implementations.
 // Note: Why, you may ask, do I use @c TextView::self_type for return type instead of the
@@ -1359,6 +1378,16 @@ inline char const *
 TextView::data_end() const
 {
   return this->data() + this->size();
+}
+
+inline TextView
+TextView::substr(size_type pos, size_type count) const
+{
+  if (pos >= this->size()) {
+    return {};
+  }
+  count = std::min(this->size() - pos, count);
+  return {this->data() + pos, count};
 }
 
 inline bool

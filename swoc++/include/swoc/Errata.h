@@ -62,7 +62,7 @@
 namespace swoc
 {
 /// Severity levels for Errata.
-enum class Severity {
+enum class Severity : uint8_t {
   DIAG,  ///< Diagnostic (internal use).
   INFO,  ///< User visible but not a problem.
   WARN,  ///< Warning.
@@ -416,13 +416,6 @@ public:
    */
   Rv(result_type const &result, Errata &&errata);
 
-  /** Construct with copy of @a result and @a errata.
-   *
-   * @param result Return value / result.
-   * @param errata Source errata to copy.
-   */
-  Rv(result_type const &result, const Errata &errata);
-
   /** Construct with move of @a result and empty (successful) Errata.
    *
    * @param result The return / result value.
@@ -436,13 +429,25 @@ public:
    */
   Rv(result_type &&result, Errata &&errata);
 
-  /** Construct with a move of result and a copy of @a errata.
+  /** Construct only from @a errata
    *
-   * @param result The return / result value to move.
-   * @param errata Errata to copy.
+   * @param errata Errata instance.
+   *
+   * This is useful for error conditions. The result is default constructed and the @a errata
+   * consumed by the return value. If @c result_type is a smart pointer or other cheaply default
+   * constructed class this can make the code much cleaner;
+   *
+   * @code
+   * // Assume Thing can be default constructed cheaply.
+   * Rv<Thing> func(...) {
+   *   if (something_bad) {
+   *     return Errata().error("Bad thing happen!");
+   *   }
+   *   return new Thing{arg1, arg2};
+   * }
+   * @endcode
    */
-
-  Rv(result_type &&result, const Errata &errata);
+  Rv(Errata &&errata);
 
   /** Push a message in to the result.
    *
@@ -804,13 +809,11 @@ template <typename T> Rv<T>::Rv(result_type const &r) : _r(r) {}
 
 template <typename T> Rv<T>::Rv(result_type const &r, Errata &&errata) : _r(r), _errata(std::move(errata)) {}
 
-template <typename T> Rv<T>::Rv(result_type const &r, const Errata &errata) : _r(r), _errata(errata) {}
-
 template <typename R> Rv<R>::Rv(R &&r) : _r(std::move(r)) {}
 
 template <typename R> Rv<R>::Rv(R &&r, Errata &&errata) : _r(std::move(r)), _errata(std::move(errata)) {}
 
-template <typename R> Rv<R>::Rv(R &&r, const Errata &errata) : _r(std::move(r)), _errata(errata) {}
+template <typename R> Rv<R>::Rv(Errata &&errata) : _errata{std::move(errata)} {}
 
 template <typename T> Rv<T>::operator result_type const &() const
 {
