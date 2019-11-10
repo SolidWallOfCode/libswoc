@@ -13,8 +13,8 @@ AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
-AlwaysBreakAfterDefinitionReturnType: All
-AlwaysBreakAfterReturnType: AllDefinitions
+#AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: false
 BinPackArguments: true
@@ -23,7 +23,7 @@ BraceWrapping:
   AfterClass:      true
   AfterControlStatement: true
   AfterEnum:       true
-  AfterFunction:   true
+  AfterFunction:   false
   AfterNamespace:  true
   AfterObjCDeclaration: false
   AfterStruct:     true
@@ -92,10 +92,10 @@ PenaltyBreakString: 1000
 PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 200
 PointerAlignment: Right
-RawStringFormats: 
-  - Delimiter:       pb
-    Language:        TextProto
-    BasedOnStyle:    Mozilla
+#RawStringFormats: 
+#  - Delimiter:       'pb'
+#    Language:        TextProto
+#    BasedOnStyle:    Mozilla
 ReflowComments:  true
 SortIncludes:    false
 SortUsingDeclarations: false
