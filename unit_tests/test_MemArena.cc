@@ -26,6 +26,7 @@
 
 using swoc::MemSpan;
 using swoc::MemArena;
+using swoc::FixedArena;
 using std::string_view;
 using swoc::TextView;
 using namespace std::literals;
@@ -358,3 +359,33 @@ TEST_CASE("MemArena temporary", "[libswoc][MemArena][tmp]")
   }
   REQUIRE(arena.reserved_size() == rsize);
 }
+
+TEST_CASE("FixedArena", "[libswoc][FixedArena]") {
+  struct Thing {
+    int x = 0;
+    std::string name;
+  };
+  MemArena arena;
+  FixedArena<Thing> fa{arena};
+
+  Thing * one = fa.make();
+  Thing * two = fa.make();
+  two->x = 17;
+  two->name = "Bob";
+  fa.destroy(two);
+  Thing * three = fa.make();
+  REQUIRE(three == two); // reused instance.
+  REQUIRE(three->x == 0); // but reconstructed.
+  REQUIRE(three->name.empty() == true);
+  fa.destroy(three);
+  std::array<Thing*, 17> things;
+  for ( auto & ptr : things ) {
+    ptr = fa.make();
+  }
+  two = things[things.size() - 1];
+  for ( auto & ptr : things) {
+    fa.destroy(ptr);
+  }
+  three = fa.make();
+  REQUIRE(two == three);
+};
