@@ -45,8 +45,7 @@ namespace detail
    */
   template <typename... Args>
   std::string
-  what(std::string_view const &fmt, Args &&... args)
-  {
+  what(std::string_view const &fmt, Args &&... args) {
     std::string zret;
     swoc::bwprint_v(zret, fmt, std::forward_as_tuple(args...));
     return std::move(zret);
@@ -75,8 +74,7 @@ namespace detail
     @note All names and value must be unique across the Lexicon. All name comparisons are case
     insensitive.
  */
-template <typename E> class Lexicon
-{
+template <typename E> class Lexicon {
   using self_type = Lexicon; ///< Self reference type.
 
 protected:
@@ -221,8 +219,7 @@ public:
   size_t count() const;
 
   /// Iterator over pairs of values and primary name pairs.
-  class const_iterator
-  {
+  class const_iterator {
     using self_type = const_iterator;
 
   public:
@@ -275,20 +272,17 @@ protected:
     E _value;
 
     std::string_view
-    operator()(std::monostate const &) const
-    {
+    operator()(std::monostate const &) const {
       throw std::domain_error(detail::what("Lexicon: invalid enumeration value {}", static_cast<int>(_value)).data());
     }
 
     std::string_view
-    operator()(std::string_view const &name) const
-    {
+    operator()(std::string_view const &name) const {
       return name;
     }
 
     std::string_view
-    operator()(UnknownValueHandler const &handler) const
-    {
+    operator()(UnknownValueHandler const &handler) const {
       return handler(_value);
     }
   };
@@ -298,20 +292,17 @@ protected:
     std::string_view _name;
 
     E
-    operator()(std::monostate const &) const
-    {
+    operator()(std::monostate const &) const {
       throw std::domain_error(detail::what("Lexicon: Unknown name \"{}\"", _name).data());
     }
 
     E
-    operator()(E const &value) const
-    {
+    operator()(E const &value) const {
       return value;
     }
 
     E
-    operator()(UnknownNameHandler const &handler) const
-    {
+    operator()(UnknownNameHandler const &handler) const {
       return handler(_name);
     }
   };
@@ -386,72 +377,62 @@ template <typename E> Lexicon<E>::Item::Item(E value, std::string_view name) : _
 
 template <typename E>
 auto
-Lexicon<E>::Item::NameLinkage::next_ptr(Item *item) -> Item *&
-{
+Lexicon<E>::Item::NameLinkage::next_ptr(Item *item) -> Item *& {
   return item->_name_link._next;
 }
 
 template <typename E>
 auto
-Lexicon<E>::Item::NameLinkage::prev_ptr(Item *item) -> Item *&
-{
+Lexicon<E>::Item::NameLinkage::prev_ptr(Item *item) -> Item *& {
   return item->_name_link._prev;
 }
 
 template <typename E>
 auto
-Lexicon<E>::Item::ValueLinkage::next_ptr(Item *item) -> Item *&
-{
+Lexicon<E>::Item::ValueLinkage::next_ptr(Item *item) -> Item *& {
   return item->_value_link._next;
 }
 
 template <typename E>
 auto
-Lexicon<E>::Item::ValueLinkage::prev_ptr(Item *item) -> Item *&
-{
+Lexicon<E>::Item::ValueLinkage::prev_ptr(Item *item) -> Item *& {
   return item->_value_link._prev;
 }
 
 template <typename E>
 std::string_view
-Lexicon<E>::Item::NameLinkage::key_of(Item *item)
-{
+Lexicon<E>::Item::NameLinkage::key_of(Item *item) {
   return item->_name;
 }
 
 template <typename E>
 E
-Lexicon<E>::Item::ValueLinkage::key_of(Item *item)
-{
+Lexicon<E>::Item::ValueLinkage::key_of(Item *item) {
   return item->_value;
 }
 
 template <typename E>
 uint32_t
-Lexicon<E>::Item::NameLinkage::hash_of(std::string_view s)
-{
+Lexicon<E>::Item::NameLinkage::hash_of(std::string_view s) {
   return Hash32FNV1a().hash_immediate(transform_view_of(&toupper, s));
 }
 
 template <typename E>
 uintmax_t
-Lexicon<E>::Item::ValueLinkage::hash_of(E value)
-{
+Lexicon<E>::Item::ValueLinkage::hash_of(E value) {
   // In almost all cases, the values will be (roughly) sequential, so an identity hash works well.
   return static_cast<uintmax_t>(value);
 }
 
 template <typename E>
 bool
-Lexicon<E>::Item::NameLinkage::equal(std::string_view const &lhs, std::string_view const &rhs)
-{
+Lexicon<E>::Item::NameLinkage::equal(std::string_view const &lhs, std::string_view const &rhs) {
   return 0 == strcasecmp(lhs, rhs);
 }
 
 template <typename E>
 bool
-Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs)
-{
+Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs) {
   return lhs == rhs;
 }
 
@@ -461,51 +442,52 @@ Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs)
 template <typename E> Lexicon<E>::Lexicon() {}
 
 template <typename E>
-Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1, DefaultHandler handler_2)
-{
-  for (auto const &item : items) {
+Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1, DefaultHandler handler_2) {
+  for (auto const &item : items)
+  {
     this->define(item.value, item.names);
   }
 
-  for (auto &&h : {handler_1, handler_2}) {
+  for (auto &&h : {handler_1, handler_2})
+  {
     this->set_default(h);
   }
 }
 
 template <typename E>
-Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1, DefaultHandler handler_2)
-{
-  for (auto const &item : items) {
+Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1, DefaultHandler handler_2) {
+  for (auto const &item : items)
+  {
     this->define(item);
   }
 
-  for (auto &&h : {handler_1, handler_2}) {
+  for (auto &&h : {handler_1, handler_2})
+  {
     this->set_default(h);
   }
 }
 
 template <typename E>
 std::string_view
-Lexicon<E>::localize(std::string_view const &name)
-{
+Lexicon<E>::localize(std::string_view const &name) {
   auto span = _arena.alloc(name.size());
   memcpy(span.data(), name.data(), name.size());
   return span.view();
 }
 
-template <typename E> std::string_view Lexicon<E>::operator[](E value) const
-{
+template <typename E> std::string_view Lexicon<E>::operator[](E value) const {
   auto spot = _by_value.find(value);
-  if (spot != _by_value.end()) {
+  if (spot != _by_value.end())
+  {
     return spot->_name;
   }
   return std::visit(NameDefaultVisitor{value}, _name_default);
 }
 
-template <typename E> E Lexicon<E>::operator[](std::string_view const &name) const
-{
+template <typename E> E Lexicon<E>::operator[](std::string_view const &name) const {
   auto spot = _by_name.find(name);
-  if (spot != _by_name.end()) {
+  if (spot != _by_name.end())
+  {
     return spot->_value;
   }
   return std::visit(ValueDefaultVisitor{name}, _value_default);
@@ -513,19 +495,22 @@ template <typename E> E Lexicon<E>::operator[](std::string_view const &name) con
 
 template <typename E>
 auto
-Lexicon<E>::define(E value, const std::initializer_list<std::string_view> &names) -> self_type &
-{
-  if (names.size() < 1) {
+Lexicon<E>::define(E value, const std::initializer_list<std::string_view> &names) -> self_type & {
+  if (names.size() < 1)
+  {
     throw std::invalid_argument("A defined value must have at least a primary name");
   }
-  for (auto name : names) {
-    if (_by_name.find(name) != _by_name.end()) {
+  for (auto name : names)
+  {
+    if (_by_name.find(name) != _by_name.end())
+    {
       throw std::invalid_argument(detail::what("Duplicate name '{}' in Lexicon", name));
     }
     auto i = new Item(value, this->localize(name));
     _by_name.insert(i);
     // Only put primary names in the value table.
-    if (_by_value.find(value) == _by_value.end()) {
+    if (_by_value.find(value) == _by_value.end())
+    {
       _by_value.insert(i);
     }
   }
@@ -535,31 +520,28 @@ Lexicon<E>::define(E value, const std::initializer_list<std::string_view> &names
 template <typename E>
 template <typename... Args>
 auto
-Lexicon<E>::define(E value, Args &&... names) -> self_type &
-{
+Lexicon<E>::define(E value, Args &&... names) -> self_type & {
   static_assert(sizeof...(Args) > 0, "A defined value must have at least a priamry name");
   return this->define(value, {std::forward<Args>(names)...});
 }
 
 template <typename E>
 auto
-Lexicon<E>::define(const Pair &pair) -> self_type &
-{
+Lexicon<E>::define(const Pair &pair) -> self_type & {
   return this->define(std::get<0>(pair), {std::get<1>(pair)});
 }
 
 template <typename E>
 auto
-Lexicon<E>::define(const Definition &init) -> self_type &
-{
+Lexicon<E>::define(const Definition &init) -> self_type & {
   return this->define(init.value, init.names);
 }
 
 template <typename E>
 auto
-Lexicon<E>::set_default(DefaultHandler const &handler) -> self_type &
-{
-  switch (handler.index()) {
+Lexicon<E>::set_default(DefaultHandler const &handler) -> self_type & {
+  switch (handler.index())
+  {
   case 0:
     break;
   case 1:
@@ -580,22 +562,19 @@ Lexicon<E>::set_default(DefaultHandler const &handler) -> self_type &
 
 template <typename E>
 size_t
-Lexicon<E>::count() const
-{
+Lexicon<E>::count() const {
   return _by_value.count();
 }
 
 template <typename E>
 auto
-Lexicon<E>::begin() const -> const_iterator
-{
+Lexicon<E>::begin() const -> const_iterator {
   return const_iterator{static_cast<const Item *>(_by_value.begin())};
 }
 
 template <typename E>
 auto
-Lexicon<E>::end() const -> const_iterator
-{
+Lexicon<E>::end() const -> const_iterator {
   return {};
 }
 
@@ -603,48 +582,43 @@ Lexicon<E>::end() const -> const_iterator
 
 template <typename E>
 void
-Lexicon<E>::const_iterator::update()
-{
+Lexicon<E>::const_iterator::update() {
   std::get<0>(_v) = _item->_value;
   std::get<1>(_v) = _item->_name;
 }
 
-template <typename E> Lexicon<E>::const_iterator::const_iterator(const Item *item) : _item(item)
-{
-  if (_item) {
+template <typename E> Lexicon<E>::const_iterator::const_iterator(const Item *item) : _item(item) {
+  if (_item)
+  {
     this->update();
   };
 }
 
-template <typename E> auto Lexicon<E>::const_iterator::operator*() const -> reference
-{
+template <typename E> auto Lexicon<E>::const_iterator::operator*() const -> reference {
   return _v;
 }
 
-template <typename E> auto Lexicon<E>::const_iterator::operator-> () const -> pointer
-{
+template <typename E> auto Lexicon<E>::const_iterator::operator-> () const -> pointer {
   return &_v;
 }
 
 template <typename E>
 bool
-Lexicon<E>::const_iterator::operator==(self_type const &that) const
-{
+Lexicon<E>::const_iterator::operator==(self_type const &that) const {
   return _item == that._item;
 }
 
 template <typename E>
 bool
-Lexicon<E>::const_iterator::operator!=(self_type const &that) const
-{
+Lexicon<E>::const_iterator::operator!=(self_type const &that) const {
   return _item != that._item;
 }
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator++() -> self_type &
-{
-  if (nullptr != (_item = _item->_value_link._next)) {
+Lexicon<E>::const_iterator::operator++() -> self_type & {
+  if (nullptr != (_item = _item->_value_link._next))
+  {
     this->update();
   }
   return *this;
@@ -652,8 +626,7 @@ Lexicon<E>::const_iterator::operator++() -> self_type &
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator++(int) -> self_type
-{
+Lexicon<E>::const_iterator::operator++(int) -> self_type {
   self_type tmp{*this};
   ++*this;
   return tmp;
@@ -661,9 +634,9 @@ Lexicon<E>::const_iterator::operator++(int) -> self_type
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator--() -> self_type &
-{
-  if (nullptr != (_item = _item->_value_link->_prev)) {
+Lexicon<E>::const_iterator::operator--() -> self_type & {
+  if (nullptr != (_item = _item->_value_link->_prev))
+  {
     this->update();
   }
   return *this;
@@ -671,8 +644,7 @@ Lexicon<E>::const_iterator::operator--() -> self_type &
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator--(int) -> self_type
-{
+Lexicon<E>::const_iterator::operator--(int) -> self_type {
   self_type tmp;
   ++*this;
   return tmp;

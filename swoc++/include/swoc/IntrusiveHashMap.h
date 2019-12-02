@@ -80,8 +80,7 @@ namespace swoc
     @endcode
 
  */
-template <typename H> class IntrusiveHashMap
-{
+template <typename H> class IntrusiveHashMap {
   using self_type = IntrusiveHashMap;
 
 public:
@@ -313,15 +312,13 @@ protected:
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::Bucket::Linkage::next_ptr(Bucket *b) -> Bucket *&
-{
+IntrusiveHashMap<H>::Bucket::Linkage::next_ptr(Bucket *b) -> Bucket *& {
   return b->_link._next;
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::Bucket::Linkage::prev_ptr(Bucket *b) -> Bucket *&
-{
+IntrusiveHashMap<H>::Bucket::Linkage::prev_ptr(Bucket *b) -> Bucket *& {
   return b->_link._prev;
 }
 
@@ -329,16 +326,14 @@ IntrusiveHashMap<H>::Bucket::Linkage::prev_ptr(Bucket *b) -> Bucket *&
 // a search loop on an empty bucket because that will start with a nullptr candidate, matching the limit.
 template <typename H>
 auto
-IntrusiveHashMap<H>::Bucket::limit() const -> value_type *
-{
+IntrusiveHashMap<H>::Bucket::limit() const -> value_type * {
   Bucket *n{_link._next};
   return n ? n->_v : nullptr;
 };
 
 template <typename H>
 void
-IntrusiveHashMap<H>::Bucket::clear()
-{
+IntrusiveHashMap<H>::Bucket::clear() {
   _v       = nullptr;
   _count   = 0;
   _mixed_p = false;
@@ -348,11 +343,11 @@ IntrusiveHashMap<H>::Bucket::clear()
 
 template <typename H>
 bool
-IntrusiveHashMap<H>::Bucket::contains(value_type *v) const
-{
+IntrusiveHashMap<H>::Bucket::contains(value_type *v) const {
   value_type *x     = _v;
   value_type *limit = this->limit();
-  while (x != limit && x != v) {
+  while (x != limit && x != v)
+  {
     x = H::next_ptr(x);
   }
   return x == v;
@@ -361,80 +356,71 @@ IntrusiveHashMap<H>::Bucket::contains(value_type *v) const
 // ---------------------
 template <typename H>
 auto
-IntrusiveHashMap<H>::range::begin() const -> iterator const &
-{
+IntrusiveHashMap<H>::range::begin() const -> iterator const & {
   return super_type::first;
 }
 template <typename H>
 auto
-IntrusiveHashMap<H>::range::end() const -> iterator const &
-{
+IntrusiveHashMap<H>::range::end() const -> iterator const & {
   return super_type::second;
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::const_range::begin() const -> const_iterator const &
-{
+IntrusiveHashMap<H>::const_range::begin() const -> const_iterator const & {
   return super_type::first;
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::const_range::end() const -> const_iterator const &
-{
+IntrusiveHashMap<H>::const_range::end() const -> const_iterator const & {
   return super_type::second;
 }
 
 // ---------------------
 
-template <typename H> IntrusiveHashMap<H>::IntrusiveHashMap(size_t n)
-{
-  if (n) {
+template <typename H> IntrusiveHashMap<H>::IntrusiveHashMap(size_t n) {
+  if (n)
+  {
     _table.resize(*std::lower_bound(PRIME.begin(), PRIME.end(), n));
   }
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::bucket_for(key_type key) -> Bucket *
-{
+IntrusiveHashMap<H>::bucket_for(key_type key) -> Bucket * {
   return &_table[H::hash_of(key) % _table.size()];
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::begin() -> iterator
-{
+IntrusiveHashMap<H>::begin() -> iterator {
   return _list.begin();
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::begin() const -> const_iterator
-{
+IntrusiveHashMap<H>::begin() const -> const_iterator {
   return _list.begin();
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::end() -> iterator
-{
+IntrusiveHashMap<H>::end() -> iterator {
   return _list.end();
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::end() const -> const_iterator
-{
+IntrusiveHashMap<H>::end() const -> const_iterator {
   return _list.end();
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::clear() -> self_type &
-{
-  for (auto &b : _table) {
+IntrusiveHashMap<H>::clear() -> self_type & {
+  for (auto &b : _table)
+  {
     b.clear();
   }
   // Clear container data.
@@ -445,12 +431,12 @@ IntrusiveHashMap<H>::clear() -> self_type &
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::find(key_type key) -> iterator
-{
+IntrusiveHashMap<H>::find(key_type key) -> iterator {
   Bucket *b         = this->bucket_for(key);
   value_type *v     = b->_v;
   value_type *limit = b->limit();
-  while (v != limit && !H::equal(key, H::key_of(v))) {
+  while (v != limit && !H::equal(key, H::key_of(v)))
+  {
     v = H::next_ptr(v);
   }
   return v == limit ? _list.end() : _list.iterator_for(v);
@@ -458,20 +444,19 @@ IntrusiveHashMap<H>::find(key_type key) -> iterator
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::find(key_type key) const -> const_iterator
-{
+IntrusiveHashMap<H>::find(key_type key) const -> const_iterator {
   return const_cast<self_type *>(this)->find(key);
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::equal_range(key_type key) -> range
-{
+IntrusiveHashMap<H>::equal_range(key_type key) -> range {
   iterator first{this->find(key)};
   iterator last{first};
   iterator limit{this->end()};
 
-  while (last != limit && H::equal(key, H::key_of(&*last))) {
+  while (last != limit && H::equal(key, H::key_of(&*last)))
+  {
     ++last;
   }
 
@@ -480,75 +465,75 @@ IntrusiveHashMap<H>::equal_range(key_type key) -> range
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::equal_range(key_type key) const -> const_range
-{
+IntrusiveHashMap<H>::equal_range(key_type key) const -> const_range {
   return const_cast<self_type *>(this)->equal_range(key);
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::iterator_for(const value_type *v) const -> const_iterator
-{
+IntrusiveHashMap<H>::iterator_for(const value_type *v) const -> const_iterator {
   return _list.iterator_for(v);
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::iterator_for(value_type *v) -> iterator
-{
+IntrusiveHashMap<H>::iterator_for(value_type *v) -> iterator {
   return _list.iterator_for(v);
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::find(value_type *v) -> iterator
-{
+IntrusiveHashMap<H>::find(value_type *v) -> iterator {
   Bucket *b = this->bucket_for(H::key_of(v));
   return b->contains(v) ? _list.iterator_for(v) : this->end();
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::find(value_type const *v) const -> const_iterator
-{
+IntrusiveHashMap<H>::find(value_type const *v) const -> const_iterator {
   return const_cast<self_type *>(this)->find(const_cast<value_type *>(v));
 }
 
 template <typename H>
 void
-IntrusiveHashMap<H>::insert(value_type *v)
-{
+IntrusiveHashMap<H>::insert(value_type *v) {
   auto key         = H::key_of(v);
   Bucket *bucket   = this->bucket_for(key);
   value_type *spot = bucket->_v;
   bool mixed_p     = false; // Found a different key in the bucket.
 
-  if (nullptr == spot) { // currently empty bucket, set it and add to active list.
+  if (nullptr == spot)
+  { // currently empty bucket, set it and add to active list.
     _list.append(v);
     bucket->_v = v;
     _active_buckets.append(bucket);
-  } else {
+  } else
+  {
     value_type *limit = bucket->limit();
 
     // First search the bucket to see if the key is already in it.
-    while (spot != limit && !H::equal(key, H::key_of(spot))) {
+    while (spot != limit && !H::equal(key, H::key_of(spot)))
+    {
       spot = H::next_ptr(spot);
     }
-    if (spot != bucket->_v) {
+    if (spot != bucket->_v)
+    {
       mixed_p = true; // found some other key, it's going to be mixed.
     }
-    if (spot != limit) {
+    if (spot != limit)
+    {
       // If an equal key was found, walk past those to insert at the upper end of the range.
-      do {
-        spot = H::next_ptr(spot);
-      } while (spot != limit && H::equal(key, H::key_of(spot)));
-      if (spot != limit) { // something not equal past last equivalent, it's going to be mixed.
+      do
+      { spot = H::next_ptr(spot); } while (spot != limit && H::equal(key, H::key_of(spot)));
+      if (spot != limit)
+      { // something not equal past last equivalent, it's going to be mixed.
         mixed_p = true;
       }
     }
 
     _list.insert_before(spot, v);
-    if (spot == bucket->_v) { // added before the bucket start, update the start.
+    if (spot == bucket->_v)
+    { // added before the bucket start, update the start.
       bucket->_v = v;
     }
     bucket->_mixed_p = mixed_p;
@@ -557,25 +542,28 @@ IntrusiveHashMap<H>::insert(value_type *v)
 
   // auto expand if appropriate.
   if ((AVERAGE == _expansion_policy && (_list.count() / _table.size()) > _expansion_limit) ||
-      (MAXIMUM == _expansion_policy && bucket->_count > _expansion_limit && bucket->_mixed_p)) {
+      (MAXIMUM == _expansion_policy && bucket->_count > _expansion_limit && bucket->_mixed_p))
+  {
     this->expand();
   }
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::erase(iterator const &loc) -> iterator
-{
+IntrusiveHashMap<H>::erase(iterator const &loc) -> iterator {
   value_type *v     = loc;
   iterator zret     = ++(this->iterator_for(v)); // get around no const_iterator -> iterator.
   Bucket *b         = this->bucket_for(H::key_of(v));
   value_type *nv    = H::next_ptr(v);
   value_type *limit = b->limit();
-  if (b->_v == v) {    // removed first element in bucket, update bucket
-    if (limit == nv) { // that was also the only element, deactivate bucket
+  if (b->_v == v)
+  { // removed first element in bucket, update bucket
+    if (limit == nv)
+    { // that was also the only element, deactivate bucket
       _active_buckets.erase(b);
       b->clear();
-    } else {
+    } else
+    {
       b->_v = nv;
       --b->_count;
     }
@@ -586,10 +574,10 @@ IntrusiveHashMap<H>::erase(iterator const &loc) -> iterator
 
 template <typename H>
 bool
-IntrusiveHashMap<H>::erase(value_type *value)
-{
+IntrusiveHashMap<H>::erase(value_type *value) {
   auto loc = this->find(value);
-  if (loc != this->end()) {
+  if (loc != this->end())
+  {
     this->erase(loc);
     return true;
   }
@@ -598,19 +586,21 @@ IntrusiveHashMap<H>::erase(value_type *value)
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::erase(iterator const &start, iterator const &limit) -> iterator
-{
+IntrusiveHashMap<H>::erase(iterator const &start, iterator const &limit) -> iterator {
   auto spot{start};
   Bucket *bucket{this->bucket_for(spot)};
-  while (spot != limit) {
+  while (spot != limit)
+  {
     auto target         = bucket;
     bucket              = bucket->_link._next; // bump now to avoid forward iteration problems in case of bucket removal.
     value_type *v_limit = bucket ? bucket->_v : nullptr;
-    while (spot != v_limit && spot != limit) {
+    while (spot != v_limit && spot != limit)
+    {
       --(target->_count);
       ++spot;
     }
-    if (target->_count == 0) {
+    if (target->_count == 0)
+    {
       _active_buckets.erase(target);
     }
   }
@@ -620,8 +610,7 @@ IntrusiveHashMap<H>::erase(iterator const &start, iterator const &limit) -> iter
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::erase(range const &r) -> iterator
-{
+IntrusiveHashMap<H>::erase(range const &r) -> iterator {
   return this->erase(r.first, r.second);
 }
 
@@ -636,19 +625,18 @@ namespace detail
   template <typename H, typename F>
   auto
   IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
-    -> decltype(f(*static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map)
-  {
+    -> decltype(f(*static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map) {
     return map.apply([&f](typename IntrusiveHashMap<H>::value_type *v) { return f(*v); });
   }
 
   template <typename H, typename F>
   auto
   IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
-    -> decltype(f(static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map)
-  {
+    -> decltype(f(static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map) {
     auto spot{map.begin()};
     auto limit{map.end()};
-    while (spot != limit) {
+    while (spot != limit)
+    {
       f(spot++); // post increment means @a spot is updated before @a f is applied.
     }
     return map;
@@ -658,15 +646,13 @@ namespace detail
 template <typename H>
 template <typename F>
 auto
-IntrusiveHashMap<H>::apply(F &&f) -> self_type &
-{
+IntrusiveHashMap<H>::apply(F &&f) -> self_type & {
   return detail::IntrusiveHashMapApply(*this, f);
 };
 
 template <typename H>
 void
-IntrusiveHashMap<H>::expand()
-{
+IntrusiveHashMap<H>::expand() {
   ExpansionPolicy org_expansion_policy = _expansion_policy; // save for restore.
   value_type *old                      = _list.head();      // save for repopulating.
   auto old_size                        = _table.size();
@@ -676,7 +662,8 @@ IntrusiveHashMap<H>::expand()
   _table.resize(*std::lower_bound(PRIME.begin(), PRIME.end(), old_size + 1));
 
   _expansion_policy = MANUAL; // disable any auto expand while we're expanding.
-  while (old) {
+  while (old)
+  {
     value_type *v = old;
     old           = H::next_ptr(old);
     this->insert(v);
@@ -687,45 +674,39 @@ IntrusiveHashMap<H>::expand()
 
 template <typename H>
 size_t
-IntrusiveHashMap<H>::count() const
-{
+IntrusiveHashMap<H>::count() const {
   return _list.count();
 }
 
 template <typename H>
 size_t
-IntrusiveHashMap<H>::bucket_count() const
-{
+IntrusiveHashMap<H>::bucket_count() const {
   return _table.size();
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::set_expansion_policy(ExpansionPolicy policy) -> self_type &
-{
+IntrusiveHashMap<H>::set_expansion_policy(ExpansionPolicy policy) -> self_type & {
   _expansion_policy = policy;
   return *this;
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::get_expansion_policy() const -> ExpansionPolicy
-{
+IntrusiveHashMap<H>::get_expansion_policy() const -> ExpansionPolicy {
   return _expansion_policy;
 }
 
 template <typename H>
 auto
-IntrusiveHashMap<H>::set_expansion_limit(size_t n) -> self_type &
-{
+IntrusiveHashMap<H>::set_expansion_limit(size_t n) -> self_type & {
   _expansion_limit = n;
   return *this;
 }
 
 template <typename H>
 size_t
-IntrusiveHashMap<H>::get_expansion_limit() const
-{
+IntrusiveHashMap<H>::get_expansion_limit() const {
   return _expansion_limit;
 }
 

@@ -137,9 +137,7 @@ namespace meta
    *   }, v);
    * @endcode
    */
-  template <typename... Args> struct vary : public Args... {
-    using Args::operator()...;
-  };
+  template <typename... Args> struct vary : public Args... { using Args::operator()...; };
   /// Template argument deduction guide (C++17 required).
   template <typename... Args> vary(Args...)->vary<Args...>;
 
@@ -201,5 +199,5 @@ namespace meta
     template <typename T> static constexpr bool contains = is_any_of<T, Types...>::value;
   };
 
-}; // namespace meta
+} // namespace meta
 } // namespace swoc

@@ -49,9 +49,9 @@ namespace swoc
 using bwf::Spec;
 
 BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, in_addr const &addr)
+bwformat(BufferWriter &w, Spec const &spec, in_addr_t addr)
 {
-  auto *ptr = reinterpret_cast<uint8_t const *>(&addr.s_addr);
+  in_addr_t host { ntohl(addr) };
   Spec local_spec{spec}; // Format for address elements.
   bool align_p = false;
 
@@ -72,13 +72,13 @@ bwformat(BufferWriter &w, Spec const &spec, in_addr const &addr)
     local_spec._min = 0;
   }
 
-  bwformat(w, local_spec, ptr[0]);
+  bwformat(w, local_spec, static_cast<uint8_t>(host >> 24 & 0xFF));
   w.write('.');
-  bwformat(w, local_spec, ptr[1]);
+  bwformat(w, local_spec, static_cast<uint8_t>(host >> 16 & 0xFF));
   w.write('.');
-  bwformat(w, local_spec, ptr[2]);
+  bwformat(w, local_spec, static_cast<uint8_t>(host >> 8 & 0xFF));
   w.write('.');
-  bwformat(w, local_spec, ptr[3]);
+  bwformat(w, local_spec, static_cast<uint8_t>(host & 0xFF));
   return w;
 }
 
@@ -182,9 +182,9 @@ bwformat(BufferWriter &w, Spec const &spec, IPAddr const &addr)
 
   if (addr_p) {
     if (addr.is_ip4()) {
-      swoc::bwformat(w, spec, in_addr{addr.raw_ip4()});
+      swoc::bwformat(w, spec, addr.network_ip4());
     } else if (addr.is_ip6()) {
-      swoc::bwformat(w, spec, addr.raw_ip6());
+      swoc::bwformat(w, spec, addr.network_ip6());
     } else {
       w.print("*Not IP address [{}]*", addr.family());
     }
@@ -253,7 +253,7 @@ bwformat(BufferWriter &w, Spec const &spec, sockaddr const *addr)
     bool bracket_p = false;
     switch (addr->sa_family) {
     case AF_INET:
-      bwformat(w, spec, reinterpret_cast<sockaddr_in const *>(addr)->sin_addr);
+      bwformat(w, spec, reinterpret_cast<sockaddr_in const *>(addr)->sin_addr.s_addr);
       break;
     case AF_INET6:
       if (port_p) {

@@ -29,7 +29,7 @@
     so it is even cheaper to copy.
 
     To further ease use, the library has the ability to define @a sinks.  A sink is a function that
-    acts on an erratum when it becomes unreferenced. The indended use is to send the messages to an
+    acts on an erratum when it becomes unreferenced. The intended use is to send the messages to an
     output log. This makes reporting errors to a log from even deeply nested functions easy while
     preserving the ability of the top level logic to control such logging.
 
@@ -73,8 +73,7 @@ enum class Severity : uint8_t {
  * wraps the actual data and can therefore be treated a value type with cheap copy semantics.
  * Default construction is very cheap.
  */
-class Errata
-{
+class Errata {
 public:
   using Severity = swoc::Severity; ///< Import for associated classes.
 
@@ -302,8 +301,7 @@ public:
       destructed until application shutdown). Clients can subclass this class in order to preserve
       arbitrary data for the sink or retain a handle to the sink for runtime modifications.
    */
-  class Sink
-  {
+  class Sink {
     using self_type = Sink;
 
   public:
@@ -332,8 +330,7 @@ public:
 
   /// Register a sink function for abandonded erratum.
   static void
-  register_sink(SinkHandler const &f)
-  {
+  register_sink(SinkHandler const &f) {
     register_sink(Sink::Handle(new SinkWrapper(f)));
   }
 
@@ -385,8 +382,7 @@ extern std::ostream &operator<<(std::ostream &os, Errata const &stat);
     of @c errata rather than having to remember it (and the order) each time - Enable assignment
     directly to @a R for ease of use and compatibility so clients can upgrade asynchronously.
  */
-template <typename R> class Rv
-{
+template <typename R> class Rv {
 public:
   using result_type = R; ///< Type of result value.
 
@@ -582,8 +578,7 @@ template <typename R>
 Rv<typename std::remove_reference<R>::type>
 MakeRv(R &&r,           ///< The function result
        Errata &&erratum ///< The pre-existing status object
-)
-{
+) {
   return Rv<typename std::remove_reference<R>::type>(std::forward<R>(r), std::move(erratum));
 }
 /* ----------------------------------------------------------------------- */
@@ -594,67 +589,57 @@ inline Errata::Annotation::Annotation() {}
 inline Errata::Annotation::Annotation(Severity severity, std::string_view text) : _severity(severity), _text(text) {}
 
 inline Errata::Annotation &
-Errata::Annotation::clear()
-{
+Errata::Annotation::clear() {
   _severity = Errata::DEFAULT_SEVERITY;
   _text     = std::string_view{};
   return *this;
 }
 
 inline std::string_view
-Errata::Annotation::text() const
-{
+Errata::Annotation::text() const {
   return _text;
 }
 
 inline unsigned
-Errata::Annotation::level() const
-{
+Errata::Annotation::level() const {
   return _level;
 }
 
 inline Errata::Severity
-Errata::Annotation::severity() const
-{
+Errata::Annotation::severity() const {
   return _severity;
 }
 
 inline Errata::Annotation &
-Errata::Annotation::assign(std::string_view text)
-{
+Errata::Annotation::assign(std::string_view text) {
   _text = text;
   return *this;
 }
 
 inline Errata::Annotation &
-Errata::Annotation::assign(Severity level)
-{
+Errata::Annotation::assign(Severity level) {
   _severity = level;
   return *this;
 }
 /* ----------------------------------------------------------------------- */
 // Inline methods for Errata::Data
 
-inline Errata::Data::Data(MemArena &&arena)
-{
+inline Errata::Data::Data(MemArena &&arena) {
   _arena = std::move(arena);
 }
 
 inline swoc::MemSpan<char>
-Errata::Data::remnant()
-{
+Errata::Data::remnant() {
   return _arena.remnant().rebind<char>();
 }
 
 inline swoc::MemSpan<char>
-Errata::Data::alloc(size_t n)
-{
+Errata::Data::alloc(size_t n) {
   return _arena.alloc(n).rebind<char>();
 }
 
 inline bool
-Errata::Data::empty() const
-{
+Errata::Data::empty() const {
   return _notes.empty();
 }
 
@@ -663,100 +648,87 @@ Errata::Data::empty() const
 
 inline Errata::Errata() {}
 
-inline Errata::Errata(self_type &&that)
-{
+inline Errata::Errata(self_type &&that) {
   std::swap(_data, that._data);
 }
 
-inline Errata::Errata(self_type const &that)
-{
-  if (nullptr != (_data = that._data)) {
+inline Errata::Errata(self_type const &that) {
+  if (nullptr != (_data = that._data))
+  {
     ++(_data->_ref_count);
   }
 }
 
 inline auto
-Errata::operator=(self_type &&that) -> self_type &
-{
-  if (this != &that) {
+Errata::operator=(self_type &&that) -> self_type & {
+  if (this != &that)
+  {
     this->release();
     std::swap(_data, that._data);
   }
   return *this;
 }
 
-inline Errata::operator bool() const
-{
+inline Errata::operator bool() const {
   return this->is_ok();
 }
 
-inline bool Errata::operator!() const
-{
+inline bool Errata::operator!() const {
   return !this->is_ok();
 }
 
 inline bool
-Errata::empty() const
-{
+Errata::empty() const {
   return _data == nullptr || _data->_notes.count() == 0;
 }
 
 inline size_t
-Errata::count() const
-{
+Errata::count() const {
   return _data ? _data->_notes.count() : 0;
 }
 
 inline bool
-Errata::is_ok() const
-{
+Errata::is_ok() const {
   return 0 == _data || 0 == _data->_notes.count() || _data->_severity < FAILURE_SEVERITY;
 }
 
 inline const Errata::Annotation &
-Errata::front() const
-{
+Errata::front() const {
   return *(_data->_notes.head());
 }
 
 template <typename... Args>
 Errata &
-Errata::note(Severity severity, std::string_view fmt, Args &&... args)
-{
+Errata::note(Severity severity, std::string_view fmt, Args &&... args) {
   return this->note_v(severity, fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
 Errata &
-Errata::diag(std::string_view fmt, Args &&... args)
-{
+Errata::diag(std::string_view fmt, Args &&... args) {
   return this->note_v(Severity::DIAG, fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
 Errata &
-Errata::info(std::string_view fmt, Args &&... args)
-{
+Errata::info(std::string_view fmt, Args &&... args) {
   return this->note_v(Severity::INFO, fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
 Errata &
-Errata::warn(std::string_view fmt, Args &&... args)
-{
+Errata::warn(std::string_view fmt, Args &&... args) {
   return this->note_v(Severity::WARN, fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
 Errata &
-Errata::error(std::string_view fmt, Args &&... args)
-{
+Errata::error(std::string_view fmt, Args &&... args) {
   return this->note_v(Severity::ERROR, fmt, std::forward_as_tuple(args...));
 }
 
 inline Errata &
-Errata::note(self_type &&that)
-{
+Errata::note(self_type &&that) {
   this->note(that);
   that.clear();
   return *this;
@@ -764,15 +736,16 @@ Errata::note(self_type &&that)
 
 template <typename... Args>
 Errata &
-Errata::note_v(Severity severity, std::string_view fmt, std::tuple<Args...> const &args)
-{
+Errata::note_v(Severity severity, std::string_view fmt, std::tuple<Args...> const &args) {
   Data *data = this->writeable_data();
   auto span  = data->remnant();
   FixedBufferWriter bw{span};
-  if (!bw.print_v(fmt, args).error()) {
+  if (!bw.print_v(fmt, args).error())
+  {
     span = span.prefix(bw.extent());
     data->alloc(bw.extent()); // require the part of the remnant actually used.
-  } else {
+  } else
+  {
     // Not enough space, get a big enough chunk and do it again.
     span = this->alloc(bw.extent());
     FixedBufferWriter{span}.print_v(fmt, args);
@@ -782,8 +755,7 @@ Errata::note_v(Severity severity, std::string_view fmt, std::tuple<Args...> cons
 }
 
 inline void
-Errata::SinkWrapper::operator()(Errata const &e) const
-{
+Errata::SinkWrapper::operator()(Errata const &e) const {
   _f(e);
 }
 /* ----------------------------------------------------------------------- */
@@ -791,15 +763,13 @@ Errata::SinkWrapper::operator()(Errata const &e) const
 
 template <typename R>
 inline bool
-Rv<R>::is_ok() const
-{
+Rv<R>::is_ok() const {
   return _errata.is_ok();
 }
 
 template <typename R>
 inline auto
-Rv<R>::clear() -> self_type &
-{
+Rv<R>::clear() -> self_type & {
   errata().clear();
 }
 
@@ -815,72 +785,62 @@ template <typename R> Rv<R>::Rv(R &&r, Errata &&errata) : _r(std::move(r)), _err
 
 template <typename R> Rv<R>::Rv(Errata &&errata) : _errata{std::move(errata)} {}
 
-template <typename T> Rv<T>::operator result_type const &() const
-{
+template <typename T> Rv<T>::operator result_type const &() const {
   return _r;
 }
 
 template <typename R>
 R const &
-Rv<R>::result() const
-{
+Rv<R>::result() const {
   return _r;
 }
 
 template <typename R>
 R &
-Rv<R>::result()
-{
+Rv<R>::result() {
   return _r;
 }
 
 template <typename R>
 Errata const &
-Rv<R>::errata() const
-{
+Rv<R>::errata() const {
   return _errata;
 }
 
 template <typename R>
 Errata &
-Rv<R>::errata()
-{
+Rv<R>::errata() {
   return _errata;
 }
 
-template <typename R> Rv<R>::operator Errata &()
-{
+template <typename R> Rv<R>::operator Errata &() {
   return _errata;
 }
 
 template <typename R>
 Rv<R> &
-Rv<R>::assign(result_type const &r)
-{
+Rv<R>::assign(result_type const &r) {
   _r = r;
   return *this;
 }
 
 template <typename R>
 Rv<R> &
-Rv<R>::assign(R &&r)
-{
+Rv<R>::assign(R &&r) {
   _r = std::move(r);
   return *this;
 }
 
 template <typename R>
 auto
-Rv<R>::operator=(Errata &&errata) -> self_type &
-{
+Rv<R>::operator=(Errata &&errata) -> self_type & {
   _errata = std::move(errata);
   return *this;
 }
 
 template <typename R>
 auto
-Rv<R>::note(Severity level, std::string_view text) -> self_type &
-{
+Rv<R>::note(Severity level, std::string_view text) -> self_type & {
   _errata.note(level, text);
   return *this;
 }
@@ -888,24 +848,21 @@ Rv<R>::note(Severity level, std::string_view text) -> self_type &
 template <typename R>
 template <typename... Args>
 Rv<R> &
-Rv<R>::note(Severity level, std::string_view fmt, Args &&... args)
-{
+Rv<R>::note(Severity level, std::string_view fmt, Args &&... args) {
   _errata.note_v(level, fmt, std::forward_as_tuple(args...));
   return *this;
 }
 
 template <typename R>
 auto
-Rv<R>::operator=(result_type const &r) -> result_type &
-{
+Rv<R>::operator=(result_type const &r) -> result_type & {
   _r = r;
   return _r;
 }
 
 template <typename R>
 auto
-Rv<R>::operator=(result_type &&r) -> result_type &
-{
+Rv<R>::operator=(result_type &&r) -> result_type & {
   _r = std::move(r);
   return _r;
 }
@@ -921,26 +878,19 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata const &);
 // Tuple / structured binding support.
 namespace std
 {
-template <size_t IDX, typename R> class tuple_element<IDX, swoc::Rv<R>>
-{
-  static_assert("swoc:Rv tuple index out of range");
-};
+template <size_t IDX, typename R> class tuple_element<IDX, swoc::Rv<R>> { static_assert("swoc:Rv tuple index out of range"); };
 
-template <typename R> class tuple_element<0, swoc::Rv<R>>
-{
+template <typename R> class tuple_element<0, swoc::Rv<R>> {
 public:
   using type = typename swoc::Rv<R>::result_type;
 };
 
-template <typename R> class tuple_element<1, swoc::Rv<R>>
-{
+template <typename R> class tuple_element<1, swoc::Rv<R>> {
 public:
   using type = swoc::Errata;
 };
 
-template <typename R> class tuple_size<swoc::Rv<R>> : public std::integral_constant<size_t, 2>
-{
-};
+template <typename R> class tuple_size<swoc::Rv<R>> : public std::integral_constant<size_t, 2> {};
 
 } // namespace std
 
@@ -954,35 +904,32 @@ namespace swoc
 
 template <size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type &
-get(swoc::Rv<R> &&rv)
-{
-  if constexpr (IDX == 0) {
+get(swoc::Rv<R> &&rv) {
+  if constexpr (IDX == 0)
+  {
     return rv.result();
-  } else if constexpr (IDX == 1) {
-    return rv.errata();
-  }
+  } else if constexpr (IDX == 1)
+  { return rv.errata(); }
 }
 
 template <size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type &
-get(swoc::Rv<R> &rv)
-{
-  if constexpr (IDX == 0) {
+get(swoc::Rv<R> &rv) {
+  if constexpr (IDX == 0)
+  {
     return rv.result();
-  } else if constexpr (IDX == 1) {
-    return rv.errata();
-  }
+  } else if constexpr (IDX == 1)
+  { return rv.errata(); }
 }
 
 template <size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type const &
-get(swoc::Rv<R> const &rv)
-{
-  if constexpr (IDX == 0) {
+get(swoc::Rv<R> const &rv) {
+  if constexpr (IDX == 0)
+  {
     return rv.result();
-  } else if constexpr (IDX == 1) {
-    return rv.errata();
-  }
+  } else if constexpr (IDX == 1)
+  { return rv.errata(); }
 }
 
 } // namespace swoc

@@ -346,8 +346,8 @@ protected:
     Item *_next; ///< Next item in the free list.
   };
 
-  Item _list { nullptr }; ///< List of dead instances.
-  MemArena &_arena; ///< Memory source.
+  Item _list{nullptr}; ///< List of dead instances.
+  MemArena &_arena;    ///< Memory source.
 
 public:
   /** Construct a pool.
@@ -371,50 +371,46 @@ public:
    * The instance is destructed and then put on the free list for re-use.
    */
   void destroy(T *t);
+
+  /// Drop all items in the free list.
+  void clear();
 };
 // Implementation
 
-inline auto MemArena::Block::Linkage::next_ptr(Block *b) -> Block *&
-{
+inline auto MemArena::Block::Linkage::next_ptr(Block *b) -> Block *& {
   return b->_link._next;
 }
 
-inline auto MemArena::Block::Linkage::prev_ptr(Block *b) -> Block *&
-{
+inline auto MemArena::Block::Linkage::prev_ptr(Block *b) -> Block *& {
   return b->_link._prev;
 }
 
 inline MemArena::Block::Block(size_t n) : size(n) {}
 
-inline char *MemArena::Block::data()
-{
+inline char *MemArena::Block::data() {
   return reinterpret_cast<char *>(this + 1);
 }
 
-inline const char *MemArena::Block::data() const
-{
+inline const char *MemArena::Block::data() const {
   return reinterpret_cast<const char *>(this + 1);
 }
 
-inline bool MemArena::Block::contains(const void *ptr) const
-{
+inline bool MemArena::Block::contains(const void *ptr) const {
   const char *base = this->data();
   return base <= ptr && ptr < base + size;
 }
 
-inline size_t MemArena::Block::remaining() const
-{
+inline size_t MemArena::Block::remaining() const {
   return size - allocated;
 }
 
-inline bool MemArena::Block::is_full() const
-{
+inline bool MemArena::Block::is_full() const {
   return this->remaining() < MIN_FREE_SPACE;
 }
 
-inline MemSpan<void> MemArena::Block::alloc(size_t n)
-{
-  if (n > this->remaining()) {
+inline MemSpan<void> MemArena::Block::alloc(size_t n) {
+  if (n > this->remaining())
+  {
     throw(std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
   }
   MemSpan<void> zret = this->remnant().prefix(n);
@@ -422,91 +418,82 @@ inline MemSpan<void> MemArena::Block::alloc(size_t n)
   return zret;
 }
 
-template <typename T, typename... Args> T *MemArena::make(Args &&... args)
-{
+template <typename T, typename... Args> T *MemArena::make(Args &&... args) {
   return new (this->alloc(sizeof(T)).data()) T(std::forward<Args>(args)...);
 }
 
 inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
 
-inline MemSpan<void> MemArena::Block::remnant()
-{
+inline MemSpan<void> MemArena::Block::remnant() {
   return {this->data() + allocated, this->remaining()};
 }
 
-inline MemArena::Block &MemArena::Block::discard()
-{
+inline MemArena::Block &MemArena::Block::discard() {
   allocated = 0;
   return *this;
 }
 
-inline size_t MemArena::size() const
-{
+inline size_t MemArena::size() const {
   return _active_allocated;
 }
 
-inline size_t MemArena::allocated_size() const
-{
+inline size_t MemArena::allocated_size() const {
   return _frozen_allocated + _active_allocated;
 }
 
-inline size_t MemArena::remaining() const
-{
+inline size_t MemArena::remaining() const {
   return _active.empty() ? 0 : _active.head()->remaining();
 }
 
-inline MemSpan<void> MemArena::remnant()
-{
+inline MemSpan<void> MemArena::remnant() {
   return _active.empty() ? MemSpan<void>() : _active.head()->remnant();
 }
 
-inline size_t MemArena::reserved_size() const
-{
+inline size_t MemArena::reserved_size() const {
   return _active_reserved + _frozen_reserved;
 }
 
-inline auto MemArena::begin() const -> const_iterator
-{
+inline auto MemArena::begin() const -> const_iterator {
   return _active.begin();
 }
 
-inline auto MemArena::end() const -> const_iterator
-{
+inline auto MemArena::end() const -> const_iterator {
   return _active.end();
 }
 
-inline auto MemArena::frozen_begin() const -> const_iterator
-{
+inline auto MemArena::frozen_begin() const -> const_iterator {
   return _frozen.begin();
 }
 
-inline auto MemArena::frozen_end() const -> const_iterator
-{
+inline auto MemArena::frozen_end() const -> const_iterator {
   return _frozen.end();
 }
 
 template <typename T> FixedArena<T>::FixedArena(MemArena &arena) : _arena(arena) {
-  static_assert(sizeof(T) >= sizeof(T*));
+  static_assert(sizeof(T) >= sizeof(T *));
 }
 
-template <typename T> template <typename... Args> T *FixedArena<T>::make(Args... args)
-{
+template <typename T> template <typename... Args> T *FixedArena<T>::make(Args... args) {
   if (_list._next) {
-    void* t = _list._next;
+    void *t     = _list._next;
     _list._next = _list._next->_next;
-    return new (t) T(std::forward(args)...);
+    return new (t) T(std::forward<Args>(args)...);
   }
-  return _arena.template make<T>(std::forward(args)...);
+  return _arena.template make<T>(std::forward<Args>(args)...);
 }
 
-template <typename T> void FixedArena<T>::destroy(T *t)
-{
+template <typename T> void FixedArena<T>::destroy(T *t) {
   if (t) {
     t->~T(); // destructor.
     auto item   = reinterpret_cast<Item *>(t);
     item->_next = _list._next;
     _list._next = item;
   }
+}
+
+template<typename T>
+void FixedArena<T>::clear() {
+  _list._next = nullptr;
 }
 
 } // namespace swoc

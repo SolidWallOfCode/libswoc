@@ -300,7 +300,7 @@ namespace detail
             parent    = n->_parent;
             d         = Direction::NONE; // Cancel any leaf node logic
           } else {
-            if (wfc->_color == Color::BLACK) {
+            if (wfc == Color::BLACK) {
               w->child_at(near)->_color = Color::BLACK;
               w->_color                 = Color::RED;
               w->rotate(far);

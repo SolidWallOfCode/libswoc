@@ -68,17 +68,18 @@ namespace bwf
   namespace detail
   {
     // Special case conversions - these handle nullptr because the @c std::string_view spec is stupid.
-    inline std::string_view FirstOfConverter(std::nullptr_t) { return std::string_view{}; }
     inline std::string_view
-    FirstOfConverter(char const *s)
-    {
+    FirstOfConverter(std::nullptr_t) {
+      return std::string_view{};
+    }
+    inline std::string_view
+    FirstOfConverter(char const *s) {
       return std::string_view{s ? s : ""};
     }
     // Otherwise do any compliant conversion.
     template <typename T>
     std::string_view
-    FirstOfConverter(T &&t)
-    {
+    FirstOfConverter(T &&t) {
       return t;
     }
   } // namespace detail
@@ -87,10 +88,10 @@ namespace bwf
   /// All arguments must be convertible to @c std::string.
   template <typename... Args>
   std::string_view
-  FirstOf(Args &&... args)
-  {
+  FirstOf(Args &&... args) {
     std::array<std::string_view, sizeof...(args)> strings{{detail::FirstOfConverter(args)...}};
-    for (auto &s : strings) {
+    for (auto &s : strings)
+    {
       if (!s.empty())
         return s;
     }
@@ -142,8 +143,7 @@ namespace bwf
    */
   template <typename... Args>
   SubText<Args...>
-  If(bool flag, TextView const &fmt, Args &&... args)
-  {
+  If(bool flag, TextView const &fmt, Args &&... args) {
     return SubText<Args...>(flag ? fmt : TextView{}, std::forward_as_tuple(args...));
   }
 
@@ -151,20 +151,22 @@ namespace bwf
   {
     // @a T has the @c empty() method.
     template <typename T>
-    auto Optional(meta::CaseTag<2>, TextView fmt, T &&t) -> decltype(void(t.empty()), meta::TypeFunc<SubText<T>>())
-    {
+    auto
+    Optional(meta::CaseTag<2>, TextView fmt, T &&t) -> decltype(void(t.empty()), meta::TypeFunc<SubText<T>>()) {
       return SubText<T>(t.empty() ? TextView{} : fmt, std::forward_as_tuple(t));
     }
 
     // @a T is convertible to @c bool.
-    template <typename T> auto Optional(meta::CaseTag<1>, TextView fmt, T &&t) -> decltype(bool(t), meta::TypeFunc<SubText<T>>())
-    {
+    template <typename T>
+    auto
+    Optional(meta::CaseTag<1>, TextView fmt, T &&t) -> decltype(bool(t), meta::TypeFunc<SubText<T>>()) {
       return SubText<T>(bool(t) ? fmt : TextView{}, std::forward_as_tuple(t));
     }
 
     // @a T is not optional, always print.
-    template <typename T> auto Optional(meta::CaseTag<0>, TextView fmt, T &&t) -> SubText<T>
-    {
+    template <typename T>
+    auto
+    Optional(meta::CaseTag<0>, TextView fmt, T &&t) -> SubText<T> {
       return SubText<T>(fmt, std::forward_as_tuple(t));
     }
   } // namespace detail
@@ -202,8 +204,7 @@ namespace bwf
    */
   template <typename ARG>
   SubText<ARG>
-  Optional(TextView fmt, ARG &&arg)
-  {
+  Optional(TextView fmt, ARG &&arg) {
     return detail::Optional(meta::CaseArg, fmt, std::forward<ARG>(arg));
   }
 } // namespace bwf
@@ -214,9 +215,9 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &
 
 template <typename... Args>
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::SubText<Args...> const &subtext)
-{
-  if (!subtext._fmt.empty()) {
+bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::SubText<Args...> const &subtext) {
+  if (!subtext._fmt.empty())
+  {
     w.print_v(subtext._fmt, subtext._args);
   }
   return w;

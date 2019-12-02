@@ -1,25 +1,11 @@
+#pragma once
+// SPDX-License-Identifier: Apache-2.0
 /** @file
 
    Red/Black tree.
-
-   The primary purpose of this class is to provide access to structural changes in the
-   tree so that subtree data can be maintained.
 */
-/* Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
-   See the NOTICE file distributed with this work for additional information regarding copyright
-   ownership.  The ASF licenses this file to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance with the License.  You may obtain a
-   copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software distributed under the License
-   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-   or implied. See the License for the specific language governing permissions and limitations under
-   the License.
- */
-
-#pragma once
+#include <swoc/IntrusiveDList.h>
 
 namespace swoc
 {
@@ -30,6 +16,10 @@ namespace detail
       This class provides only the basic tree operations. The container must provide the search and
       decision logic. This enables this class to be a base class for templated nodes with much less
       code duplication.
+
+      @internal The primary point of a custom implementation is to hook on rotation events which
+      are used to update additional tree data. This provides a significant performance boost
+      for range based uses of this class.
   */
   struct RBNode {
     using self_type = RBNode; ///< self reference type
@@ -135,10 +125,7 @@ namespace detail
 
         @internal This is the primary reason for this class.
     */
-    virtual void
-    structure_fixup()
-    {
-    }
+    virtual void structure_fixup() {}
 
     /** Called from @c validate to perform any additional validation checks.
         Clients should chain this if they wish to perform additional checks.
@@ -192,31 +179,39 @@ namespace detail
     self_type *_right{nullptr};  ///< right child
     self_type *_next{nullptr};   ///< Next node.
     self_type *_prev{nullptr};   ///< Previous node.
+
+    /// Support for @c IntrusiveDList
+    struct Linkage {
+      static self_type *& next_ptr(self_type *t) {
+        return swoc::ptr_ref_cast<self_type>(t->_next);
+      }
+      static self_type *& prev_ptr(self_type *t) {
+        return swoc::ptr_ref_cast<self_type>(t->_prev);
+      }
+    };
+
+
   };
 
   // --- Implementation ---
 
   inline auto
-  RBNode::direction_of(self_type *const &n) const -> Direction
-  {
+  RBNode::direction_of(self_type *const &n) const -> Direction {
     return (n == _left) ? Direction::LEFT : (n == _right) ? Direction::RIGHT : Direction::NONE;
   }
 
   inline RBNode::Color
-  RBNode::color() const
-  {
+  RBNode::color() const {
     return _color;
   }
 
   inline RBNode::Direction
-  RBNode::flip(RBNode::Direction d)
-  {
+  RBNode::flip(RBNode::Direction d) {
     return Direction::LEFT == d ? Direction::RIGHT : Direction::RIGHT == d ? Direction::LEFT : Direction::NONE;
   }
 
   inline void
-  RBNode::clear_child(RBNode::Direction dir)
-  {
+  RBNode::clear_child(RBNode::Direction dir) {
     if (Direction::LEFT == dir)
       _left = nullptr;
     else if (Direction::RIGHT == dir)
@@ -224,11 +219,10 @@ namespace detail
   }
 
   inline bool
-  RBNode::structure_validate()
-  {
+  RBNode::structure_validate() {
     return true;
   }
 
-} /* namespace detail */
+} // namespace detail
 
 } // namespace swoc
