@@ -78,8 +78,7 @@ int memcmp(const std::string_view &lhs, const std::string_view &rhs);
  * @see memcmp
  */
 inline int
-strcmp(const std::string_view &lhs, const std::string_view &rhs)
-{
+strcmp(const std::string_view &lhs, const std::string_view &rhs) {
   return memcmp(lhs, rhs);
 }
 
@@ -99,8 +98,7 @@ class TextView;
     Constructors require either a literal string or an explicit length. This avoid ambiguities which
     are much more annoying that explicitly calling @c strlen on a character pointer.
  */
-class TextView : public std::string_view
-{
+class TextView : public std::string_view {
   using self_type  = TextView;         ///< Self reference type.
   using super_type = std::string_view; ///< Parent type.
 
@@ -266,14 +264,6 @@ public:
    * @return @a this
    */
   self_type &rtrim(std::string_view const &delimiters);
-
-  /** Remove bytes from the end of the view that are in @a delimiters.
-   *
-   * @return @c *this
-   *
-   * @internal This is needed to avoid collisions with the templated predicate style.
-   */
-  self_type &rtrim(const char *delimiters);
 
   /** Remove bytes from the end of the view for which @a pred is @c true.
    *
@@ -712,8 +702,7 @@ public:
   /// Ordering functor, lexicographic comparison.
   struct LessThan {
     bool
-    operator()(self_type const &lhs, self_type const &rhs)
-    {
+    operator()(self_type const &lhs, self_type const &rhs) {
       return -1 == strcmp(lhs, rhs);
     }
   };
@@ -721,8 +710,7 @@ public:
   /// Ordering functor, case ignoring lexicographic comparison.
   struct LessThanNoCase {
     bool
-    operator()(self_type const &lhs, self_type const &rhs)
-    {
+    operator()(self_type const &lhs, self_type const &rhs) {
       return -1 == strcasecmp(lhs, rhs);
     }
   };
@@ -813,14 +801,15 @@ uintmax_t svtou(TextView src, TextView *parsed = nullptr, int base = 0);
  */
 template <int N>
 uintmax_t
-svto_radix(swoc::TextView &src)
-{
+svto_radix(swoc::TextView &src) {
   static_assert(0 < N && N <= 36, "Radix must be in the range 1..36");
   uintmax_t zret{0};
   int8_t v;
-  while (src.size() && (0 <= (v = swoc::svtoi_convert[uint8_t(*src)])) && v < N) {
+  while (src.size() && (0 <= (v = swoc::svtoi_convert[uint8_t(*src)])) && v < N)
+  {
     auto n = zret * N + v;
-    if (n < zret) { // overflow / wrap
+    if (n < zret)
+    { // overflow / wrap
       return std::numeric_limits<uintmax_t>::max();
     }
     zret = n;
@@ -831,8 +820,7 @@ svto_radix(swoc::TextView &src)
 
 template <int N>
 uintmax_t
-svto_radix(swoc::TextView &&src)
-{
+svto_radix(swoc::TextView &&src) {
   return svto_radix<N>(src);
 }
 // ----------------------------------------------------------
@@ -851,126 +839,110 @@ template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_typ
 template <size_t N> constexpr TextView::TextView(const char (&s)[N], size_t n) : super_type(s, n) {}
 
 inline void
-TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set)
-{
+TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set) {
   set.reset();
   for (char c : delimiters)
     set[static_cast<uint8_t>(c)] = true;
 }
 
 inline TextView &
-TextView::clear()
-{
+TextView::clear() {
   new (this) self_type();
   return *this;
 }
 
-inline char TextView::operator*() const
-{
+inline char TextView::operator*() const {
   return this->empty() ? char(0) : *(this->data());
 }
 
-inline bool TextView::operator!() const
-{
+inline bool TextView::operator!() const {
   return this->empty();
 }
 
-inline TextView::operator bool() const
-{
+inline TextView::operator bool() const {
   return !this->empty();
 }
 
 inline TextView &
-TextView::operator++()
-{
+TextView::operator++() {
   this->remove_prefix(1);
   return *this;
 }
 
 inline TextView
-TextView::operator++(int)
-{
+TextView::operator++(int) {
   self_type zret{*this};
   this->remove_prefix(1);
   return zret;
 }
 
 inline TextView &
-TextView::operator+=(size_t n)
-{
+TextView::operator+=(size_t n) {
   this->remove_prefix(n);
   return *this;
 }
 
 template <size_t N>
 inline TextView::self_type &
-TextView::operator=(const char (&s)[N])
-{
+TextView::operator=(const char (&s)[N]) {
   return *this = self_type{s, s[N - 1] ? N : N - 1};
 }
 
 inline TextView &
-TextView::operator=(super_type const &that)
-{
+TextView::operator=(super_type const &that) {
   this->super_type::operator=(that);
   return *this;
 }
 
 inline TextView &
-TextView::operator=(const std::string &s)
-{
+TextView::operator=(const std::string &s) {
   this->super_type::operator=(s);
   return *this;
 }
 
 inline TextView &
-TextView::assign(const std::string &s)
-{
+TextView::assign(const std::string &s) {
   *this = super_type(s);
   return *this;
 }
 
 inline TextView &
-TextView::assign(char const *ptr, size_t n)
-{
+TextView::assign(char const *ptr, size_t n) {
   *this = super_type(ptr, n);
   return *this;
 }
 
 inline TextView &
-TextView::assign(char const *b, char const *e)
-{
+TextView::assign(char const *b, char const *e) {
   *this = super_type(b, e - b);
   return *this;
 }
 
 inline TextView
-TextView::prefix(size_t n) const
-{
+TextView::prefix(size_t n) const {
   return {this->data(), std::min(n, this->size())};
 }
 
 inline TextView
-TextView::prefix(int n) const
-{
+TextView::prefix(int n) const {
   return {this->data(), std::min<size_t>(n, this->size())};
 }
 
 inline TextView
-TextView::prefix_at(char c) const
-{
+TextView::prefix_at(char c) const {
   self_type zret; // default to empty return.
-  if (auto n = this->find(c); n != npos) {
+  if (auto n = this->find(c); n != npos)
+  {
     zret.assign(this->data(), n);
   }
   return zret;
 }
 
 inline TextView
-TextView::prefix_at(std::string_view const &delimiters) const
-{
+TextView::prefix_at(std::string_view const &delimiters) const {
   self_type zret; // default to empty return.
-  if (auto n = this->find_first_of(delimiters); n != npos) {
+  if (auto n = this->find_first_of(delimiters); n != npos)
+  {
     zret.assign(this->data(), n);
   }
   return zret;
@@ -978,35 +950,34 @@ TextView::prefix_at(std::string_view const &delimiters) const
 
 template <typename F>
 TextView::self_type
-TextView::prefix_if(F const &pred) const
-{
+TextView::prefix_if(F const &pred) const {
   self_type zret; // default to empty return.
-  if (auto n = this->find_if(pred); n != npos) {
+  if (auto n = this->find_if(pred); n != npos)
+  {
     zret.assign(this->data(), n);
   }
   return zret;
 }
 
 inline auto
-TextView::remove_prefix(size_t n) -> self_type &
-{
+TextView::remove_prefix(size_t n) -> self_type & {
   this->super_type::remove_prefix(std::min(n, this->size()));
   return *this;
 }
 
 inline TextView &
-TextView::remove_prefix_at(char c)
-{
-  if (auto n = this->find(c); n != npos) {
+TextView::remove_prefix_at(char c) {
+  if (auto n = this->find(c); n != npos)
+  {
     this->super_type::remove_prefix(n + 1);
   }
   return *this;
 }
 
 inline TextView &
-TextView::remove_prefix_at(std::string_view const &delimiters)
-{
-  if (auto n = this->find_first_of(delimiters); n != npos) {
+TextView::remove_prefix_at(std::string_view const &delimiters) {
+  if (auto n = this->find_first_of(delimiters); n != npos)
+  {
     this->super_type::remove_prefix(n + 1);
   }
   return *this;
@@ -1014,19 +985,19 @@ TextView::remove_prefix_at(std::string_view const &delimiters)
 
 template <typename F>
 TextView::self_type &
-TextView::remove_prefix_if(F const &pred)
-{
-  if (auto n = this->find_if(pred); n != npos) {
+TextView::remove_prefix_if(F const &pred) {
+  if (auto n = this->find_if(pred); n != npos)
+  {
     this->super_type::remove_prefix(n + 1);
   }
   return *this;
 }
 
 inline TextView
-TextView::split_prefix(size_t n)
-{
+TextView::split_prefix(size_t n) {
   self_type zret; // default to empty return.
-  if (n < this->size()) {
+  if (n < this->size())
+  {
     zret = this->prefix(n);
     this->remove_prefix(std::min(n + 1, this->size()));
   }
@@ -1034,33 +1005,28 @@ TextView::split_prefix(size_t n)
 }
 
 inline TextView
-TextView::split_prefix(int n)
-{
+TextView::split_prefix(int n) {
   return this->split_prefix(size_t(n));
 }
 
 inline TextView
-TextView::split_prefix_at(char c)
-{
+TextView::split_prefix_at(char c) {
   return this->split_prefix(this->find(c));
 }
 
 inline TextView
-TextView::split_prefix_at(std::string_view const &delimiters)
-{
+TextView::split_prefix_at(std::string_view const &delimiters) {
   return this->split_prefix(this->find_first_of(delimiters));
 }
 
 template <typename F>
 TextView::self_type
-TextView::split_prefix_if(F const &pred)
-{
+TextView::split_prefix_if(F const &pred) {
   return this->split_prefix(this->find_if(pred));
 }
 
 inline TextView
-TextView::take_prefix(size_t n)
-{
+TextView::take_prefix(size_t n) {
   n              = std::min(n, this->size());
   self_type zret = this->prefix(n);
   this->remove_prefix(std::min(n + 1, this->size()));
@@ -1068,42 +1034,37 @@ TextView::take_prefix(size_t n)
 }
 
 inline TextView
-TextView::take_prefix_at(char c)
-{
+TextView::take_prefix_at(char c) {
   return this->take_prefix(this->find(c));
 }
 
 inline TextView
-TextView::take_prefix_at(std::string_view const &delimiters)
-{
+TextView::take_prefix_at(std::string_view const &delimiters) {
   return this->take_prefix(this->find_first_of(delimiters));
 }
 
 template <typename F>
 TextView::self_type
-TextView::take_prefix_if(F const &pred)
-{
+TextView::take_prefix_if(F const &pred) {
   return this->take_prefix(this->find_if(pred));
 }
 
 inline TextView
-TextView::suffix(size_t n) const
-{
+TextView::suffix(size_t n) const {
   n = std::min(n, this->size());
   return {this->data_end() - n, n};
 }
 
 inline TextView
-TextView::suffix(int n) const
-{
+TextView::suffix(int n) const {
   return this->suffix(size_t(n));
 }
 
 inline TextView
-TextView::suffix_at(char c) const
-{
+TextView::suffix_at(char c) const {
   self_type zret;
-  if (auto n = this->rfind(c); n != npos) {
+  if (auto n = this->rfind(c); n != npos)
+  {
     ++n;
     zret.assign(this->data() + n, this->size() - n);
   }
@@ -1111,10 +1072,10 @@ TextView::suffix_at(char c) const
 }
 
 inline TextView
-TextView::suffix_at(std::string_view const &delimiters) const
-{
+TextView::suffix_at(std::string_view const &delimiters) const {
   self_type zret;
-  if (auto n = this->find_last_of(delimiters); n != npos) {
+  if (auto n = this->find_last_of(delimiters); n != npos)
+  {
     ++n;
     zret.assign(this->data() + n, this->size() - n);
   }
@@ -1123,10 +1084,10 @@ TextView::suffix_at(std::string_view const &delimiters) const
 
 template <typename F>
 TextView::self_type
-TextView::suffix_if(F const &pred) const
-{
+TextView::suffix_if(F const &pred) const {
   self_type zret;
-  if (auto n = this->rfind_if(pred); n != npos) {
+  if (auto n = this->rfind_if(pred); n != npos)
+  {
     ++n;
     zret.assign(this->data() + n, this->size() - n);
   }
@@ -1134,25 +1095,24 @@ TextView::suffix_if(F const &pred) const
 }
 
 inline auto
-TextView::remove_suffix(size_t n) -> self_type &
-{
+TextView::remove_suffix(size_t n) -> self_type & {
   this->super_type::remove_suffix(std::min(n, this->size()));
   return *this;
 }
 
 inline TextView &
-TextView::remove_suffix_at(char c)
-{
-  if (auto n = this->rfind(c); n != npos) {
+TextView::remove_suffix_at(char c) {
+  if (auto n = this->rfind(c); n != npos)
+  {
     this->remove_suffix(this->size() - n);
   }
   return *this;
 }
 
 inline TextView &
-TextView::remove_suffix_at(std::string_view const &delimiters)
-{
-  if (auto n = this->find_last_of(delimiters); n != npos) {
+TextView::remove_suffix_at(std::string_view const &delimiters) {
+  if (auto n = this->find_last_of(delimiters); n != npos)
+  {
     this->remove_suffix(this->size() - n);
   }
   return *this;
@@ -1160,17 +1120,16 @@ TextView::remove_suffix_at(std::string_view const &delimiters)
 
 template <typename F>
 TextView::self_type &
-TextView::remove_suffix_if(F const &pred)
-{
-  if (auto n = this->rfind_if(pred); n != npos) {
+TextView::remove_suffix_if(F const &pred) {
+  if (auto n = this->rfind_if(pred); n != npos)
+  {
     this->remove_suffix(this->size() - n);
   }
   return *this;
 }
 
 inline TextView
-TextView::split_suffix(size_t n)
-{
+TextView::split_suffix(size_t n) {
   self_type zret;
   n    = std::min(n, this->size());
   zret = this->suffix(n);
@@ -1179,69 +1138,59 @@ TextView::split_suffix(size_t n)
 }
 
 inline auto
-TextView::split_suffix(int n) -> self_type
-{
+TextView::split_suffix(int n) -> self_type {
   return this->split_suffix(size_t(n));
 }
 
 inline TextView
-TextView::split_suffix_at(char c)
-{
+TextView::split_suffix_at(char c) {
   auto idx = this->rfind(c);
   return npos == idx ? self_type{} : this->split_suffix(this->size() - (idx + 1));
 }
 
 inline auto
-TextView::split_suffix_at(std::string_view const &delimiters) -> self_type
-{
+TextView::split_suffix_at(std::string_view const &delimiters) -> self_type {
   auto idx = this->find_last_of(delimiters);
   return npos == idx ? self_type{} : this->split_suffix(this->size() - (idx + 1));
 }
 
 template <typename F>
 TextView::self_type
-TextView::split_suffix_if(F const &pred)
-{
+TextView::split_suffix_if(F const &pred) {
   return this->split_suffix(this->rfind_if(pred));
 }
 
 inline TextView
-TextView::take_suffix(size_t n)
-{
+TextView::take_suffix(size_t n) {
   self_type zret{*this};
   *this = zret.split_prefix(n);
   return zret;
 }
 
 inline TextView
-TextView::take_suffix(int n)
-{
+TextView::take_suffix(int n) {
   return this->take_suffix(size_t(n));
 }
 
 inline TextView
-TextView::take_suffix_at(char c)
-{
+TextView::take_suffix_at(char c) {
   return this->take_suffix(this->rfind(c));
 }
 
 inline TextView
-TextView::take_suffix_at(std::string_view const &delimiters)
-{
+TextView::take_suffix_at(std::string_view const &delimiters) {
   return this->take_suffix(this->find_last_of(delimiters));
 }
 
 template <typename F>
 TextView::self_type
-TextView::take_suffix_if(F const &pred)
-{
+TextView::take_suffix_if(F const &pred) {
   return this->take_suffix_at(this->rfind_if(pred));
 }
 
 template <typename F>
 inline size_t
-TextView::find_if(F const &pred) const
-{
+TextView::find_if(F const &pred) const {
   for (const char *spot = this->data(), *limit = this->data_end(); spot < limit; ++spot)
     if (pred(*spot))
       return spot - this->data();
@@ -1250,8 +1199,7 @@ TextView::find_if(F const &pred) const
 
 template <typename F>
 inline size_t
-TextView::rfind_if(F const &pred) const
-{
+TextView::rfind_if(F const &pred) const {
   for (const char *spot = this->data_end(), *limit = this->data(); spot > limit;)
     if (pred(*--spot))
       return spot - this->data();
@@ -1259,29 +1207,25 @@ TextView::rfind_if(F const &pred) const
 }
 
 inline TextView &
-TextView::ltrim(char c)
-{
+TextView::ltrim(char c) {
   this->remove_prefix(this->find_first_not_of(c));
   return *this;
 }
 
 inline TextView &
-TextView::rtrim(char c)
-{
+TextView::rtrim(char c) {
   auto n = this->find_last_not_of(c);
   this->remove_suffix(this->size() - (n == npos ? 0 : n + 1));
   return *this;
 }
 
 inline TextView &
-TextView::trim(char c)
-{
+TextView::trim(char c) {
   return this->ltrim(c).rtrim(c);
 }
 
 inline TextView &
-TextView::ltrim(std::string_view const &delimiters)
-{
+TextView::ltrim(std::string_view const &delimiters) {
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
   const char *spot;
@@ -1295,14 +1239,12 @@ TextView::ltrim(std::string_view const &delimiters)
 }
 
 inline TextView &
-TextView::ltrim(const char *delimiters)
-{
+TextView::ltrim(const char *delimiters) {
   return this->ltrim(std::string_view(delimiters));
 }
 
 inline TextView &
-TextView::rtrim(std::string_view const &delimiters)
-{
+TextView::rtrim(std::string_view const &delimiters) {
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
   const char *spot  = this->data_end();
@@ -1316,8 +1258,7 @@ TextView::rtrim(std::string_view const &delimiters)
 }
 
 inline TextView &
-TextView::trim(std::string_view const &delimiters)
-{
+TextView::trim(std::string_view const &delimiters) {
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
   const char *spot;
@@ -1338,15 +1279,13 @@ TextView::trim(std::string_view const &delimiters)
 }
 
 inline TextView &
-TextView::trim(const char *delimiters)
-{
+TextView::trim(const char *delimiters) {
   return this->trim(std::string_view(delimiters));
 }
 
 template <typename F>
 TextView::self_type &
-TextView::ltrim_if(F const &pred)
-{
+TextView::ltrim_if(F const &pred) {
   const char *spot;
   const char *limit;
   for (spot = this->data(), limit = this->data_end(); spot < limit && pred(*spot); ++spot)
@@ -1357,8 +1296,7 @@ TextView::ltrim_if(F const &pred)
 
 template <typename F>
 TextView::self_type &
-TextView::rtrim_if(F const &pred)
-{
+TextView::rtrim_if(F const &pred) {
   const char *spot  = this->data_end();
   const char *limit = this->data();
   while (limit < spot-- && pred(*spot))
@@ -1369,21 +1307,19 @@ TextView::rtrim_if(F const &pred)
 
 template <typename F>
 TextView::self_type &
-TextView::trim_if(F const &pred)
-{
+TextView::trim_if(F const &pred) {
   return this->ltrim_if(pred).rtrim_if(pred);
 }
 
 inline char const *
-TextView::data_end() const
-{
+TextView::data_end() const {
   return this->data() + this->size();
 }
 
 inline TextView
-TextView::substr(size_type pos, size_type count) const
-{
-  if (pos >= this->size()) {
+TextView::substr(size_type pos, size_type count) const {
+  if (pos >= this->size())
+  {
     return {};
   }
   count = std::min(this->size() - pos, count);
@@ -1391,33 +1327,28 @@ TextView::substr(size_type pos, size_type count) const
 }
 
 inline bool
-TextView::starts_with(std::string_view const &prefix) const
-{
+TextView::starts_with(std::string_view const &prefix) const {
   return this->size() >= prefix.size() && 0 == ::memcmp(this->data(), prefix.data(), prefix.size());
 }
 
 inline bool
-TextView::starts_with_nocase(std::string_view const &prefix) const
-{
+TextView::starts_with_nocase(std::string_view const &prefix) const {
   return this->size() >= prefix.size() && 0 == ::strncasecmp(this->data(), prefix.data(), prefix.size());
 }
 
 inline bool
-TextView::ends_with(std::string_view const &suffix) const
-{
+TextView::ends_with(std::string_view const &suffix) const {
   return this->size() >= suffix.size() && 0 == ::memcmp(this->data_end() - suffix.size(), suffix.data(), suffix.size());
 }
 
 inline bool
-TextView::ends_with_nocase(std::string_view const &suffix) const
-{
+TextView::ends_with_nocase(std::string_view const &suffix) const {
   return this->size() >= suffix.size() && 0 == ::strncasecmp(this->data_end() - suffix.size(), suffix.data(), suffix.size());
 }
 
 template <typename Stream>
 Stream &
-TextView::stream_write(Stream &os, const TextView &b) const
-{
+TextView::stream_write(Stream &os, const TextView &b) const {
   // Local function, avoids extra template work.
   static const auto stream_fill = [](Stream &os, size_t n) -> Stream & {
     static constexpr size_t pad_size = 8;
@@ -1432,9 +1363,11 @@ TextView::stream_write(Stream &os, const TextView &b) const
   };
 
   const std::size_t w = os.width();
-  if (w <= b.size()) {
+  if (w <= b.size())
+  {
     os.write(b.data(), b.size());
-  } else {
+  } else
+  {
     const std::size_t pad_size = w - b.size();
     const bool align_left      = (os.flags() & Stream::adjustfield) == Stream::left;
     if (!align_left && os.good())
@@ -1473,8 +1406,7 @@ extern template std::ostream &TextView::stream_write(std::ostream &, const TextV
  * auto xv = transform_view_of(&tolower, source);
  * @endcode
  */
-template <typename X, typename V> class TransformView
-{
+template <typename X, typename V> class TransformView {
   using self_type = TransformView; ///< Self reference type.
   using iter      = decltype(static_cast<V *>(nullptr)->begin());
 
@@ -1534,32 +1466,26 @@ protected:
 };
 
 template <typename X, typename V>
-TransformView<X, V>::TransformView(transform_type &&xf, source_view_type const &v) : _xf(xf), _spot(v.begin()), _limit(v.end())
-{
-}
+TransformView<X, V>::TransformView(transform_type &&xf, source_view_type const &v) : _xf(xf), _spot(v.begin()), _limit(v.end()) {}
 
 template <typename X, typename V>
-TransformView<X, V>::TransformView(transform_type const &xf, source_view_type const &v) : _xf(xf), _spot(v.begin()), _limit(v.end())
-{
-}
+TransformView<X, V>::TransformView(transform_type const &xf, source_view_type const &v)
+  : _xf(xf), _spot(v.begin()), _limit(v.end()) {}
 
-template <typename X, typename V> auto TransformView<X, V>::operator*() const -> value_type
-{
+template <typename X, typename V> auto TransformView<X, V>::operator*() const -> value_type {
   return _xf(*_spot);
 }
 
 template <typename X, typename V>
 auto
-TransformView<X, V>::operator++() -> self_type &
-{
+TransformView<X, V>::operator++() -> self_type & {
   ++_spot;
   return *this;
 }
 
 template <typename X, typename V>
 auto
-TransformView<X, V>::operator++(int) -> self_type
-{
+TransformView<X, V>::operator++(int) -> self_type {
   self_type zret{*this};
   ++_spot;
   return zret;
@@ -1567,27 +1493,23 @@ TransformView<X, V>::operator++(int) -> self_type
 
 template <typename X, typename V>
 bool
-TransformView<X, V>::empty() const
-{
+TransformView<X, V>::empty() const {
   return _spot == _limit;
 }
 
-template <typename X, typename V> TransformView<X, V>::operator bool() const
-{
+template <typename X, typename V> TransformView<X, V>::operator bool() const {
   return _spot != _limit;
 }
 
 template <typename X, typename V>
 bool
-TransformView<X, V>::operator==(self_type const &that) const
-{
+TransformView<X, V>::operator==(self_type const &that) const {
   return _spot == that._spot && _limit == that._limit;
 }
 
 template <typename X, typename V>
 bool
-TransformView<X, V>::operator!=(self_type const &that) const
-{
+TransformView<X, V>::operator!=(self_type const &that) const {
   return _spot != that._spot || _limit != that._limit;
 }
 
@@ -1601,8 +1523,7 @@ TransformView<X, V>::operator!=(self_type const &that) const
  */
 template <typename X, typename V>
 TransformView<X, V>
-transform_view_of(X const &xf, V const &src)
-{
+transform_view_of(X const &xf, V const &src) {
   return TransformView<X, V>(xf, src);
 }
 
@@ -1613,8 +1534,7 @@ transform_view_of(X const &xf, V const &src)
  * This is a transform that returns the input unmodified. This is convenient when a transform is
  * required in general but not in in all cases.
  */
-template <typename V> class TransformView<void, V>
-{
+template <typename V> class TransformView<void, V> {
   using self_type = TransformView; ///< Self reference type.
   /// Iterator over source, for internal use.
   using iter = decltype(static_cast<V *>(nullptr)->begin());
@@ -1650,15 +1570,13 @@ public:
   value_type operator*() const { return *_spot; }
   /// Move to next element.
   self_type &
-  operator++()
-  {
+  operator++() {
     ++_spot;
     return *this;
   }
   /// Move to next element.
   self_type
-  operator++(int)
-  {
+  operator++(int) {
     auto zret{*this};
     ++*this;
     return zret;
@@ -1666,8 +1584,7 @@ public:
 
   /// Check if view is empty.
   bool
-  empty() const
-  {
+  empty() const {
     return _spot == _limit;
   }
   /// Check if bool is not empty.
@@ -1682,8 +1599,7 @@ protected:
 // Capture @c void transforms and make them identity transforms.
 template <typename V>
 TransformView<void, V>
-transform_view_of(V const &v)
-{
+transform_view_of(V const &v) {
   return TransformView<void, V>(v);
 }
 /// @endcond

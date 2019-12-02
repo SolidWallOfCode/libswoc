@@ -16,4 +16,5 @@ get_target_property(_TMP test_libswoc CLANG_FORMAT_DIRS)
 list(APPEND _CLANG_DIRS ${_TMP})
 list(JOIN _CLANG_DIRS " " _CLANG_DIRS)
 
-add_custom_target(clang-format COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${_CLANG_DIRS})
+#add_custom_target(clang-format COMMAND ${CMAKE_HOME_DIRECTORY}/tools/clang-format.sh ${_CLANG_DIRS})
+#add_custom_target(clang-format COMMAND clang-format ${_CLANG_DIRS})

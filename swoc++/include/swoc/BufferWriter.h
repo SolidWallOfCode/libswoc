@@ -51,8 +51,7 @@ namespace bwf
  *
  * @note This is a protocol class, concrete subclasses implement the functionality.
  */
-class BufferWriter
-{
+class BufferWriter {
 public:
   /** Write @a c to the buffer.
    *
@@ -295,8 +294,7 @@ public:
 /** A concrete @c BufferWriter class for a fixed buffer.
  *
  */
-class FixedBufferWriter : public BufferWriter
-{
+class FixedBufferWriter : public BufferWriter {
   using super_type = BufferWriter;
   using self_type  = FixedBufferWriter;
 
@@ -427,8 +425,7 @@ protected:
  * create_note(LocalBufferWriter<256>().print("Note {}", idx).view());
  * @endcode
  */
-template <size_t N> class LocalBufferWriter : public FixedBufferWriter
-{
+template <size_t N> class LocalBufferWriter : public FixedBufferWriter {
   using self_type  = LocalBufferWriter;
   using super_type = FixedBufferWriter;
 
@@ -447,60 +444,53 @@ protected:
 inline BufferWriter::~BufferWriter() {}
 
 inline BufferWriter &
-BufferWriter::write(const void *data, size_t length)
-{
+BufferWriter::write(const void *data, size_t length) {
   const char *d = static_cast<const char *>(data);
 
-  while (length--) {
+  while (length--)
+  {
     this->write(*(d++));
   }
   return *this;
 }
 
 inline BufferWriter &
-BufferWriter::write(const std::string_view &sv)
-{
+BufferWriter::write(const std::string_view &sv) {
   return this->write(sv.data(), sv.size());
 }
 
 inline char *
-BufferWriter::aux_data()
-{
+BufferWriter::aux_data() {
   return nullptr;
 }
 
 inline size_t
-BufferWriter::size() const
-{
+BufferWriter::size() const {
   return std::min(this->extent(), this->capacity());
 }
 
 inline size_t
-BufferWriter::remaining() const
-{
+BufferWriter::remaining() const {
   return this->capacity() - this->size();
 }
 
 // --- FixedBufferWriter ---
-inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buffer(buffer), _capacity(capacity)
-{
-  if (_capacity != 0 && buffer == nullptr) {
+inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buffer(buffer), _capacity(capacity) {
+  if (_capacity != 0 && buffer == nullptr)
+  {
     throw(std::invalid_argument{"FixedBufferWriter created with null buffer and non-zero size."});
   };
 }
 
 inline FixedBufferWriter::FixedBufferWriter(MemSpan<void> const &span)
-  : _buffer{static_cast<char *>(span.data())}, _capacity{span.size()}
-{
-}
+  : _buffer{static_cast<char *>(span.data())}, _capacity{span.size()} {}
 
 inline FixedBufferWriter::FixedBufferWriter(MemSpan<char> const &span) : _buffer{span.begin()}, _capacity{span.size()} {}
 
 inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buffer(nullptr), _capacity(0) {}
 
 inline FixedBufferWriter::self_type &
-FixedBufferWriter::detach()
-{
+FixedBufferWriter::detach() {
   const_cast<char *&>(_buffer) = nullptr;
   _capacity                    = 0;
   _attempted                   = 0;
@@ -508,14 +498,12 @@ FixedBufferWriter::detach()
 }
 
 inline FixedBufferWriter::FixedBufferWriter(FixedBufferWriter &&that)
-  : _buffer(that._buffer), _capacity(that._capacity), _attempted(that._attempted)
-{
+  : _buffer(that._buffer), _capacity(that._capacity), _attempted(that._attempted) {
   that.detach();
 }
 
 inline FixedBufferWriter::self_type &
-FixedBufferWriter::assign(MemSpan<char> const &span)
-{
+FixedBufferWriter::assign(MemSpan<char> const &span) {
   const_cast<char *&>(_buffer) = span.data();
   _capacity                    = span.size();
   _attempted                   = 0;
@@ -523,8 +511,7 @@ FixedBufferWriter::assign(MemSpan<char> const &span)
 }
 
 inline FixedBufferWriter &
-FixedBufferWriter::operator=(FixedBufferWriter &&that)
-{
+FixedBufferWriter::operator=(FixedBufferWriter &&that) {
   const_cast<char *&>(_buffer) = that._buffer;
   _capacity                    = that._capacity;
   _attempted                   = that._attempted;
@@ -533,9 +520,9 @@ FixedBufferWriter::operator=(FixedBufferWriter &&that)
 }
 
 inline FixedBufferWriter &
-FixedBufferWriter::write(char c)
-{
-  if (_attempted < _capacity) {
+FixedBufferWriter::write(char c) {
+  if (_attempted < _capacity)
+  {
     _buffer[_attempted] = c;
   }
   ++_attempted;
@@ -544,16 +531,16 @@ FixedBufferWriter::write(char c)
 }
 
 inline FixedBufferWriter &
-FixedBufferWriter::write(const void *data, size_t length)
-{
+FixedBufferWriter::write(const void *data, size_t length) {
   const size_t newSize = _attempted + length;
 
-  if (_buffer) {
-    if (newSize <= _capacity) {
+  if (_buffer)
+  {
+    if (newSize <= _capacity)
+    {
       std::memcpy(_buffer + _attempted, data, length);
-    } else if (_attempted < _capacity) {
-      std::memcpy(_buffer + _attempted, data, _capacity - _attempted);
-    }
+    } else if (_attempted < _capacity)
+    { std::memcpy(_buffer + _attempted, data, _capacity - _attempted); }
   }
   _attempted = newSize;
 
@@ -562,47 +549,41 @@ FixedBufferWriter::write(const void *data, size_t length)
 
 /// Return the output buffer.
 inline const char *
-FixedBufferWriter::data() const
-{
+FixedBufferWriter::data() const {
   return _buffer;
 }
 
 inline bool
-FixedBufferWriter::error() const
-{
+FixedBufferWriter::error() const {
   return _attempted > _capacity;
 }
 
 inline char *
-FixedBufferWriter::aux_data()
-{
+FixedBufferWriter::aux_data() {
   return error() ? nullptr : _buffer + _attempted;
 }
 
 inline bool
-FixedBufferWriter::commit(size_t n)
-{
+FixedBufferWriter::commit(size_t n) {
   _attempted += n;
 
   return true;
 }
 
 inline size_t
-FixedBufferWriter::capacity() const
-{
+FixedBufferWriter::capacity() const {
   return _capacity;
 }
 
 inline size_t
-FixedBufferWriter::extent() const
-{
+FixedBufferWriter::extent() const {
   return _attempted;
 }
 
 inline auto
-FixedBufferWriter::restrict(size_t n) -> self_type &
-{
-  if (n > _capacity) {
+FixedBufferWriter::restrict(size_t n) -> self_type & {
+  if (n > _capacity)
+  {
     throw(std::invalid_argument{"FixedBufferWriter restrict value more than capacity"});
   }
   _capacity -= n;
@@ -610,9 +591,9 @@ FixedBufferWriter::restrict(size_t n) -> self_type &
 }
 
 inline auto
-FixedBufferWriter::restore(size_t n) -> self_type &
-{
-  if (error()) {
+FixedBufferWriter::restore(size_t n) -> self_type & {
+  if (error())
+  {
     _attempted = _capacity;
   }
   _capacity += n;
@@ -620,22 +601,19 @@ FixedBufferWriter::restore(size_t n) -> self_type &
 }
 
 inline auto
-FixedBufferWriter::discard(size_t n) -> self_type &
-{
+FixedBufferWriter::discard(size_t n) -> self_type & {
   _attempted -= std::min(_attempted, n);
   return *this;
 }
 
 inline auto
-FixedBufferWriter::clear() -> self_type &
-{
+FixedBufferWriter::clear() -> self_type & {
   _attempted = 0;
   return *this;
 }
 
 inline auto
-FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type &
-{
+FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type & {
   auto limit = std::min<size_t>(_capacity, _attempted); // max offset of region possible.
   MemSpan<char> src_span{_buffer + src, std::min(limit, src + n)};
   MemSpan<char> dst_span{_buffer + dst, std::min(limit, dst + n)};
@@ -644,14 +622,12 @@ FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type &
 }
 
 inline std::string_view
-FixedBufferWriter::view() const
-{
+FixedBufferWriter::view() const {
   return {_buffer, size()};
 }
 
 /// Provide a @c string_view of all successfully written characters as a user conversion.
-inline FixedBufferWriter::operator std::string_view() const
-{
+inline FixedBufferWriter::operator std::string_view() const {
   return this->view();
 }
 
@@ -663,8 +639,7 @@ template <size_t N> LocalBufferWriter<N>::LocalBufferWriter() : super_type(_arr,
 namespace std
 {
 inline ostream &
-operator<<(ostream &s, swoc::BufferWriter const &w)
-{
+operator<<(ostream &s, swoc::BufferWriter const &w) {
   return w >> s;
 }
 } // end namespace std
