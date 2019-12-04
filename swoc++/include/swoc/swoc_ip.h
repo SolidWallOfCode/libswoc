@@ -525,6 +525,14 @@ public:
     return f == _family;
   }
 
+  /** Load the range from @a text.
+   *
+   * @param text Range specifier in text format.
+   * @return @c true if @a text was successfully parsed, @c false if not.
+   *
+   * A successful parse means @a this was loaded with the specified range. If not the range is
+   * marked as invalid.
+   */
   bool load(std::string_view const& text);
 
   IPAddr min() const;
@@ -632,6 +640,16 @@ public:
    * All addresses in @a r are set to have the @a payload.
    */
   self_type & mark(IP4Range const &r, PAYLOAD const &payload);
+
+  /** Fill the @a range with @a payload.
+   *
+   * @param range Destination range.
+   * @param payload Payload for range.
+   * @return this
+   *
+   * Addresses in @a range are set to have @a payload if the address does not already have a payload.
+   */
+  self_type & fill(IPRange const& range, PAYLOAD const& payload);
 
   /** Blend @a payload in to the @a range.
    *
@@ -1192,10 +1210,13 @@ template < typename PAYLOAD > auto IPSpace<PAYLOAD>::mark(swoc::IP4Range const &
   return *this;
 }
 
-template<typename PAYLOAD>
-void IPSpace<PAYLOAD>::clear() {
-  _ip4.clear();
-  _ip6.clear();
+template < typename PAYLOAD > auto IPSpace<PAYLOAD>::fill(swoc::IPRange const &range, PAYLOAD const &payload) -> self_type & {
+  if (range.is(AF_INET6)) {
+    _ip6.fill(range, payload);
+  } else if (range.is(AF_INET)) {
+    _ip4.fill(range, payload);
+  }
+  return *this;
 }
 
 template<typename PAYLOAD>
@@ -1208,5 +1229,12 @@ auto IPSpace<PAYLOAD>::blend(IPRange const&range, PAYLOAD const&payload, F&&blen
   }
   return *this;
 }
+
+template<typename PAYLOAD>
+void IPSpace<PAYLOAD>::clear() {
+  _ip4.clear();
+  _ip6.clear();
+}
+
 
 } // namespace swoc
