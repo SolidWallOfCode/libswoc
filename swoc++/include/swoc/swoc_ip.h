@@ -651,35 +651,36 @@ public:
    */
   self_type & fill(IPRange const& range, PAYLOAD const& payload);
 
-  /** Blend @a payload in to the @a range.
+  /** Blend @a color in to the @a range.
    *
    * @tparam F Blending functor type (deduced).
+   * @tparam U Data to blend in to payloads.
    * @param range Target range.
-   * @param payload Payload for @a range.
+   * @param color Data to blend in to existing payloads in @a range.
    * @param blender Blending functor.
    * @return @a this
    *
-   * @a blender is required to have the signature <tt>void(PAYLOAD& lhs , PAYLOAD CONST&rhs)</tt>.
-   * It must act as a compound assignment operator, blending @a B into @a A. That is, if the
-   * result of blending B in to A is defined as "A @ B" for the binary operator "@", then
-   * @a blender computes "A @= B".
+   * @a blender is required to have the signature <tt>void(PAYLOAD& lhs , U CONST&rhs)</tt>. It must
+   * act as a compound assignment operator, blending @a rhs into @a lhs. That is, if the result of
+   * blending @a rhs in to @a lhs is defined as "lhs @ rhs" for the binary operator "@", then @a
+   * blender computes "lhs @= rhs".
    *
-   * Every address in @a range is assigned a payload. If the address does not already have a
-   * payload, it is assigned @a payload. If the address has a payload of A it is updated by
-   * invoking @a blender on the existing payload and @a payload.
+   * Every address in @a range is assigned a payload. If the address does not already have a color,
+   * it is assigned the default constructed @c PAYLOAD blended with @a color. If the address has a
+   * color of A it is updated by invoking @a blender on the existing payload and @a color.
    */
-  template < typename F >
-  self_type & blend(IPRange const& range, PAYLOAD const& payload, F && blender);
+  template < typename F , typename U = PAYLOAD >
+  self_type & blend(IPRange const& range, U const& color, F && blender);
 
-  template < typename F >
-  self_type & blend(IP4Range const& range, PAYLOAD const& payload, F && blender) {
-    _ip4.blend(range, payload, blender);
+  template < typename F , typename U = PAYLOAD >
+  self_type & blend(IP4Range const& range, U const& color, F && blender) {
+    _ip4.blend(range, color, blender);
     return *this;
   }
 
-  template < typename F >
-  self_type & blend(IP6Range const& range, PAYLOAD const& payload, F && blender) {
-    _ip6.blend(range, payload, blender);
+  template < typename F , typename U = PAYLOAD >
+  self_type & blend(IP6Range const& range, U const& color, F && blender) {
+    _ip6.blend(range, color, blender);
     return *this;
   }
 
@@ -1220,12 +1221,12 @@ template < typename PAYLOAD > auto IPSpace<PAYLOAD>::fill(swoc::IPRange const &r
 }
 
 template<typename PAYLOAD>
-template<typename F>
-auto IPSpace<PAYLOAD>::blend(IPRange const&range, PAYLOAD const&payload, F&&blender) -> self_type &{
+template<typename F, typename U >
+auto IPSpace<PAYLOAD>::blend(IPRange const&range, U const&color, F&&blender) -> self_type & {
   if (range.is(AF_INET)) {
-    _ip4.blend(range, payload, blender);
+    _ip4.blend(range, color, blender);
   } else if (range.is(AF_INET6)) {
-    _ip6.blend(range, payload, blender);
+    _ip6.blend(range, color, blender);
   }
   return *this;
 }

@@ -472,7 +472,7 @@ TEST_CASE("IP Space YNETDB", "[libswoc][ipspace][ynetdb]") {
     }
 
     auto BF = [](Payload&lhs, Payload const&rhs) -> bool {
-      if (&lhs != &rhs) {
+      if (! lhs._colo.empty()) {
         std::cout << "Overlap " << lhs._descr << " with " << rhs._descr << std::endl;
       }
       return true;
