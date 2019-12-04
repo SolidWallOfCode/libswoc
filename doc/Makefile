@@ -22,7 +22,8 @@ $(IMAGEDIR)/%.svg : $(UMLDIR)/%.uml
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  html       to make standalone HTML files"
+	@echo "  html       to make standalone HTML files."
+	@echo "  publish    to build the documentation clean, ready to publish."
 
 uml:
 	@if [ ! -d uml ] ; then mkdir uml; fi
@@ -38,6 +39,7 @@ html: static uml ext/local-config.py reference
 clean:
 	-rm -rf html warn.log
 	-rm -rf $(BUILDDIR)/doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml
+	-rm -rf doxygen
 
 publish: clean doxygen html
 

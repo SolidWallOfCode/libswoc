@@ -26,6 +26,7 @@ unrelated projects. Hence this library. I hope you find it as useful as I have.
    :maxdepth: 1
 
    preface.en
+   building.en
    code/BufferWriter.en
    code/BW_Format.en
    code/meta.en

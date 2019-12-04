@@ -489,8 +489,8 @@ Specific types
    :code:`#include <swoc/bwf_ip.h>`
 
    The IP address is printed. Fill is used to fill in address segments if provided, not to the
-   minimum width if specified. :class:`IpEndpoint` and :class:`IpAddr` are supported with the same
-   formatting. The formatting support in this case is extensive because of the commonality and
+   minimum width if specified. :libswoc:`IPEndpoint` and :libswoc:`IPAddr` are supported with the
+   same formatting. The formatting support in this case is extensive because of the commonality and
    importance of IP address data.
 
    Type overrides

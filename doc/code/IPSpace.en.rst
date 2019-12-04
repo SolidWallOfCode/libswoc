@@ -16,14 +16,17 @@
 .. default-domain:: cpp
 .. highlight:: cpp
 
-********
-IP Space
-********
+*************
+IP Networking
+*************
 
 Synopsis
 ********
 
 :code:`#include <swoc/swoc_ip.h>`
+
+Usage
+*****
 
 .. class:: IPEndpoint
 
@@ -32,8 +35,122 @@ Synopsis
 This library is for storing and manipulating IP addresses as data. It has no support for actual
 network operations.
 
-Usage
-*****
+IPAddr
+======
+
+The classes :libswoc:`swoc::IPAddr`, :libswoc:`swoc::IP4Addr`, and :libswoc:`swoc::IP6Addr` are used
+to hold IP addresses. :code:`IP4Addr` and :code:`IP6Addr` are family specific and hold
+(respectively) IPv4 and IPv6 addresses. :code:`IPAddr` acts as a union of these two types along with
+an IP family specifier that indicates the type of address contained. The type specific classes
+provide performance and storage benefits when the type of the address is known or forced, while
+:code:`IPAddr` provides a generic type useful for interfaces.
+
+These classes provide support for parsing and formatting IP addresses. The constructor can take
+a string and, if a valid address, will initialize the instance to that address. The downside is
+there is no indication of failure other than the instance initializing to the zero or "any"
+address. This can be reasonable in situations where those addresses are not valid either. However
+in general the :libswoc:`swoc::IPAddr::load` method should be used, which both initializes the
+instance and provides an indication of whether the input was valid.
+
+IPRange
+=======
+
+The classes :libswoc:`swoc::IPRange`, :libswoc:`swoc::IP4Range`, and :libswoc:`swoc::IP6Range` are
+used to hold ranges of IP addresses. :code:`IP4Range` and :code:`IP6Range` are family specific and
+hold (respectively) IPv4 and IPv6 addresses. :code:`IPAddr` acts as a union of these two types along
+with an IP family specifier that indicates the type of address contained. The type specific classes
+provide performance and storage benefits when the type of the address is known or forced, while
+:code:`IPRange` provides a generic type useful for interfaces. Note that an :code:`IPRange` holds a
+range of addresses of a single family, it can never hold a range that is of mixed families.
+
+These classes provide support for parsing and formatting ranges of IP adddresses. The parsing logic
+accepts three forms of a range. In all cases the lower and upper limits of the range must be the
+same IP address family.
+
+Range
+   Two addresses, separated by a dash ("-") character. E.g.
+
+      172.26.13.4-172.27.12.9
+
+Network
+   An address and a CIDR based mask, separated by a slash ("/") character. E.g.
+
+      1337:0:0:ded:BEEF::/48
+
+Singleton
+   A single IP address, which is interpreted as a range of size 1.
+
+Such a string can be passed to the constructor, which will initialize to the corresponding range if
+properly formatted, otherwise the range will be default constructed to an invalid range. There is
+also the :libswoc:`swoc::IPRange::load` method which returns a :code:`bool` to indicate if the
+parsing was successful.
+
+IPSpace
+=======
+
+The :libswoc:`swoc::IPSpace` class is designed as a container for ranges of IP addresses. Lookup is
+done by single addresses. Conceptually, for each possible IP address there is a *payload*. Populating
+the container is done by applying a specific payload to a range of addresses. After populating an
+IP address can be looked up to find the corresponding payload.
+
+The payload is a template argument to the class, as with standard containers. There is no template
+argument for the key, as that is always an IP address.
+
+Applying payloads to the space is analogized to painting, each distinct payload considered a different
+"color" for an address. There are several methods used to paint the space, depending on the desired
+effect on existing payloads.
+
+mark
+   :libswoc:`swoc::IPSpace::mark` applies the :arg:`payload` to the range, replacing any existing
+   payload present. This is modeled on the "painter's algorithm" where the most recent coloring
+   replaces any prior colors in the region.
+
+fill
+   :libswoc:`swoc::IPSpace::fill` applies the :arg:`payload` to the range but only where there is not
+   already a payload. This is modeled on "backfilling" a background. This is useful for "first match"
+   logic, as which ever payload is first put in to the container will remain.
+
+blend
+   :libswoc:`swoc::IPSpace::blend` applies the :arg:`payload` to the range by combining ("blending")
+   the payloads. The result of blending can be "uncolored" which results in those addresses being
+   removed from the space. This is useful for applying different properties in sequence, where the
+   result is a combination of the properties.
+
+Blend
++++++
+
+The :libswoc:`swoc::IPSpace::blend` method requires a range and a "blender", which is a functor
+that combines two :code:`PAYLOAD` instances. The signature is ::
+
+  bool blender(PAYLOAD & lhs, PAYLOAD const& rhs)
+
+The method is modeled on C++ `compound assignment operators
+<https://en.cppreference.com/w/cpp/language/operator_assignment#Builtin_compound_assignment>`__. If
+the blend operation is thought of as the "@" operator, then the blend functor performs :code:`lhs @=
+rhs`. That is, :arg:`lhs` is modified to be the combination of :arg:`lhs` and :arg`rhs`. :arg:`lhs`
+is always the previous payload already in the space, and :arg:`rhs` is the :arg:`payload` argument
+to the :code:`blend` method. The internal logic handles copying the payload instances as needed.
+
+The return value indicates whether the combined result in :arg:`lhs` is a valid payload or not. If
+it is the method should return :code:`true`. In general most implementations will :code:`return
+true;` in all cases. If the method returns :code:`false` then the address(es) for the combined
+payload are removed from the container. This allows payloads to be "unblended", for one payload to
+cancel out another, or to do selective erasing of ranges.
+
+As an example, consider the case where the payload is a bitmask. It might be reasonable to keep
+empty bitmasks in the container, but it would be reasonble to decide the empty bitmask and any
+address mapped to it should removed entirely from the container. In such a case, a blender that
+clears bits in the payloads should return :code:`false` when the result is the empty bitmask.
+
+Similarly, if the goal is to remove ranges that have a specific payload, then a blender that returns
+:code:`false` if :arg:`lhs` matches that specific payload and :code:`true` if not, should be used.
+
+There is a small implementation wrinkle, however. Because the blending logic cannot assume the
+result of blending a payload with an equal payload results in the same payload, it must do a test to
+determine the result. I.e. if :arg:`lhs == rhs` for the arguments, it cannot be assumed that after
+the blend :arg:`lhs` remains unchanged (consider the bitmask unsetting blender earlier). The blender
+may want to return something special in this case, which can be detected by comparing :code:`&lhs ==
+&rhs`. If true then this is the test case, otherwise it is not.
 
 History
 *******
