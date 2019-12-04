@@ -671,22 +671,24 @@ public:
    */
   self_type &erase(range_type const &range);
 
-  /** Blend a @a payload to a @a range.
+  /** Blend a @a color to a @a range.
    *
-   * @tparam blender Functor to blend payloads.
+   * @tparam F Functor to blend payloads.
+   * @tparam U type to blend in to payloads.
    * @param range Range for blending.
-   * @param payload Payload to blend.
+   * @param color Payload to blend.
    * @return @a this
    *
-   * @a payload is blended to values in @a range. If a value is not present, its payload is set
-   * to @a payload. If the value is present, its payload is set to the blend of the existing payload
-   * and @a payload using @blender. The existing payload is passed as the first argument and @a
-   * payload as the second argument. The functor is expected to update the first argument to be the
-   * blended payload. The function must return a @c bool to indicate whether the blend resulted in
-   * a valid color. If @c false is returned, the blended region is removed from the space.
+   * @a color is blended to values in @a range. If an address in @a range does not have a payload,
+   * its payload is set a default constructed @c PAYLOAD blended with @a color. If such an address
+   * does have a payload, @a color is blended in to that payload using @blender. The existing color
+   * is passed as the first argument and @a color as the second argument. The functor is expected to
+   * update the first argument to be the blended color. The function must return a @c bool to
+   * indicate whether the blend resulted in a valid color. If @c false is returned, the blended
+   * region is removed from the space.
    */
-  template < typename F >
-  self_type &blend(range_type const &range, PAYLOAD const &payload, F && blender);
+  template < typename F, typename U = PAYLOAD >
+  self_type &blend(range_type const &range, U const &color, F && blender);
 
   /** Fill @a range with @a payload.
    *
@@ -699,7 +701,12 @@ public:
    */
   self_type &fill(range_type const &range, PAYLOAD const &payload);
 
-  PAYLOAD * find(METRIC const &addr);
+  /** Find the payload at @a metric.
+   *
+   * @param metric The metric for which to search.
+   * @return The payload for @a metric if found, @c nullptr if not found.
+   */
+  PAYLOAD * find(METRIC const &metric);
 
   /// @return The number of distinct ranges.
   size_t count() const;
@@ -812,17 +819,17 @@ DiscreteSpace<METRIC, PAYLOAD>::head() -> Node *{
 
 template <typename METRIC, typename PAYLOAD>
 PAYLOAD *
-DiscreteSpace<METRIC, PAYLOAD>::find(METRIC const &addr) {
+DiscreteSpace<METRIC, PAYLOAD>::find(METRIC const &metric) {
   auto n = _root; // current node to test.
   while (n) {
-    if (addr < n->min()) {
-      if (n->_hull.contains(addr)) {
+    if (metric < n->min()) {
+      if (n->_hull.contains(metric)) {
         n = n->left();
       } else {
         return nullptr;
       }
-    } else if (n->max() < addr) {
-      if (n->_hull.contains(addr)) {
+    } else if (n->max() < metric) {
+      if (n->_hull.contains(metric)) {
         n = n->right();
       } else {
         return nullptr;
@@ -1147,16 +1154,17 @@ DiscreteSpace<METRIC, PAYLOAD>::fill(DiscreteSpace::range_type const &range, PAY
 }
 
 template<typename METRIC, typename PAYLOAD>
-template<typename F>
+template<typename F, typename U>
 auto
-DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, PAYLOAD const&payload
+DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U const& color
                                       , F &&blender) -> self_type & {
-  // Do a base check for the color to use on unmapped values. If self blending on @a payload
+  // Do a base check for the color to use on unmapped values. If self blending on @a color
   // is @c false, then do not color currently unmapped values.
-  PAYLOAD plain_color { payload };
-  bool plain_color_p = blender(plain_color, plain_color);
-  // Used to hold a temporary blended node - @c release if put in space, otherwise cleaned up.
+  auto plain_color = PAYLOAD();
+  bool plain_color_p = blender(plain_color, color);
+
   auto node_cleaner = [&] (Node * ptr) -> void { _fa.destroy(ptr); };
+  // Used to hold a temporary blended node - @c release if put in space, otherwise cleaned up.
   using unique_node = std::unique_ptr<Node, decltype(node_cleaner)>;
 
   // Rightmost node of interest with n->_min <= min.
@@ -1246,7 +1254,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, PAY
     // Create a node with the blend for the overlap and then update / replace @a n as needed.
     auto max { right_ext_p ? range.max() : n->max() }; // smallest boundary of range and @a n.
     unique_node fill { _fa.make(n->min(), max, n->payload()), node_cleaner };
-    bool fill_p = blender(fill->payload(), payload); // fill or clear?
+    bool fill_p = blender(fill->payload(), color); // fill or clear?
     auto next_n = next(n); // cache this in case @a n is removed.
     range_min = fill->max(); // blend will be updated to one past @a fill
     ++range_min;
@@ -1262,7 +1270,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, PAY
           return *this;
         }
       } else {
-        // PROBLEM - not collapsing into @a pred(n) when it's adjacent / matching payload.
+        // PROBLEM - not collapsing into @a pred(n) when it's adjacent / matching color.
         // But @a pred may have been removed above, not reliable at this point.
         pred = prev(n);
         if (pred && pred->payload() == fill->payload()) {

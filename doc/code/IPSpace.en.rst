@@ -120,15 +120,19 @@ Blend
 +++++
 
 The :libswoc:`swoc::IPSpace::blend` method requires a range and a "blender", which is a functor
-that combines two :code:`PAYLOAD` instances. The signature is ::
+that blends a :arg:`color` into a :code:`PAYLOAD` instances. The signature is ::
 
-  bool blender(PAYLOAD & lhs, PAYLOAD const& rhs)
+  bool blender(PAYLOAD & payload, U const& color)
+
+The type :code:`U` is that same as the template argument :code:`U` to the method, which must be
+compatible with the second argument to the :code:`blend` method. The argument passed to
+:code:`blender` is the second argument to :code:`blend`.
 
 The method is modeled on C++ `compound assignment operators
 <https://en.cppreference.com/w/cpp/language/operator_assignment#Builtin_compound_assignment>`__. If
 the blend operation is thought of as the "@" operator, then the blend functor performs :code:`lhs @=
 rhs`. That is, :arg:`lhs` is modified to be the combination of :arg:`lhs` and :arg`rhs`. :arg:`lhs`
-is always the previous payload already in the space, and :arg:`rhs` is the :arg:`payload` argument
+is always the previous payload already in the space, and :arg:`rhs` is the :arg:`color` argument
 to the :code:`blend` method. The internal logic handles copying the payload instances as needed.
 
 The return value indicates whether the combined result in :arg:`lhs` is a valid payload or not. If
@@ -138,19 +142,17 @@ payload are removed from the container. This allows payloads to be "unblended", 
 cancel out another, or to do selective erasing of ranges.
 
 As an example, consider the case where the payload is a bitmask. It might be reasonable to keep
-empty bitmasks in the container, but it would be reasonble to decide the empty bitmask and any
+empty bitmasks in the container, but it would also be reasonble to decide the empty bitmask and any
 address mapped to it should removed entirely from the container. In such a case, a blender that
 clears bits in the payloads should return :code:`false` when the result is the empty bitmask.
 
 Similarly, if the goal is to remove ranges that have a specific payload, then a blender that returns
 :code:`false` if :arg:`lhs` matches that specific payload and :code:`true` if not, should be used.
 
-There is a small implementation wrinkle, however. Because the blending logic cannot assume the
-result of blending a payload with an equal payload results in the same payload, it must do a test to
-determine the result. I.e. if :arg:`lhs == rhs` for the arguments, it cannot be assumed that after
-the blend :arg:`lhs` remains unchanged (consider the bitmask unsetting blender earlier). The blender
-may want to return something special in this case, which can be detected by comparing :code:`&lhs ==
-&rhs`. If true then this is the test case, otherwise it is not.
+There is a small implementation wrinkle, however, in dealing with unmapped addresses. The
+:arg:`color` is not necessarily a :code:`PAYLOAD` and therefore must be converted in to one. This
+is done by default constructing a :code:`PAYLOAD` instance and then calling :code:`blend` on that
+and the :arg:`color`. If this returns :code:`false` then unmapped addresses will remain unmapped.
 
 History
 *******
