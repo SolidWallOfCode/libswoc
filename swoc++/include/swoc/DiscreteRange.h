@@ -101,7 +101,7 @@ public:
   using metric_type = T;
   using Relation = DiscreteRangeRelation;
 
-  static constexpr self_type ALL{detail::minimum<metric_type>(), detail::maximum<metric_type>()};
+//  static constexpr self_type ALL{detail::minimum<metric_type>(), detail::maximum<metric_type>()};
 
   /** Default constructor.
       An empty range is constructed.

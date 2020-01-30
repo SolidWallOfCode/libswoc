@@ -7,7 +7,7 @@ DependsOn([
     ])
 
 env.AppendUnique(
-    CCFLAGS=['-std=c++17'],    
+    CCFLAGS=['-std=c++17'],
 )
 
 files = [
@@ -35,6 +35,6 @@ env.UnitTest(
     "tests",
     files,
     # data file we need for the test to pass
-    data_src=[Pattern(src_dir="#",includes=['doc/conf.py','unit_tests/test_swoc_file.cc'])]
+    data_src=[Pattern(src_dir="#",includes=['doc/conf.py','unit_tests/examples/resolver.txt', 'unit_tests/test_swoc_file.cc'])]
     )
 
