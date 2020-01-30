@@ -149,7 +149,7 @@ union IPEndpoint {
 };
 
 /** Storage for an IPv4 address.
-    Stored in network order.
+    Stored in host order.
  */
 class IP4Addr {
   using self_type = IP4Addr; ///< Self reference type.
@@ -185,6 +185,7 @@ public:
   sockaddr *fill(sockaddr_in *sa, in_port_t port = 0) const;
 
   in_addr_t network_order() const;
+  in_addr_t host_order() const;
 
   /** Parse @a text as IPv4 address.
       The address resulting from the parse is copied to this object if the conversion is successful,
@@ -210,13 +211,17 @@ public:
   /// Test for loopback
   bool is_loopback() const;
 
+  constexpr static in_addr_t reorder(in_addr_t src) {
+    return ((src & 0xFF) << 24) | (((src >> 8) & 0xFF) << 16) | (((src >> 16) & 0xFF) << 8) | ((src >> 24) & 0xFF);
+  }
+
 protected:
   friend bool operator==(self_type const &, self_type const &);
   friend bool operator!=(self_type const &, self_type const &);
   friend bool operator<(self_type const &, self_type const &);
   friend bool operator<=(self_type const &, self_type const &);
 
-  in_addr_t _addr = INADDR_ANY;
+  in_addr_t _addr = INADDR_ANY; ///< Address in host order.
 };
 
 /** Storage for an IPv6 address.
@@ -1002,7 +1007,7 @@ IPEndpoint::host_order_port(sockaddr const *addr) {
 
 // --- IPAddr variants ---
 
-inline constexpr IP4Addr::IP4Addr(in_addr_t addr) : _addr(addr) {}
+inline constexpr IP4Addr::IP4Addr(in_addr_t addr) : _addr(reorder(addr)) {}
 
 inline IP4Addr::IP4Addr(std::string_view const& text) {
   if (! this->load(text)) {
@@ -1024,6 +1029,10 @@ IP4Addr::operator--() {
 
 inline in_addr_t IP4Addr::network_order() const {
   return htonl(_addr);
+}
+
+inline in_addr_t IP4Addr::host_order() const {
+  return _addr;
 }
 
 inline IP4Addr::operator in_addr_t() const {
