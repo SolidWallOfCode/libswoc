@@ -1,5 +1,5 @@
 Import("*")
-PartVersion("1.0.9")
+PartVersion("1.0.10")
 PartName("swoc++")
 
 files = [
