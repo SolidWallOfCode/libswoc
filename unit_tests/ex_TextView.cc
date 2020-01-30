@@ -202,7 +202,7 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
 
 TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
 {
-  swoc::file::path path{"../doc/conf.py"};
+  swoc::file::path path{"doc/conf.py"};
   std::error_code ec;
 
   auto content   = swoc::file::load(path, ec);
@@ -240,7 +240,7 @@ TEST_CASE("TextView parsing", "[libswoc][example][text][parsing]") {
   swoc::IP4Addr addr;
 
   std::error_code ec;
-  auto data { swoc::file::load("../unit_tests/examples/resolver.txt"_tv, ec) };
+  auto data { swoc::file::load("unit_tests/examples/resolver.txt"_tv, ec) };
   REQUIRE(data.size() > 2); // if this fails, there's something wrong with the path or current directory.
 
   TextView content { data };

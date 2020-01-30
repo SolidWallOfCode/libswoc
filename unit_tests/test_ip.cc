@@ -62,7 +62,6 @@ TEST_CASE("ink_inet", "[libswoc][ip]") {
   IP6Addr a6_1{"fe80:88b5:4a:20c:29ff:feae:5587:1c33"};
   IP6Addr a6_2{"fe80:88b5:4a:20c:29ff:feae:5587:1c34"};
   IP6Addr a6_3{"de80:88b5:4a:20c:29ff:feae:5587:1c35"};
-  IP6Addr a6_4{"fe80:88b5:4a:20c:29ff:feae:5587:1c34"};
 
   REQUIRE(a6_1 != a6_null);
   REQUIRE(a6_1 != a6_2);
@@ -73,9 +72,29 @@ TEST_CASE("ink_inet", "[libswoc][ip]") {
   ++a6_1;
   REQUIRE(a6_1 != a6_2);
   REQUIRE(a6_1 > a6_2);
-  REQUIRE(a6_3 != a6_4);
-  REQUIRE(a6_3 < a6_4);
-  REQUIRE(a6_4 > a6_3);
+
+  REQUIRE(a6_3 != a6_2);
+  REQUIRE(a6_3 < a6_2);
+  REQUIRE(a6_2 > a6_3);
+
+  // Little bit of IP4 address arithmetic / comparison testing.
+  IP4Addr a4_null;
+  IP4Addr a4_1{"172.28.56.33"};
+  IP4Addr a4_2{"172.28.56.34"};
+  IP4Addr a4_3{"170.28.56.35"};
+
+  REQUIRE(a4_1 != a4_null);
+  REQUIRE(a4_1 != a4_2);
+  REQUIRE(a4_1 < a4_2);
+  REQUIRE(a4_2 > a4_1);
+  ++a4_1;
+  REQUIRE(a4_1 == a4_2);
+  ++a4_1;
+  REQUIRE(a4_1 != a4_2);
+  REQUIRE(a4_1 > a4_2);
+  REQUIRE(a4_3 != a4_2);
+  REQUIRE(a4_3 < a4_2);
+  REQUIRE(a4_2 > a4_3);
 
   // For this data, the bytes should be in IPv6 network order.
   static const std::tuple<TextView, bool, IP6Addr::raw_type> ipv6_ex[] = {
