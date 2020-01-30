@@ -128,6 +128,7 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   std::string_view addr_6{"[1337:0:0:ded:BEEF:0:0:0]:53874"};
   std::string_view addr_7{"172.19.3.105:4951"};
   std::string_view addr_null{"[::]:53874"};
+  std::string_view localhost{"[::1]:8080"};
   swoc::LocalBufferWriter<1024> w;
 
   REQUIRE(ep.parse(addr_1) == true);
@@ -225,6 +226,22 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   w.reset().print("{}", swoc::bwf::Hex_Dump(ep));
   REQUIRE(w.view() == "ffee00000000000024c333493cee0143");
 #endif
+
+  REQUIRE(ep.parse(localhost) == true);
+  w.clear().print("{}", ep);
+  REQUIRE(w.view() == localhost);
+  w.clear().print("{::p}", ep);
+  REQUIRE(w.view() == "8080");
+  w.clear().print("{::a}", ep);
+  REQUIRE(w.view() == localhost.substr(1, 3)); // check the brackets are dropped.
+  w.clear().print("[{::a}]", ep);
+  REQUIRE(w.view() == localhost.substr(0, 5));
+  w.clear().print("[{0::a}]:{0::p}", ep);
+  REQUIRE(w.view() == localhost); // check the brackets are dropped.
+  w.clear().print("{::=a}", ep);
+  REQUIRE(w.view() == "0000:0000:0000:0000:0000:0000:0000:0001");
+  w.clear().print("{:: =a}", ep);
+  REQUIRE(w.view() == "   0:   0:   0:   0:   0:   0:   0:   1");
 }
 
 // Property maps for IPSpace.
