@@ -148,10 +148,31 @@ public:
     /// Inequality
     bool operator!=(self_type const &that) const;
 
+    /// Check if @c std::prev would be valid.
+    /// @return @c true if calling @c std::prev would yield a valid iterator.
+    /// @note Identical to @c has_predecessor.
+    bool has_prev() const;
+
+    /// Check if @c std::next would be valid.
+    /// @return @c true if calling @c std::next would yield a valid iterator.
+    bool has_next() const;
+
+    /// Check if there is a predecessor.
+    /// @return @c true if there is a predecessor element for the current element.
+    /// @note Identical to @c has_prev.
+    bool has_predecessor() const;
+
+    /// Check if there is a successor.
+    /// @return @c true if after incrementing, the iterator will reference a value.
+    /// @note This is subtly different from @c has_net. It is false for the last element in the
+    /// iteration. Even though incrementing such an iterator would valid, there would not be a
+    /// successor element.
+    bool has_successor() const;
+
   protected:
     // These are stored non-const to make implementing @c iterator easier. This class provides the required @c const
     // protection.
-    list_type *_list{nullptr};                   ///< Needed to descrement from @c end() position.
+    list_type *_list{nullptr};                   ///< Needed to decrement from @c end() position.
     typename list_type::value_type *_v{nullptr}; ///< Referenced element.
 
     /// Internal constructor for containers.
@@ -577,6 +598,26 @@ template <typename L>
 bool
 IntrusiveDList<L>::const_iterator::operator!=(self_type const &that) const {
   return this->_v != that._v;
+}
+
+template<typename L>
+bool IntrusiveDList<L>::const_iterator::has_predecessor() const {
+  return _v ? nullptr != L::prev_ptr(_v) : ! _list->empty();
+}
+
+template<typename L>
+bool IntrusiveDList<L>::const_iterator::has_prev() const {
+  return _v ? nullptr != L::prev_ptr(_v) : ! _list->empty();
+}
+
+template<typename L>
+bool IntrusiveDList<L>::const_iterator::has_successor() const {
+  return _v && nullptr != L::next_ptr(_v);
+}
+
+template<typename L>
+bool IntrusiveDList<L>::const_iterator::has_next() const {
+  return nullptr != _v;
 }
 
 template <typename L>
