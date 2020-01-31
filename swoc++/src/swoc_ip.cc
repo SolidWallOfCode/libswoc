@@ -27,26 +27,23 @@ using swoc::svtoi;
 using swoc::svtou;
 using namespace swoc::literals;
 
-namespace
-{
+namespace {
 // Handle the @c sin_len member, the presence of which varies across compilation environments.
-template <typename T>
+template<typename T>
 auto
-Set_Sockaddr_Len_Case(T *, swoc::meta::CaseTag<0>) -> decltype(swoc::meta::TypeFunc<void>())
-{
+Set_Sockaddr_Len_Case(T *, swoc::meta::CaseTag<0>) -> decltype(swoc::meta::TypeFunc<void>()) {
 }
 
-template <typename T>
+template<typename T>
 auto
-Set_Sockaddr_Len_Case(T *addr, swoc::meta::CaseTag<1>) -> decltype(T::sin_len, swoc::meta::TypeFunc<void>())
-{
+Set_Sockaddr_Len_Case(T *addr
+                      , swoc::meta::CaseTag<1>) -> decltype(T::sin_len, swoc::meta::TypeFunc<void>()) {
   addr->sin_len = sizeof(T);
 }
 
-template <typename T>
+template<typename T>
 void
-Set_Sockaddr_Len(T *addr)
-{
+Set_Sockaddr_Len(T *addr) {
   Set_Sockaddr_Len_Case(addr, swoc::meta::CaseArg);
 }
 
@@ -197,15 +194,15 @@ sockaddr *
 IPAddr::fill(sockaddr *sa, in_port_t port) const {
   switch (sa->sa_family = _family) {
     case AF_INET: {
-      sockaddr_in *sa4{reinterpret_cast<sockaddr_in *>(sa)};
+      auto sa4 = reinterpret_cast<sockaddr_in *>(sa);
       memset(sa4, 0, sizeof(*sa4));
-      sa4->sin_addr.s_addr = _addr._ip4;
+      sa4->sin_addr.s_addr = _addr._ip4.network_order();
       sa4->sin_port = port;
       Set_Sockaddr_Len(sa4);
     }
       break;
     case AF_INET6: {
-      sockaddr_in6 *sa6{reinterpret_cast<sockaddr_in6 *>(sa)};
+      auto sa6 = reinterpret_cast<sockaddr_in6 *>(sa);
       memset(sa6, 0, sizeof(*sa6));
       sa6->sin6_port = port;
       Set_Sockaddr_Len(sa6);
@@ -291,6 +288,18 @@ IP4Addr::load(std::string_view const&text) {
   }
   _addr = INADDR_ANY;
   return false;
+}
+
+IP4Addr::IP4Addr(sockaddr_in const *sa) : _addr(reorder(sa->sin_addr.s_addr)) {}
+
+auto IP4Addr::operator=(sockaddr_in const *sa) -> self_type& {
+  _addr = reorder(sa->sin_addr.s_addr);
+  return *this;
+}
+
+sockaddr_in *IP4Addr::fill(sockaddr_in *sa, in_port_t port) const {
+  sa->sin_addr.s_addr = this->network_order();
+  return sa;
 }
 
 bool
@@ -559,22 +568,22 @@ bool IP4Range::load(string_view text) {
   return false;
 }
 
-IP6Range & IP6Range::assign(IP6Addr const&addr, IPMask const&mask) {
-  static constexpr auto FULL_MASK { std::numeric_limits<uint64_t>::max() };
+IP6Range&IP6Range::assign(IP6Addr const&addr, IPMask const&mask) {
+  static constexpr auto FULL_MASK{std::numeric_limits<uint64_t>::max()};
   auto cidr = mask.width();
   if (cidr == 0) {
     _min = metric_type::MIN;
     _max = metric_type::MAX;
   } else if (cidr < 64) { // only upper bytes affected, lower bytes are forced.
-    auto bits          = FULL_MASK << (64 - cidr);
-    _min._addr._u64[0]           = addr._addr._u64[0] & bits;
-    _min._addr._u64[1]           = 0;
-    _max._addr._u64[0]           = addr._addr._u64[0] | ~bits;
-    _max._addr._u64[1]           = FULL_MASK;
+    auto bits = FULL_MASK << (64 - cidr);
+    _min._addr._u64[0] = addr._addr._u64[0] & bits;
+    _min._addr._u64[1] = 0;
+    _max._addr._u64[0] = addr._addr._u64[0] | ~bits;
+    _max._addr._u64[1] = FULL_MASK;
   } else if (cidr == 64) {
     _min._addr._u64[0] = _max._addr._u64[0] = addr._addr._u64[0];
-    _min._addr._u64[1]                       = 0;
-    _max._addr._u64[1]                       = FULL_MASK;
+    _min._addr._u64[1] = 0;
+    _max._addr._u64[1] = FULL_MASK;
   } else if (cidr <= 128) { // _min bytes changed, _max bytes unaffected.
     _min = _max = addr;
     if (cidr < 128) {
@@ -613,7 +622,7 @@ bool IP6Range::load(std::string_view text) {
   return false;
 }
 
-bool IPRange::load(std::string_view const& text) {
+bool IPRange::load(std::string_view const&text) {
   static const string_view CHARS{".:"};
   auto idx = text.find_first_of(CHARS);
   if (idx != text.npos) {
@@ -633,7 +642,7 @@ bool IPRange::load(std::string_view const& text) {
 }
 
 IPAddr IPRange::min() const {
-  switch(_family) {
+  switch (_family) {
     case AF_INET: return _range._ip4.min();
     case AF_INET6: return _range._ip6.min();
     default: break;
@@ -642,7 +651,7 @@ IPAddr IPRange::min() const {
 }
 
 IPAddr IPRange::max() const {
-  switch(_family) {
+  switch (_family) {
     case AF_INET: return _range._ip4.max();
     case AF_INET6: return _range._ip6.max();
     default: break;

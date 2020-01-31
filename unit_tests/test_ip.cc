@@ -19,10 +19,15 @@ using namespace std::literals;
 using namespace swoc::literals;
 using swoc::TextView;
 using swoc::IPEndpoint;
+
 using swoc::IP4Addr;
 using swoc::IP4Range;
+
 using swoc::IP6Addr;
 using swoc::IP6Range;
+
+using swoc::IPAddr;
+using swoc::IPRange;
 
 TEST_CASE("ink_inet", "[libswoc][ip]") {
   // Use TextView because string_view(nullptr) fails. Gah.
@@ -82,6 +87,10 @@ TEST_CASE("ink_inet", "[libswoc][ip]") {
   IP4Addr a4_1{"172.28.56.33"};
   IP4Addr a4_2{"172.28.56.34"};
   IP4Addr a4_3{"170.28.56.35"};
+  IP4Addr a4_loopback{"127.0.0.1"_tv};
+  IP4Addr ip4_loopback{INADDR_LOOPBACK};
+
+  REQUIRE(a4_loopback == ip4_loopback);
 
   REQUIRE(a4_1 != a4_null);
   REQUIRE(a4_1 != a4_2);
@@ -150,8 +159,16 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   std::string_view localhost{"[::1]:8080"};
   swoc::LocalBufferWriter<1024> w;
 
+  REQUIRE(ep.parse(addr_null) == true);
+  w.clear().print("{::a}", ep);
+  REQUIRE(w.view() == "::");
+
+  ep.set_to_loopback(AF_INET6);
+  w.clear().print("{::a}", ep);
+  REQUIRE(w.view() == "::1");
+
   REQUIRE(ep.parse(addr_1) == true);
-  w.print("{}", ep);
+  w.clear().print("{}", ep);
   REQUIRE(w.view() == addr_1);
   w.clear().print("{::p}", ep);
   REQUIRE(w.view() == "8080");
@@ -165,30 +182,6 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(w.view() == "ffee:0000:0000:0000:24c3:3349:3cee:0143");
   w.clear().print("{:: =a}", ep);
   REQUIRE(w.view() == "ffee:   0:   0:   0:24c3:3349:3cee: 143");
-
-#if 0
-  ep.setToLoopback(AF_INET6);
-  w.reset().print("{::a}", ep);
-  REQUIRE(w.view() == "::1");
-  REQUIRE(0 == ats_ip_pton(addr_3, &ep.sa));
-  w.reset().print("{::a}", ep);
-  REQUIRE(w.view() == "1337:ded:beef::");
-  REQUIRE(0 == ats_ip_pton(addr_4, &ep.sa));
-  w.reset().print("{::a}", ep);
-  REQUIRE(w.view() == "1337::ded:beef");
-
-  REQUIRE(0 == ats_ip_pton(addr_5, &ep.sa));
-  w.reset().print("{:X:a}", ep);
-  REQUIRE(w.view() == "1337::DED:BEEF:0:0:956");
-
-  REQUIRE(0 == ats_ip_pton(addr_6, &ep.sa));
-  w.reset().print("{::a}", ep);
-  REQUIRE(w.view() == "1337:0:0:ded:beef::");
-
-  REQUIRE(0 == ats_ip_pton(addr_null, &ep.sa));
-  w.reset().print("{::a}", ep);
-  REQUIRE(w.view() == "::");
-#endif
 
   REQUIRE(ep.parse(addr_2) == true);
   w.clear().print("{::a}", ep);
@@ -212,39 +205,46 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   w.clear().print("{::=a}", ep);
   REQUIRE(w.view() == "172.017.099.231");
 
-#if 0
+  REQUIRE(ep.parse(addr_3) == true);
+  w.clear().print("{::a}", ep);
+  REQUIRE(w.view() == "1337:ded:beef::"_tv);
+
+  REQUIRE(ep.parse(addr_4) == true);
+  w.clear().print("{::a}", ep);
+  REQUIRE(w.view() == "1337::ded:beef"_tv);
+
+  REQUIRE(ep.parse(addr_5) == true);
+  w.clear().print("{:X:a}", ep);
+  REQUIRE(w.view() == "1337::DED:BEEF:0:0:956");
+
+  REQUIRE(ep.parse(addr_6) == true);
+  w.clear().print("{::a}", ep);
+  REQUIRE(w.view() == "1337:0:0:ded:beef::");
+
   // Documentation examples
-  REQUIRE(0 == ats_ip_pton(addr_7, &ep.sa));
-  w.reset().print("To {}", ep);
+  REQUIRE(ep.parse(addr_7) == true);
+  w.clear().print("To {}", ep);
   REQUIRE(w.view() == "To 172.19.3.105:4951");
-  w.reset().print("To {0::a} on port {0::p}", ep); // no need to pass the argument twice.
+  w.clear().print("To {0::a} on port {0::p}", ep); // no need to pass the argument twice.
   REQUIRE(w.view() == "To 172.19.3.105 on port 4951");
-  w.reset().print("To {::=}", ep);
+  w.clear().print("To {::=}", ep);
   REQUIRE(w.view() == "To 172.019.003.105:04951");
-  w.reset().print("{::a}", ep);
+  w.clear().print("{::a}", ep);
   REQUIRE(w.view() == "172.19.3.105");
-  w.reset().print("{::=a}", ep);
+  w.clear().print("{::=a}", ep);
   REQUIRE(w.view() == "172.019.003.105");
-  w.reset().print("{::0=a}", ep);
+  w.clear().print("{::0=a}", ep);
   REQUIRE(w.view() == "172.019.003.105");
-  w.reset().print("{:: =a}", ep);
+  w.clear().print("{:: =a}", ep);
   REQUIRE(w.view() == "172. 19.  3.105");
-  w.reset().print("{:>20:a}", ep);
+  w.clear().print("{:>20:a}", ep);
   REQUIRE(w.view() == "        172.19.3.105");
-  w.reset().print("{:>20:=a}", ep);
+  w.clear().print("{:>20:=a}", ep);
   REQUIRE(w.view() == "     172.019.003.105");
-  w.reset().print("{:>20: =a}", ep);
+  w.clear().print("{:>20: =a}", ep);
   REQUIRE(w.view() == "     172. 19.  3.105");
-  w.reset().print("{:<20:a}", ep);
+  w.clear().print("{:<20:a}", ep);
   REQUIRE(w.view() == "172.19.3.105        ");
-
-  w.reset().print("{:p}", reinterpret_cast<sockaddr const *>(0x1337beef));
-  REQUIRE(w.view() == "0x1337beef");
-
-  ats_ip_pton(addr_1, &ep.sa);
-  w.reset().print("{}", swoc::bwf::Hex_Dump(ep));
-  REQUIRE(w.view() == "ffee00000000000024c333493cee0143");
-#endif
 
   REQUIRE(ep.parse(localhost) == true);
   w.clear().print("{}", ep);
@@ -317,17 +317,17 @@ Property *PropertyGroup::operator[](std::string_view const&name) {
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   using int_space = swoc::IPSpace<unsigned>;
   int_space space;
-  auto dump = [] (int_space & space) -> void {
+  auto dump = [](int_space&space) -> void {
     swoc::LocalBufferWriter<1024> w;
     std::cout << "Dumping " << space.count() << " ranges" << std::endl;
-    for ( auto & r : space ) {
-      std::cout << w.clear().print("{} - {} : {}\n", r.min(), r.max(), r.payload()).view();
+    for (auto &&[r, payload] : space) {
+      std::cout << w.clear().print("{} - {} : {}\n", r.min(), r.max(), payload).view();
     }
   };
 
   REQUIRE(space.count() == 0);
 
-  space.mark({IP4Addr("172.16.0.0"), IP4Addr("172.16.0.255")}, 1);
+  space.mark(IPRange{{IP4Addr("172.16.0.0"), IP4Addr("172.16.0.255")}}, 1);
   auto result = space.find({"172.16.0.97"});
   REQUIRE(result != nullptr);
   REQUIRE(*result == 1);
@@ -335,7 +335,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   result = space.find({"172.17.0.97"});
   REQUIRE(result == nullptr);
 
-  space.mark({IP4Addr("172.16.0.12"), IP4Addr("172.16.0.25")}, 2);
+  space.mark(IPRange{"172.16.0.12-172.16.0.25"_tv}, 2);
 
   result = space.find({"172.16.0.21"});
   REQUIRE(result != nullptr);
@@ -343,11 +343,18 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(space.count() == 3);
 
   space.clear();
-  auto BF = [](unsigned&lhs, unsigned rhs) -> bool { lhs |= rhs; return true; };
+  auto BF = [](unsigned&lhs, unsigned rhs) -> bool {
+    lhs |= rhs;
+    return true;
+  };
   unsigned *payload;
   swoc::IP4Range r_1{"1.1.1.0-1.1.1.9"};
   swoc::IP4Range r_2{"1.1.2.0-1.1.2.97"};
   swoc::IP4Range r_3{"1.1.0.0-1.2.0.0"};
+
+  // Compiler check - make sure both of these work.
+  REQUIRE(r_1.min() == IP4Addr("1.1.1.0"_tv));
+  REQUIRE(r_1.max() == IPAddr("1.1.1.9"_tv));
 
   space.blend(r_1, 0x1, BF);
   REQUIRE(space.count() == 1);
@@ -366,7 +373,6 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(*payload == 0x2);
 
   space.blend(r_3, 0x4, BF);
-  dump(space);
   REQUIRE(space.count() == 5);
   payload = space.find(r_2.min());
   REQUIRE(payload != nullptr);
@@ -381,11 +387,109 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(*payload == 0x5);
 
   space.blend({r_2.min(), r_3.max()}, 0x6, BF);
-  dump(space);
   REQUIRE(space.count() == 4);
 }
 
-#if 1
+TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
+  using PAYLOAD = std::bitset<32>;
+  using Space = swoc::IPSpace<PAYLOAD>;
+
+  auto dump = [](Space&space) -> void {
+    swoc::LocalBufferWriter<1024> w;
+    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
+    for (auto &&[r, payload] : space) {
+      w.clear().print("{}-{} :", r.min(), r.max());
+      std::cout << w << payload << std::endl;
+    }
+  };
+  auto reverse_dump = [](Space&space) -> void {
+    swoc::LocalBufferWriter<1024> w;
+    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
+    for (auto spot = space.end(); spot != space.begin();) {
+      auto &&[r, payload]{*--spot};
+      w.clear().print("{} :", r);
+      std::cout << w << payload << std::endl;
+    }
+  };
+
+  std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 6> ranges = {
+      {
+          {"172.28.56.12-172.28.56.99"_tv, {0, 2, 3}}
+          , {"10.10.35.0/24"_tv, {1, 2}}
+          , {"192.168.56.0/25"_tv, {10, 12, 31}}
+          , {"1337::ded:beef-1337::ded:ceef"_tv, {4, 5, 6, 7}}
+          , {"ffee:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv, {9, 10, 18}}
+          , {"10.12.148.0/23"_tv, {1, 2, 17}}
+      }};
+
+  Space space;
+
+  for (auto &&[text, bit_list] : ranges) {
+    PAYLOAD bits;
+    for (auto bit : bit_list) {
+      bits[bit] = true;
+    }
+    space.mark(IPRange{text}, bits);
+  }
+  REQUIRE(space.count() == ranges.size());
+  dump(space);
+  reverse_dump(space);
+}
+
+TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
+  using PAYLOAD = std::bitset<32>;
+  using Space = swoc::IPSpace<PAYLOAD>;
+
+  auto dump = [](Space&space) -> void {
+    swoc::LocalBufferWriter<1024> w;
+    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
+    for (auto &&[r, payload] : space) {
+      w.clear().print("{}-{} :", r.min(), r.max());
+      std::cout << w << payload << std::endl;
+    }
+  };
+  auto reverse_dump = [](Space&space) -> void {
+    swoc::LocalBufferWriter<1024> w;
+    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
+    for (auto spot = space.end(); spot != space.begin();) {
+      auto &&[r, payload]{*--spot};
+      w.clear().print("{} :", r);
+      std::cout << w << payload << std::endl;
+    }
+  };
+
+  auto blender = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
+    lhs |= rhs;
+    return true;
+  };
+
+  std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 9> ranges = {
+      {
+            { "100.0.0.0-100.0.0.255", { 0 } }
+          , { "100.0.1.0-100.0.1.255", { 1 } }
+          , { "100.0.2.0-100.0.2.255", { 2 } }
+          , { "100.0.3.0-100.0.3.255", { 3 } }
+          , { "100.0.4.0-100.0.4.255", { 4 } }
+          , { "100.0.5.0-100.0.5.255", { 5 } }
+          , { "100.0.6.0-100.0.6.255", { 6 } }
+          , { "100.0.0.0-100.0.0.255", { 31 } }
+          , { "100.0.1.0-100.0.1.255", { 30 } }
+      }};
+
+  Space space;
+
+  for (auto &&[text, bit_list] : ranges) {
+    PAYLOAD bits;
+    for (auto bit : bit_list) {
+      bits[bit] = true;
+    }
+    space.blend(IPRange{text}, bits, blender);
+  }
+  dump(space);
+  reverse_dump(space);
+}
+
+#if 0
 TEST_CASE("IP Space YNETDB", "[libswoc][ipspace][ynetdb]") {
   std::set<std::string_view> Locations;
   std::set<std::string_view> Owners;

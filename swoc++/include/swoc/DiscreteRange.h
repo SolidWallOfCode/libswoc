@@ -1,4 +1,5 @@
 #pragma once
+
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2014 Network Geographics
 
@@ -64,13 +65,21 @@ namespace detail
 } // namespace detail
 
 /// Relationship between two intervals.
-enum DiscreteRangeRelation {
+enum class DiscreteRangeRelation : uint8_t {
   NONE,     ///< No common elements.
   EQUAL,    ///< Identical ranges.
   SUBSET,   ///< All elements in LHS are also in RHS.
   SUPERSET, ///< Every element in RHS is in LHS.
   OVERLAP,  ///< There exists at least one element in both LHS and RHS.
   ADJACENT  ///< The two intervals are adjacent and disjoint.
+};
+
+/// Relationship between one edge of an interval and the "opposite" edge of another.
+enum class DiscreteRangeEdgeRelation : uint8_t  {
+  NONE, ///< Edge is on the opposite side of the relating edge.
+  GAP, ///< There is a gap between the edges.
+  ADJ, ///< The edges are adjacent.
+  OVLP, ///< Edge is inside interval.
 };
 
 /** A range over a discrete finite value metric.
@@ -100,6 +109,7 @@ protected:
 public:
   using metric_type = T;
   using Relation = DiscreteRangeRelation;
+  using EdgeRelation = DiscreteRangeEdgeRelation;
 
 //  static constexpr self_type ALL{detail::minimum<metric_type>(), detail::maximum<metric_type>()};
 
@@ -113,7 +123,7 @@ public:
    *
    * @note Not marked @c explicit and so serves as a conversion from scalar values to an interval.
    */
-  constexpr DiscreteRange(T const &value) : _min(value), _max(value){};
+  constexpr DiscreteRange(T const &value) : _min(value), _max(value) {};
 
   /** Constructor.
    *
@@ -173,6 +183,13 @@ public:
    */
   bool is_adjacent_to(self_type const &that) const;
 
+  /** Test for @a this being adjacent on the left of @a that.
+   *
+   * @param that Range to check for adjacency.
+   * @return @c true if @a this ends exactly the value before @a that begins.
+   */
+  bool is_left_adjacent_to(self_type const& that) const;
+
   //! Test if the union of two intervals is also an interval.
   bool has_union(self_type const &that) const;
 
@@ -200,6 +217,27 @@ public:
       @return The relationship type.
    */
   Relation relationship(self_type const &that) const;
+
+  /** Determine the relationship of the left edge of @a that with @a this.
+   *
+   * @param that The other interval.
+   * @return The edge relationship.
+   *
+   * This checks the right edge of @a this against the left edge of @a that.
+   *
+   * - GAP: @a that left edge is right of @a this.
+   * - ADJ: @a that left edge is right adjacent to @a this.
+   * - OVLP: @a that left edge is inside @a this.
+   * - NONE: @a that left edge is left of @a this.
+   */
+  EdgeRelation left_edge_relationship(self_type const& that) const {
+    if (_max < that._max) {
+      auto tmp{_max};
+      ++tmp;
+      return tmp < that._max ? EdgeRelation::GAP : EdgeRelation::ADJ;
+    }
+    return _min >= that._min ? EdgeRelation::NONE : EdgeRelation::OVLP;
+  }
 
   /** Compute the convex hull of this interval and another one.
       @return The smallest interval that is a superset of @c this
@@ -287,18 +325,18 @@ DiscreteRange<T>::hull(DiscreteRange::self_type const &that) const {
 template <typename T>
 typename DiscreteRange<T>::Relation
 DiscreteRange<T>::relationship(self_type const &that) const {
-  Relation retval = NONE;
+  Relation retval = Relation::NONE;
   if (this->has_intersection(that)) {
     if (*this == that)
-      retval = EQUAL;
+      retval = Relation::EQUAL;
     else if (this->is_subset_of(that))
-      retval = SUBSET;
+      retval = Relation::SUBSET;
     else if (this->is_superset_of(that))
-      retval = SUPERSET;
+      retval = Relation::SUPERSET;
     else
-      retval = OVERLAP;
+      retval = Relation::OVERLAP;
   } else if (this->is_adjacent_to(that)) {
-    retval = ADJACENT;
+    retval = Relation::ADJACENT;
   }
   return retval;
 }
@@ -417,6 +455,12 @@ DiscreteRange<T>::is_superset_of(DiscreteRange::self_type const &that) const {
 template <typename T>
 bool
 DiscreteRange<T>::is_adjacent_to(DiscreteRange::self_type const &that) const {
+  return this->is_left_adjacent_to(that) || that.is_left_adjacent_to(*this);
+}
+
+template <typename T>
+bool
+DiscreteRange<T>::is_left_adjacent_to(DiscreteRange::self_type const &that) const {
   /* Need to be careful here. We don't know much about T and we certainly don't know if "t+1"
    * even compiles for T. We do require the increment operator, however, so we can use that on a
    * copy to get the equivalent of t+1 for adjacency testing. We must also handle the possibility
@@ -427,9 +471,6 @@ DiscreteRange<T>::is_adjacent_to(DiscreteRange::self_type const &that) const {
   if (_max < that._min) {
     T x(_max);
     return ++x == that._min;
-  } else if (that._max < _min) {
-    T x(that._max);
-    return ++x == _min;
   }
   return false;
 }
@@ -577,6 +618,8 @@ protected:
      * @return @a this
      */
     self_type & assign(PAYLOAD const &payload);
+
+    range_type const& range() const { return _range; }
 
     self_type &
     assign_min(METRIC const &m) {
@@ -1167,16 +1210,15 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
   // Used to hold a temporary blended node - @c release if put in space, otherwise cleaned up.
   using unique_node = std::unique_ptr<Node, decltype(node_cleaner)>;
 
-  // Rightmost node of interest with n->_min <= min.
+  // Rightmost node of interest with n->min() <= range.min().
   Node *n = this->lower_bound(range.min());
-  Node *pred = nullptr;
 
   // This doesn't change, compute outside loop.
   auto range_max_plus_1 = range.max();
   ++range_max_plus_1; // only use in contexts where @a max < METRIC max value.
 
-  // Update every loop to be the place to start blending.
-  auto range_min = range.min();
+  // Update every loop to track what remains to be filled.
+  auto remaining = range;
 
   if (nullptr == n) {
     n = this->head();
@@ -1184,61 +1226,75 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
 
   // Process @a n, covering the values from the previous range to @a n.max
   while (n) {
-    // min is the smallest value of interest, need to fill from there on to the right.
-    metric_type min, min_minus_1;
-
-    pred = n ? prev(n) : nullptr;
-    if (pred && pred->max() >= range.min()) {
-      min_minus_1 = min = pred->max();
-      ++min;
-    } else {
-      min_minus_1 = min = range.min();
-      --min_minus_1;
-      if (pred && pred->max() < min_minus_1) {
-        pred = nullptr;
-      }
+    // Always look back at prev, so if there's no overlap at all, skip it.
+    if (n->max() < remaining.min()) {
+      n = next(n);
+      continue;
     }
-    // if @a pred is set, then it's adjacent or overlapping on the left.
 
-    // Do some important computations once, caching the results.
-    // @a n extends past @a range, so the trailing segment must be dealt with.
-    bool right_ext_p = n->max() > range.max();
-    // @a n overlaps with @a range, but only to the right.
-    bool right_overlap_p = n->min() <= range.max() && n->min() >= range.min();
-    // @a n is adjacent on the right to @a range.
-    bool right_adj_p = !right_overlap_p && n->min() == range_max_plus_1;
+    // Invariant - n->max() >= remaining.min();
+    Node* pred = prev(n);
+
+    // Check for left extension. If found, clip that node to be adjacent and put in a
+    // temporary that covers the overlap with the original payload.
+    if (n->min() < remaining.min()) {
+      auto stub = _fa.make(remaining.min(), n->max(), n->payload());
+      auto x { remaining.min() };
+      --x;
+      n->assign_max(x);
+      this->insert_after(n, stub);
+      pred = n;
+      n = stub;
+    }
+
+    auto pred_edge = pred ? remaining.left_edge_relationship(pred->range()) : DiscreteRangeEdgeRelation::NONE;
+    // invariant - pred->max() < remaining.min()
+
+    // Calculate and cache key relationships between @a n and @a remaining.
+
+    // @a n extends past @a remaining, so the trailing segment must be dealt with.
+    bool right_ext_p = n->max() > remaining.max();
+    // @a n strictly right overlaps with @a remaining.
+    bool right_overlap_p = remaining.contains(n->min());
+    // @a n is adjacent on the right to @a remaining.
+    bool right_adj_p = remaining.is_left_adjacent_to(n->range());
     // @a n has the same color as would be used for unmapped values.
     bool n_plain_colored_p = plain_color_p && (n->payload() == plain_color);
-    // @a pred has the same color as would be used for unmapped values.
-    bool pred_plain_colored_p = plain_color_p && pred && pred->payload() == plain_color;
+    // @a rped has the same color as would be used for unmapped values.
+    bool pred_plain_colored_p =
+        (DiscreteRangeEdgeRelation::NONE != pred_edge && DiscreteRangeEdgeRelation::GAP != pred_edge) &&
+        pred->payload() == plain_color;
 
-    // Check for no right overlap - that means the next node is past the target range.
+    // Check for no right overlap - that means @a n is past the target range.
+    // It may be possible to extend @a n or the previous range to cover
+    // the target range. Regardless, all of @a range can be filled at this point.
     if (!right_overlap_p) {
       if (right_adj_p && n_plain_colored_p) { // can pull @a n left to cover
-        n->assign_min(min);
+        n->assign_min(remaining.min());
         if (pred_plain_colored_p) { // if that touches @a pred with same color, collapse.
           n->assign_min(pred->min());
           this->remove(pred);
         }
       } else if (pred_plain_colored_p) { // can pull @a pred right to cover.
-        pred->assign_max(range.max());
-      } else { // Must add new range.
-        this->insert_after(n, _fa.make(min, range.max(), plain_color));
+        pred->assign_max(remaining.max());
+      } else if (! remaining.is_empty()) { // Must add new range.
+        this->insert_before(n, _fa.make(remaining.min(), remaining.max(), plain_color));
       }
       return *this;
     }
 
-    // Invariant: There is overlap between @a n and @a range.
+    // Invariant: @n has right overlap with @a remaining
 
-    // Fill from @a min to @a n.min - 1
-    if (plain_color_p && min < n->min()) { // can fill and there's space to fill.
+    // If there's a gap on the left, fill from @a min to @a n.min - 1
+    // Also see above - @a pred is set iff it is left overlapping or left adjacent.
+    if (plain_color_p && remaining.min() < n->min()) {
       if (n->payload() == plain_color) {
         if (pred && pred->payload() == n->payload()) {
           auto pred_min{pred->min()};
           this->remove(pred);
           n->assign_min(pred_min);
         } else {
-          n->assign_min(min);
+          n->assign_min(remaining.min());
         }
       } else {
         auto n_min_minus_1{n->min()};
@@ -1246,18 +1302,19 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
         if (pred && pred->payload() == plain_color) {
           pred->assign_max(n_min_minus_1);
         } else {
-          this->insert_before(n, _fa.make(min, n_min_minus_1, plain_color));
+          this->insert_before(n, _fa.make(range.min(), n_min_minus_1, plain_color));
         }
       }
     }
 
+    // Invariant: Space in @a range and to the left of @a n has been filled.
+
     // Create a node with the blend for the overlap and then update / replace @a n as needed.
-    auto max { right_ext_p ? range.max() : n->max() }; // smallest boundary of range and @a n.
+    auto max { right_ext_p ? remaining.max() : n->max() }; // smallest boundary of range and @a n.
     unique_node fill { _fa.make(n->min(), max, n->payload()), node_cleaner };
     bool fill_p = blender(fill->payload(), color); // fill or clear?
     auto next_n = next(n); // cache this in case @a n is removed.
-    range_min = fill->max(); // blend will be updated to one past @a fill
-    ++range_min;
+    remaining.assign_min(++METRIC{fill->max()}); // Update what is left to fill.
 
     // Clean up the range for @a n
     if (fill_p) {
@@ -1270,10 +1327,8 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
           return *this;
         }
       } else {
-        // PROBLEM - not collapsing into @a pred(n) when it's adjacent / matching color.
-        // But @a pred may have been removed above, not reliable at this point.
-        pred = prev(n);
-        if (pred && pred->payload() == fill->payload()) {
+        // Collapse in to previous range if it's adjacent and the color matches.
+        if (nullptr != (pred = prev(n)) && pred->range().is_left_adjacent_to(fill->range()) && pred->payload() == fill->payload()) {
           this->remove(n);
           pred->assign_max(fill->max());
         } else {
@@ -1281,13 +1336,11 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
           this->remove(n);
         }
       }
+    } else if (right_ext_p) {
+      n->assign_min(range_max_plus_1);
+      return *this;
     } else {
-      if (right_ext_p) {
-        n->assign_min(range_max_plus_1);
-        return *this;
-      } else {
-        this->remove(n);
-      }
+      this->remove(n);
     }
 
     // Everything up to @a n.max is correct, time to process next node.
@@ -1296,14 +1349,14 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
 
   // Arriving here means there are no more ranges past @a range (those cases return from the loop).
   // Therefore the final fill node is always last in the tree.
-  if (plain_color_p && range_min <= range.max()) {
+  if (plain_color_p && remaining.min() <= range.max()) {
     // Check if the last node can be extended to cover because it's left adjacent.
     // Can decrement @a range_min because if there's a range to the left, @a range_min is not minimal.
     n = _list.tail();
-    if (n && n->max() >= --range_min && n->payload() == plain_color) {
+    if (n && n->max() >= --METRIC{remaining.min()} && n->payload() == plain_color) {
       n->assign_max(range.max());
     } else {
-      this->append(_fa.make(range_min, range.max(), plain_color));
+      this->append(_fa.make(remaining.min(), remaining.max(), plain_color));
     }
   }
 
