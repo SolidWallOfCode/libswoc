@@ -7,6 +7,7 @@
 *.lo
 *.o
 *.obj
+*.swp
 
 # Precompiled Headers
 *.gch
@@ -28,8 +29,8 @@
 *.out
 *.app
 
-cmake-build-debug
 .idea
+cmake-build-debug
 doc/_build
 doc/doxygen
 doc/reference
@@ -38,3 +39,11 @@ doc/ext/__*
 CMakeFiles/
 cmake-build-release/
 venv/
+.parts.cache
+.sconsign.dblite
+_build
+_install
+_sdk
+_unit_tests
+
+
