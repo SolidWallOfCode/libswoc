@@ -16,7 +16,7 @@ files = [
 ]
 
 env.AppendUnique(
-    CCFLAGS=['-std=c++17', '-fPIC' ],
+    CCFLAGS=['-std=c++17' ],
     CPPPATH=["include"],
 )
 
