@@ -36,52 +36,101 @@ using swoc::MemArena;
 
 using W = swoc::LocalBufferWriter<256>;
 
-// Property maps for IPSpace.
-
-/// A @c Property is a collection of names which are values of the property.
-class Property {
-  using self_type = Property;
-public:
-  /// A handle to an instance.
-  using Handle = std::unique_ptr<self_type>;
-
-  /** Construct an instance.
-   *
-   * @param idx THe property index in a row.
-   */
-  Property(TextView  const& name) : _name(name) {};
-
-  virtual ~Property() = default;
-
-  virtual size_t size() const = 0;
-
-  unsigned idx() const { return _idx; }
-
-  virtual bool needs_localized_token() const { return false; }
-
-  self_type & assign_idx(unsigned idx) { _idx = idx; return *this; }
-  /// Assign the @a offset in bytes for this property.
-  self_type & assign_offset(size_t offset) { _offset = offset; return *this; }
-  size_t offset() const { return _offset; }
-
-  virtual bool parse(TextView token, MemSpan<std::byte> span) = 0;
-
-protected:
-  TextView _name;
-  unsigned _idx = std::numeric_limits<unsigned>::max(); ///< Column index.
-  size_t _offset = std::numeric_limits<size_t>::max(); ///< Offset into a row.
-};
-
 // ---
 
+/** A "table" is conceptually a table with the rows labeled by IP address and a set of
+ * property columns that represent data for each IP address.
+ */
 class Table {
-  using self_type = Table;
+  using self_type = Table; ///< Self reference type.
 public:
-  static constexpr char SEP = ',';
+  static constexpr char SEP = ','; /// Value separator for input file.
 
+  /** A property is the description of data for an address.
+   * The table consists of an ordered list of properties, each corresponding to a column.
+   */
+  class Property {
+    using self_type = Property; ///< Self reference type.
+  public:
+    /// A handle to an instance.
+    using Handle = std::unique_ptr<self_type>;
+
+    /** Construct an instance.
+     *
+     * @param name Property name.
+     */
+    Property(TextView const& name) : _name(name) {};
+
+    /// Force virtual destructor.
+    virtual ~Property() = default;
+
+    /** The size of the property in bytes.
+     *
+     * @return The amount of data needed for a single instance of the property value.
+     */
+    virtual size_t size() const = 0;
+
+    /** The index in the table of the property.
+     *
+     * @return The column index.
+     */
+    unsigned idx() const { return _idx; }
+
+    /** Token persistence.
+     *
+     * @return @c true if the token needs to be preserved, @c false if not.
+     *
+     * If the token for the value is consumed, this should be left as is. However, if the token
+     * itself needs to be persistent for the lifetime of the table, this must be overridden to
+     * return @c true.
+     */
+    virtual bool needs_localized_token() const { return false; }
+
+    /// @return The row data offset in bytes for this property.
+    size_t offset() const { return _offset; }
+
+    /** Parse the @a token.
+     *
+     * @param token Value from the input file for this property.
+     * @param span Row data storage for this property.
+     * @return @c true if @a token was correctly parse, @c false if not.
+     *
+     * The table parses the input file and handles the fields in a line. Each value is passed to
+     * the corresponding property for parsing via this method. The method should update the data
+     * pointed at by @a span.
+     */
+    virtual bool parse(TextView token, MemSpan<std::byte> span) = 0;
+
+  protected:
+    friend class Table;
+
+    TextView _name; ///< Name of the property.
+    unsigned _idx = std::numeric_limits<unsigned>::max(); ///< Column index.
+    size_t _offset = std::numeric_limits<size_t>::max(); ///< Offset into a row.
+
+    /** Set the column index.
+     *
+     * @param idx Index for this property.
+     * @return @a this.
+     *
+     * This is called from @c Table to indicate the column index.
+     */
+    self_type & assign_idx(unsigned idx) { _idx = idx; return *this; }
+
+    /** Set the row data @a offset.
+     *
+     * @param offset Offset in bytes.
+     * @return @a this
+     *
+     * This is called from @c Table to store the row data offset.
+     */
+    self_type & assign_offset(size_t offset) { _offset = offset; return *this; }
+  };
+
+  /// Construct an empty Table.
   Table() = default;
 
-  /** Add a column to the table.
+  /** Add a property column to the table.
    *
    * @param col Column descriptor.
    * @return @a this
@@ -100,25 +149,51 @@ public:
     MemSpan<std::byte> _data;
   };
 
+  /** Parse input.
+   *
+   * @param src The source to parse.
+   * @return @a true if parsing was successful, @c false if not.
+   *
+   * In general, @a src will be the contents of a file.
+   *
+   * @see swoc::file::load
+   */
   bool parse(TextView src);
 
+  /** Look up @a addr in the table.
+   *
+   * @param addr Address to find.
+   * @return A @c Row for the address, or @c nullptr if not found.
+   */
   Row* find(IPAddr const& addr);
 
+  /// @return The number of ranges in the container.
   size_t size() const { return _space.count(); }
 
-  /// Return the property for the column @a idx.
+  /** Property for column @a idx.
+   *
+   * @param idx Index.
+   * @return The property.
+   */
   Property * column(unsigned idx) { return _columns[idx].get(); }
 
 protected:
-  size_t _size = 0;
+  size_t _size = 0; ///< Size of row data.
+  /// Defined properties for columns.
   std::vector<Property::Handle> _columns;
 
+  /// IPSpace type.
   using space = IPSpace<Row>;
-  space _space;
+  space _space; ///< IPSpace instance.
 
-  MemArena _arena;
+  MemArena _arena; ///< Arena for storing rows.
 
-  TextView token(TextView & src);
+  /** Extract the next token from the line.
+   *
+   * @param line Current line [in,out]
+   * @return Extracted token.
+   */
+  TextView token(TextView & line);
 
   TextView localize(TextView const& src);
 };
@@ -137,22 +212,22 @@ TextView Table::localize(TextView const&src) {
   return span.view();
 }
 
-TextView Table::token(TextView & src) {
+TextView Table::token(TextView & line) {
   TextView::size_type idx = 0;
   // Characters of interest in a null terminated string.
   char sep_list[3] = {'"', SEP, 0};
   bool in_quote_p  = false;
-  while (idx < src.size()) {
+  while (idx < line.size()) {
     // Next character of interest.
-    idx = src.find_first_of(sep_list, idx);
+    idx = line.find_first_of(sep_list, idx);
     if (TextView::npos == idx) {
-      // no more, consume all of @a src.
+      // no more, consume all of @a line.
       break;
-    } else if ('"' == src[idx]) {
+    } else if ('"' == line[idx]) {
       // quote, skip it and flip the quote state.
       in_quote_p = !in_quote_p;
       ++idx;
-    } else if (SEP == src[idx]) { // separator.
+    } else if (SEP == line[idx]) { // separator.
       if (in_quote_p) {
         // quoted separator, skip and continue.
         ++idx;
@@ -164,7 +239,7 @@ TextView Table::token(TextView & src) {
   }
 
   // clip the token from @a src and trim whitespace, quotes
-  auto zret = src.take_prefix(idx).trim_if(&isspace).trim('"');
+  auto zret = line.take_prefix(idx).trim_if(&isspace).trim('"');
   return zret;
 }
 
@@ -204,9 +279,9 @@ bool operator == (Table::Row const&, Table::Row const&) { return false; }
 
 // ---
 
-class FlagProperty : public Property {
+class FlagProperty : public Table::Property {
   using self_type = FlagProperty;
-  using super_type = Property;
+  using super_type = Table::Property;
 public:
   static constexpr size_t SIZE = sizeof(bool);
 protected:
@@ -214,9 +289,9 @@ protected:
   bool parse(TextView token, MemSpan<std::byte> span) override;
 };
 
-class FlagGroupProperty : public Property {
+class FlagGroupProperty : public Table::Property {
   using self_type = FlagGroupProperty;
-  using super_type = Property;
+  using super_type = Table::Property;
 public:
   static constexpr size_t SIZE = sizeof(uint8_t);
   FlagGroupProperty(TextView const& name, std::initializer_list<TextView> tags);
@@ -228,9 +303,9 @@ protected:
   std::vector<TextView> _tags;
 };
 
-class TagProperty : public Property {
+class TagProperty : public Table::Property {
   using self_type = TagProperty;
-  using super_type = Property;
+  using super_type = Table::Property;
 public: // owner
   static constexpr size_t SIZE = sizeof(uint8_t);
   using super_type::super_type;
@@ -241,9 +316,9 @@ protected:
   bool parse(TextView token, MemSpan<std::byte> span) override;
 };
 
-class StringProperty : public Property {
+class StringProperty : public Table::Property {
   using self_type = StringProperty;
-  using super_type = Property;
+  using super_type = Table::Property;
 public:
   static constexpr size_t SIZE = sizeof(TextView);
   using super_type::super_type;
