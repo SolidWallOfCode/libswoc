@@ -250,7 +250,7 @@ public:
   bool is_singleton() const;
 
   //! Check if the interval is empty.
-  bool is_empty() const;
+  bool empty() const;
 
   /** Test for empty, operator form.
       @return @c true if the interval is empty, @c false otherwise.
@@ -364,7 +364,7 @@ DiscreteRange<T>::is_singleton() const {
 
 template <typename T>
 bool
-DiscreteRange<T>::is_empty() const {
+DiscreteRange<T>::empty() const {
   return _min > _max;
 }
 
@@ -1277,7 +1277,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
         }
       } else if (pred_plain_colored_p) { // can pull @a pred right to cover.
         pred->assign_max(remaining.max());
-      } else if (! remaining.is_empty()) { // Must add new range.
+      } else if (!remaining.empty()) { // Must add new range.
         this->insert_before(n, _fa.make(remaining.min(), remaining.max(), plain_color));
       }
       return *this;

@@ -659,4 +659,13 @@ IPAddr IPRange::max() const {
   return {};
 }
 
+bool IPRange::empty() const {
+  switch (_family) {
+    case AF_INET: return _range._ip4.empty();
+    case AF_INET6: return _range._ip6.empty();
+    default: break;
+  }
+  return true;
+}
+
 } // namespace swoc

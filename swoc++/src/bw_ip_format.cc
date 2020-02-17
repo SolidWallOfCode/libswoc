@@ -302,14 +302,14 @@ bwformat(BufferWriter &w, Spec const &spec, IPAddr const &addr)
 
 BufferWriter &
 bwformat(BufferWriter & w, Spec const& spec, IP4Range const& range) {
-  return range.is_empty()
+  return range.empty()
   ? w.write("*-*"_tv)
   : w.print("{}-{}", range.min(), range.max());
 }
 
 BufferWriter &
 bwformat(BufferWriter & w, Spec const& spec, IP6Range const& range) {
-  return range.is_empty()
+  return range.empty()
          ? w.write("*-*"_tv)
          : w.print("{}-{}", range.min(), range.max());
 }

@@ -21,6 +21,7 @@ add_executable(test_libswoc
 
     ex_bw_format.cc
     ex_IntrusiveDList.cc
+    ex_ipspace_properties.cc
     ex_MemArena.cc
     ex_TextView.cc
     )
