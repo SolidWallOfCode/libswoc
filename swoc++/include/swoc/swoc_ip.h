@@ -642,6 +642,8 @@ public:
   /// @return The maximum address in the range.
   IPAddr max() const;
 
+  bool empty() const;
+
   operator IP4Range & () { return _range._ip4; }
   operator IP6Range & () { return _range._ip6; }
   operator IP4Range const & () const { return _range._ip4; }
@@ -795,6 +797,29 @@ public:
    */
   PAYLOAD *find(IP4Addr const &addr) {
     return _ip4.find(addr);
+  }
+
+  /** Find the payload for an @a addr.
+   *
+   * @param addr Address to find.
+   * @return The payload if any, @c nullptr if the address is not in the space.
+   */
+  PAYLOAD *find(IP6Addr const &addr) {
+    return _ip6.find(addr);
+  }
+
+  /** Find the payload for an @a addr.
+   *
+   * @param addr Address to find.
+   * @return The payload if any, @c nullptr if the address is not in the space.
+   */
+  PAYLOAD *find(IPAddr const &addr) {
+    if (addr.is_ip4()) {
+      return _ip4.find(IP4Addr{addr});
+    } else if (addr.is_ip6()) {
+      return _ip6.find(IP6Addr{addr});
+    }
+    return nullptr;
   }
 
   /// @return The number of distinct ranges.

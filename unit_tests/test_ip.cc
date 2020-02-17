@@ -263,57 +263,6 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(w.view() == "   0:   0:   0:   0:   0:   0:   0:   1");
 }
 
-// Property maps for IPSpace.
-
-/** A @c Property is a collection of names which are values of the property.
- *
- */
-class Property {
-  using self_type = Property;
-public:
-  Property(unsigned idx) : _idx(idx) {}
-
-  unsigned operator[](std::string_view const&);
-
-protected:
-  unsigned _idx;
-  std::vector<std::string> _names;
-};
-
-unsigned Property::operator[](std::string_view const&name) {
-  if (auto spot = std::find_if(_names.begin(), _names.end()
-                               , [&](std::string const&prop) { return strcasecmp(name, prop); });
-      spot != _names.end()) {
-    return spot - _names.begin();
-  }
-  // Create a value
-  _names.emplace_back(name);
-  return _names.size() - 1;
-}
-
-class PropertyGroup {
-  using self_type = PropertyGroup;
-public:
-  Property *operator[](std::string_view const&name);
-
-protected:
-  using Item = std::tuple<std::string, std::unique_ptr<Property>>;
-  std::vector<Item> _properties;
-};
-
-
-Property *PropertyGroup::operator[](std::string_view const&name) {
-  if (auto spot = std::find_if(_properties.begin(), _properties.end()
-                               , [&](
-            Item const&item) { return strcasecmp(name, std::get<0>(item)); });
-      spot != _properties.end()) {
-    return std::get<1>(*spot).get();
-  }
-  // Create a new property.
-  _properties.emplace_back(name, new Property(_properties.size()));
-  return std::get<1>(_properties.back()).get();
-}
-
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   using int_space = swoc::IPSpace<unsigned>;
   int_space space;
@@ -328,16 +277,16 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(space.count() == 0);
 
   space.mark(IPRange{{IP4Addr("172.16.0.0"), IP4Addr("172.16.0.255")}}, 1);
-  auto result = space.find({"172.16.0.97"});
+  auto result = space.find(IPAddr{"172.16.0.97"});
   REQUIRE(result != nullptr);
   REQUIRE(*result == 1);
 
-  result = space.find({"172.17.0.97"});
+  result = space.find(IPAddr{"172.17.0.97"});
   REQUIRE(result == nullptr);
 
   space.mark(IPRange{"172.16.0.12-172.16.0.25"_tv}, 2);
 
-  result = space.find({"172.16.0.21"});
+  result = space.find(IPAddr{"172.16.0.21"});
   REQUIRE(result != nullptr);
   REQUIRE(*result == 2);
   REQUIRE(space.count() == 3);
