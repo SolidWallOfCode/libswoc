@@ -14,6 +14,7 @@
 #include <swoc/TextView.h>
 #include <swoc/swoc_ip.h>
 #include <swoc/bwf_ip.h>
+#include <swoc/Scalar.h>
 #include <swoc/swoc_file.h>
 
 using namespace std::literals;
@@ -132,21 +133,31 @@ public:
 
   /** Add a property column to the table.
    *
+   * @tparam P Property class.
    * @param col Column descriptor.
-   * @return @a this
+   * @return @a A pointer to the property.
+   *
+   * The @c Property instance must be owned by the @c Table because changes are made to it specific
+   * to this instance of @c Table.
    */
-  self_type & add_column(Property::Handle && col);
+  template < typename P >
+  P * add_column(std::unique_ptr<P> && col);
 
-  /// A row for the table.
+  /// A row in the table.
   class Row {
-    using self_type = Row;
+    using self_type = Row; ///< Self reference type.
   public:
+    /// Default cconstruct an row with uninitialized data.
     Row(MemSpan<std::byte> span) : _data(span) {}
-    MemSpan<std::byte> span_for(Property const& prop) const {
-      return MemSpan<std::byte>{_data}.remove_prefix(prop.offset());
-    }
+    /** Extract property specific data from @a this.
+     *
+     * @param prop Property that defines the data.
+     * @return The range of bytes in the row for @a prop.
+     */
+    MemSpan<std::byte> span_for(Property const& prop) const;
+
   protected:
-    MemSpan<std::byte> _data;
+    MemSpan<std::byte> _data; ///< Raw row data.
   };
 
   /** Parse input.
@@ -195,15 +206,25 @@ protected:
    */
   TextView token(TextView & line);
 
+  /** Localize view.
+   *
+   * @param src View to localize.
+   * @return The localized view.
+   *
+   * This copies @a src to the internal @c MemArena and returns a view of the copied data.
+   */
   TextView localize(TextView const& src);
 };
 
-auto Table::add_column(Property::Handle &&col) -> self_type & {
+template < typename P >
+P * Table::add_column(std::unique_ptr<P> &&col) {
+  auto prop = col.get();
+  auto idx = _columns.size();
   col->assign_offset(_size);
-  col->assign_idx(_columns.size());
-  _size += col->size();
+  col->assign_idx(idx);
+  _size += static_cast<Property*>(prop)->size();
   _columns.emplace_back(std::move(col));
-  return *this;
+  return prop;
 }
 
 TextView Table::localize(TextView const&src) {
@@ -214,25 +235,21 @@ TextView Table::localize(TextView const&src) {
 
 TextView Table::token(TextView & line) {
   TextView::size_type idx = 0;
-  // Characters of interest in a null terminated string.
-  char sep_list[3] = {'"', SEP, 0};
+  // Characters of interest.
+  TextView sep_list { {'"', SEP} , 2 };
   bool in_quote_p  = false;
   while (idx < line.size()) {
     // Next character of interest.
     idx = line.find_first_of(sep_list, idx);
-    if (TextView::npos == idx) {
-      // no more, consume all of @a line.
+    if (TextView::npos == idx) { // nothing interesting left, consume all of @a line.
       break;
-    } else if ('"' == line[idx]) {
-      // quote, skip it and flip the quote state.
+    } else if ('"' == line[idx]) { // quote, skip it and flip the quote state.
       in_quote_p = !in_quote_p;
       ++idx;
     } else if (SEP == line[idx]) { // separator.
-      if (in_quote_p) {
-        // quoted separator, skip and continue.
+      if (in_quote_p) { // quoted separator, skip and continue.
         ++idx;
-      } else {
-        // found token, finish up.
+      } else { // found token, finish up.
         break;
       }
     }
@@ -246,24 +263,31 @@ TextView Table::token(TextView & line) {
 bool Table::parse(TextView src) {
   unsigned line_no = 0;
   while (src) {
-    auto line = src.take_prefix_at('\n');
+    auto line = src.take_prefix_at('\n').ltrim_if(&isspace);
     ++line_no;
+    // skip blank and comment lines.
+    if (line.empty() || '#' == *line) {
+      continue;
+    }
+
     auto range_token = line.take_prefix_at(',');
     IPRange range{range_token};
     if (range.empty()) {
       std::cout << W().print("{} is not a valid range specification.", range_token);
       continue; // This is an error, real code should report it.
     }
-    MemSpan<std::byte> span = _arena.alloc(_size).rebind<std::byte>();
-    Row row{span};
+
+    auto span = _arena.alloc(_size).rebind<std::byte>(); // need this broken out.
+    Row row{span}; // store the original span to preserve it.
     for ( auto const& col : _columns) {
       auto token = this->token(line);
       if (col->needs_localized_token()) {
         token = this->localize(token);
       }
-      if (! col->parse(token, MemSpan<std::byte>{span.data(), col->size()})) {
+      if (! col->parse(token, span.subspan(0, col->size()))) {
         std::cout << W().print("Value \"{}\" at index {} on line {} is invalid.", token, col->idx(), line_no);
       }
+      // drop reference to storage used by this column.
       span.remove_prefix(col->size());
     }
     _space.mark(range, std::move(row));
@@ -277,42 +301,77 @@ auto Table::find(IPAddr const &addr) -> Row * {
 
 bool operator == (Table::Row const&, Table::Row const&) { return false; }
 
+MemSpan<std::byte> Table::Row::span_for(Table::Property const&prop) const {
+  return _data.subspan(prop.offset(), prop.size());
+}
+
 // ---
 
-class FlagProperty : public Table::Property {
-  using self_type = FlagProperty;
-  using super_type = Table::Property;
-public:
-  static constexpr size_t SIZE = sizeof(bool);
-protected:
-  size_t size() const override { return SIZE; }
-  bool parse(TextView token, MemSpan<std::byte> span) override;
-};
-
+/** A set of keys, each of which represents an independent property.
+ * The set of keys must be specified at construction, keys not in the list are invalid.
+ */
 class FlagGroupProperty : public Table::Property {
-  using self_type = FlagGroupProperty;
-  using super_type = Table::Property;
+  using self_type = FlagGroupProperty; ///< Self reference type.
+  using super_type = Table::Property; ///< Parent type.
 public:
-  static constexpr size_t SIZE = sizeof(uint8_t);
+  /** Construct with a @a name and a list of @a tags.
+   *
+   * @param name of the property
+   * @param tags List of valid tags that represent attributes.
+   *
+   * Input tokens must consist of lists of tokens, each of which is one of the @a tags.
+   * This is stored so that the exact set of tags present can be retrieved.
+   */
   FlagGroupProperty(TextView const& name, std::initializer_list<TextView> tags);
 
-  bool is_set(unsigned idx, Table::Row const& row) const;
+  /** Check for a tag being present.
+   *
+   * @param idx Tag index, as specified in the constructor tag list.
+   * @param row Row data from the @c Table.
+   * @return @c true if the tag was present, @c false if not.
+   */
+  bool is_set(Table::Row const&row, unsigned idx) const;
+
 protected:
-  size_t size() const override { return SIZE; }
+  size_t size() const override; ///< Storeage required in a row.
+
+  /** Parse a token.
+   *
+   * @param token Token to parse (list of tags).
+   * @param span Storage for parsed results.
+   * @return @c true on a successful parse, @c false if not.
+   */
   bool parse(TextView token, MemSpan<std::byte> span) override;
+  /// List of tags.
   std::vector<TextView> _tags;
 };
 
-class TagProperty : public Table::Property {
-  using self_type = TagProperty;
-  using super_type = Table::Property;
-public: // owner
-  static constexpr size_t SIZE = sizeof(uint8_t);
-  using super_type::super_type;
-protected:
-  std::vector<TextView> _tags;
+/** Enumeration property.
+ * The tokens for this property are assumed to be from a limited set of tags. Each token, the
+ * value for that row, must be one of those tags. The tags do not need to be specified, but will be
+ * accumulated as needed. The property supports a maximum of 255 distinct tags.
+ */
+class EnumProperty : public Table::Property {
+  using self_type = EnumProperty; ///< Self reference type.
+  using super_type = Table::Property; ///< Parent type.
+  using store_type = __uint8_t; ///< Row storage type.
+public:
+  using super_type::super_type; ///< Inherit super type constructors.
 
-  size_t size() const override { return SIZE; }
+  /// @return The enumeration tag for this @a row.
+  TextView operator() (Table::Row const& row) const;
+protected:
+  std::vector<TextView> _tags; ///< Tags in the enumeration.
+
+  /// @a return Size of required storage.
+  size_t size() const override { return sizeof(store_type); }
+
+  /** Parse a token.
+   *
+   * @param token Token to parse (an enumeration tag).
+   * @param span Storage for parsed results.
+   * @return @c true on a successful parse, @c false if not.
+   */
   bool parse(TextView token, MemSpan<std::byte> span) override;
 };
 
@@ -365,12 +424,16 @@ bool FlagGroupProperty::parse(TextView token, MemSpan<std::byte> span) {
   return true;
 }
 
-bool FlagGroupProperty::is_set(unsigned flag_idx, Table::Row const& row) const {
+bool FlagGroupProperty::is_set(Table::Row const&row, unsigned idx) const {
   auto sp = row.span_for(*this);
-  return std::byte{0} != ((sp[flag_idx/8] >> (flag_idx%8)) & std::byte{1});
+  return std::byte{0} != ((sp[idx / 8] >> (idx % 8)) & std::byte{1});
 }
 
-bool TagProperty::parse(TextView token, MemSpan<std::byte> span) {
+size_t FlagGroupProperty::size() const {
+  return swoc::Scalar<8>(swoc::round_up(_tags.size())).count();
+}
+
+bool EnumProperty::parse(TextView token, MemSpan<std::byte> span) {
   // Already got one?
   auto spot = std::find_if(_tags.begin(), _tags.end(), [&](TextView const& tag) { return 0 == strcasecmp(token, tag); });
   if (spot == _tags.end()) { // nope, add it to the list.
@@ -381,15 +444,20 @@ bool TagProperty::parse(TextView token, MemSpan<std::byte> span) {
   return true;
 }
 
+TextView EnumProperty::operator()(Table::Row const& row) const {
+  auto idx = row.span_for(*this).rebind<store_type>()[0];
+  return _tags[idx];
+}
+
 // ---
 
 TEST_CASE("IPSpace properties", "[libswoc][ip][ex][properties]") {
   Table table;
   auto flag_names = { "prod"_tv, "dmz"_tv, "internal"_tv};
-  table.add_column(std::make_unique<TagProperty>("owner"));
-  table.add_column(std::make_unique<TagProperty>("colo"));
-  table.add_column(std::make_unique<FlagGroupProperty>("flags"_tv, flag_names));
-  table.add_column(std::make_unique<StringProperty>("Description"));
+  auto owner = table.add_column(std::make_unique<EnumProperty>("owner"));
+  auto colo = table.add_column(std::make_unique<EnumProperty>("colo"));
+  auto flags = table.add_column(std::make_unique<FlagGroupProperty>("flags"_tv, flag_names));
+  auto description = table.add_column(std::make_unique<StringProperty>("Description"));
 
   TextView src = R"(10.1.1.0/24,asf,cmi,prod;internal,"ASF core net"
 192.168.28.0/25,asf,ind,prod,"Indy Net"
@@ -400,8 +468,12 @@ TEST_CASE("IPSpace properties", "[libswoc][ip][ex][properties]") {
   REQUIRE(3 == table.size());
   auto row = table.find(IPAddr{"10.1.1.56"});
   REQUIRE(nullptr != row);
-  CHECK(true == static_cast<FlagGroupProperty*>(table.column(2))->is_set(0, *row));
-  CHECK(false == static_cast<FlagGroupProperty*>(table.column(2))->is_set(1, *row));
-  CHECK(true == static_cast<FlagGroupProperty*>(table.column(2))->is_set(2, *row));
+  CHECK(true == flags->is_set(*row, 0));
+  CHECK(false == flags->is_set(*row, 1));
+  CHECK(true == flags->is_set(*row, 2));
+
+  row = table.find(IPAddr{"192.168.28.131"});
+  REQUIRE(row != nullptr);
+  CHECK("abq"_tv == (*colo)(*row));
 };
 
