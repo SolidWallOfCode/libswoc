@@ -266,13 +266,6 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   using int_space = swoc::IPSpace<unsigned>;
   int_space space;
-  auto dump = [](int_space&space) -> void {
-    swoc::LocalBufferWriter<1024> w;
-    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
-    for (auto &&[r, payload] : space) {
-      std::cout << w.clear().print("{} - {} : {}\n", r.min(), r.max(), payload).view();
-    }
-  };
 
   REQUIRE(space.count() == 0);
 
@@ -337,6 +330,25 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
 
   space.blend({r_2.min(), r_3.max()}, 0x6, BF);
   REQUIRE(space.count() == 4);
+
+  std::array<std::tuple<TextView, int>, 9> ranges = {
+      {
+          { "100.0.0.0-100.0.0.255",  0 }
+          , { "100.0.1.0-100.0.1.255",  1 }
+          , { "100.0.2.0-100.0.2.255",  2 }
+          , { "100.0.3.0-100.0.3.255",  3 }
+          , { "100.0.4.0-100.0.4.255",  4 }
+          , { "100.0.5.0-100.0.5.255",  5 }
+          , { "100.0.6.0-100.0.6.255",  6 }
+          , { "100.0.0.0-100.0.0.255",  31 }
+          , { "100.0.1.0-100.0.1.255",  30 }
+      }};
+
+  space.clear();
+  for (auto &&[text, value] : ranges) {
+    space.mark(IPRange{text}, value);
+  }
+  CHECK(7 == space.count());
 }
 
 TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
