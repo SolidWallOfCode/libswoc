@@ -1071,6 +1071,8 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAY
     } else if (n->min() <= range.max()) { // skew overlap different payload
       n->assign_min(max_plus_1);
       break;
+    } else { // n->min() > range.max(), different payloads - done.
+      break;
     }
   }
 
