@@ -1,15 +1,4 @@
-.. Licensed to the Apache Software Foundation (ASF) under one or more contributor license
-   agreements.  See the NOTICE file distributed with this work for additional information regarding
-   copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
-   (the "License"); you may not use this file except in compliance with the License.  You may obtain
-   a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software distributed under the License
-   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-   or implied.  See the License for the specific language governing permissions and limitations
-   under the License.
+.. SPDX-License-Identifier: Apache-2.0
 
 .. include:: ../common-defs.rst
 
@@ -119,30 +108,38 @@ blend
 Blend
 +++++
 
+Blending is different than marking or filling, as the latter two apply the payload passed to the
+method. That is, if an address is marked by either method, it is marked with precisely the payload
+passed to the method. :code:`blend` is different because it can cause an address to be marked by
+a payload that was not explicitly passed in to any coloring method. Instead of replacing an
+existing payload, it enables computing the resulting payload from the existing payload and a value
+passed to the method.
+
 The :libswoc:`swoc::IPSpace::blend` method requires a range and a "blender", which is a functor
 that blends a :arg:`color` into a :code:`PAYLOAD` instances. The signature is ::
 
   bool blender(PAYLOAD & payload, U const& color)
 
-The type :code:`U` is that same as the template argument :code:`U` to the method, which must be
-compatible with the second argument to the :code:`blend` method. The argument passed to
-:code:`blender` is the second argument to :code:`blend`.
+The type :code:`U` is that same as the template argument :code:`U` to the :code:`blend` method,
+which must be compatible with the second argument to the :code:`blend` method. The argument passed
+to :code:`blender` is the second argument to :code:`blend`.
 
 The method is modeled on C++ `compound assignment operators
 <https://en.cppreference.com/w/cpp/language/operator_assignment#Builtin_compound_assignment>`__. If
-the blend operation is thought of as the "@" operator, then the blend functor performs :code:`lhs @=
-rhs`. That is, :arg:`lhs` is modified to be the combination of :arg:`lhs` and :arg`rhs`. :arg:`lhs`
-is always the previous payload already in the space, and :arg:`rhs` is the :arg:`color` argument
-to the :code:`blend` method. The internal logic handles copying the payload instances as needed.
+the blend operation is thought of as the "@" operator, then the blend functor performs
+:code:`lhs @=rhs`. That is, :arg:`lhs` is modified to be the combination of :arg:`lhs` and :arg`rhs`.
+:arg:`lhs` is always the previous payload already in the space, and :arg:`rhs` is the :arg:`color`
+argument to the :code:`blend` method. The internal logic handles copying the payload instances as
+needed.
 
-The return value indicates whether the combined result in :arg:`lhs` is a valid payload or not. If
-it is the method should return :code:`true`. In general most implementations will :code:`return
-true;` in all cases. If the method returns :code:`false` then the address(es) for the combined
-payload are removed from the container. This allows payloads to be "unblended", for one payload to
-cancel out another, or to do selective erasing of ranges.
+The return value of the blender indicates whether the combined result in :arg:`lhs` is a valid
+payload or not. If it is the method should return :code:`true`. In general most implementations will
+:code:`return true;` in all cases. If the method returns :code:`false` then the address(es) for the
+combined payload are removed from the container. This allows payloads to be "unblended", for one
+payload to cancel out another, or to do selective erasing of ranges.
 
 As an example, consider the case where the payload is a bitmask. It might be reasonable to keep
-empty bitmasks in the container, but it would also be reasonble to decide the empty bitmask and any
+empty bitmasks in the container, but it would also be reasonable to decide the empty bitmask and any
 address mapped to it should removed entirely from the container. In such a case, a blender that
 clears bits in the payloads should return :code:`false` when the result is the empty bitmask.
 

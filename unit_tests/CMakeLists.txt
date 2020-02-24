@@ -28,3 +28,4 @@ add_executable(test_libswoc
 
 target_link_libraries(test_libswoc PUBLIC swoc++)
 set_target_properties(test_libswoc PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
+add_definitions(-DVERBOSE_EXAMPLE_OUTPUT=1)

@@ -400,28 +400,16 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
 TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   using PAYLOAD = std::bitset<32>;
   using Space = swoc::IPSpace<PAYLOAD>;
-
-  auto dump = [](Space&space) -> void {
-    swoc::LocalBufferWriter<1024> w;
-    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
-    for (auto &&[r, payload] : space) {
-      w.clear().print("{}-{} :", r.min(), r.max());
-      std::cout << w << payload << std::endl;
-    }
-  };
-  auto reverse_dump = [](Space&space) -> void {
-    swoc::LocalBufferWriter<1024> w;
-    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
-    for (auto spot = space.end(); spot != space.begin();) {
-      auto &&[r, payload]{*--spot};
-      w.clear().print("{} :", r);
-      std::cout << w << payload << std::endl;
-    }
-  };
-
   auto blender = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
     lhs |= rhs;
     return true;
+  };
+  auto make_bits = [](std::initializer_list<unsigned> idx) -> PAYLOAD {
+    PAYLOAD bits;
+    for (auto bit : idx) {
+      bits[bit] = true;
+    }
+    return bits;
   };
 
   std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 9> ranges = {
@@ -437,17 +425,41 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
           , { "100.0.1.0-100.0.1.255", { 30 } }
       }};
 
+  std::array<std::initializer_list<unsigned>, 7> results = {{
+        { 0, 31 }
+      , { 1, 30 }
+      , { 2 }
+      , { 3 }
+      , { 4 }
+      , { 5 }
+      , { 6 }
+  }};
+
   Space space;
 
   for (auto &&[text, bit_list] : ranges) {
-    PAYLOAD bits;
-    for (auto bit : bit_list) {
-      bits[bit] = true;
-    }
-    space.blend(IPRange{text}, bits, blender);
+    space.blend(IPRange{text}, make_bits(bit_list), blender);
   }
-  dump(space);
-  reverse_dump(space);
+
+  // Check iteration - verify forward and reverse iteration yield the correct number of ranges
+  // and the range payloads match what is expected.
+  REQUIRE(space.count() == results.size());
+  unsigned idx;
+
+  idx = 0;
+  for ( auto const& [ range, bits ] : space) {
+    REQUIRE(idx < results.size());
+    CHECK(bits == make_bits(results[idx]));
+    ++idx;
+  }
+
+  idx = results.size();
+  for ( auto spot = space.end() ; spot != space.begin() ; ) {
+    auto const& [ range, bits ] { *--spot };
+    REQUIRE(idx > 0);
+    --idx;
+    CHECK(bits == make_bits(results[idx]));
+  }
 }
 
 #if 0
