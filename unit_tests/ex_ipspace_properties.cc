@@ -14,8 +14,7 @@
 #include <swoc/TextView.h>
 #include <swoc/swoc_ip.h>
 #include <swoc/bwf_ip.h>
-#include <swoc/Scalar.h>
-#include <swoc/swoc_file.h>
+#include <swoc/bwf_std.h>
 
 using namespace std::literals;
 using namespace swoc::literals;
@@ -36,6 +35,74 @@ using swoc::MemSpan;
 using swoc::MemArena;
 
 using W = swoc::LocalBufferWriter<256>;
+namespace {
+bool Verbose_p =
+#if VERBOSE_EXAMPLE_OUTPUT
+    true
+#else
+    false
+#endif
+    ;
+}
+
+TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
+  // Color each address with a set of bits.
+  using PAYLOAD = std::bitset<32>;
+  // Declare the IPSpace.
+  using Space = swoc::IPSpace<PAYLOAD>;
+
+  // Dump the ranges to stdout.
+  auto dump = [](Space&space) -> void {
+    if (Verbose_p) {
+      std::cout << W().print("{} ranges\n", space.count());
+      for (auto &&[r, payload] : space) {
+        std::cout << W().print("{:12}-{:12} : {}\n", r.min(), r.max(), payload);
+      }
+    }
+  };
+
+  // Blend functor which computes a union of the bitsets.
+  auto blender = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
+    lhs |= rhs;
+    return lhs != 0;
+  };
+
+  // test ranges.
+  std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 9> ranges = {
+      {
+          { "100.0.0.0-100.0.0.255", { 0 } }
+          , { "100.0.1.0-100.0.1.255", { 1 } }
+          , { "100.0.2.0-100.0.2.255", { 2 } }
+          , { "100.0.3.0-100.0.3.255", { 3 } }
+          , { "100.0.4.0-100.0.4.255", { 4 } }
+          , { "100.0.5.0-100.0.5.255", { 5 } }
+          , { "100.0.6.0-100.0.6.255", { 6 } }
+          , { "100.0.0.0-100.0.0.255", { 31 } }
+          , { "100.0.1.0-100.0.1.255", { 30 } }
+      }};
+
+  // The IPSpace instance.
+  Space space;
+
+  // For each test range, compute the bitset from the list of bit indices.
+  for (auto &&[text, bit_list] : ranges) {
+    PAYLOAD bits; // zero bitset.
+    for (auto bit : bit_list) {
+      bits[bit] = true;
+    }
+    space.blend(IPRange{text}, bits, blender);
+  }
+
+  dump(space);
+
+  auto resetter = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
+    auto mask = rhs;
+    lhs &= mask.flip();
+    return lhs != 0;
+  };
+  space.blend(IPRange{"100.0.2.128-100.0.3.127"}, PAYLOAD{"1111"}, resetter);
+  dump(space);
+}
 
 // ---
 
