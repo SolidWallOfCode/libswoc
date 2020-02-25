@@ -191,15 +191,12 @@ namespace detail
     }
 
     /*  The node to be removed from the tree.
-        If @c this (the target node) has both children, we remove
-        its successor, which cannot have a left child and
-        put that node in place of the target node. Otherwise this
-        node has at most one child, so we can remove it.
-        Note that the successor of a node with a right child is always
-        a right descendant of the node. Therefore, remove_node
-        is an element of the tree rooted at this node.
-        Because of the initial special case checks, we know
-        that remove_node is @b not the root node.
+        If @c this (the target node) has both children, we remove its successor, which cannot have a
+        left child and put that node in place of the target node. Otherwise this node has at most
+        one child, so we can remove it. Note that the successor of a node with a right child is
+        always a right descendant of the node. Therefore, remove_node is an element of the tree
+        rooted at this node. Because of the initial special case checks, we know that remove_node is
+        @b not the root node.
     */
     self_type *remove_node(_left && _right ? _right->left_most_descendant() : this);
 

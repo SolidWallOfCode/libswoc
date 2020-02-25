@@ -832,12 +832,14 @@ template<typename METRIC, typename PAYLOAD>
 void DiscreteSpace<METRIC, PAYLOAD>::Node::structure_fixup() {
   if (_left) {
     if (_right) {
-      _hull = this->left()->_range.hull(this->right()->_range);
+      _hull = this->left()->_hull.hull(this->right()->_hull);
     } else {
-      _hull = this->left()->_range;
+      _hull = this->left()->_hull;
     }
   } else if (_right) {
-    _hull = this->right()->_range;
+    _hull = this->right()->_hull;
+  } else {
+    _hull = _range; // always contain at least self in the hull.
   }
 }
 
@@ -1014,7 +1016,7 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAY
         // y->min >= min (or y would have been selected). Therefore in this
         // case the request covers the next node therefore it can be reused.
         x = y;
-        x->assign(range).assign(payload);
+        x->assign(range).assign(payload).ripple_structure_fixup();
         n = x; // this gets bumped again, which is correct.
       }
     } else {
