@@ -102,8 +102,8 @@ IPAddr&
 IPAddr::assign(sockaddr const *addr) {
   if (addr) {
     switch (addr->sa_family) {
-      case AF_INET:return this->assign(reinterpret_cast<sockaddr_in const *>(addr)->sin_addr.s_addr);
-      case AF_INET6:return this->assign(reinterpret_cast<sockaddr_in6 const *>(addr)->sin6_addr);
+      case AF_INET:return this->assign(reinterpret_cast<sockaddr_in const *>(addr));
+      case AF_INET6:return this->assign(reinterpret_cast<sockaddr_in6 const *>(addr));
       default:break;
     }
   }

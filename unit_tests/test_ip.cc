@@ -28,8 +28,9 @@ using swoc::IP6Range;
 
 using swoc::IPAddr;
 using swoc::IPRange;
+using W = swoc::LocalBufferWriter<256>;
 
-TEST_CASE("ink_inet", "[libswoc][ip]") {
+TEST_CASE("Basic IP", "[libswoc][ip]") {
   // Use TextView because string_view(nullptr) fails. Gah.
   struct ip_parse_spec {
     TextView hostspec;
@@ -61,6 +62,11 @@ TEST_CASE("ink_inet", "[libswoc][ip]") {
     REQUIRE(s.port == port);
     REQUIRE(s.rest == rest);
   }
+
+  IP4Addr alpha { "172.96.12.134"};
+  CHECK(alpha == IP4Addr{"172.96.12.134"});
+  CHECK(alpha == IP4Addr{IPAddr{"172.96.12.134"}});
+  CHECK(alpha == IPAddr{IPEndpoint{"172.96.12.134:80"}});
 
   // Do a bit of IPv6 testing.
   IP6Addr a6_null;
@@ -303,6 +309,8 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(nullptr == space.find(r_2.min()));
   REQUIRE(nullptr != space.find(r_1.min()));
   REQUIRE(nullptr != space.find(r_1.max()));
+  REQUIRE(nullptr != space.find(IP4Addr{"1.1.1.7"}));
+  CHECK(0x1 == *space.find(IP4Addr{"1.1.1.7"}));
 
   space.blend(r_2, 0x2, BF);
   REQUIRE(space.count() == 2);
@@ -346,32 +354,19 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
 
   space.clear();
   for (auto &&[text, value] : ranges) {
+    IPRange range{text};
     space.mark(IPRange{text}, value);
   }
+
   CHECK(7 == space.count());
+  CHECK(nullptr != space.find(IP4Addr{"100.0.4.16"}));
+  CHECK(nullptr != space.find(IPAddr{"100.0.4.16"}));
+  CHECK(nullptr != space.find(IPAddr{IPEndpoint{"100.0.4.16:80"}}));
 }
 
 TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
   using PAYLOAD = std::bitset<32>;
   using Space = swoc::IPSpace<PAYLOAD>;
-
-  auto dump = [](Space&space) -> void {
-    swoc::LocalBufferWriter<1024> w;
-    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
-    for (auto &&[r, payload] : space) {
-      w.clear().print("{}-{} :", r.min(), r.max());
-      std::cout << w << payload << std::endl;
-    }
-  };
-  auto reverse_dump = [](Space&space) -> void {
-    swoc::LocalBufferWriter<1024> w;
-    std::cout << "Dumping " << space.count() << " ranges" << std::endl;
-    for (auto spot = space.end(); spot != space.begin();) {
-      auto &&[r, payload]{*--spot};
-      w.clear().print("{} :", r);
-      std::cout << w << payload << std::endl;
-    }
-  };
 
   std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 6> ranges = {
       {
@@ -393,8 +388,6 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
     space.mark(IPRange{text}, bits);
   }
   REQUIRE(space.count() == ranges.size());
-  dump(space);
-  reverse_dump(space);
 }
 
 TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {

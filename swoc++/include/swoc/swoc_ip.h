@@ -956,11 +956,13 @@ public:
     value_type const* operator->() const;
 
   protected:
-    using super_type::super_type;
+    using super_type::super_type; /// Inherit supertype constructors.
   };
 
-  const_iterator begin() const { return const_iterator(_ip4.begin(), _ip6.begin()); }
-  const_iterator end() const { return const_iterator(_ip4.end(), _ip6.end()); }
+  /// @return A constant iterator to the first element.
+  const_iterator begin() const;
+  /// @return A constent iterator past the last element.
+  const_iterator end() const;
 
   iterator begin() { return iterator{_ip4.begin(), _ip6.begin()}; }
   iterator end() { return iterator{_ip4.end(), _ip6.end()}; }
@@ -1187,23 +1189,23 @@ IPAddr::assign(in6_addr const &addr) {
 
 inline IPAddr &
 IPAddr::assign(sockaddr_in const *addr) {
-  if (addr)
-  {
+  if (addr) {
     _family    = AF_INET;
-    _addr._ip4 = addr->sin_addr.s_addr;
-  } else
-  { _family = AF_UNSPEC; }
+    _addr._ip4 = addr;
+  } else {
+    _family = AF_UNSPEC;
+  }
   return *this;
 }
 
 inline IPAddr &
 IPAddr::assign(sockaddr_in6 const *addr) {
-  if (addr)
-  {
+  if (addr) {
     _family    = AF_INET6;
     _addr._ip6 = addr->sin6_addr;
-  } else
-  { _family = AF_UNSPEC; }
+  } else {
+    _family = AF_UNSPEC;
+  }
   return *this;
 }
 
@@ -1675,6 +1677,18 @@ template<typename PAYLOAD>
 void IPSpace<PAYLOAD>::clear() {
   _ip4.clear();
   _ip6.clear();
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin() const -> const_iterator {
+  auto nc_this = const_cast<self_type*>(this);
+  return const_iterator(nc_this->_ip4.begin(), nc_this->_ip6.begin());
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end() const -> const_iterator {
+  auto nc_this = const_cast<self_type*>(this);
+  return const_iterator(nc_this->_ip4.end(), nc_this->_ip6.end());
 }
 
 
