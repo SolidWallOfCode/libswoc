@@ -12,6 +12,8 @@ sed -i swoc++/include/swoc/swoc_version.h --expr "s/\(POINT_VERSION *= *\).*\$/\
 
 sed -i doc/conf.py --expr "s/release = .*\$/release = \"$1.$2.$3\"/"
 sed -i doc/Doxyfile --expr "s/\(PROJECT_NUMBER *= *\).*\$/\\1\"$1.$2.$3\"/"
+find doc -name "*.en.rst" -exec sed -i {} --expr "s!/libswoc/blob/[0-9.]*/unit_tests/!/libswoc/blob/$1.$2.$3/unit_tests/!" \;
 
 sed -i swoc++/CMakeLists.txt --expr "s/\(LIBSWOC_VERSION *\)\"[^\"]*\"/\\1\"$1.$2.$3\"/"
 sed -i swoc++/swoc++.part --expr "s/PartVersion(\"[0-9.]*\")/PartVersion(\"$1.$2.$3\")/"
+

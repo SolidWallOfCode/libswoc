@@ -17,12 +17,20 @@ Synopsis
 Usage
 *****
 
-.. class:: IPEndpoint
-
-   :libswoc:`Reference documentation <swoc::IPEndpoint>`.
+:libswoc:`Reference documentation <swoc::IPEndpoint>`.
 
 This library is for storing and manipulating IP addresses as data. It has no support for actual
 network operations.
+
+IPEndpoint
+==========
+
+:libswoc:`swoc::IPEndpoint` is a wrapper around :code:`sockaddr` and provides a number of utilities.
+It enables constructing an instance from the string representation of an address, supporting IPv4
+and IPv6. It will also parse and store the port if that is part of the string. Some of the internal
+logic is exposed via :libswoc:`swoc::IPEndpoint::tokenize` which finds and returns the elements of
+an address string, the host (address), port, and any trailing remnants. This is useful for doing
+syntax checks or more specialized processing of the address string.
 
 IPAddr
 ======
@@ -40,6 +48,9 @@ there is no indication of failure other than the instance initializing to the ze
 address. This can be reasonable in situations where those addresses are not valid either. However
 in general the :libswoc:`swoc::IPAddr::load` method should be used, which both initializes the
 instance and provides an indication of whether the input was valid.
+
+Conversions to and from :code:`sockaddr` are provided. This is handier with :code:`IPAddr` as it
+will conform to the family of the address in the :code:`sockaddr`.
 
 IPRange
 =======
@@ -150,6 +161,23 @@ There is a small implementation wrinkle, however, in dealing with unmapped addre
 :arg:`color` is not necessarily a :code:`PAYLOAD` and therefore must be converted in to one. This
 is done by default constructing a :code:`PAYLOAD` instance and then calling :code:`blend` on that
 and the :arg:`color`. If this returns :code:`false` then unmapped addresses will remain unmapped.
+
+Examples
+********
+
+Blending Bitsets
+================
+
+As an example of blending, consider a mapping of IP addresses to a bit set, each representing some
+independent property of the address (e.g., production, externally accessible, secure, etc.). It
+might be the case that each of these was in a separate data source. In that case one approach
+would be to blend each data source into the IPSpace, combining the bits in the blending functor.
+The declarations could be
+
+.. literalinclude:: ../../unit_tests/ex_ipspace_properties.cc
+   :start-after: "IPSpace bitset blending"
+   :lines: 1-4
+   :emphasize-lines: 2,4
 
 History
 *******

@@ -275,7 +275,7 @@ separated by commas.
 
 .. sidebar:: Verification
 
-   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/master/src/unit_tests/ex_TextView.cc#L66>`__.
+   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/1.0.13/unit_tests/ex_TextView.cc#L67>`__.
 
 If :arg:`value` was :literal:`bob  ,dave, sam` then :arg:`token` would be successively
 :literal:`bob`, :literal:`dave`, :literal:`sam`. After :literal:`sam` was extracted :arg:`value`
@@ -297,7 +297,7 @@ for values that are boolean.
 
 .. sidebar:: Verification
 
-   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/master/src/unit_tests/ex_TextView.cc#L73>`__.
+   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/1.0.13/unit_tests/ex_TextView.cc#L74>`__.
 
 The basic list processing is the same as the previous example, with each element being treated as
 a "list" with ``=`` as the separator. Note if there is no ``=`` character then all of the list
@@ -343,11 +343,12 @@ reference in order to be updated by the tokenizer. Further, some callers want th
 do not, so a flag to strip quotes from the resulting elements is needed. The final result looks like
 
 .. literalinclude:: ../../unit_tests/ex_TextView.cc
-   :lines: 91-123
+   :start-after: "TextView Tokens"
+   :lines: 2-26
 
 .. sidebar:: Verification
 
-   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/master/src/unit_tests/ex_TextView.cc#L125>`__.
+   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/1.0.13/unit_tests/ex_TextView.cc#L90>`__.
 
 This takes a :code:`TextView&` which is the source view which will be updated as tokens are removed
 (therefore the caller must do the empty view check). The other arguments are the separator character
