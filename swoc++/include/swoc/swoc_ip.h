@@ -42,7 +42,7 @@ union IPEndpoint {
 
   /// Default construct invalid instance.
   IPEndpoint();
-  /// Construct from string representation of an address.
+  /// Construct from the @a text representation of an address.
   IPEndpoint(string_view const &text);
   // Construct from @a IPAddr
   IPEndpoint(IPAddr const &addr);

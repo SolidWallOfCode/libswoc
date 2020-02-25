@@ -50,5 +50,6 @@ ext/local-config.py : Makefile
 doxygen:
 	doxygen
 
-reference:
-	@if [ ! -r _build/html/reference ] ; then mkdir -p _build/html; ln -s ../../doxygen/html _build/html/reference ; fi
+reference: doxygen
+	@if [ ! -d _build/html ] ; then mkdir -p _build/html ; fi
+	@if [ ! -d _build/html/reference ] ; then ln -s ../../doxygen/html _build/html/reference ; fi
