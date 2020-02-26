@@ -50,58 +50,103 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   using PAYLOAD = std::bitset<32>;
   // Declare the IPSpace.
   using Space = swoc::IPSpace<PAYLOAD>;
+  // Example data type.
+  using Data = std::tuple<TextView, std::initializer_list<unsigned>>;
 
   // Dump the ranges to stdout.
   auto dump = [](Space&space) -> void {
     if (Verbose_p) {
       std::cout << W().print("{} ranges\n", space.count());
       for (auto &&[r, payload] : space) {
-        std::cout << W().print("{:12}-{:12} : {}\n", r.min(), r.max(), payload);
+        std::cout << W().print("{:25} : {}\n", r, payload);
       }
     }
   };
 
-  // Blend functor which computes a union of the bitsets.
-  auto blender = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
-    lhs |= rhs;
-    return lhs != 0;
+  // Convert a list of bit indices into a bitset.
+  auto make_bits = [](std::initializer_list<unsigned> idx) -> PAYLOAD {
+    PAYLOAD bits;
+    for (auto bit : idx) {
+      bits[bit] = true;
+    }
+    return bits;
   };
 
-  // test ranges.
-  std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 9> ranges = {
-      {
-          { "100.0.0.0-100.0.0.255", { 0 } }
-          , { "100.0.1.0-100.0.1.255", { 1 } }
-          , { "100.0.2.0-100.0.2.255", { 2 } }
-          , { "100.0.3.0-100.0.3.255", { 3 } }
-          , { "100.0.4.0-100.0.4.255", { 4 } }
-          , { "100.0.5.0-100.0.5.255", { 5 } }
-          , { "100.0.6.0-100.0.6.255", { 6 } }
-          , { "100.0.0.0-100.0.0.255", { 31 } }
-          , { "100.0.1.0-100.0.1.255", { 30 } }
-      }};
+  // Bitset blend functor which computes a union of the bitsets.
+  auto blender = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
+    lhs |= rhs;
+    return true;
+  };
+
+  // Example marking functor.
+  auto marker = [&](Space & space, swoc::MemSpan<Data> ranges) -> void {
+    // For each test range, compute the bitset from the list of bit indices.
+    for (auto &&[text, bit_list] : ranges) {
+      space.blend(IPRange{text}, make_bits(bit_list), blender);
+    }
+  };
 
   // The IPSpace instance.
   Space space;
 
-  // For each test range, compute the bitset from the list of bit indices.
-  for (auto &&[text, bit_list] : ranges) {
-    PAYLOAD bits; // zero bitset.
-    for (auto bit : bit_list) {
-      bits[bit] = true;
-    }
-    space.blend(IPRange{text}, bits, blender);
-  }
+  // test ranges 1
+  std::array<Data, 7> ranges_1 = {{
+        { "100.0.0.0-100.0.0.255", { 0 } }
+      , { "100.0.1.0-100.0.1.255", { 1 } }
+      , { "100.0.2.0-100.0.2.255", { 2 } }
+      , { "100.0.3.0-100.0.3.255", { 3 } }
+      , { "100.0.4.0-100.0.4.255", { 4 } }
+      , { "100.0.5.0-100.0.5.255", { 5 } }
+      , { "100.0.6.0-100.0.6.255", { 6 } }
+  }};
 
+  marker(space, MemSpan<Data>{ranges_1.data(), ranges_1.size()});
   dump(space);
 
+  // test ranges 2
+  std::array<Data, 3> ranges_2 = {{
+      { "100.0.0.0-100.0.0.255", { 31 } }
+    , { "100.0.1.0-100.0.1.255", { 30 } }
+    , { "100.0.2.128-100.0.3.127", { 29 }}
+  }};
+
+  marker(space, MemSpan<Data>{ranges_2.data(), ranges_2.size()});
+  dump(space);
+
+  // test ranges 3
+  std::array<Data, 1> ranges_3 = {{
+      { "100.0.2.0-100.0.4.255", { 2, 3, 29 }}
+  }};
+
+  marker(space, MemSpan<Data>{ranges_3.data(), ranges_3.size()});
+  dump(space);
+
+  // reset blend functor
   auto resetter = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
     auto mask = rhs;
     lhs &= mask.flip();
     return lhs != 0;
   };
-  space.blend(IPRange{"100.0.2.128-100.0.3.127"}, PAYLOAD{"1111"}, resetter);
+
+  // erase bits
+  space.blend(IPRange{"0.0.0.0-255.255.255.255"}, make_bits({2,3,29}), resetter);
   dump(space);
+
+  // ragged boundaries
+  space.blend(IPRange{"100.0.2.19-100.0.5.117"}, make_bits({16,18,20}), blender);
+  dump(space);
+
+  // bit list blend functor which computes a union of the bitsets.
+  auto bit_blender = [](PAYLOAD& lhs, std::initializer_list<unsigned> const& rhs) -> bool {
+    for ( auto idx : rhs )
+      lhs[idx] = true;
+    return true;
+  };
+
+  std::initializer_list<unsigned> bit_list = { 10,11 };
+  space.blend(IPRange{"0.0.0.1-255.255.255.254"}, bit_list, bit_blender);
+  dump(space);
+
 }
 
 // ---
