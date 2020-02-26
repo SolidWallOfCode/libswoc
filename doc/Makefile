@@ -42,6 +42,7 @@ clean:
 	-rm -rf doxygen
 
 publish: clean doxygen html
+	( cd _build/html ; tar cfh /tmp/libswoc-doc.tar * )
 
 ext/local-config.py : Makefile
 	@echo "plantuml = '$(JAVA) -jar $(PLANTUML_JAR)'" > ext/local-config.py
@@ -53,3 +54,4 @@ doxygen:
 reference: doxygen
 	@if [ ! -d _build/html ] ; then mkdir -p _build/html ; fi
 	@if [ ! -d _build/html/reference ] ; then ln -s ../../doxygen/html _build/html/reference ; fi
+
