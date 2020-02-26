@@ -21,7 +21,7 @@ env.AppendUnique(
 )
 
 # build the library
-out = env.Library("libswoc++",files)
+out = env.StaticLibrary("libswoc++",files)
 env.InstallLib(out)
 # export the include directory
 env.InstallInclude(
