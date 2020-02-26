@@ -773,7 +773,8 @@ public:
    *
    * Every address in @a range is assigned a payload. If the address does not already have a color,
    * it is assigned the default constructed @c PAYLOAD blended with @a color. If the address has a
-   * color of A it is updated by invoking @a blender on the existing payload and @a color.
+   * @c PAYLOAD @a p, @a p is updated by invoking <tt>blender(p, color)</tt>, with the expectation
+   * that @a p will be updated in place.
    */
   template < typename F , typename U = PAYLOAD >
   self_type & blend(IPRange const& range, U const& color, F && blender);

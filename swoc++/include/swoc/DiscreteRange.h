@@ -1306,7 +1306,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
         if (pred && pred->payload() == plain_color) {
           pred->assign_max(n_min_minus_1);
         } else {
-          this->insert_before(n, _fa.make(range.min(), n_min_minus_1, plain_color));
+          this->insert_before(n, _fa.make(remaining.min(), n_min_minus_1, plain_color));
         }
       }
     }
