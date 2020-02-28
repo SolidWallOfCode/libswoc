@@ -27,5 +27,5 @@ env.InstallInclude(
     Pattern(src_dir="include/",includes=["*.h"]),
     )
 
-env.Part("swoc++-static.part", package_group="libswoc", "src_files"=src_files)
-env.Part("swoc++-shared.part", package_group="libswoc" "src_files"=src_files)
+env.Part("swoc++-static.part", package_group="libswoc", src_files=src_files)
+env.Part("swoc++-shared.part", package_group="libswoc" src_files=src_files)
