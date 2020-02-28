@@ -19,9 +19,6 @@ env.AppendUnique(
     CPPPATH=["include"],
 )
 
-# build the library
-out = env.SharedLibrary("libswoc++",files)
-env.InstallLib(out)
 # export the include directory
 env.InstallInclude(
     Pattern(src_dir="include/",includes=["*.h"]),
