@@ -2,7 +2,7 @@ Import("*")
 PartName("libswoc")
 PartVersion("1.0.14")
 
-files = [
+src_files = [
     "src/ArenaWriter.cc",
     "src/bw_format.cc",
     "src/bw_ip_format.cc",
@@ -20,15 +20,12 @@ env.AppendUnique(
 )
 
 # build the library
-out = env.Library("libswoc++",files)
+out = env.SharedLibrary("libswoc++",files)
 env.InstallLib(out)
 # export the include directory
 env.InstallInclude(
     Pattern(src_dir="include/",includes=["*.h"]),
     )
-pc_file = env.Substfile("libswoc++.pc", "libswoc++.pc.in"
-    , SUBST_DICT = {
-        "pkg_prefix": env.Dir("$INSTALL_ROOT").abspath
-      , "pkg_version": "$PART_VERSION"
-    })
-env.InstallPkgConfig(pc_file)
+
+env.Part("swoc++-static.part", package_group="libswoc", "src_files"=src_files)
+env.Part("swoc++-shared.part", package_group="libswoc" "src_files"=src_files)
