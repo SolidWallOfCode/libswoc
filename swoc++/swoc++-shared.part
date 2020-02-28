@@ -11,7 +11,6 @@ env.AppendUnique(
 # build the library
 out = env.SharedLibrary("libswoc++", src_files)
 env.InstallLib(out)
-env.InstallInclude(env.get("inc_files"))
 
 # Export the package config.
 pc_file = env.Substfile("libswoc++.pc", "libswoc++.pc.in"

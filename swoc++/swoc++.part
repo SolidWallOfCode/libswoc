@@ -16,6 +16,8 @@ src_files = [
 
 # export the include directory
 inc_files = Pattern(src_dir="include/swoc", includes=["*.h"])
+#env.InstallInclude(env.get("inc_files"))
+env.InstallInclude(inc_files)
 
 env.AppendUnique(
     CCFLAGS=['-std=c++17' ],
