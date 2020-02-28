@@ -14,15 +14,13 @@ src_files = [
     "src/TextView.cc",
 ]
 
+# export the include directory
+inc_files = Pattern(src_dir="include/swoc", includes=["*.h"])
+
 env.AppendUnique(
     CCFLAGS=['-std=c++17' ],
     CPPPATH=["include"],
 )
 
-# export the include directory
-env.InstallInclude(
-    Pattern(src_dir="include/",includes=["*.h"]),
-    )
-
-env.Part("swoc++-static.part", package_group="libswoc", src_files=src_files)
-env.Part("swoc++-shared.part", package_group="libswoc", src_files=src_files)
+env.Part("swoc++-static.part", package_group="libswoc", src_files=src_files, inc_files=inc_files)
+env.Part("swoc++-shared.part", package_group="libswoc", src_files=src_files, inc_files=inc_files)

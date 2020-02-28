@@ -3,7 +3,7 @@ Import("*")
 PartName("tests")
 
 DependsOn([
-    Component("libswoc",requires=REQ.DEFAULT(internal=False))
+    Component("libswoc.static", requires=REQ.DEFAULT(internal=False))
     ])
 
 env.AppendUnique(

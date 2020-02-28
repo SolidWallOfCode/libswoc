@@ -1,17 +1,17 @@
 Import("*")
 PartName("shared")
-PartVersion("1.0.14")
 
 src_files = env.get("src_files")
 
 env.AppendUnique(
     CCFLAGS=['-std=c++17' ],
-    CPPPATH=["include"],
+    CPPPATH=['include'],
 )
 
 # build the library
 out = env.SharedLibrary("libswoc++", src_files)
 env.InstallLib(out)
+env.InstallInclude(env.get("inc_files"))
 
 # Export the package config.
 pc_file = env.Substfile("libswoc++.pc", "libswoc++.pc.in"
