@@ -1,9 +1,8 @@
-import os
 Import("*")
 PartName("libswoc")
-PartVersion("1.0.13")
+PartVersion("1.0.14")
 
-files = [
+src_files = [
     "src/ArenaWriter.cc",
     "src/bw_format.cc",
     "src/bw_ip_format.cc",
@@ -15,21 +14,15 @@ files = [
     "src/TextView.cc",
 ]
 
+# export the include directory
+inc_files = Pattern(src_dir="include/swoc", includes=["*.h"])
+#env.InstallInclude(env.get("inc_files"))
+env.InstallInclude(inc_files)
+
 env.AppendUnique(
     CCFLAGS=['-std=c++17' ],
     CPPPATH=["include"],
 )
 
-# build the library
-out = env.Library("libswoc++",files)
-env.InstallLib(out)
-# export the include directory
-env.InstallInclude(
-    Pattern(src_dir="include/",includes=["*.h"]),
-    )
-pc_file = env.Substfile("libswoc++.pc", "libswoc++.pc.in"
-    , SUBST_DICT = {
-        "pkg_prefix": env.Dir("$INSTALL_ROOT").abspath
-      , "pkg_version": "$PART_VERSION"
-    })
-env.InstallPkgConfig(pc_file)
+env.Part("swoc++-static.part", package_group="libswoc", src_files=src_files, inc_files=inc_files)
+env.Part("swoc++-shared.part", package_group="libswoc", src_files=src_files, inc_files=inc_files)
