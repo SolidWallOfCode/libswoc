@@ -618,6 +618,48 @@ IP6Addr IPMask::as_ip6() const {
   return { MASK, MASK };
 }
 
+// ++ IPNet ++
+
+bool IP4Net::load(TextView text) {
+  auto idx = text.find('/');
+  if (idx != text.npos) {
+    if (idx + 1 < text.size()) { // must have something past the separator or it's bogus.
+      IP4Addr addr;
+      if (addr.load(text.substr(0, idx))) { // load the address
+        IPMask mask;
+        text.remove_prefix(idx + 1); // drop address and separator.
+        if (mask.load(text)) {
+          this->assign(addr, mask);
+          return true;
+        }
+      }
+    }
+  }
+
+  this->clear();
+  return false;
+}
+
+bool IP6Net::load(TextView text) {
+  auto idx = text.find('/');
+  if (idx != text.npos) {
+    if (idx + 1 < text.size()) { // must have something past the separator or it's bogus.
+      IP6Addr addr;
+      if (addr.load(text.substr(0, idx))) { // load the address
+        IPMask mask;
+        text.remove_prefix(idx + 1); // drop address and separator.
+        if (mask.load(text)) {
+          this->assign(addr, mask);
+          return true;
+        }
+      }
+    }
+  }
+
+  this->clear();
+  return false;
+}
+
 // +++ IP4Range +++
 
 IP4Range::IP4Range(swoc::IP4Addr const&addr, swoc::IPMask const&mask) {
