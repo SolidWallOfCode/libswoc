@@ -190,6 +190,7 @@ IPEndpoint::parse(std::string_view const&str) {
   return false;
 }
 
+#if 0
 sockaddr *
 IPAddr::fill(sockaddr *sa, in_port_t port) const {
   switch (sa->sa_family = _family) {
@@ -211,6 +212,7 @@ IPAddr::fill(sockaddr *sa, in_port_t port) const {
   }
   return sa;
 }
+#endif
 
 socklen_t
 IPEndpoint::size() const {
@@ -302,6 +304,46 @@ sockaddr_in *IP4Addr::fill(sockaddr_in *sa, in_port_t port) const {
   return sa;
 }
 
+IP6Addr& IP6Addr::operator<<=(unsigned int n) {
+  static constexpr auto MASK = ~word_type{0};
+  if (n < WORD_WIDTH) {
+    _addr._store[MSW] <<= n;
+    _addr._store[MSW] |= (_addr._store[LSW] >> (WORD_WIDTH - n)) & ~(MASK << n);
+    _addr._store[LSW] <<= n;
+  } else {
+    n -= WORD_WIDTH;
+    _addr._store[MSW] = _addr._store[LSW] << n;
+    _addr._store[LSW] = 0;
+  }
+  return *this;
+}
+
+IP6Addr& IP6Addr::operator>>=(unsigned int n) {
+  static constexpr auto MASK = ~word_type{0};
+  if (n < WORD_WIDTH) {
+    _addr._store[LSW] >>= n;
+    _addr._store[LSW] |= (_addr._store[MSW] & ~(MASK << n)) << (WORD_WIDTH - n);
+    _addr._store[MSW] >>= n;
+  } else {
+    n -= WORD_WIDTH;
+    _addr._store[LSW] = _addr._store[MSW] >> n;
+    _addr._store[MSW] = 0;
+  }
+  return *this;
+}
+
+IP6Addr& IP6Addr::operator&=(self_type const& that) {
+  _addr._store[MSW] &= that._addr._store[MSW];
+  _addr._store[LSW] &= that._addr._store[LSW];
+  return *this;
+}
+
+IP6Addr& IP6Addr::operator|=(self_type const& that) {
+  _addr._store[MSW] |= that._addr._store[MSW];
+  _addr._store[LSW] |= that._addr._store[LSW];
+  return *this;
+}
+
 bool
 IP6Addr::load(std::string_view const&str) {
   TextView src{str};
@@ -329,8 +371,8 @@ IP6Addr::load(std::string_view const&str) {
         this->clear();
         return true;
       } else if (src.size() == 3 && src[2] == '1') {
-        _addr._u64[0] = 0;
-        _addr._u64[1] = 1;
+        _addr._store[0] = 0;
+        _addr._store[1] = 1;
         return true;
       } else {
         empty_idx = n;
@@ -512,13 +554,71 @@ IPEndpoint::IPEndpoint(std::string_view const&text) {
 
 bool IPMask::load(string_view const&text) {
   TextView parsed;
-  _mask = swoc::svtou(text, &parsed);
+  _cidr = swoc::svtou(text, &parsed);
   if (parsed.size() != text.size()) {
-    _mask = 0;
+    _cidr = 0;
     return false;
   }
   return true;
 }
+
+IPMask IPMask::mask_for(IPAddr const&addr) {
+  if (addr.is_ip4()) {
+    return self_type::mask_for(static_cast<IP4Addr const&>(addr));
+  } else if (addr.is_ip6()) {
+    return self_type::mask_for(static_cast<IP6Addr const&>(addr));
+  }
+  return {};
+}
+
+auto IPMask::mask_for_quad(IP6Addr::quad_type q) -> raw_type {
+  raw_type cidr = IP6Addr::QUAD_WIDTH;
+  if (q != 0) {
+    auto mask = IP6Addr::QUAD_MASK;
+    do {
+      mask <<= 1;
+      --cidr;
+    } while ((q | ~mask) == q);
+    ++cidr; // loop goes exactly 1 too far.
+  }
+  return cidr;
+}
+
+IPMask IPMask::mask_for(IP4Addr const& addr) {
+  auto n = addr.host_order();
+  raw_type cidr = 0;
+  if (auto q = (n & IP6Addr::QUAD_MASK) ; q != 0) {
+    cidr = IP6Addr::QUAD_WIDTH + self_type::mask_for_quad(q);
+  } else if (auto q = ((n >> IP6Addr::QUAD_WIDTH) & IP6Addr::QUAD_MASK) ; q != 0) {
+    cidr = self_type::mask_for_quad(q);
+  }
+  return self_type(cidr);
+}
+
+IPMask IPMask::mask_for(IP6Addr const& addr) {
+  auto cidr = IP6Addr::WIDTH;
+  for ( unsigned idx = IP6Addr::N_QUADS ; idx > 0 ; ) {
+    auto q = addr._addr._quad[IP6Addr::QUAD_IDX[--idx]];
+    cidr -= IP6Addr::QUAD_WIDTH;
+    if (q != 0) {
+      cidr += self_type::mask_for_quad(q);
+      break;
+    }
+  }
+  return self_type(cidr);
+}
+
+IP6Addr IPMask::as_ip6() const {
+  static constexpr auto MASK = ~IP6Addr::word_type{0};
+  if (_cidr <= IP6Addr::WORD_WIDTH) {
+    return { MASK << (IP6Addr::WORD_WIDTH - _cidr), 0};
+  } else if (_cidr < 2 * IP6Addr::WORD_WIDTH) {
+    return {MASK, MASK << (2 * IP6Addr::WORD_WIDTH - _cidr)};
+  }
+  return { MASK, MASK };
+}
+
+// +++ IP4Range +++
 
 IP4Range::IP4Range(swoc::IP4Addr const&addr, swoc::IPMask const&mask) {
   this->assign(addr, mask);
@@ -568,6 +668,50 @@ bool IP4Range::load(string_view text) {
   return false;
 }
 
+IP4Range::NetSource::NetSource(IP4Range::NetSource::range_type const&range) : _range(range) {
+  if (!_range.empty()) {
+    this->search_wider();
+  }
+}
+
+auto IP4Range::NetSource::operator++() -> self_type & {
+  auto upper (IP4Addr{_range._min._addr | ~_mask._addr} );
+  if (upper >= _range.max()) {
+    _range.clear();
+  } else {
+    _range.assign_min(++upper);
+    // @a _range is not empty, because there's at least one address still not covered.
+    if (this->is_valid(_mask)) {
+      this->search_wider();
+    } else {
+      this->search_narrower();
+    }
+  }
+  return *this;
+}
+
+void IP4Range::NetSource::search_wider() {
+  while (_cidr > 0) {
+    auto m = _mask;
+    m <<= 1;
+    if (this->is_valid(m)) {
+      _mask = m;
+      --_cidr;
+    } else {
+      break;
+    }
+  }
+}
+
+void IP4Range::NetSource::search_narrower() {
+  while (! this->is_valid(_mask)) {
+    _mask._addr = (_mask._addr >>= 1) | (1<<(IP4Addr::WIDTH-1));
+    ++_cidr;
+  }
+}
+
+// +++ IP6Range +++
+
 IP6Range&IP6Range::assign(IP6Addr const&addr, IPMask const&mask) {
   static constexpr auto FULL_MASK{std::numeric_limits<uint64_t>::max()};
   auto cidr = mask.width();
@@ -576,20 +720,20 @@ IP6Range&IP6Range::assign(IP6Addr const&addr, IPMask const&mask) {
     _max = metric_type::MAX;
   } else if (cidr < 64) { // only upper bytes affected, lower bytes are forced.
     auto bits = FULL_MASK << (64 - cidr);
-    _min._addr._u64[0] = addr._addr._u64[0] & bits;
-    _min._addr._u64[1] = 0;
-    _max._addr._u64[0] = addr._addr._u64[0] | ~bits;
-    _max._addr._u64[1] = FULL_MASK;
+    _min._addr._store[0] = addr._addr._store[0] & bits;
+    _min._addr._store[1] = 0;
+    _max._addr._store[0] = addr._addr._store[0] | ~bits;
+    _max._addr._store[1] = FULL_MASK;
   } else if (cidr == 64) {
-    _min._addr._u64[0] = _max._addr._u64[0] = addr._addr._u64[0];
-    _min._addr._u64[1] = 0;
-    _max._addr._u64[1] = FULL_MASK;
+    _min._addr._store[0] = _max._addr._store[0] = addr._addr._store[0];
+    _min._addr._store[1] = 0;
+    _max._addr._store[1] = FULL_MASK;
   } else if (cidr <= 128) { // _min bytes changed, _max bytes unaffected.
     _min = _max = addr;
     if (cidr < 128) {
       auto bits = FULL_MASK << (128 - cidr);
-      _min._addr._u64[1] &= bits;
-      _max._addr._u64[1] |= ~bits;
+      _min._addr._store[1] &= bits;
+      _max._addr._store[1] |= ~bits;
     }
   }
   return *this;
@@ -666,6 +810,46 @@ bool IPRange::empty() const {
     default: break;
   }
   return true;
+}
+
+IP6Range::NetSource::NetSource(IP6Range::NetSource::range_type const&range) : _range(range) {
+  if (!_range.empty()) {
+    this->search_wider();
+  }
+}
+
+auto IP6Range::NetSource::operator++() -> self_type & {
+  auto upper = _range.min() | _mask;
+  if (upper >= _range.max()) {
+    _range.clear();
+  } else {
+    _range.assign_min(++upper);
+    // @a _range is not empty, because there's at least one address still not covered.
+    if (this->is_valid(_mask)) {
+      this->search_wider();
+    } else {
+      this->search_narrower();
+    }
+  }
+  return *this;
+}
+
+void IP6Range::NetSource::search_wider() {
+  while (_mask.width() > 0) {
+    auto m = _mask;
+    m <<= 1;
+    if (this->is_valid(m)) {
+      _mask = m;
+    } else {
+      break;
+    }
+  }
+}
+
+void IP6Range::NetSource::search_narrower() {
+  while (! this->is_valid(_mask)) {
+    _mask >>= 1;
+  }
 }
 
 } // namespace swoc

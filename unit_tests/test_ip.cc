@@ -269,6 +269,33 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(w.view() == "   0:   0:   0:   0:   0:   0:   0:   1");
 }
 
+TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
+  swoc::IP4Range r_0;
+  swoc::IP4Range r_1{"1.1.1.0-1.1.1.9"};
+  swoc::IP4Range r_2{"1.1.2.0-1.1.2.97"};
+  swoc::IP4Range r_3{"1.1.0.0-1.2.0.0"};
+  swoc::IP4Range r_4{"10.33.45.19-10.33.45.76"};
+  swoc::IP6Range r_5{"2001:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv};
+
+  CHECK(true == r_0.empty());
+  CHECK(false == r_1.empty());
+
+  swoc::IPMask mask{127};
+  CHECK(r_5.min() == (r_5.min() | swoc::IPMask(128)));
+  CHECK(r_5.min() == (r_5.min() | mask));
+  CHECK(r_5.min() != (r_5.min() & mask));
+
+  swoc::IP6Addr a_1{"2001:1f2d:c587:24c4::"};
+  CHECK(a_1 == (a_1 & swoc::IPMask{62}));
+
+  for ( auto const& [ addr, mask ] : r_4.networks()) {
+    std::cout << W().print("{}/{}\n", addr, mask.width());
+  }
+  for ( auto const& [ addr, mask ] : r_5.networks()) {
+    std::cout << W().print("{}/{}\n", addr, mask.width());
+  }
+}
+
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   using int_space = swoc::IPSpace<unsigned>;
   int_space space;

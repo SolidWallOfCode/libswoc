@@ -905,31 +905,31 @@ namespace swoc
 template <size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type &
 get(swoc::Rv<R> &&rv) {
-  if constexpr (IDX == 0)
-  {
+  if constexpr (IDX == 0) {
     return rv.result();
-  } else if constexpr (IDX == 1)
-  { return rv.errata(); }
+  } else if constexpr (IDX == 1) {
+    return rv.errata();
+  }
 }
 
 template <size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type &
 get(swoc::Rv<R> &rv) {
-  if constexpr (IDX == 0)
-  {
+  if constexpr (IDX == 0) {
     return rv.result();
-  } else if constexpr (IDX == 1)
-  { return rv.errata(); }
+  } else if constexpr (IDX == 1) {
+    return rv.errata();
+  }
 }
 
 template <size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type const &
 get(swoc::Rv<R> const &rv) {
-  if constexpr (IDX == 0)
-  {
+  if constexpr (IDX == 0) {
     return rv.result();
-  } else if constexpr (IDX == 1)
-  { return rv.errata(); }
+  } else if constexpr (IDX == 1) {
+    return rv.errata();
+  }
 }
 
 } // namespace swoc
