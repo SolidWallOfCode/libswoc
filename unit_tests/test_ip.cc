@@ -13,6 +13,7 @@
 #include <swoc/TextView.h>
 #include <swoc/swoc_ip.h>
 #include <swoc/bwf_ip.h>
+#include <swoc/bwf_std.h>
 #include <swoc/swoc_file.h>
 
 using namespace std::literals;
@@ -643,17 +644,17 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
     return bits;
   };
 
-  std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 9> ranges = {
+  std::array<std::tuple<TextView, PAYLOAD>, 9> ranges = {
       {
-          {"100.0.0.0-100.0.0.255", {0}}
-          , {"100.0.1.0-100.0.1.255", {1}}
-          , {"100.0.2.0-100.0.2.255", {2}}
-          , {"100.0.3.0-100.0.3.255", {3}}
-          , {"100.0.4.0-100.0.4.255", {4}}
-          , {"100.0.5.0-100.0.5.255", {5}}
-          , {"100.0.6.0-100.0.6.255", {6}}
-          , {"100.0.0.0-100.0.0.255", {31}}
-          , {"100.0.1.0-100.0.1.255", {30}}
+          {"100.0.0.0-100.0.0.255", make_bits({0})}
+          , {"100.0.1.0-100.0.1.255", make_bits({1})}
+          , {"100.0.2.0-100.0.2.255", make_bits({2})}
+          , {"100.0.3.0-100.0.3.255", make_bits({3})}
+          , {"100.0.4.0-100.0.4.255", make_bits({4})}
+          , {"100.0.5.0-100.0.5.255", make_bits({5})}
+          , {"100.0.6.0-100.0.6.255", make_bits({6})}
+          , {"100.0.0.0-100.0.0.255", make_bits({31})}
+          , {"100.0.1.0-100.0.1.255", make_bits({30})}
       }};
 
   std::array<std::initializer_list<unsigned>, 7> results = {{
@@ -668,8 +669,9 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
 
   Space space;
 
-  for (auto &&[text, bit_list] : ranges) {
-    space.blend(IPRange{text}, make_bits(bit_list), blender);
+  for (auto && [text, bit_list] : ranges) {
+    std::cout << W().print("{} = {}\n", text, bit_list);
+    space.blend(IPRange{text}, bit_list, blender);
   }
 
   // Check iteration - verify forward and reverse iteration yield the correct number of ranges

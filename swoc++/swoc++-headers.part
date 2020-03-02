@@ -2,5 +2,5 @@ Import("*")
 PartName("headers")
 
 # export the include directory
-inc_files = Pattern(src_dir="include/swoc", includes=["*.h"])
+inc_files = Pattern(src_dir="include", includes=["swoc/*.h"])
 env.InstallInclude(inc_files)
