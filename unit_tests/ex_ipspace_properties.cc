@@ -348,7 +348,8 @@ TextView Table::localize(TextView const&src) {
 TextView Table::token(TextView & line) {
   TextView::size_type idx = 0;
   // Characters of interest.
-  TextView sep_list { {'"', SEP} , 2 };
+  static char constexpr separators[2] = { '"', SEP };
+  static TextView sep_list { separators, 2 };
   bool in_quote_p  = false;
   while (idx < line.size()) {
     // Next character of interest.

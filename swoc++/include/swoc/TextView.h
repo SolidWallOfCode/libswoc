@@ -174,11 +174,25 @@ public:
   /// Assign from a @c std::string.
   self_type &operator=(const std::string &s);
 
+  /** Assign a view of the @a c_str
+   *
+   * @param c_str Pointer to C string.
+   * @return @a this
+   *
+   * @note @c c_str must be a null terminated string. The null byte is not included in the view.
+   */
+  self_type& assign(char const* c_str);;
+
   /// Explicitly set the start @a ptr and size @a n of the view.
   self_type &assign(char const *ptr, size_t n);
 
-  /// Explicitly set the view to the half open range [ @a first , @a last )
-  self_type &assign(char const *first, char const *lsat);
+  /** Assign the half open view [ @a b , @a e ) to @a this
+   *
+   * @param b First character in the view.
+   * @param e One character after the last character in the view.
+   * @return @a this
+   */
+  self_type &assign(char const *b, char const *e);
 
   /// Explicitly set the view from a @c std::string
   self_type &assign(std::string const &s);
@@ -898,6 +912,11 @@ inline TextView &
 TextView::operator=(const std::string &s) {
   this->super_type::operator=(s);
   return *this;
+}
+
+inline TextView&
+TextView::assign(char const *c_str) {
+  return this->assign(c_str, strlen(c_str));
 }
 
 inline TextView &

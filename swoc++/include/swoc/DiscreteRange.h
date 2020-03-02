@@ -107,14 +107,12 @@ protected:
   T _max; ///< the maximum value in the interval
 
 public:
-  using metric_type = T;
-  using Relation = DiscreteRangeRelation;
-  using EdgeRelation = DiscreteRangeEdgeRelation;
-
-//  static constexpr self_type ALL{detail::minimum<metric_type>(), detail::maximum<metric_type>()};
+  using metric_type = T; ///< Export metric type.
+  using Relation = DiscreteRangeRelation; ///< Import type for convenience.
+  using EdgeRelation = DiscreteRangeEdgeRelation; ///< Import type for convenience.
 
   /** Default constructor.
-      An empty range is constructed.
+      An invalid (empty) range is constructed.
    */
   constexpr DiscreteRange() : _min(detail::maximum<T>()), _max(detail::minimum<T>()) {}
 
@@ -133,6 +131,13 @@ public:
   constexpr DiscreteRange(T const &min, T const &max) : _min(min), _max(max) {}
 
   ~DiscreteRange() = default;
+
+  /** Check if there are no values in the range.
+   *
+   * @return @c true if the range is empty (contains no values), @c false if it contains at least
+   * one value.
+   */
+  bool empty() const;
 
   self_type &assign(metric_type const &min, metric_type const &max);
 
@@ -159,8 +164,13 @@ public:
    */
   metric_type const &max() const;
 
-  bool contains(metric_type const& n) {
-    return _min <= n && n <= _max;
+  /** Check if a value is in @a this range.
+   *
+   * @param m Metric value to check.
+   * @return @c true if @a m is in the range, @c false if not.
+   */
+  bool contains(metric_type const& m) {
+    return _min <= m && m <= _max;
   }
 
   /** Logical intersection test for two intervals.
@@ -248,9 +258,6 @@ public:
 
   //! Check if the interval is exactly one element.
   bool is_singleton() const;
-
-  //! Check if the interval is empty.
-  bool empty() const;
 
   /** Test for empty, operator form.
       @return @c true if the interval is empty, @c false otherwise.
