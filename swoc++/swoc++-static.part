@@ -1,6 +1,8 @@
 Import("*")
 PartName("static")
 
+DependsOn([ Component("libswoc.headers") ])
+
 src_files = env.get("src_files")
 
 env.AppendUnique(

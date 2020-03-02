@@ -13,6 +13,7 @@
 #include <swoc/TextView.h>
 #include <swoc/swoc_ip.h>
 #include <swoc/bwf_ip.h>
+#include <swoc/bwf_std.h>
 #include <swoc/swoc_file.h>
 
 using namespace std::literals;
@@ -28,6 +29,9 @@ using swoc::IP6Range;
 
 using swoc::IPAddr;
 using swoc::IPRange;
+
+using swoc::IPMask;
+
 using W = swoc::LocalBufferWriter<256>;
 
 TEST_CASE("Basic IP", "[libswoc][ip]") {
@@ -63,7 +67,7 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
     REQUIRE(s.rest == rest);
   }
 
-  IP4Addr alpha { "172.96.12.134"};
+  IP4Addr alpha{"172.96.12.134"};
   CHECK(alpha == IP4Addr{"172.96.12.134"});
   CHECK(alpha == IP4Addr{IPAddr{"172.96.12.134"}});
   CHECK(alpha == IPAddr{IPEndpoint{"172.96.12.134:80"}});
@@ -269,6 +273,257 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(w.view() == "   0:   0:   0:   0:   0:   0:   0:   1");
 }
 
+TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
+  swoc::IP4Range r_0;
+  swoc::IP4Range r_1{"1.1.1.0-1.1.1.9"};
+  swoc::IP4Range r_2{"1.1.2.0-1.1.2.97"};
+  swoc::IP4Range r_3{"1.1.0.0-1.2.0.0"};
+  swoc::IP4Range r_4{"10.33.45.19-10.33.45.76"};
+  swoc::IP6Range r_5{
+      "2001:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv};
+
+  CHECK(true == r_0.empty());
+  CHECK(false == r_1.empty());
+
+  swoc::IPMask mask{127};
+  CHECK(r_5.min() == (r_5.min() | swoc::IPMask(128)));
+  CHECK(r_5.min() == (r_5.min() | mask));
+  CHECK(r_5.min() != (r_5.min() & mask));
+
+  swoc::IP6Addr a_1{"2001:1f2d:c587:24c4::"};
+  CHECK(a_1 == (a_1 & swoc::IPMask{62}));
+
+  std::array<swoc::IP4Net, 7> r_4_nets =
+      {{
+           "10.33.45.19/32"_tv
+           , "10.33.45.20/30"_tv
+           , "10.33.45.24/29"_tv
+           , "10.33.45.32/27"_tv
+           , "10.33.45.64/29"_tv
+           , "10.33.45.72/30"_tv
+           , "10.33.45.76/32"_tv
+       }};
+  auto r4_net = r_4_nets.begin();
+  for (auto const &net : r_4.networks()) {
+    REQUIRE(r4_net != r_4_nets.end());
+    CHECK(*r4_net == net);
+    ++r4_net;
+  }
+
+  // Let's try that again, with @c IPRange instead.
+  r4_net = r_4_nets.begin();
+  for (auto const& net : IPRange{r_4}.networks()) {
+    REQUIRE(r4_net != r_4_nets.end());
+    CHECK(*r4_net == net);
+    ++r4_net;
+  }
+
+  std::array<swoc::IP6Net, 130> r_5_nets =
+      {{
+           {IP6Addr{
+               "2001:1f2d:c587:24c3:9128:3349:3cee:143"}, IPMask{
+               128}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:144"}, IPMask{126}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:148"}, IPMask{125}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:150"}, IPMask{124}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:160"}, IPMask{123}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:180"}, IPMask{121}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:200"}, IPMask{119}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:400"}, IPMask{118}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:800"}, IPMask{117}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:1000"}, IPMask{116}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:2000"}, IPMask{115}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:4000"}, IPMask{114}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cee:8000"}, IPMask{113}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cef:0"}, IPMask{112}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3cf0:0"}, IPMask{108}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3d00:0"}, IPMask{104}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:3e00:0"}, IPMask{103}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:4000:0"}, IPMask{98}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3349:8000:0"}, IPMask{97}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:334a::"}, IPMask{95}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:334c::"}, IPMask{94}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3350::"}, IPMask{92}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3360::"}, IPMask{91}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3380::"}, IPMask{89}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3400::"}, IPMask{86}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:3800::"}, IPMask{85}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:4000::"}, IPMask{82}}
+           , {IP6Addr{
+              "2001:1f2d:c587:24c3:9128:8000::"}, IPMask{81}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:9129::"}, IPMask{
+              80}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:912a::"}, IPMask{
+              79}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:912c::"}, IPMask{
+              78}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:9130::"}, IPMask{
+              76}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:9140::"}, IPMask{
+              74}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:9180::"}, IPMask{
+              73}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:9200::"}, IPMask{
+              71}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:9400::"}, IPMask{
+              70}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:9800::"}, IPMask{
+              69}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:a000::"}, IPMask{
+              67}}
+           , {IP6Addr{"2001:1f2d:c587:24c3:c000::"}, IPMask{
+              66}}
+           , {IP6Addr{"2001:1f2d:c587:24c4::"}, IPMask{62}}
+           , {IP6Addr{"2001:1f2d:c587:24c8::"}, IPMask{61}}
+           , {IP6Addr{"2001:1f2d:c587:24d0::"}, IPMask{60}}
+           , {IP6Addr{"2001:1f2d:c587:24e0::"}, IPMask{59}}
+           , {IP6Addr{"2001:1f2d:c587:2500::"}, IPMask{56}}
+           , {IP6Addr{"2001:1f2d:c587:2600::"}, IPMask{55}}
+           , {IP6Addr{"2001:1f2d:c587:2800::"}, IPMask{53}}
+           , {IP6Addr{"2001:1f2d:c587:3000::"}, IPMask{52}}
+           , {IP6Addr{"2001:1f2d:c587:4000::"}, IPMask{50}}
+           , {IP6Addr{"2001:1f2d:c587:8000::"}, IPMask{49}}
+           , {IP6Addr{"2001:1f2d:c588::"}, IPMask{45}}
+           , {IP6Addr{"2001:1f2d:c590::"}, IPMask{44}}
+           , {IP6Addr{"2001:1f2d:c5a0::"}, IPMask{43}}
+           , {IP6Addr{"2001:1f2d:c5c0::"}, IPMask{42}}
+           , {IP6Addr{"2001:1f2d:c600::"}, IPMask{39}}
+           , {IP6Addr{"2001:1f2d:c800::"}, IPMask{37}}
+           , {IP6Addr{"2001:1f2d:d000::"}, IPMask{36}}
+           , {IP6Addr{"2001:1f2d:e000::"}, IPMask{35}}
+           , {IP6Addr{"2001:1f2e::"}, IPMask{31}}
+           , {IP6Addr{"2001:1f30::"}, IPMask{28}}
+           , {IP6Addr{"2001:1f40::"}, IPMask{26}}
+           , {IP6Addr{"2001:1f80::"}, IPMask{25}}
+           , {IP6Addr{"2001:2000::"}, IPMask{19}}
+           , {IP6Addr{"2001:4000::"}, IPMask{18}}
+           , {IP6Addr{"2001:8000::"}, IPMask{17}}
+           , {IP6Addr{"2002::"}, IPMask{15}}
+           , {IP6Addr{"2004::"}, IPMask{14}}
+           , {IP6Addr{"2008::"}, IPMask{13}}
+           , {IP6Addr{"2010::"}, IPMask{12}}
+           , {IP6Addr{"2020::"}, IPMask{11}}
+           , {IP6Addr{"2040::"}, IPMask{10}}
+           , {IP6Addr{"2080::"}, IPMask{9}}
+           , {IP6Addr{"2100::"}, IPMask{8}}
+           , {IP6Addr{"2200::"}, IPMask{7}}
+           , {IP6Addr{"2400::"}, IPMask{6}}
+           , {IP6Addr{"2800::"}, IPMask{5}}
+           , {IP6Addr{"3000::"}, IPMask{4}}
+           , {IP6Addr{"4000::"}, IPMask{2}}
+           , {IP6Addr{"8000::"}, IPMask{2}}
+           , {IP6Addr{"c000::"}, IPMask{3}}
+           , {IP6Addr{"e000::"}, IPMask{4}}
+           , {IP6Addr{"f000::"}, IPMask{5}}
+           , {IP6Addr{"f800::"}, IPMask{6}}
+           , {IP6Addr{"fc00::"}, IPMask{7}}
+           , {IP6Addr{"fe00::"}, IPMask{8}}
+           , {IP6Addr{"ff00::"}, IPMask{9}}
+           , {IP6Addr{"ff80::"}, IPMask{10}}
+           , {IP6Addr{"ffc0::"}, IPMask{11}}
+           , {IP6Addr{"ffe0::"}, IPMask{13}}
+           , {IP6Addr{"ffe8::"}, IPMask{14}}
+           , {IP6Addr{"ffec::"}, IPMask{15}}
+           , {IP6Addr{"ffee::"}, IPMask{20}}
+           , {IP6Addr{"ffee:1000::"}, IPMask{21}}
+           , {IP6Addr{"ffee:1800::"}, IPMask{22}}
+           , {IP6Addr{"ffee:1c00::"}, IPMask{23}}
+           , {IP6Addr{"ffee:1e00::"}, IPMask{24}}
+           , {IP6Addr{"ffee:1f00::"}, IPMask{27}}
+           , {IP6Addr{"ffee:1f20::"}, IPMask{29}}
+           , {IP6Addr{"ffee:1f28::"}, IPMask{30}}
+           , {IP6Addr{"ffee:1f2c::"}, IPMask{32}}
+           , {IP6Addr{"ffee:1f2d::"}, IPMask{33}}
+           , {IP6Addr{"ffee:1f2d:8000::"}, IPMask{34}}
+           , {IP6Addr{"ffee:1f2d:c000::"}, IPMask{38}}
+           , {IP6Addr{"ffee:1f2d:c400::"}, IPMask{40}}
+           , {IP6Addr{"ffee:1f2d:c500::"}, IPMask{41}}
+           , {IP6Addr{"ffee:1f2d:c580::"}, IPMask{46}}
+           , {IP6Addr{"ffee:1f2d:c584::"}, IPMask{47}}
+           , {IP6Addr{"ffee:1f2d:c586::"}, IPMask{48}}
+           , {IP6Addr{"ffee:1f2d:c587::"}, IPMask{51}}
+           , {IP6Addr{"ffee:1f2d:c587:2000::"}, IPMask{54}}
+           , {IP6Addr{"ffee:1f2d:c587:2400::"}, IPMask{57}}
+           , {IP6Addr{"ffee:1f2d:c587:2480::"}, IPMask{58}}
+           , {IP6Addr{"ffee:1f2d:c587:24c0::"}, IPMask{63}}
+           , {IP6Addr{"ffee:1f2d:c587:24c2::"}, IPMask{64}}
+           , {IP6Addr{"ffee:1f2d:c587:24c3::"}, IPMask{65}}
+           , {IP6Addr{"ffee:1f2d:c587:24c3:8000::"}, IPMask{
+              68}}
+           , {IP6Addr{"ffee:1f2d:c587:24c3:9000::"}, IPMask{
+              72}}
+           , {IP6Addr{"ffee:1f2d:c587:24c3:9100::"}, IPMask{
+              75}}
+           , {IP6Addr{"ffee:1f2d:c587:24c3:9120::"}, IPMask{
+              77}}
+           , {IP6Addr{"ffee:1f2d:c587:24c3:9128::"}, IPMask{
+              83}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:2000::"}, IPMask{84}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3000::"}, IPMask{87}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3200::"}, IPMask{88}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3300::"}, IPMask{90}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3340::"}, IPMask{93}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3348::"}, IPMask{96}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3349::"}, IPMask{99}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3349:2000:0"}, IPMask{100}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3349:3000:0"}, IPMask{101}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3349:3800:0"}, IPMask{102}}
+           , {IP6Addr{
+              "ffee:1f2d:c587:24c3:9128:3349:3c00:0"}, IPMask{104}}
+       }};
+
+  auto r5_net = r_5_nets.begin();
+  for (auto const&[addr, mask] : r_5.networks()) {
+    REQUIRE(r5_net != r_5_nets.end());
+    CHECK(*r5_net == swoc::IP6Net{addr, mask});
+    ++r5_net;
+  }
+
+  // Try it again, using @c IPRange.
+  r5_net = r_5_nets.begin();
+  for ( auto const&[addr, mask] : IPRange{r_5}.networks()) {
+    REQUIRE(r5_net != r_5_nets.end());
+    CHECK(*r5_net == swoc::IPNet{addr, mask});
+    ++r5_net;
+  }
+}
+
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   using int_space = swoc::IPSpace<unsigned>;
   int_space space;
@@ -336,20 +591,20 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(payload != nullptr);
   REQUIRE(*payload == 0x5);
 
-  space.blend({r_2.min(), r_3.max()}, 0x6, BF);
+  space.blend(IPRange{r_2.min(), r_3.max()}, 0x6, BF);
   REQUIRE(space.count() == 4);
 
   std::array<std::tuple<TextView, int>, 9> ranges = {
       {
-          { "100.0.0.0-100.0.0.255",  0 }
-          , { "100.0.1.0-100.0.1.255",  1 }
-          , { "100.0.2.0-100.0.2.255",  2 }
-          , { "100.0.3.0-100.0.3.255",  3 }
-          , { "100.0.4.0-100.0.4.255",  4 }
-          , { "100.0.5.0-100.0.5.255",  5 }
-          , { "100.0.6.0-100.0.6.255",  6 }
-          , { "100.0.0.0-100.0.0.255",  31 }
-          , { "100.0.1.0-100.0.1.255",  30 }
+          {"100.0.0.0-100.0.0.255", 0}
+          , {"100.0.1.0-100.0.1.255", 1}
+          , {"100.0.2.0-100.0.2.255", 2}
+          , {"100.0.3.0-100.0.3.255", 3}
+          , {"100.0.4.0-100.0.4.255", 4}
+          , {"100.0.5.0-100.0.5.255", 5}
+          , {"100.0.6.0-100.0.6.255", 6}
+          , {"100.0.0.0-100.0.0.255", 31}
+          , {"100.0.1.0-100.0.1.255", 30}
       }};
 
   space.clear();
@@ -393,7 +648,7 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
 TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   using PAYLOAD = std::bitset<32>;
   using Space = swoc::IPSpace<PAYLOAD>;
-  auto blender = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
+  auto blender = [](PAYLOAD&lhs, PAYLOAD const&rhs) -> bool {
     lhs |= rhs;
     return true;
   };
@@ -405,33 +660,34 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
     return bits;
   };
 
-  std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 9> ranges = {
+  std::array<std::tuple<TextView, PAYLOAD>, 9> ranges = {
       {
-            { "100.0.0.0-100.0.0.255", { 0 } }
-          , { "100.0.1.0-100.0.1.255", { 1 } }
-          , { "100.0.2.0-100.0.2.255", { 2 } }
-          , { "100.0.3.0-100.0.3.255", { 3 } }
-          , { "100.0.4.0-100.0.4.255", { 4 } }
-          , { "100.0.5.0-100.0.5.255", { 5 } }
-          , { "100.0.6.0-100.0.6.255", { 6 } }
-          , { "100.0.0.0-100.0.0.255", { 31 } }
-          , { "100.0.1.0-100.0.1.255", { 30 } }
+          {"100.0.0.0-100.0.0.255", make_bits({0})}
+          , {"100.0.1.0-100.0.1.255", make_bits({1})}
+          , {"100.0.2.0-100.0.2.255", make_bits({2})}
+          , {"100.0.3.0-100.0.3.255", make_bits({3})}
+          , {"100.0.4.0-100.0.4.255", make_bits({4})}
+          , {"100.0.5.0-100.0.5.255", make_bits({5})}
+          , {"100.0.6.0-100.0.6.255", make_bits({6})}
+          , {"100.0.0.0-100.0.0.255", make_bits({31})}
+          , {"100.0.1.0-100.0.1.255", make_bits({30})}
       }};
 
   std::array<std::initializer_list<unsigned>, 7> results = {{
-        { 0, 31 }
-      , { 1, 30 }
-      , { 2 }
-      , { 3 }
-      , { 4 }
-      , { 5 }
-      , { 6 }
-  }};
+                                                                {0, 31}
+                                                                , {1, 30}
+                                                                , {2}
+                                                                , {3}
+                                                                , {4}
+                                                                , {5}
+                                                                , {6}
+                                                            }};
 
   Space space;
 
-  for (auto &&[text, bit_list] : ranges) {
-    space.blend(IPRange{text}, make_bits(bit_list), blender);
+  for (auto && [text, bit_list] : ranges) {
+    std::cout << W().print("{} = {}\n", text, bit_list);
+    space.blend(IPRange{text}, bit_list, blender);
   }
 
   // Check iteration - verify forward and reverse iteration yield the correct number of ranges
@@ -440,18 +696,31 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   unsigned idx;
 
   idx = 0;
-  for ( auto const& [ range, bits ] : space) {
+  for (auto const&[range, bits] : space) {
     REQUIRE(idx < results.size());
     CHECK(bits == make_bits(results[idx]));
     ++idx;
   }
 
   idx = results.size();
-  for ( auto spot = space.end() ; spot != space.begin() ; ) {
-    auto const& [ range, bits ] { *--spot };
+  for (auto spot = space.end(); spot != space.begin();) {
+    auto const&[range, bits]{*--spot};
     REQUIRE(idx > 0);
     --idx;
     CHECK(bits == make_bits(results[idx]));
+  }
+
+  // Check iterator copying.
+  idx = 0;
+  Space::iterator iter;
+  IPRange range;
+  PAYLOAD bits;
+  for (auto spot = space.begin(); spot != space.end() ; ++spot) {
+    iter = spot;
+    std::tie(range, bits) = *iter;
+    REQUIRE(idx < results.size());
+    CHECK(bits == make_bits(results[idx]));
+    ++idx;
   }
 }
 

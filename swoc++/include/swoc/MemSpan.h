@@ -749,7 +749,7 @@ MemSpan<T>::remove_suffix(size_t count) {
 template <typename T>
 constexpr MemSpan<T>
 MemSpan<T>::subspan(size_t offset, size_t count) const {
-  return offset <= _count ? self_type{this->data() + offset, std::min(count, _count - offset)} : self_type{};
+  return offset < _count ? self_type{this->data() + offset, std::min(count, _count - offset)} : self_type{};
 }
 
 template <typename T>

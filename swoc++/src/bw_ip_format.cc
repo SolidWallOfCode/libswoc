@@ -280,7 +280,7 @@ bwformat(BufferWriter &w, Spec const &spec, IPAddr const &addr)
     if (addr.is_ip4()) {
       swoc::bwformat(w, spec, static_cast<IP4Addr const&>(addr));
     } else if (addr.is_ip6()) {
-      swoc::bwformat(w, spec, addr.network_ip6());
+      swoc::bwformat(w, spec, addr.ip6().network_order());
     } else {
       w.print("*Not IP address [{}]*", addr.family());
     }
@@ -317,9 +317,9 @@ bwformat(BufferWriter & w, Spec const& spec, IP6Range const& range) {
 BufferWriter &
 bwformat(BufferWriter & w, Spec const& spec, IPRange const& range) {
   return range.is(AF_INET)
-  ? bwformat(w, spec, static_cast<IP4Range const&>(range))
+  ? bwformat(w, spec, range.ip4())
   : range.is(AF_INET6)
-    ? bwformat(w, spec, static_cast<IP6Range const&>(range))
+    ? bwformat(w, spec, range.ip6())
     : w.write("*-*"_tv)
   ;
 }
