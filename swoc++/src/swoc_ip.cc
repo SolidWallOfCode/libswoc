@@ -81,7 +81,7 @@ IPEndpoint::assign(IPAddr const&src, in_port_t port) {
     case AF_INET: {
       memset(&sa4, 0, sizeof sa4);
       sa4.sin_family = AF_INET;
-      sa4.sin_addr.s_addr = src.network_ip4();
+      sa4.sin_addr.s_addr = src.ip4().network_order();
       sa4.sin_port = port;
       Set_Sockaddr_Len(&sa4);
     }
@@ -89,25 +89,12 @@ IPEndpoint::assign(IPAddr const&src, in_port_t port) {
     case AF_INET6: {
       memset(&sa6, 0, sizeof sa6);
       sa6.sin6_family = AF_INET6;
-      sa6.sin6_addr = src.network_ip6();
+      sa6.sin6_addr = src.ip6().network_order();
       sa6.sin6_port = port;
       Set_Sockaddr_Len(&sa6);
     }
       break;
   }
-  return *this;
-}
-
-IPAddr&
-IPAddr::assign(sockaddr const *addr) {
-  if (addr) {
-    switch (addr->sa_family) {
-      case AF_INET:return this->assign(reinterpret_cast<sockaddr_in const *>(addr));
-      case AF_INET6:return this->assign(reinterpret_cast<sockaddr_in6 const *>(addr));
-      default:break;
-    }
-  }
-  _family = AF_UNSPEC;
   return *this;
 }
 
@@ -466,6 +453,37 @@ IPAddr::load(const std::string_view&text) {
   return this->is_valid();
 }
 
+IPAddr&
+IPAddr::assign(sockaddr const *addr) {
+  if (addr) {
+    switch (addr->sa_family) {
+      case AF_INET:return this->assign(reinterpret_cast<sockaddr_in const *>(addr));
+      case AF_INET6:return this->assign(reinterpret_cast<sockaddr_in6 const *>(addr));
+      default:break;
+    }
+  }
+  _family = AF_UNSPEC;
+  return *this;
+}
+
+IPAddr::self_type& IPAddr::operator&=(IPMask const& mask) {
+  if (_family == AF_INET) {
+    _addr._ip4 &= mask;
+  } else if (_family == AF_INET6) {
+    _addr._ip6 &= mask;
+  }
+  return *this;
+}
+
+IPAddr::self_type& IPAddr::operator|=(IPMask const& mask) {
+  if (_family == AF_INET) {
+    _addr._ip4 |= mask;
+  } else if (_family == AF_INET6) {
+    _addr._ip6 |= mask;
+  }
+  return *this;
+}
+
 #if 0
 bool
 operator==(IPAddr const &lhs, sockaddr const *rhs)
@@ -660,6 +678,24 @@ bool IP6Net::load(TextView text) {
   return false;
 }
 
+bool IPNet::load(TextView text) {
+  auto mask_text = text.split_suffix_at('/');
+  if (!mask_text.empty()) {
+    IPMask mask;
+    if (mask.load(mask_text)) {
+      if (IP6Addr addr; addr.load(text)) { // load the address
+        this->assign(addr, mask);
+        return true;
+      } else if (IP4Addr addr; addr.load(text)) {
+        this->assign(addr, mask);
+        return true;
+      }
+    }
+  }
+  this->clear();
+  return false;
+}
+
 // +++ IP4Range +++
 
 IP4Range::IP4Range(swoc::IP4Addr const&addr, swoc::IPMask const&mask) {
@@ -806,6 +842,16 @@ bool IP6Range::load(std::string_view text) {
   }
   this->clear();
   return false;
+}
+
+IPRange::IPRange(IPAddr const& min, IPAddr const& max) {
+  if (min.is_ip4() && max.is_ip4()) {
+    _range._ip4.assign(min.ip4(), max.ip4());
+    _family = AF_INET;
+  } else if (min.is_ip6() && max.is_ip6()) {
+    _range._ip6.assign(min.ip6(), max.ip6());
+    _family = AF_INET6;
+  }
 }
 
 bool IPRange::load(std::string_view const&text) {

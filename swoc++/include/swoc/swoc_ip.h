@@ -16,14 +16,24 @@
 
 namespace swoc {
 class IP4Addr;
+
 class IP6Addr;
+
 class IPAddr;
+
 class IPMask;
+
 class IP4Range;
+
 class IP6Range;
+
 class IPRange;
+
 class IP4Net;
+
 class IP6Net;
+
+class IPNet;
 
 using ::std::string_view;
 
@@ -47,10 +57,10 @@ union IPEndpoint {
   IPEndpoint();
 
   /// Construct from the @a text representation of an address.
-  IPEndpoint(string_view const&text);
+  IPEndpoint(string_view const& text);
 
   // Construct from @a IPAddr
-  IPEndpoint(IPAddr const&addr);
+  IPEndpoint(IPAddr const& addr);
 
   /** Break a string in to IP address relevant tokens.
    *
@@ -73,16 +83,16 @@ union IPEndpoint {
 
       @return @c true on success, @c false otherwise.
   */
-  bool parse(string_view const&str);
+  bool parse(string_view const& str);
 
   /// Invalidate a @c sockaddr.
   static void invalidate(sockaddr *addr);
 
   /// Invalidate this endpoint.
-  self_type&invalidate();
+  self_type& invalidate();
 
   /// Copy constructor.
-  self_type&operator=(self_type const&that);
+  self_type& operator=(self_type const& that);
 
   /** Copy (assign) the contents of @a src to @a dst.
    *
@@ -98,13 +108,13 @@ union IPEndpoint {
   /** Assign from a socket address.
       The entire address (all parts) are copied if the @a ip is valid.
   */
-  self_type&assign(sockaddr const *addr);
+  self_type& assign(sockaddr const *addr);
 
   /// Assign from an @a addr and @a port.
-  self_type&assign(IPAddr const&addr, in_port_t port = 0);
+  self_type& assign(IPAddr const& addr, in_port_t port = 0);
 
   /// Copy to @a sa.
-  const self_type&fill(sockaddr *addr) const;
+  const self_type& fill(sockaddr *addr) const;
 
   /// Test for valid IP address.
   bool is_valid() const;
@@ -127,15 +137,15 @@ union IPEndpoint {
   /// Set to be the ANY address for family @a family.
   /// @a family must be @c AF_INET or @c AF_INET6.
   /// @return This object.
-  self_type&set_to_any(int family);
+  self_type& set_to_any(int family);
 
   /// Set to be loopback address for family @a family.
   /// @a family must be @c AF_INET or @c AF_INET6.
   /// @return This object.
-  self_type&set_to_loopback(int family);
+  self_type& set_to_loopback(int family);
 
   /// Port in network order.
-  in_port_t&port();
+  in_port_t& port();
 
   /// Port in network order.
   in_port_t port() const;
@@ -144,7 +154,7 @@ union IPEndpoint {
   in_port_t host_order_port() const;
 
   /// Port in network order from @a sockaddr.
-  static in_port_t&port(sockaddr *sa);
+  static in_port_t& port(sockaddr *sa);
 
   /// Port in network order from @a sockaddr.
   static in_port_t port(sockaddr const *sa);
@@ -187,22 +197,22 @@ public:
 
   /// Construct from text representation.
   /// If the @a text is invalid the result is an invalid instance.
-  IP4Addr(string_view const&text);
+  IP4Addr(string_view const& text);
 
   /// Construct from generic address @a addr.
-  explicit IP4Addr(IPAddr const&addr);
+  explicit IP4Addr(IPAddr const& addr);
 
   /// Assign from IPv4 raw address.
-  self_type&operator=(in_addr_t ip);
+  self_type& operator=(in_addr_t ip);
 
   /// Set to the address in @a addr.
-  self_type&operator=(sockaddr_in const *sa);
+  self_type& operator=(sockaddr_in const *sa);
 
   /// Increment address.
-  self_type&operator++();
+  self_type& operator++();
 
   /// Decrement address.
-  self_type&operator--();
+  self_type& operator--();
 
   /** Byte access.
    *
@@ -214,10 +224,10 @@ public:
   }
 
   /// Apply @a mask to address, leaving the network portion.
-  self_type&operator&=(IPMask const&mask);
+  self_type& operator&=(IPMask const& mask);
 
   /// Apply @a mask to address, creating the broadcast address.
-  self_type&operator|=(IPMask const&mask);
+  self_type& operator|=(IPMask const& mask);
 
   /// Write this adddress and @a port to the sockaddr @a sa.
   sockaddr_in *fill(sockaddr_in *sa, in_port_t port = 0) const;
@@ -234,10 +244,10 @@ public:
 
       @return @c true on success, @c false otherwise.
   */
-  bool load(string_view const&text);
+  bool load(string_view const& text);
 
   /// Standard ternary compare.
-  int cmp(self_type const&that) const;
+  int cmp(self_type const& that) const;
 
   /// Get the IP address family.
   /// @return @c AF_INET
@@ -254,14 +264,14 @@ public:
    * @param n Number of bits to shift left.
    * @return @a this.
    */
-  self_type&operator<<=(unsigned n);
+  self_type& operator<<=(unsigned n);
 
   /** Right shift.
    *
    * @param n Number of bits to shift right.
    * @return @a this.
    */
-  self_type&operator>>=(unsigned n);
+  self_type& operator>>=(unsigned n);
 
   /** Bitwise AND.
    *
@@ -270,7 +280,7 @@ public:
    *
    * The bits in @a this are set to the bitwise AND of the corresponding bits in @a this and @a that.
    */
-  self_type&operator&=(self_type const&that);
+  self_type& operator&=(self_type const& that);
 
   /** Bitwise OR.
    *
@@ -279,7 +289,7 @@ public:
    *
    * The bits in @a this are set to the bitwise OR of the corresponding bits in @a this and @a that.
    */
-  self_type&operator|=(self_type const&that);
+  self_type& operator|=(self_type const& that);
 
   /** Convert between network and host order.
    *
@@ -356,10 +366,10 @@ public:
   static const self_type MAX;
 
   IP6Addr() = default; ///< Default constructor - 0 address.
-  IP6Addr(self_type const&that) = default;
+  IP6Addr(self_type const& that) = default;
 
   /// Construct using IPv6 @a addr.
-  explicit IP6Addr(in6_addr const&addr);
+  explicit IP6Addr(in6_addr const& addr);
 
   /// Construct from @c sockaddr_in.
   explicit IP6Addr(sockaddr_in6 const *addr) {
@@ -368,24 +378,24 @@ public:
 
   /// Construct from text representation.
   /// If the @a text is invalid the result is an invalid instance.
-  IP6Addr(string_view const&text);
+  IP6Addr(string_view const& text);
 
   /// Construct from generic @a addr.
-  IP6Addr(IPAddr const&addr);
+  IP6Addr(IPAddr const& addr);
 
   /** Left shift.
    *
    * @param n Number of bits to shift left.
    * @return @a this.
    */
-  self_type&operator<<=(unsigned n);
+  self_type& operator<<=(unsigned n);
 
   /** Right shift.
    *
    * @param n Number of bits to shift right.
    * @return @a this.
    */
-  self_type&operator>>=(unsigned n);
+  self_type& operator>>=(unsigned n);
 
   /** Bitwise AND.
    *
@@ -394,7 +404,7 @@ public:
    *
    * The bits in @a this are set to the bitwise AND of the corresponding bits in @a this and @a that.
    */
-  self_type&operator&=(self_type const&that);
+  self_type& operator&=(self_type const& that);
 
   /** Bitwise OR.
    *
@@ -403,25 +413,25 @@ public:
    *
    * The bits in @a this are set to the bitwise OR of the corresponding bits in @a this and @a that.
    */
-  self_type&operator|=(self_type const&that);
+  self_type& operator|=(self_type const& that);
 
   /// Increment address.
-  self_type&operator++();
+  self_type& operator++();
 
   /// Decrement address.
-  self_type&operator--();
+  self_type& operator--();
 
   /// Assign from IPv6 raw address.
-  self_type&operator=(in6_addr const&ip);
+  self_type& operator=(in6_addr const& ip);
 
   /// Set to the address in @a addr.
-  self_type&operator=(sockaddr_in6 const *addr);
+  self_type& operator=(sockaddr_in6 const *addr);
 
   /// Write to @c sockaddr using network order and @a port.
   sockaddr *copy_to(sockaddr *sa, in_port_t port = 0) const;
 
   /// Copy address to @a addr in network order.
-  in6_addr&copy_to(in6_addr&addr) const;
+  in6_addr& copy_to(in6_addr& addr) const;
 
   /// Return the address in network order.
   in6_addr network_order() const;
@@ -433,10 +443,10 @@ public:
 
       @return @c true on success, @c false otherwise.
   */
-  bool load(string_view const&str);
+  bool load(string_view const& str);
 
   /// Generic compare.
-  int cmp(self_type const&that) const;
+  int cmp(self_type const& that) const;
 
   /// Get the address family.
   /// @return The address family.
@@ -448,18 +458,18 @@ public:
   /// Test for loopback
   bool is_multicast() const { return IN6_IS_ADDR_MULTICAST(_addr._raw.data()); }
 
-  self_type&clear() {
+  self_type& clear() {
     _addr._store[0] = _addr._store[1] = 0;
     return *this;
   }
 
-  self_type&operator&=(IPMask const&mask);
+  self_type& operator&=(IPMask const& mask);
 
-  self_type&operator|=(IPMask const&mask);
+  self_type& operator|=(IPMask const& mask);
 
-  static void reorder(in6_addr&dst, raw_type const&src);
+  static void reorder(in6_addr& dst, raw_type const& src);
 
-  static void reorder(raw_type&dst, in6_addr const&src);
+  static void reorder(raw_type& dst, in6_addr const& src);
 
 protected:
   friend bool operator==(self_type const&, self_type const&);
@@ -493,9 +503,9 @@ protected:
    */
   IP6Addr(word_store_type::value_type msw, word_store_type::value_type lsw) : _addr{msw, lsw} {}
 
-  friend IP6Addr operator&(IP6Addr const&addr, IPMask const&mask);
+  friend IP6Addr operator&(IP6Addr const& addr, IPMask const& mask);
 
-  friend IP6Addr operator|(IP6Addr const&addr, IPMask const&mask);
+  friend IP6Addr operator|(IP6Addr const& addr, IPMask const& mask);
 };
 
 /** Storage for an IP address.
@@ -506,74 +516,75 @@ class IPAddr {
   using self_type = IPAddr; ///< Self reference type.
 public:
   IPAddr() = default; ///< Default constructor - invalid result.
-  IPAddr(self_type const&that) = default; ///< Copy constructor.
+  IPAddr(self_type const& that) = default; ///< Copy constructor.
 
   /// Construct using IPv4 @a addr.
   explicit IPAddr(in_addr_t addr);
 
   /// Construct using an IPv4 @a addr
-  IPAddr(IP4Addr const&addr) : _family(AF_INET), _addr{addr} {}
+  IPAddr(IP4Addr const& addr) : _family(AF_INET), _addr{addr} {}
 
   /// Construct using IPv6 @a addr.
-  explicit IPAddr(in6_addr const&addr);
+  explicit IPAddr(in6_addr const& addr);
 
   /// construct using an IPv6 @a addr
-  IPAddr(IP6Addr const&addr) : _family(AF_INET6), _addr{addr} {}
+  IPAddr(IP6Addr const& addr) : _family(AF_INET6), _addr{addr} {}
 
   /// Construct from @c sockaddr.
   explicit IPAddr(sockaddr const *addr);
 
   /// Construct from @c IPEndpoint.
-  explicit IPAddr(IPEndpoint const&addr);
+  explicit IPAddr(IPEndpoint const& addr);
 
   /// Construct from text representation.
   /// If the @a text is invalid the result is an invalid instance.
-  explicit IPAddr(string_view const&text);
+  explicit IPAddr(string_view const& text);
 
   /// Set to the address in @a addr.
-  self_type&assign(sockaddr const *addr);
+  self_type& assign(sockaddr const *addr);
 
   /// Set to the address in @a addr.
-  self_type&assign(sockaddr_in const *addr);
+  self_type& assign(sockaddr_in const *addr);
 
   /// Set to the address in @a addr.
-  self_type&assign(sockaddr_in6 const *addr);
+  self_type& assign(sockaddr_in6 const *addr);
 
   /// Set to the address in @a addr.
-  self_type&assign(in_addr_t addr);
+  self_type& assign(in_addr_t addr);
 
   /// Set to address in @a addr.
-  self_type&assign(in6_addr const&addr);
+  self_type& assign(in6_addr const& addr);
 
   /// Assign from end point.
-  self_type&operator=(IPEndpoint const&ip);
+  self_type& operator=(IPEndpoint const& ip);
 
   /// Assign from IPv4 raw address.
-  self_type&operator=(in_addr_t ip);
+  self_type& operator=(in_addr_t ip);
 
   /// Assign from IPv6 raw address.
-  self_type&operator=(in6_addr const&ip);
+  self_type& operator=(in6_addr const& ip);
 
   /// Assign from @c sockaddr
-  self_type&operator=(sockaddr const *addr);
+  self_type& operator=(sockaddr const *addr);
 
-  self_type&operator&=(IPMask const&mask);
+  self_type& operator&=(IPMask const& mask);
 
-  self_type&operator|=(IPMask const&mask);
+  self_type& operator|=(IPMask const& mask);
 
-  /** Parse a string and load the result in @a this.
+
+/** Parse a string and load the result in @a this.
    *
    * @param text Text to parse.
    * @return  @c true on success, @c false otherwise.
    */
-  bool load(string_view const&text);
+  bool load(string_view const& text);
 
   /// Generic compare.
-  int cmp(self_type const&that) const;
+  int cmp(self_type const& that) const;
 
   /// Test for same address family.
   /// @c return @c true if @a that is the same address family as @a this.
-  bool isCompatibleWith(self_type const&that);
+  bool isCompatibleWith(self_type const& that);
 
   /// Get the address family.
   /// @return The address family.
@@ -585,9 +596,9 @@ public:
   /// Test for IPv6.
   bool is_ip6() const;
 
-  in_addr_t network_ip4() const;
+  IP4Addr const& ip4() const;
 
-  in6_addr network_ip6() const;
+  IP6Addr const& ip6() const;
 
   explicit operator IP4Addr const&() const { return _addr._ip4; }
 
@@ -601,7 +612,7 @@ public:
   bool is_valid() const;
 
   /// Make invalid.
-  self_type&invalidate();
+  self_type& invalidate();
 
   /// Test for multicast
   bool is_multicast() const;
@@ -629,11 +640,11 @@ protected:
 
     raw_addr_type(in_addr_t addr) : _ip4(addr) {}
 
-    raw_addr_type(in6_addr const&addr) : _ip6(addr) {}
+    raw_addr_type(in6_addr const& addr) : _ip6(addr) {}
 
-    raw_addr_type(IP4Addr const&addr) : _ip4(addr) {}
+    raw_addr_type(IP4Addr const& addr) : _ip4(addr) {}
 
-    raw_addr_type(IP6Addr const&addr) : _ip6(addr) {}
+    raw_addr_type(IP6Addr const& addr) : _ip6(addr) {}
   } _addr;
 
   sa_family_t _family{AF_UNSPEC}; ///< Protocol family.
@@ -664,28 +675,28 @@ public:
    * @param text A number in string format.
    * @return @a true if a valid CIDR value, @c false if not.
    */
-  bool load(string_view const&text);
+  bool load(string_view const& text);
 
   /** Copmute a mask for the network at @a addr.
    * @param addr Lower bound of network.
    * @return The width of the largest network starting at @a addr.
    */
-  static self_type mask_for(IPAddr const&addr);
+  static self_type mask_for(IPAddr const& addr);
 
   /** Copmute a mask for the network at @a addr.
    * @param addr Lower bound of network.
    * @return A mask with the width of the largest network starting at @a addr.
    */
-  static self_type mask_for(IP4Addr const&addr);
+  static self_type mask_for(IP4Addr const& addr);
 
   /** Copmute a mask for the network at @a addr.
    * @param addr Lower bound of network.
    * @return A mask with the width of the largest network starting at @a addr.
    */
-  static self_type mask_for(IP6Addr const&addr);
+  static self_type mask_for(IP6Addr const& addr);
 
   /// Force @a this to an invalid state.
-  self_type&clear() {
+  self_type& clear() {
     _cidr = INVALID;
     return *this;
   }
@@ -693,12 +704,12 @@ public:
   /// The width of the mask.
   raw_type width() const;
 
-  self_type&operator<<=(raw_type n) {
+  self_type& operator<<=(raw_type n) {
     _cidr -= n;
     return *this;
   }
 
-  self_type&operator>>=(raw_type n) {
+  self_type& operator>>=(raw_type n) {
     _cidr += n;
     return *this;
   }
@@ -729,7 +740,6 @@ protected:
   static raw_type mask_for_quad(IP6Addr::quad_type q);
 };
 
-
 /** An inclusive range of IPv4 addresses.
  */
 class IP4Range : public DiscreteRange<IP4Addr> {
@@ -738,17 +748,15 @@ class IP4Range : public DiscreteRange<IP4Addr> {
   using metric_type = IP4Addr;
 
 public:
-  using super_type::super_type; ///< Import super class constructors.
-
   /// Default constructor, invalid range.
   IP4Range() = default;
 
   /// Construct from an network expressed as @a addr and @a mask.
-  IP4Range(IP4Addr const&addr, IPMask const&mask);
+  IP4Range(IP4Addr const& addr, IPMask const& mask);
 
   /// Construct from super type.
   /// @internal Why do I have to do this, even though the super type constructors are inherited?
-  IP4Range(super_type const&r) : super_type(r) {}
+  IP4Range(super_type const& r) : super_type(r) {}
 
   /** Construct range from @a text.
    *
@@ -758,7 +766,9 @@ public:
    * This results in a zero address if @a text is not a valid string. If this should be checked,
    * use @c load.
    */
-  IP4Range(string_view const&text);
+  IP4Range(string_view const& text);
+
+  using super_type::super_type; ///< Import super class constructors.
 
   /** Set @a this range.
    *
@@ -766,7 +776,9 @@ public:
    * @param mask CIDR mask to compute maximum adddress from @a addr.
    * @return @a this
    */
-  self_type&assign(IP4Addr const&addr, IPMask const&mask);
+  self_type& assign(IP4Addr const& addr, IPMask const& mask);
+
+  using super_type::assign; ///< Import assign methods.
 
   /** Assign to this range from text.
    *
@@ -809,10 +821,10 @@ public:
   using range_type = IP4Range; ///< Import base range type.
 
   /// Construct from @a range.
-  explicit NetSource(range_type const&range);
+  explicit NetSource(range_type const& range);
 
   /// Copy constructor.
-  NetSource(self_type const&that) = default;
+  NetSource(self_type const& that) = default;
 
   /// This class acts as a container and an iterator.
   using iterator = self_type;
@@ -830,23 +842,23 @@ public:
 
   /// Iterator support.
   /// @areturn The current network address.
-  IP4Addr const&addr() const;
+  IP4Addr const& addr() const;
 
   /// Iterator support.
   /// @return The current network mask.
   IPMask mask() const;
 
   /// Move to next network.
-  self_type&operator++();
+  self_type& operator++();
 
   /// Move to next network.
   self_type operator++(int);
 
   /// Equality.
-  bool operator==(self_type const&that);
+  bool operator==(self_type const& that) const;
 
   /// Inequality.
-  bool operator!=(self_type const&that);
+  bool operator!=(self_type const& that) const;
 
 protected:
   IP4Range _range; ///< Remaining range.
@@ -866,11 +878,9 @@ class IP6Range : public DiscreteRange<IP6Addr> {
   using super_type = DiscreteRange<IP6Addr>;
 
 public:
-  using super_type::super_type; ///< Import super class constructors.
-
   /// Construct from super type.
   /// @internal Why do I have to do this, even though the super type constructors are inherited?
-  IP6Range(super_type const&r) : super_type(r) {}
+  IP6Range(super_type const& r) : super_type(r) {}
 
   /** Construct range from @a text.
    *
@@ -880,7 +890,9 @@ public:
    * This results in a zero address if @a text is not a valid string. If this should be checked,
    * use @c load.
    */
-  IP6Range(string_view const&text);
+  IP6Range(string_view const& text);
+
+  using super_type::super_type; ///< Import super class constructors.
 
   /** Set @a this range.
    *
@@ -888,7 +900,9 @@ public:
    * @param mask CIDR mask to compute maximum adddress from @a addr.
    * @return @a this
    */
-  self_type&assign(IP6Addr const&addr, IPMask const&mask);
+  self_type& assign(IP6Addr const& addr, IPMask const& mask);
+
+  using super_type::assign; ///< Import assign methods.
 
   /** Assign to this range from text.
    *
@@ -911,7 +925,7 @@ public:
    * the unique minimal set of networks that cover @a this range.
    *
    * @code
-   * void (IP4Range const& range) {
+   * void (IP6Range const& range) {
    *   for ( auto const& net : range ) {
    *     net.addr(); // network address.
    *     net.mask(); // network mask;
@@ -931,10 +945,10 @@ public:
   using range_type = IP6Range; ///< Import base range type.
 
   /// Construct from @a range.
-  explicit NetSource(range_type const&range);
+  explicit NetSource(range_type const& range);
 
   /// Copy constructor.
-  NetSource(self_type const&that) = default;
+  NetSource(self_type const& that) = default;
 
   /// This class acts as a container and an iterator.
   using iterator = self_type;
@@ -952,23 +966,23 @@ public:
 
   /// Iterator support.
   /// @areturn The current network address.
-  IP6Addr const&addr() const;
+  IP6Addr const& addr() const { return _range.min(); }
 
   /// Iterator support.
   /// @return The current network mask.
-  IPMask mask() const;
+  IPMask mask() const { return _mask; }
 
   /// Move to next network.
-  self_type&operator++();
+  self_type& operator++();
 
   /// Move to next network.
   self_type operator++(int);
 
   /// Equality.
-  bool operator==(self_type const&that);
+  bool operator==(self_type const& that) const;
 
   /// Inequality.
-  bool operator!=(self_type const&that);
+  bool operator!=(self_type const& that) const;
 
 protected:
   IP6Range _range; ///< Remaining range.
@@ -978,7 +992,7 @@ protected:
 
   void search_narrower();
 
-  bool is_valid(IPMask const&mask);
+  bool is_valid(IPMask const& mask);
 };
 
 class IPRange {
@@ -987,11 +1001,13 @@ public:
   /// Default constructor - construct invalid range.
   IPRange() = default;
 
+  IPRange(IPAddr const& min, IPAddr const& max);
+
   /// Construct from an IPv4 @a range.
-  IPRange(IP4Range const&range);
+  IPRange(IP4Range const& range);
 
   /// Construct from an IPv6 @a range.
-  IPRange(IP6Range const&range);
+  IPRange(IP6Range const& range);
 
   /** Construct from a string format.
    *
@@ -999,7 +1015,13 @@ public:
    *
    * The string can be a single address, two addresses separated by a dash '-' or a CIDR network.
    */
-  IPRange(string_view const&text);
+  IPRange(string_view const& text);
+
+  /// @return @c true if this is an IPv4 range, @c false if not.
+  bool is_ip4() const { return AF_INET == _family; }
+
+  /// @return @c true if this is an IPv6 range, @c false if not.
+  bool is_ip6() const { return AF_INET6 == _family; }
 
   /** Check if @a this range is the IP address @a family.
    *
@@ -1016,7 +1038,7 @@ public:
    * A successful parse means @a this was loaded with the specified range. If not the range is
    * marked as invalid.
    */
-  bool load(std::string_view const&text);
+  bool load(std::string_view const& text);
 
   /// @return The minimum address in the range.
   IPAddr min() const;
@@ -1026,13 +1048,28 @@ public:
 
   bool empty() const;
 
-  operator IP4Range&() { return _range._ip4; }
+  IP4Range const& ip4() const { return _range._ip4; }
+  IP6Range const& ip6() const { return _range._ip6; }
 
-  operator IP6Range&() { return _range._ip6; }
+  class NetSource;
 
-  operator IP4Range const&() const { return _range._ip4; }
-
-  operator IP6Range const&() const { return _range._ip6; }
+  /** Generate a list of networks covering @a this range.
+   *
+   * @return A network generator.
+   *
+   * The returned object can be used as an iterator, or as a container to iterating over
+   * the unique minimal set of networks that cover @a this range.
+   *
+   * @code
+   * void (IPRange const& range) {
+   *   for ( auto const& net : range ) {
+   *     net.addr(); // network address.
+   *     net.mask(); // network mask;
+   *   }
+   * }
+   * @endcode
+   */
+  NetSource networks() const;
 
 protected:
   /** Range container.
@@ -1053,12 +1090,69 @@ protected:
   sa_family_t _family{AF_UNSPEC};
 };
 
+/** Network generator class.
+ * This generates networks from a range and acts as both a forward iterator and a container.
+ */
+class IPRange::NetSource {
+  using self_type = NetSource; ///< Self reference type.
+public:
+  using range_type = IPRange; ///< Import base range type.
+
+  /// Construct from @a range.
+  explicit NetSource(range_type const& range);
+
+  /// Copy constructor.
+  NetSource(self_type const& that) = default;
+
+  /// This class acts as a container and an iterator.
+  using iterator = self_type;
+  /// All iteration is constant so no distinction between iterators.
+  using const_iterator = iterator;
+
+  iterator begin() const; ///< First network.
+  iterator end() const; ///< Past last network.
+
+  /// @return The current network.
+  IPNet operator*() const;
+
+  /// Access @a this as if it were an @c IP6Net.
+  self_type *operator->();
+
+  /// Iterator support.
+  /// @areturn The current network address.
+  IPAddr addr() const;
+
+  /// Iterator support.
+  /// @return The current network mask.
+  IPMask mask() const;
+
+  /// Move to next network.
+  self_type& operator++();
+
+  /// Move to next network.
+  self_type operator++(int);
+
+  /// Equality.
+  bool operator==(self_type const& that) const;
+
+  /// Inequality.
+  bool operator!=(self_type const& that) const;
+
+protected:
+  union {
+    std::monostate _nil;
+    IP4Range::NetSource _ip4;
+    IP6Range::NetSource _ip6;
+  };
+  sa_family_t _family = AF_UNSPEC;
+};
+
 /// An IPv4 network.
 class IP4Net {
   using self_type = IP4Net; ///< Self reference type.
 public:
   IP4Net() = default; ///< Construct invalid network.
-  IP4Net(self_type const&that) = default; ///< Copy constructor.
+  IP4Net(self_type const& that) = default; ///< Copy constructor.
 
   /** Construct from @a addr and @a mask.
    *
@@ -1092,7 +1186,7 @@ public:
   IP4Addr upper_bound() const;
 
   /// @return The mask for the network.
-  IPMask const&mask() const;
+  IPMask const& mask() const;
 
   /// @return A range that exactly covers the network.
   IP4Range as_range() const;
@@ -1103,19 +1197,19 @@ public:
    * @param mask Network mask.
    * @return @a this.
    */
-  self_type&assign(IP4Addr const&addr, IPMask const&mask);
+  self_type& assign(IP4Addr const& addr, IPMask const& mask);
 
   /// Reset network to invalid state.
-  self_type&clear() {
+  self_type& clear() {
     _mask.clear();
     return *this;
   }
 
   /// Equality.
-  bool operator==(self_type const&that) const;
+  bool operator==(self_type const& that) const;
 
   /// Inequality
-  bool operator!=(self_type const&that) const;
+  bool operator!=(self_type const& that) const;
 
 protected:
   IP4Addr _addr; ///< Network address (also lower_bound).
@@ -1126,7 +1220,7 @@ class IP6Net {
   using self_type = IP6Net; ///< Self reference type.
 public:
   IP6Net() = default; ///< Construct invalid network.
-  IP6Net(self_type const&that) = default; ///< Copy constructor.
+  IP6Net(self_type const& that) = default; ///< Copy constructor.
 
   /** Construct from @a addr and @a mask.
    *
@@ -1156,7 +1250,7 @@ public:
   IP6Addr upper_bound() const;
 
   /// @return The mask for the network.
-  IPMask const&mask() const;
+  IPMask const& mask() const;
 
   /// @return A range that exactly covers the network.
   IP6Range as_range() const;
@@ -1167,19 +1261,19 @@ public:
    * @param mask Network mask.
    * @return @a this.
    */
-  self_type&assign(IP6Addr const&addr, IPMask const&mask);
+  self_type& assign(IP6Addr const& addr, IPMask const& mask);
 
   /// Reset network to invalid state.
-  self_type&clear() {
+  self_type& clear() {
     _mask.clear();
     return *this;
   }
 
   /// Equality.
-  bool operator==(self_type const&that) const;
+  bool operator==(self_type const& that) const;
 
   /// Inequality
-  bool operator!=(self_type const&that) const;
+  bool operator!=(self_type const& that) const;
 
 protected:
   IP6Addr _addr; ///< Network address (also lower_bound).
@@ -1192,39 +1286,77 @@ protected:
 class IPNet {
   using self_type = IPNet; ///< Self reference type.
 public:
-  static constexpr char SEPARATOR = '/'; // the character used between the address and mask
+  IPNet() = default; ///< Construct invalid network.
+  IPNet(self_type const& that) = default; ///< Copy constructor.
 
-  IPNet() = default;
+  /** Construct from @a addr and @a mask.
+   *
+   * @param addr An address in the network.
+   * @param mask The mask for the network.
+   *
+   * The network is based on the mask, and the resulting network address is chosen such that the
+   * network will contain @a addr. For a given @a addr and @a mask there is only one network
+   * that satisifies these criteria.
+   */
+  IPNet(IPAddr const& addr, IPMask const& mask);
 
-  IPNet(const IPAddr&addr, const IPMask&mask);
+  IPNet(TextView text);
 
-  operator IPAddr const&() const;
+  /** Parse network as @a text.
+   *
+   * @param text String describing the network in CIDR format.
+   * @return @c true if a valid string, @c false if not.
+   */
+  bool load(swoc::TextView text);
 
-  operator IPMask const&() const;
+  /// @return @c true if the network is valid, @c false if not.
+  bool is_valid() const;
 
-  IPAddr const&addr() const;
-
-  IPMask const&mask() const;
-
+  /// @return THh smallest address in the network.
   IPAddr lower_bound() const;
 
+  /// @return The largest address in the network.
   IPAddr upper_bound() const;
 
+  IPMask::raw_type width() const;
+
+  /// @return The mask for the network.
+  IPMask const& mask() const;
+
+  /// @return A range that exactly covers the network.
   IPRange as_range() const;
 
-  bool contains(IPAddr const&addr) const;
+  bool is_ip4() const { return _addr.is_ip4(); }
+  bool is_ip6() const { return _addr.is_ip6(); }
 
-  // computes this is strict subset of other
-  bool is_subnet_of(self_type const&that);
+  sa_family_t family() const { return _addr.family(); }
 
-  // Check if there are any addresses in both @a this and @a that.
-  bool intersects(self_type const&that);
+  IP4Net ip4() const { return IP4Net{_addr.ip4(), _mask}; }
+  IP6Net ip6() const { return IP6Net{_addr.ip6(), _mask};}
 
-  self_type&assign(IPAddr const&addr, IPMask const&mask);
+  /** Assign an @a addr and @a mask to @a this.
+   *
+   * @param addr Network addres.
+   * @param mask Network mask.
+   * @return @a this.
+   */
+  self_type& assign(IPAddr const& addr, IPMask const& mask);
+
+  /// Reset network to invalid state.
+  self_type& clear() {
+    _mask.clear();
+    return *this;
+  }
+
+  /// Equality.
+  bool operator==(self_type const& that) const;
+
+  /// Inequality
+  bool operator!=(self_type const& that) const;
 
 protected:
-  IPAddr _addr;
-  IPMask _mask;
+  IPAddr _addr; ///< Address and family.
+  IPMask _mask; ///< Network mask.
 };
 
 // --------------------------------------------------------------------------
@@ -1260,7 +1392,7 @@ public:
    *
    * All addresses in @a r are set to have the @a payload.
    */
-  self_type&mark(IPRange const&range, PAYLOAD const&payload);
+  self_type& mark(IPRange const& range, PAYLOAD const& payload);
 
   /** Fill the @a range with @a payload.
    *
@@ -1270,7 +1402,7 @@ public:
    *
    * Addresses in @a range are set to have @a payload if the address does not already have a payload.
    */
-  self_type&fill(IPRange const&range, PAYLOAD const&payload);
+  self_type& fill(IPRange const& range, PAYLOAD const& payload);
 
   /** Blend @a color in to the @a range.
    *
@@ -1292,16 +1424,16 @@ public:
    * that @a p will be updated in place.
    */
   template<typename F, typename U = PAYLOAD>
-  self_type&blend(IPRange const&range, U const&color, F&&blender);
+  self_type& blend(IPRange const& range, U const& color, F&& blender);
 
   template<typename F, typename U = PAYLOAD>
-  self_type&blend(IP4Range const&range, U const&color, F&&blender) {
+  self_type& blend(IP4Range const& range, U const& color, F&& blender) {
     _ip4.blend(range, color, blender);
     return *this;
   }
 
   template<typename F, typename U = PAYLOAD>
-  self_type&blend(IP6Range const&range, U const&color, F&&blender) {
+  self_type& blend(IP6Range const& range, U const& color, F&& blender) {
     _ip6.blend(range, color, blender);
     return *this;
   }
@@ -1311,7 +1443,7 @@ public:
    * @param addr Address to find.
    * @return The payload if any, @c nullptr if the address is not in the space.
    */
-  PAYLOAD *find(IP4Addr const&addr) {
+  PAYLOAD *find(IP4Addr const& addr) {
     return _ip4.find(addr);
   }
 
@@ -1320,7 +1452,7 @@ public:
    * @param addr Address to find.
    * @return The payload if any, @c nullptr if the address is not in the space.
    */
-  PAYLOAD *find(IP6Addr const&addr) {
+  PAYLOAD *find(IP6Addr const& addr) {
     return _ip6.find(addr);
   }
 
@@ -1329,7 +1461,7 @@ public:
    * @param addr Address to find.
    * @return The payload if any, @c nullptr if the address is not in the space.
    */
-  PAYLOAD *find(IPAddr const&addr) {
+  PAYLOAD *find(IPAddr const& addr) {
     if (addr.is_ip4()) {
       return _ip4.find(IP4Addr{addr});
     } else if (addr.is_ip6()) {
@@ -1368,12 +1500,12 @@ public:
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
-    self_type&operator++();
+    self_type& operator++();
 
     /// Pre-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator.
-    self_type&operator--();
+    self_type& operator--();
 
     /// Post-increment.
     /// Move to the next element in the list.
@@ -1387,17 +1519,17 @@ public:
 
     /// Dereference.
     /// @return A reference to the referent.
-    value_type const&operator*() const;
+    value_type const& operator*() const;
 
     /// Dereference.
     /// @return A pointer to the referent.
     value_type const *operator->() const;
 
     /// Equality
-    bool operator==(self_type const&that) const;
+    bool operator==(self_type const& that) const;
 
     /// Inequality
-    bool operator!=(self_type const&that) const;
+    bool operator!=(self_type const& that) const;
 
   protected:
     // These are stored non-const to make implementing @c iterator easier. This class provides the
@@ -1421,8 +1553,8 @@ public:
      *
      * In practice, both iterators should be either the beginning or ending iterator for the subspace.
      */
-    const_iterator(typename IP4Space::iterator const&iter4
-                   , typename IP6Space::iterator const&iter6);
+    const_iterator(typename IP4Space::iterator const& iter4
+                   , typename IP6Space::iterator const& iter6);
   };
 
   /** Iterator.
@@ -1450,12 +1582,12 @@ public:
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
-    self_type&operator++();
+    self_type& operator++();
 
     /// Pre-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator.
-    self_type&operator--();
+    self_type& operator--();
 
     /// Post-increment.
     /// Move to the next element in the list.
@@ -1477,7 +1609,7 @@ public:
 
     /// Dereference.
     /// @return A reference to the referent.
-    value_type const&operator*() const;
+    value_type const& operator*() const;
 
     /// Dereference.
     /// @return A pointer to the referent.
@@ -1503,8 +1635,8 @@ protected:
 };
 
 template<typename PAYLOAD>
-IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator const&iter4
-                                                 , typename IP6Space::iterator const&iter6)
+IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator const& iter4
+                                                 , typename IP6Space::iterator const& iter6)
     : _iter_4(iter4), _iter_6(iter6) {
   if (_iter_4.has_next()) {
     new(&_value) value_type{_iter_4->range(), _iter_4->payload()};
@@ -1581,13 +1713,13 @@ auto IPSpace<PAYLOAD>::const_iterator::operator->() const -> value_type const * 
 
 template<typename PAYLOAD>
 bool
-IPSpace<PAYLOAD>::const_iterator::operator==(self_type const&that) const {
+IPSpace<PAYLOAD>::const_iterator::operator==(self_type const& that) const {
   return _iter_4 == that._iter_4 && _iter_6 == that._iter_6;
 }
 
 template<typename PAYLOAD>
 bool
-IPSpace<PAYLOAD>::const_iterator::operator!=(self_type const&that) const {
+IPSpace<PAYLOAD>::const_iterator::operator!=(self_type const& that) const {
   return _iter_4 != that._iter_4 || _iter_6 != that._iter_6;
 }
 
@@ -1620,17 +1752,17 @@ inline constexpr IPAddr::raw_addr_type::raw_addr_type() : _ip4(INADDR_ANY) {}
 
 inline IPAddr::IPAddr(in_addr_t addr) : _family(AF_INET), _addr(addr) {}
 
-inline IPAddr::IPAddr(in6_addr const&addr) : _family(AF_INET6), _addr(addr) {}
+inline IPAddr::IPAddr(in6_addr const& addr) : _family(AF_INET6), _addr(addr) {}
 
 inline IPAddr::IPAddr(sockaddr const *addr) {
   this->assign(addr);
 }
 
-inline IPAddr::IPAddr(IPEndpoint const&addr) {
+inline IPAddr::IPAddr(IPEndpoint const& addr) {
   this->assign(&addr.sa);
 }
 
-inline IPAddr::IPAddr(string_view const&text) {
+inline IPAddr::IPAddr(string_view const& text) {
   this->load(text);
 }
 
@@ -1642,14 +1774,14 @@ IPAddr::operator=(in_addr_t addr) {
 }
 
 inline IPAddr&
-IPAddr::operator=(in6_addr const&addr) {
+IPAddr::operator=(in6_addr const& addr) {
   _family = AF_INET6;
   _addr._ip6 = addr;
   return *this;
 }
 
 inline IPAddr&
-IPAddr::operator=(IPEndpoint const&addr) {
+IPAddr::operator=(IPEndpoint const& addr) {
   return this->assign(&addr.sa);
 }
 
@@ -1674,7 +1806,7 @@ IPAddr::is_ip6() const {
 }
 
 inline bool
-IPAddr::isCompatibleWith(self_type const&that) {
+IPAddr::isCompatibleWith(self_type const& that) {
   return this->is_valid() && _family == that._family;
 }
 
@@ -1685,7 +1817,7 @@ IPAddr::is_loopback() const {
 }
 
 inline bool
-operator==(IPAddr const&lhs, IPAddr const&rhs) {
+operator==(IPAddr const& lhs, IPAddr const& rhs) {
   if (lhs._family != rhs._family) {
     return false;
   }
@@ -1699,7 +1831,7 @@ operator==(IPAddr const&lhs, IPAddr const&rhs) {
 }
 
 inline bool
-operator!=(IPAddr const&lhs, IPAddr const&rhs) {
+operator!=(IPAddr const& lhs, IPAddr const& rhs) {
   return !(lhs == rhs);
 }
 
@@ -1711,7 +1843,7 @@ IPAddr::assign(in_addr_t addr) {
 }
 
 inline IPAddr&
-IPAddr::assign(in6_addr const&addr) {
+IPAddr::assign(in6_addr const& addr) {
   _family = AF_INET6;
   _addr._ip6 = addr;
   return *this;
@@ -1751,72 +1883,66 @@ IPAddr::invalidate() {
 }
 
 // Associated operators.
-bool operator==(IPAddr const&lhs, sockaddr const *rhs);
+bool operator==(IPAddr const& lhs, sockaddr const *rhs);
 
 inline bool
-operator==(sockaddr const *lhs, IPAddr const&rhs) {
+operator==(sockaddr const *lhs, IPAddr const& rhs) {
   return rhs == lhs;
 }
 
 inline bool
-operator!=(IPAddr const&lhs, sockaddr const *rhs) {
+operator!=(IPAddr const& lhs, sockaddr const *rhs) {
   return !(lhs == rhs);
 }
 
 inline bool
-operator!=(sockaddr const *lhs, IPAddr const&rhs) {
+operator!=(sockaddr const *lhs, IPAddr const& rhs) {
   return !(rhs == lhs);
 }
 
 inline bool
-operator==(IPAddr const&lhs, IPEndpoint const&rhs) {
+operator==(IPAddr const& lhs, IPEndpoint const& rhs) {
   return lhs == &rhs.sa;
 }
 
 inline bool
-operator==(IPEndpoint const&lhs, IPAddr const&rhs) {
+operator==(IPEndpoint const& lhs, IPAddr const& rhs) {
   return &lhs.sa == rhs;
 }
 
 inline bool
-operator!=(IPAddr const&lhs, IPEndpoint const&rhs) {
+operator!=(IPAddr const& lhs, IPEndpoint const& rhs) {
   return !(lhs == &rhs.sa);
 }
 
 inline bool
-operator!=(IPEndpoint const&lhs, IPAddr const&rhs) {
+operator!=(IPEndpoint const& lhs, IPAddr const& rhs) {
   return !(rhs == &lhs.sa);
 }
 
 inline bool
-operator<(IPAddr const&lhs, IPAddr const&rhs) {
+operator<(IPAddr const& lhs, IPAddr const& rhs) {
   return -1 == lhs.cmp(rhs);
 }
 
 inline bool
-operator>=(IPAddr const&lhs, IPAddr const&rhs) {
+operator>=(IPAddr const& lhs, IPAddr const& rhs) {
   return lhs.cmp(rhs) >= 0;
 }
 
 inline bool
-operator>(IPAddr const&lhs, IPAddr const&rhs) {
+operator>(IPAddr const& lhs, IPAddr const& rhs) {
   return 1 == lhs.cmp(rhs);
 }
 
 inline bool
-operator<=(IPAddr const&lhs, IPAddr const&rhs) {
+operator<=(IPAddr const& lhs, IPAddr const& rhs) {
   return lhs.cmp(rhs) <= 0;
 }
 
-inline in_addr_t
-IPAddr::network_ip4() const {
-  return _addr._ip4.network_order();
-}
+inline IP4Addr const& IPAddr::ip4() const { return _addr._ip4; }
 
-inline in6_addr
-IPAddr::network_ip6() const {
-  return _addr._ip6.network_order();
-}
+inline IP6Addr const& IPAddr::ip6() const { return _addr._ip6; }
 
 /// ------------------------------------------------------------------------------------
 
@@ -1824,7 +1950,7 @@ inline IPEndpoint::IPEndpoint() {
   sa.sa_family = AF_UNSPEC;
 }
 
-inline IPEndpoint::IPEndpoint(IPAddr const&addr) {
+inline IPEndpoint::IPEndpoint(IPAddr const& addr) {
   this->assign(addr);
 }
 
@@ -1845,7 +1971,7 @@ IPEndpoint::is_valid() const {
 }
 
 inline IPEndpoint&
-IPEndpoint::operator=(self_type const&that) {
+IPEndpoint::operator=(self_type const& that) {
   self_type::assign(&sa, &that.sa);
   return *this;
 }
@@ -1916,31 +2042,31 @@ IPEndpoint::host_order_port(sockaddr const *sa) {
 
 inline constexpr IP4Addr::IP4Addr(in_addr_t addr) : _addr(addr) {}
 
-inline IP4Addr::IP4Addr(std::string_view const&text) {
+inline IP4Addr::IP4Addr(std::string_view const& text) {
   if (!this->load(text)) {
     _addr = INADDR_ANY;
   }
 }
 
-inline IP4Addr::IP4Addr(IPAddr const&addr) : _addr(
+inline IP4Addr::IP4Addr(IPAddr const& addr) : _addr(
     addr._family == AF_INET ? addr._addr._ip4._addr : INADDR_ANY) {}
 
-inline IP4Addr&IP4Addr::operator<<=(unsigned n) {
+inline IP4Addr& IP4Addr::operator<<=(unsigned n) {
   _addr <<= n;
   return *this;
 }
 
-inline IP4Addr&IP4Addr::operator>>=(unsigned n) {
+inline IP4Addr& IP4Addr::operator>>=(unsigned n) {
   _addr >>= n;
   return *this;
 }
 
-inline IP4Addr&IP4Addr::operator&=(self_type const&that) {
+inline IP4Addr& IP4Addr::operator&=(self_type const& that) {
   _addr &= that._addr;
   return *this;
 }
 
-inline IP4Addr&IP4Addr::operator|=(self_type const&that) {
+inline IP4Addr& IP4Addr::operator|=(self_type const& that) {
   _addr |= that._addr;
   return *this;
 }
@@ -1971,36 +2097,36 @@ IP4Addr::operator=(in_addr_t ip) -> self_type& {
   return *this;
 }
 
-inline bool operator==(IP4Addr const&lhs, IP4Addr const&rhs) {
+inline bool operator==(IP4Addr const& lhs, IP4Addr const& rhs) {
   return lhs._addr == rhs._addr;
 }
 
-inline bool operator!=(IP4Addr const&lhs, IP4Addr const&rhs) {
+inline bool operator!=(IP4Addr const& lhs, IP4Addr const& rhs) {
   return lhs._addr != rhs._addr;
 }
 
-inline bool operator<(IP4Addr const&lhs, IP4Addr const&rhs) {
+inline bool operator<(IP4Addr const& lhs, IP4Addr const& rhs) {
   return lhs._addr < rhs._addr;
 }
 
-inline bool operator<=(IP4Addr const&lhs, IP4Addr const&rhs) {
+inline bool operator<=(IP4Addr const& lhs, IP4Addr const& rhs) {
   return lhs._addr <= rhs._addr;
 }
 
-inline bool operator>(IP4Addr const&lhs, IP4Addr const&rhs) {
+inline bool operator>(IP4Addr const& lhs, IP4Addr const& rhs) {
   return rhs < lhs;
 }
 
-inline bool operator>=(IP4Addr const&lhs, IP4Addr const&rhs) {
+inline bool operator>=(IP4Addr const& lhs, IP4Addr const& rhs) {
   return rhs <= lhs;
 }
 
-inline IP4Addr&IP4Addr::operator&=(IPMask const&mask) {
+inline IP4Addr& IP4Addr::operator&=(IPMask const& mask) {
   _addr &= mask.as_ip4()._addr;
   return *this;
 }
 
-inline IP4Addr&IP4Addr::operator|=(IPMask const&mask) {
+inline IP4Addr& IP4Addr::operator|=(IPMask const& mask) {
   _addr |= ~(mask.as_ip4()._addr);
   return *this;
 }
@@ -2012,19 +2138,19 @@ constexpr in_addr_t IP4Addr::reorder(in_addr_t src) {
 
 // ---
 
-inline IP6Addr::IP6Addr(in6_addr const&addr) {
+inline IP6Addr::IP6Addr(in6_addr const& addr) {
   *this = addr;
 }
 
-inline IP6Addr::IP6Addr(std::string_view const&text) {
+inline IP6Addr::IP6Addr(std::string_view const& text) {
   if (!this->load(text)) {
     this->clear();
   }
 }
 
-inline IP6Addr::IP6Addr(IPAddr const&addr) : _addr{addr._addr._ip6._addr} {}
+inline IP6Addr::IP6Addr(IPAddr const& addr) : _addr{addr._addr._ip6._addr} {}
 
-inline in6_addr&IP6Addr::copy_to(in6_addr&addr) const {
+inline in6_addr& IP6Addr::copy_to(in6_addr& addr) const {
   self_type::reorder(addr, _addr._raw);
   return addr;
 }
@@ -2034,7 +2160,7 @@ inline in6_addr IP6Addr::network_order() const {
   return this->copy_to(zret);
 }
 
-inline auto IP6Addr::operator=(in6_addr const&addr) -> self_type& {
+inline auto IP6Addr::operator=(in6_addr const& addr) -> self_type& {
   self_type::reorder(_addr._raw, addr);
   return *this;
 }
@@ -2068,35 +2194,35 @@ inline void IP6Addr::reorder(unsigned char dst[WORD_SIZE], unsigned char const s
   }
 }
 
-inline bool operator==(IP6Addr const&lhs, IP6Addr const&rhs) {
+inline bool operator==(IP6Addr const& lhs, IP6Addr const& rhs) {
   return lhs._addr._store[0] == rhs._addr._store[0] &&
          lhs._addr._store[1] == rhs._addr._store[1];
 }
 
-inline bool operator!=(IP6Addr const&lhs, IP6Addr const&rhs) {
+inline bool operator!=(IP6Addr const& lhs, IP6Addr const& rhs) {
   return lhs._addr._store[0] != rhs._addr._store[0] ||
          lhs._addr._store[1] != rhs._addr._store[1];
 }
 
-inline bool operator<(IP6Addr const&lhs, IP6Addr const&rhs) {
+inline bool operator<(IP6Addr const& lhs, IP6Addr const& rhs) {
   return lhs._addr._store[0] < rhs._addr._store[0] ||
          (lhs._addr._store[0] == rhs._addr._store[0] && lhs._addr._store[1] < rhs._addr._store[1]);
 }
 
-inline bool operator>(IP6Addr const&lhs, IP6Addr const&rhs) {
+inline bool operator>(IP6Addr const& lhs, IP6Addr const& rhs) {
   return rhs < lhs;
 }
 
-inline bool operator<=(IP6Addr const&lhs, IP6Addr const&rhs) {
+inline bool operator<=(IP6Addr const& lhs, IP6Addr const& rhs) {
   return lhs._addr._store[0] < rhs._addr._store[0] ||
          (lhs._addr._store[0] == rhs._addr._store[0] && lhs._addr._store[1] <= rhs._addr._store[1]);
 }
 
-inline bool operator>=(IP6Addr const&lhs, IP6Addr const&rhs) {
+inline bool operator>=(IP6Addr const& lhs, IP6Addr const& rhs) {
   return rhs <= lhs;
 }
 
-inline IP6Addr&IP6Addr::operator&=(IPMask const&mask) {
+inline IP6Addr& IP6Addr::operator&=(IPMask const& mask) {
   if (mask._cidr < WORD_WIDTH) {
     _addr._store[MSW] &= (~word_type{0} << (WORD_WIDTH - mask._cidr));
     _addr._store[LSW] = 0;
@@ -2106,7 +2232,7 @@ inline IP6Addr&IP6Addr::operator&=(IPMask const&mask) {
   return *this;
 }
 
-inline IP6Addr&IP6Addr::operator|=(IPMask const&mask) {
+inline IP6Addr& IP6Addr::operator|=(IPMask const& mask) {
   if (mask._cidr < WORD_WIDTH) {
     _addr._store[MSW] |= (~word_type{0} >> mask._cidr);
     _addr._store[LSW] = ~word_type{0};
@@ -2118,41 +2244,41 @@ inline IP6Addr&IP6Addr::operator|=(IPMask const&mask) {
 
 // Disambiguating comparisons.
 
-inline bool operator==(IPAddr const&lhs, IP4Addr const&rhs) {
+inline bool operator==(IPAddr const& lhs, IP4Addr const& rhs) {
   return lhs.is_ip4() && static_cast<IP4Addr const&>(lhs) == rhs;
 }
 
-inline bool operator!=(IPAddr const&lhs, IP4Addr const&rhs) {
+inline bool operator!=(IPAddr const& lhs, IP4Addr const& rhs) {
   return !lhs.is_ip4() || static_cast<IP4Addr const&>(lhs) != rhs;
 }
 
-inline bool operator==(IP4Addr const&lhs, IPAddr const&rhs) {
+inline bool operator==(IP4Addr const& lhs, IPAddr const& rhs) {
   return rhs.is_ip4() && lhs == static_cast<IP4Addr const&>(rhs);
 }
 
-inline bool operator!=(IP4Addr const&lhs, IPAddr const&rhs) {
+inline bool operator!=(IP4Addr const& lhs, IPAddr const& rhs) {
   return !rhs.is_ip4() || lhs != static_cast<IP4Addr const&>(rhs);
 }
 
-inline bool operator==(IPAddr const&lhs, IP6Addr const&rhs) {
+inline bool operator==(IPAddr const& lhs, IP6Addr const& rhs) {
   return lhs.is_ip6() && static_cast<IP6Addr const&>(lhs) == rhs;
 }
 
-inline bool operator!=(IPAddr const&lhs, IP6Addr const&rhs) {
+inline bool operator!=(IPAddr const& lhs, IP6Addr const& rhs) {
   return !lhs.is_ip6() || static_cast<IP6Addr const&>(lhs) != rhs;
 }
 
-inline bool operator==(IP6Addr const&lhs, IPAddr const&rhs) {
+inline bool operator==(IP6Addr const& lhs, IPAddr const& rhs) {
   return rhs.is_ip6() && lhs == static_cast<IP6Addr const&>(rhs);
 }
 
-inline bool operator!=(IP6Addr const&lhs, IPAddr const&rhs) {
+inline bool operator!=(IP6Addr const& lhs, IPAddr const& rhs) {
   return !rhs.is_ip6() || lhs != static_cast<IP6Addr const&>(rhs);
 }
 
 // +++ IPRange +++
 
-inline IP4Range::IP4Range(string_view const&text) {
+inline IP4Range::IP4Range(string_view const& text) {
   this->load(text);
 }
 
@@ -2160,7 +2286,7 @@ inline auto IP4Range::networks() const -> NetSource {
   return {NetSource{*this}};
 }
 
-inline IP6Range::IP6Range(string_view const&text) {
+inline IP6Range::IP6Range(string_view const& text) {
   this->load(text);
 }
 
@@ -2168,16 +2294,20 @@ inline auto IP6Range::networks() const -> NetSource {
   return {NetSource{*this}};
 }
 
-inline IPRange::IPRange(IP4Range const&range) : _family(AF_INET) {
+inline IPRange::IPRange(IP4Range const& range) : _family(AF_INET) {
   _range._ip4 = range;
 }
 
-inline IPRange::IPRange(IP6Range const&range) : _family(AF_INET6) {
+inline IPRange::IPRange(IP6Range const& range) : _family(AF_INET6) {
   _range._ip6 = range;
 }
 
-inline IPRange::IPRange(string_view const&text) {
+inline IPRange::IPRange(string_view const& text) {
   this->load(text);
+}
+
+inline auto IPRange::networks() const -> NetSource {
+  return {NetSource{*this}};
 }
 
 inline bool IPRange::is(sa_family_t family) const { return family == _family; }
@@ -2193,17 +2323,17 @@ inline auto IPMask::width() const -> raw_type {
 }
 
 inline bool
-operator==(IPMask const&lhs, IPMask const&rhs) {
+operator==(IPMask const& lhs, IPMask const& rhs) {
   return lhs.width() == rhs.width();
 }
 
 inline bool
-operator!=(IPMask const&lhs, IPMask const&rhs) {
+operator!=(IPMask const& lhs, IPMask const& rhs) {
   return lhs.width() != rhs.width();
 }
 
 inline bool
-operator<(IPMask const&lhs, IPMask const&rhs) {
+operator<(IPMask const& lhs, IPMask const& rhs) {
   return lhs.width() < rhs.width();
 }
 
@@ -2218,27 +2348,27 @@ inline IP4Addr IPMask::as_ip4() const {
 
 // +++ mixed operators +++
 
-inline IP4Addr operator&(IP4Addr const&addr, IPMask const&mask) {
+inline IP4Addr operator&(IP4Addr const& addr, IPMask const& mask) {
   return IP4Addr{addr} &= mask;
 }
 
-inline IP4Addr operator|(IP4Addr const&addr, IPMask const&mask) {
+inline IP4Addr operator|(IP4Addr const& addr, IPMask const& mask) {
   return IP4Addr{addr} |= mask;
 }
 
-inline IP6Addr operator&(IP6Addr const&addr, IPMask const&mask) {
+inline IP6Addr operator&(IP6Addr const& addr, IPMask const& mask) {
   return IP6Addr{addr} &= mask;
 }
 
-inline IP6Addr operator|(IP6Addr const&addr, IPMask const&mask) {
+inline IP6Addr operator|(IP6Addr const& addr, IPMask const& mask) {
   return IP6Addr{addr} |= mask;
 }
 
-inline IPAddr operator&(IPAddr const&addr, IPMask const&mask) {
+inline IPAddr operator&(IPAddr const& addr, IPMask const& mask) {
   return IPAddr{addr} &= mask;
 }
 
-inline IPAddr operator|(IPAddr const&addr, IPMask const&mask) {
+inline IPAddr operator|(IPAddr const& addr, IPMask const& mask) {
   return IPAddr{addr} |= mask;
 }
 
@@ -2246,7 +2376,7 @@ inline IPAddr operator|(IPAddr const&addr, IPMask const&mask) {
 
 inline IP4Net::IP4Net(swoc::IP4Addr addr, swoc::IPMask mask) : _addr(addr & mask), _mask(mask) {}
 
-inline IPMask const&IP4Net::mask() const { return _mask; }
+inline IPMask const& IP4Net::mask() const { return _mask; }
 
 inline bool IP4Net::is_valid() const { return _mask.is_valid(); }
 
@@ -2256,15 +2386,15 @@ inline IP4Addr IP4Net::upper_bound() const { return _addr | _mask; }
 
 inline IP4Range IP4Net::as_range() const { return {this->lower_bound(), this->upper_bound()}; }
 
-inline bool IP4Net::operator==(self_type const&that) const {
+inline bool IP4Net::operator==(self_type const& that) const {
   return _mask == that._mask && _addr == that._addr;
 }
 
-inline bool IP4Net::operator!=(self_type const&that) const {
+inline bool IP4Net::operator!=(self_type const& that) const {
   return _mask != that._mask || _addr != that._addr;
 }
 
-inline IP4Net::self_type&IP4Net::assign(IP4Addr const&addr, IPMask const&mask) {
+inline IP4Net::self_type& IP4Net::assign(IP4Addr const& addr, IPMask const& mask) {
   _addr = addr & mask;
   _mask = mask;
   return *this;
@@ -2272,7 +2402,7 @@ inline IP4Net::self_type&IP4Net::assign(IP4Addr const&addr, IPMask const&mask) {
 
 inline IP6Net::IP6Net(swoc::IP6Addr addr, swoc::IPMask mask) : _addr(addr & mask), _mask(mask) {}
 
-inline IPMask const&IP6Net::mask() const { return _mask; }
+inline IPMask const& IP6Net::mask() const { return _mask; }
 
 inline bool IP6Net::is_valid() const { return _mask.is_valid(); }
 
@@ -2282,43 +2412,65 @@ inline IP6Addr IP6Net::upper_bound() const { return _addr | _mask; }
 
 inline IP6Range IP6Net::as_range() const { return {this->lower_bound(), this->upper_bound()}; }
 
-inline bool IP6Net::operator==(self_type const&that) const {
+inline bool IP6Net::operator==(self_type const& that) const {
   return _mask == that._mask && _addr == that._addr;
 }
 
-inline bool IP6Net::operator!=(self_type const&that) const {
+inline bool IP6Net::operator!=(self_type const& that) const {
   return _mask != that._mask || _addr != that._addr;
 }
 
-inline IP6Net::self_type&IP6Net::assign(IP6Addr const&addr, IPMask const&mask) {
+inline IP6Net::self_type& IP6Net::assign(IP6Addr const& addr, IPMask const& mask) {
   _addr = addr & mask;
   _mask = mask;
   return *this;
 }
 
-inline IPNet::IPNet(IPAddr const&addr, IPMask const&mask) : _addr(addr & mask), _mask(mask) {}
+inline IPNet::IPNet(IPAddr const& addr, IPMask const& mask) : _addr(addr & mask), _mask(mask) {}
 
-inline IPNet::operator IPAddr const&() const {
-  return _addr;
-}
+inline IPNet::IPNet(TextView text) { this->load(text); }
 
-inline IPNet::operator IPMask const&() const {
-  return _mask;
-}
-
-inline IPAddr const&
-IPNet::addr() const {
-  return _addr;
-}
-
-inline IPMask const&
-IPNet::mask() const {
-  return _mask;
-}
+inline bool IPNet::is_valid() const { return _mask.is_valid(); }
 
 inline IPAddr IPNet::lower_bound() const { return _addr; }
 
 inline IPAddr IPNet::upper_bound() const { return _addr | _mask; }
+
+inline IPMask::raw_type IPNet::width() const { return _mask.width(); }
+
+inline IPMask const& IPNet::mask() const { return _mask; }
+
+inline IPRange IPNet::as_range() const { return {this->lower_bound(), this->upper_bound()};}
+
+inline IPNet::self_type& IPNet::assign(IPAddr const& addr, IPMask const& mask) {
+  _addr = addr & mask;
+  _mask = mask;
+  return *this;
+}
+
+inline bool IPNet::operator==(IPNet::self_type const& that) const {
+  return _mask == that._mask && _addr == that._addr;
+}
+
+inline bool IPNet::operator!=(IPNet::self_type const& that) const {
+  return _mask != that._mask || _addr != that._addr;
+}
+
+inline bool operator == (IPNet const& lhs, IP4Net const& rhs) {
+  return lhs.is_ip4() && lhs.ip4() == rhs;
+}
+
+inline bool operator == (IP4Net const& lhs, IPNet const& rhs) {
+  return rhs.is_ip4() && rhs.ip4() == lhs;
+}
+
+inline bool operator == (IPNet const& lhs, IP6Net const& rhs) {
+  return lhs.is_ip6() && lhs.ip6() == rhs;
+}
+
+inline bool operator == (IP6Net const& lhs, IPNet const& rhs) {
+  return rhs.is_ip6() && rhs.ip6() == lhs;
+}
 
 // +++ Range -> Network classes +++
 
@@ -2343,22 +2495,22 @@ inline IPMask IP4Range::NetSource::mask() const { return IPMask{_cidr}; }
 
 inline auto IP4Range::NetSource::operator->() -> self_type * { return this; }
 
-inline IP4Addr const&IP4Range::NetSource::addr() const { return _range.min(); }
+inline IP4Addr const& IP4Range::NetSource::addr() const { return _range.min(); }
 
-inline bool IP4Range::NetSource::operator==(IP4Range::NetSource::self_type const&that) {
+inline bool IP4Range::NetSource::operator==(IP4Range::NetSource::self_type const& that) const {
   return ((_cidr == that._cidr) && (_range == that._range)) ||
          (_range.empty() && that._range.empty());
 }
 
-inline bool IP4Range::NetSource::operator!=(IP4Range::NetSource::self_type const&that) {
+inline bool IP4Range::NetSource::operator!=(IP4Range::NetSource::self_type const& that) const {
   return !(*this == that);
 }
 
-inline IP6Range::NetSource::iterator IP6Range::NetSource::begin() const {
+inline auto IP6Range::NetSource::begin() const -> iterator {
   return *this;
 }
 
-inline IP6Range::NetSource::iterator IP6Range::NetSource::end() const {
+inline auto IP6Range::NetSource::end() const -> iterator {
   return self_type{range_type{}};
 }
 
@@ -2368,49 +2520,120 @@ inline IP6Net IP6Range::NetSource::operator*() const {
 
 inline auto IP6Range::NetSource::operator->() -> self_type * { return this; }
 
-inline bool IP6Range::NetSource::is_valid(IPMask const&mask) {
+inline bool IP6Range::NetSource::is_valid(IPMask const& mask) {
   return ((_range.min() & mask) == _range.min()) &&
          ((_range.min() | mask) <= _range.max());
 }
 
-inline bool IP6Range::NetSource::operator==(IP6Range::NetSource::self_type const&that) {
+inline bool IP6Range::NetSource::operator==(IP6Range::NetSource::self_type const& that) const {
   return ((_mask == that._mask) && (_range == that._range)) ||
          (_range.empty() && that._range.empty());
 }
 
-inline bool IP6Range::NetSource::operator!=(IP6Range::NetSource::self_type const&that) {
+inline bool IP6Range::NetSource::operator!=(IP6Range::NetSource::self_type const& that) const {
+  return !(*this == that);
+}
+
+inline IPRange::NetSource::NetSource(IPRange::NetSource::range_type const& range) {
+  if (range.is_ip4()) {
+    new (&_ip4) decltype(_ip4)(range.ip4());
+    _family = AF_INET;
+  } else if (range.is_ip6()) {
+    new (&_ip6) decltype(_ip6)(range.ip6());
+    _family = AF_INET6;
+  }
+}
+
+inline auto IPRange::NetSource::begin() const -> iterator {
+  return *this;
+}
+
+inline auto IPRange::NetSource::end() const -> iterator {
+  return AF_INET == _family ? self_type{IP4Range{}}
+  : AF_INET6 == _family ? self_type{IP6Range{}}
+  : self_type{IPRange{}};
+}
+
+inline IPAddr IPRange::NetSource::addr() const {
+  if (AF_INET == _family) {
+    return _ip4.addr();
+  } else if (AF_INET6 == _family) {
+    return _ip6.addr();
+  }
+  return {};
+}
+
+inline IPMask IPRange::NetSource::mask() const {
+  if (AF_INET == _family) {
+    return _ip4.mask();
+  } else if (AF_INET6 == _family) {
+    return _ip6.mask();
+  }
+  return {};
+}
+
+inline IPNet IPRange::NetSource::operator*() const {
+  return { this->addr(), this->mask() };
+}
+
+inline auto IPRange::NetSource::operator++() -> self_type & {
+  if (AF_INET == _family) {
+    ++_ip4;
+  } else if (AF_INET6 == _family) {
+    ++_ip6;
+  }
+  return *this;
+}
+
+inline auto IPRange::NetSource::operator->() -> self_type * { return this; }
+
+inline bool IPRange::NetSource::operator==(self_type const& that) const {
+  if (_family != that._family) {
+    return false;
+  }
+  if (AF_INET == _family) {
+    return _ip4 == that._ip4;
+  } else if (AF_INET6 == _family) {
+    return _ip6 == that._ip6;
+  } else if (AF_UNSPEC == _family) {
+    return true;
+  }
+  return false;
+}
+
+inline bool IPRange::NetSource::operator!=(self_type const& that) const {
   return !(*this == that);
 }
 
 // --- IPSpace
 
 template<typename PAYLOAD>
-auto IPSpace<PAYLOAD>::mark(IPRange const&range, PAYLOAD const&payload) -> self_type& {
+auto IPSpace<PAYLOAD>::mark(IPRange const& range, PAYLOAD const& payload) -> self_type& {
   if (range.is(AF_INET)) {
-    _ip4.mark(range, payload);
+    _ip4.mark(range.ip4(), payload);
   } else if (range.is(AF_INET6)) {
-    _ip6.mark(range, payload);
+    _ip6.mark(range.ip6(), payload);
   }
   return *this;
 }
 
 template<typename PAYLOAD>
-auto IPSpace<PAYLOAD>::fill(IPRange const&range, PAYLOAD const&payload) -> self_type& {
+auto IPSpace<PAYLOAD>::fill(IPRange const& range, PAYLOAD const& payload) -> self_type& {
   if (range.is(AF_INET6)) {
-    _ip6.fill(range, payload);
+    _ip6.fill(range.ip6(), payload);
   } else if (range.is(AF_INET)) {
-    _ip4.fill(range, payload);
+    _ip4.fill(range.ip4(), payload);
   }
   return *this;
 }
 
 template<typename PAYLOAD>
 template<typename F, typename U>
-auto IPSpace<PAYLOAD>::blend(IPRange const&range, U const&color, F&&blender) -> self_type& {
+auto IPSpace<PAYLOAD>::blend(IPRange const& range, U const& color, F&& blender) -> self_type& {
   if (range.is(AF_INET)) {
-    _ip4.blend(range, color, blender);
+    _ip4.blend(range.ip4(), color, blender);
   } else if (range.is(AF_INET6)) {
-    _ip6.blend(range, color, blender);
+    _ip6.blend(range.ip6(), color, blender);
   }
   return *this;
 }
@@ -2437,6 +2660,7 @@ auto IPSpace<PAYLOAD>::end() const -> const_iterator {
 
 namespace std {
 
+// -- Tuple support for IP4Net --
 template<> class tuple_size<swoc::IP4Net> : public std::integral_constant<size_t, 2> {
 };
 
@@ -2454,6 +2678,7 @@ public:
   using type = swoc::IPMask;
 };
 
+// -- Tuple support for IP6Net --
 template<> class tuple_size<swoc::IP6Net> : public std::integral_constant<size_t, 2> {
 };
 
@@ -2471,12 +2696,30 @@ public:
   using type = swoc::IPMask;
 };
 
+// -- Tuple support for IPNet --
+template<> class tuple_size<swoc::IPNet> : public std::integral_constant<size_t, 2> {
+};
+
+template<size_t IDX> class tuple_element<IDX, swoc::IPNet> {
+  static_assert("swoc::IPNet tuple index out of range");
+};
+
+template<> class tuple_element<0, swoc::IPNet> {
+public:
+  using type = swoc::IPAddr;
+};
+
+template<> class tuple_element<1, swoc::IPNet> {
+public:
+  using type = swoc::IPMask;
+};
+
 } // namespace std
 
 namespace swoc {
 
 template<size_t IDX> typename std::tuple_element<IDX, IP4Net>::type
-get(swoc::IP4Net const&net) {
+get(swoc::IP4Net const& net) {
   if constexpr (IDX == 0) {
     return net.lower_bound();
   } else if constexpr (IDX == 1) {
@@ -2485,7 +2728,16 @@ get(swoc::IP4Net const&net) {
 }
 
 template<size_t IDX> typename std::tuple_element<IDX, IP6Net>::type
-get(swoc::IP6Net const&net) {
+get(swoc::IP6Net const& net) {
+  if constexpr (IDX == 0) {
+    return net.lower_bound();
+  } else if constexpr (IDX == 1) {
+    return net.mask();
+  }
+}
+
+template<size_t IDX> typename std::tuple_element<IDX, IPNet>::type
+get(swoc::IPNet const& net) {
   if constexpr (IDX == 0) {
     return net.lower_bound();
   } else if constexpr (IDX == 1) {

@@ -304,7 +304,15 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
            , "10.33.45.76/32"_tv
        }};
   auto r4_net = r_4_nets.begin();
-  for (auto const&net : r_4.networks()) {
+  for (auto const &net : r_4.networks()) {
+    REQUIRE(r4_net != r_4_nets.end());
+    CHECK(*r4_net == net);
+    ++r4_net;
+  }
+
+  // Let's try that again, with @c IPRange instead.
+  r4_net = r_4_nets.begin();
+  for (auto const& net : IPRange{r_4}.networks()) {
     REQUIRE(r4_net != r_4_nets.end());
     CHECK(*r4_net == net);
     ++r4_net;
@@ -506,6 +514,14 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
     CHECK(*r5_net == swoc::IP6Net{addr, mask});
     ++r5_net;
   }
+
+  // Try it again, using @c IPRange.
+  r5_net = r_5_nets.begin();
+  for ( auto const&[addr, mask] : IPRange{r_5}.networks()) {
+    REQUIRE(r5_net != r_5_nets.end());
+    CHECK(*r5_net == swoc::IPNet{addr, mask});
+    ++r5_net;
+  }
 }
 
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
@@ -575,7 +591,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(payload != nullptr);
   REQUIRE(*payload == 0x5);
 
-  space.blend({r_2.min(), r_3.max()}, 0x6, BF);
+  space.blend(IPRange{r_2.min(), r_3.max()}, 0x6, BF);
   REQUIRE(space.count() == 4);
 
   std::array<std::tuple<TextView, int>, 9> ranges = {
