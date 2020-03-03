@@ -98,6 +98,7 @@ TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
   REQUIRE((*spot++)._payload == "muddle");
   REQUIRE((*spot++)._payload == "two");
   REQUIRE(spot == list.end());
+  spot = list.begin(); // verify assignment works.
 
   Thing *thing = list.take_head();
   REQUIRE(thing->_payload == "one");
@@ -128,4 +129,9 @@ TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
   list.insert_before(list.end(), new Thing("trailer"));
   REQUIRE(list.count() == 4);
   REQUIRE(list.tail()->_payload == "trailer");
+
+  for ( auto const& elt : list) {
+
+  }
+
 }

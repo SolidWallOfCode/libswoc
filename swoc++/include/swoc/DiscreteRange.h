@@ -698,6 +698,7 @@ protected:
 
 public:
   using iterator = typename decltype(_list)::iterator;
+  using const_iterator = typename decltype(_list)::const_iterator;
 
   DiscreteSpace() = default;
   ~DiscreteSpace();
@@ -756,7 +757,7 @@ public:
    * @param metric The metric for which to search.
    * @return The payload for @a metric if found, @c nullptr if not found.
    */
-  PAYLOAD * find(METRIC const &metric);
+  iterator find(METRIC const &metric);
 
   /// @return The number of distinct ranges.
   size_t count() const;
@@ -870,27 +871,27 @@ DiscreteSpace<METRIC, PAYLOAD>::head() -> Node *{
 }
 
 template <typename METRIC, typename PAYLOAD>
-PAYLOAD *
-DiscreteSpace<METRIC, PAYLOAD>::find(METRIC const &metric) {
+auto
+DiscreteSpace<METRIC, PAYLOAD>::find(METRIC const &metric) -> iterator {
   auto n = _root; // current node to test.
   while (n) {
     if (metric < n->min()) {
       if (n->_hull.contains(metric)) {
         n = n->left();
       } else {
-        return nullptr;
+        return this->end();
       }
     } else if (n->max() < metric) {
       if (n->_hull.contains(metric)) {
         n = n->right();
       } else {
-        return nullptr;
+        return this->end();
       }
     } else {
-      return &n->payload();
+      return _list.iterator_for(n);
     }
   }
-  return nullptr;
+  return this->end();
 }
 
 template <typename METRIC, typename PAYLOAD>

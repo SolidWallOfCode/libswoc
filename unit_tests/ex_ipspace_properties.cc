@@ -409,7 +409,8 @@ bool Table::parse(TextView src) {
 }
 
 auto Table::find(IPAddr const &addr) -> Row * {
-  return _space.find(addr);
+  auto spot = _space.find(addr);
+  return spot == _space.end() ? nullptr : &std::get<1>(*spot);
 }
 
 bool operator == (Table::Row const&, Table::Row const&) { return false; }

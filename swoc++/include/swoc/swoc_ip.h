@@ -1,5 +1,6 @@
 #pragma once
 #pragma once
+#pragma once
 // SPDX-License-Identifier: Apache-2.0
 /** @file
    IP address and network related classes.
@@ -1438,38 +1439,6 @@ public:
     return *this;
   }
 
-  /** Find the payload for an @a addr.
-   *
-   * @param addr Address to find.
-   * @return The payload if any, @c nullptr if the address is not in the space.
-   */
-  PAYLOAD *find(IP4Addr const& addr) {
-    return _ip4.find(addr);
-  }
-
-  /** Find the payload for an @a addr.
-   *
-   * @param addr Address to find.
-   * @return The payload if any, @c nullptr if the address is not in the space.
-   */
-  PAYLOAD *find(IP6Addr const& addr) {
-    return _ip6.find(addr);
-  }
-
-  /** Find the payload for an @a addr.
-   *
-   * @param addr Address to find.
-   * @return The payload if any, @c nullptr if the address is not in the space.
-   */
-  PAYLOAD *find(IPAddr const& addr) {
-    if (addr.is_ip4()) {
-      return _ip4.find(IP4Addr{addr});
-    } else if (addr.is_ip6()) {
-      return _ip6.find(IP6Addr{addr});
-    }
-    return nullptr;
-  }
-
   /// @return The number of distinct ranges.
   size_t count() const { return _ip4.count() + _ip6.count(); }
 
@@ -1564,7 +1533,7 @@ public:
   };
 
   /** Iterator.
-   * THe value type is a tuple of the IP address range and the @a PAYLOAD. The range is constant
+   * The value type is a tuple of the IP address range and the @a PAYLOAD. The range is constant
    * and the @a PAYLOAD is a reference. This can be used to update the @a PAYLOAD for this range.
    *
    * @note Range merges are not trigged by modifications of the @a PAYLOAD via an iterator.
@@ -1630,6 +1599,39 @@ public:
   protected:
     using super_type::super_type; /// Inherit supertype constructors.
   };
+
+  /** Find the payload for an @a addr.
+   *
+   * @param addr Address to find.
+   * @return Iterator for the range containing @a addr.
+   */
+  iterator find(IPAddr const& addr) {
+    if (addr.is_ip4()) {
+      return iterator(_ip4.find(IP4Addr{addr}), _ip6.begin());
+    } else if (addr.is_ip6()) {
+      return iterator(_ip4.end(), _ip6.find(IP6Addr{addr}));
+    }
+    return this->end();
+  }
+
+  /** Find the payload for an @a addr.
+   *
+   * @param addr Address to find.
+   * @return The payload if any, @c nullptr if the address is not in the space.
+   */
+  iterator find(IP4Addr const& addr) {
+    auto spot = _ip4.find(addr);
+    return spot == _ip4.end() ? this->end() : iterator{_ip4.find(addr), _ip6.begin()};
+  }
+
+  /** Find the payload for an @a addr.
+   *
+   * @param addr Address to find.
+   * @return The payload if any, @c nullptr if the address is not in the space.
+   */
+  iterator find(IP6Addr const& addr) {
+    return { _ip4.end(), _ip6.find(addr) };
+  }
 
   /// @return A constant iterator to the first element.
   const_iterator begin() const;
