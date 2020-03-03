@@ -594,9 +594,9 @@ protected:
     using super_type = detail::RBNode; ///< Parent class.
     friend class DiscreteSpace;
 
-    PAYLOAD _payload{}; ///< Default constructor, should zero init if @c PAYLOAD is a pointer.
     range_type _range;  ///< Range covered by this node.
     range_type _hull;   ///< Range covered by subtree rooted at this node.
+    PAYLOAD _payload{}; ///< Default constructor, should zero init if @c PAYLOAD is a pointer.
 
   public:
     /// Linkage for @c IntrusiveDList.

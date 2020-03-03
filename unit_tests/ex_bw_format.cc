@@ -229,7 +229,6 @@ TEST_CASE("BufferWriter Context 2", "[bufferwriter][example][context]")
   // Override the name lookup to handle structured names.
   class CookieBinding : public swoc::bwf::ContextNames<ExContext const>
   {
-    using self_type  = CookieBinding;
     using super_type = swoc::bwf::ContextNames<ExContext const>;
 
   public:

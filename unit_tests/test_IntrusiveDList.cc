@@ -129,9 +129,4 @@ TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
   list.insert_before(list.end(), new Thing("trailer"));
   REQUIRE(list.count() == 4);
   REQUIRE(list.tail()->_payload == "trailer");
-
-  for ( auto const& elt : list) {
-
-  }
-
 }

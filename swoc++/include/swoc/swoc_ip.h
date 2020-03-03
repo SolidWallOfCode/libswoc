@@ -523,13 +523,13 @@ public:
   explicit IPAddr(in_addr_t addr);
 
   /// Construct using an IPv4 @a addr
-  IPAddr(IP4Addr const& addr) : _family(AF_INET), _addr{addr} {}
+  IPAddr(IP4Addr const& addr) : _addr{addr}, _family(AF_INET) {}
 
   /// Construct using IPv6 @a addr.
   explicit IPAddr(in6_addr const& addr);
 
   /// construct using an IPv6 @a addr
-  IPAddr(IP6Addr const& addr) : _family(AF_INET6), _addr{addr} {}
+  IPAddr(IP6Addr const& addr) : _addr{addr}, _family(AF_INET6) {}
 
   /// Construct from @c sockaddr.
   explicit IPAddr(sockaddr const *addr);
@@ -1788,9 +1788,9 @@ auto IPSpace<PAYLOAD>::iterator::operator--() -> self_type& {
 // @c constexpr constructor is required to initialize _something_, it can't be completely uninitializing.
 inline constexpr IPAddr::raw_addr_type::raw_addr_type() : _ip4(INADDR_ANY) {}
 
-inline IPAddr::IPAddr(in_addr_t addr) : _family(AF_INET), _addr(addr) {}
+inline IPAddr::IPAddr(in_addr_t addr) : _addr(addr), _family(AF_INET) {}
 
-inline IPAddr::IPAddr(in6_addr const& addr) : _family(AF_INET6), _addr(addr) {}
+inline IPAddr::IPAddr(in6_addr const& addr) :  _addr(addr), _family(AF_INET6) {}
 
 inline IPAddr::IPAddr(sockaddr const *addr) {
   this->assign(addr);

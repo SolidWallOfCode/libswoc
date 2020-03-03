@@ -334,7 +334,7 @@ TEST_CASE("ArenaWriter write", "[BW][ArenaWriter]")
   swoc::TextView tv = span.view();
   try {
     for (char c = 'a'; c <= 'z'; ++c) {
-      for (int i = 0; i < buffer.size(); ++i) {
+      for (size_t i = 0; i < buffer.size(); ++i) {
         if (c != *tv++) {
           throw std::exception{};
         }
@@ -374,7 +374,7 @@ TEST_CASE("ArenaWriter print", "[BW][ArenaWriter]")
   swoc::TextView tv = span.view();
   try {
     for (char c = 'a'; c <= 'z'; ++c) {
-      for (int i = 0; i < buffer.size(); ++i) {
+      for (size_t i = 0; i < buffer.size(); ++i) {
         if (c != *tv++) {
           throw std::exception{};
         }

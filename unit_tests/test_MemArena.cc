@@ -368,7 +368,7 @@ TEST_CASE("FixedArena", "[libswoc][FixedArena]") {
   MemArena arena;
   FixedArena<Thing> fa{arena};
 
-  Thing * one = fa.make();
+  [[maybe_unused]] Thing * one = fa.make();
   Thing * two = fa.make();
   two->x = 17;
   two->name = "Bob";

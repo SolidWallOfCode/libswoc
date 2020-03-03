@@ -550,7 +550,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
     lhs |= rhs;
     return true;
   };
-  unsigned *payload;
+
   swoc::IP4Range r_1{"1.1.1.0-1.1.1.9"};
   swoc::IP4Range r_2{"1.1.2.0-1.1.2.97"};
   swoc::IP4Range r_3{"1.1.0.0-1.2.0.0"};

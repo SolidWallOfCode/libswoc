@@ -59,6 +59,6 @@ protected:
   void realloc(size_t n);
 };
 
-inline swoc::ArenaWriter::ArenaWriter(swoc::MemArena &arena) : _arena(arena), super_type(arena.remnant()) {}
+inline swoc::ArenaWriter::ArenaWriter(swoc::MemArena &arena) : super_type(arena.remnant()), _arena(arena) {}
 
 } // namespace swoc

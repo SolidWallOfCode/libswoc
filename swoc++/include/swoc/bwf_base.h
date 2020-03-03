@@ -376,7 +376,7 @@ namespace bwf
       }
 
     protected:
-      Binding(ContextNames const &names, context_type &ctx) : _names(names), _ctx(ctx) {}
+      Binding(ContextNames const &names, context_type &ctx) : _ctx(ctx), _names(names) {}
 
       context_type &_ctx;         ///< Context for generators.
       ContextNames const &_names; ///< Base set of names.
@@ -846,7 +846,7 @@ BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &arg
   // via the specifier.
   using spec_type =
     typename std::remove_reference<decltype(bwf::extractor_spec_type(&std::remove_reference<Extractor>::type::operator()))>::type;
-  size_t N    = args.count();
+  int N    = args.count();
   int arg_idx = 0; // the next argument index to be processed.
 
   // Parser is required to return @c false if there's no more data, @c true if something was parsed.

@@ -282,7 +282,7 @@ TEST_CASE("TextView parsing", "[libswoc][example][text][parsing]") {
     while (dc_txt) {
       auto key   = dc_txt.take_prefix_at(',');
       auto value = key.take_suffix_at('=');
-      auto n = swoc::svtou(value, &parsed);
+      [[maybe_unused]] auto n = swoc::svtou(value, &parsed);
       // Each element must be one of the known tags, followed by '=' and an integer.
       REQUIRE(parsed == value); // value integer.
       REQUIRE(DC_TAGS.find(key) != DC_TAGS.end());
