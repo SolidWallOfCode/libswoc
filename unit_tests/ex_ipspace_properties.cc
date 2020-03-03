@@ -409,7 +409,8 @@ bool Table::parse(TextView src) {
 }
 
 auto Table::find(IPAddr const &addr) -> Row * {
-  return _space.find(addr);
+  auto spot = _space.find(addr);
+  return spot == _space.end() ? nullptr : &std::get<1>(*spot);
 }
 
 bool operator == (Table::Row const&, Table::Row const&) { return false; }
@@ -570,7 +571,7 @@ TEST_CASE("IPSpace properties", "[libswoc][ip][ex][properties]") {
   auto owner = table.add_column(std::make_unique<EnumProperty>("owner"));
   auto colo = table.add_column(std::make_unique<EnumProperty>("colo"));
   auto flags = table.add_column(std::make_unique<FlagGroupProperty>("flags"_tv, flag_names));
-  auto description = table.add_column(std::make_unique<StringProperty>("Description"));
+  [[maybe_unused]] auto description = table.add_column(std::make_unique<StringProperty>("Description"));
 
   TextView src = R"(10.1.1.0/24,asf,cmi,prod;internal,"ASF core net"
 192.168.28.0/25,asf,ind,prod,"Indy Net"
@@ -584,6 +585,7 @@ TEST_CASE("IPSpace properties", "[libswoc][ip][ex][properties]") {
   CHECK(true == flags->is_set(*row, 0));
   CHECK(false == flags->is_set(*row, 1));
   CHECK(true == flags->is_set(*row, 2));
+  CHECK("asf"_tv == (*owner)(*row));
 
   row = table.find(IPAddr{"192.168.28.131"});
   REQUIRE(row != nullptr);

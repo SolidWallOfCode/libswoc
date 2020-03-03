@@ -23,27 +23,6 @@
 
 using namespace swoc::literals;
 
-namespace
-{
-std::string_view
-family_name(sa_family_t family)
-{
-  switch (family) {
-  case AF_INET:
-    return "ipv4"_sv;
-  case AF_INET6:
-    return "ipv6"_sv;
-  case AF_UNIX:
-    return "unix"_sv;
-  case AF_UNSPEC:
-    return "unspec"_sv;
-  default:
-    return "unknown"_sv;
-  }
-}
-
-} // namespace
-
 namespace swoc
 {
 using bwf::Spec;
