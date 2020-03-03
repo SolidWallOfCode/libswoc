@@ -98,6 +98,7 @@ TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
   REQUIRE((*spot++)._payload == "muddle");
   REQUIRE((*spot++)._payload == "two");
   REQUIRE(spot == list.end());
+  spot = list.begin(); // verify assignment works.
 
   Thing *thing = list.take_head();
   REQUIRE(thing->_payload == "one");

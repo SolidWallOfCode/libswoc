@@ -532,17 +532,17 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
 
   space.mark(IPRange{{IP4Addr("172.16.0.0"), IP4Addr("172.16.0.255")}}, 1);
   auto result = space.find(IPAddr{"172.16.0.97"});
-  REQUIRE(result != nullptr);
-  REQUIRE(*result == 1);
+  REQUIRE(result != space.end());
+  REQUIRE(std::get<1>(*result) == 1);
 
   result = space.find(IPAddr{"172.17.0.97"});
-  REQUIRE(result == nullptr);
+  REQUIRE(result == space.end());
 
   space.mark(IPRange{"172.16.0.12-172.16.0.25"_tv}, 2);
 
   result = space.find(IPAddr{"172.16.0.21"});
-  REQUIRE(result != nullptr);
-  REQUIRE(*result == 2);
+  REQUIRE(result != space.end());
+  REQUIRE(std::get<1>(*result) == 2);
   REQUIRE(space.count() == 3);
 
   space.clear();
@@ -550,7 +550,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
     lhs |= rhs;
     return true;
   };
-  unsigned *payload;
+
   swoc::IP4Range r_1{"1.1.1.0-1.1.1.9"};
   swoc::IP4Range r_2{"1.1.2.0-1.1.2.97"};
   swoc::IP4Range r_3{"1.1.0.0-1.2.0.0"};
@@ -561,35 +561,35 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
 
   space.blend(r_1, 0x1, BF);
   REQUIRE(space.count() == 1);
-  REQUIRE(nullptr == space.find(r_2.min()));
-  REQUIRE(nullptr != space.find(r_1.min()));
-  REQUIRE(nullptr != space.find(r_1.max()));
-  REQUIRE(nullptr != space.find(IP4Addr{"1.1.1.7"}));
-  CHECK(0x1 == *space.find(IP4Addr{"1.1.1.7"}));
+  REQUIRE(space.end() == space.find(r_2.min()));
+  REQUIRE(space.end() != space.find(r_1.min()));
+  REQUIRE(space.end() != space.find(r_1.max()));
+  REQUIRE(space.end() != space.find(IP4Addr{"1.1.1.7"}));
+  CHECK(0x1 == std::get<1>(*space.find(IP4Addr{"1.1.1.7"})));
 
   space.blend(r_2, 0x2, BF);
   REQUIRE(space.count() == 2);
-  REQUIRE(nullptr != space.find(r_1.min()));
-  payload = space.find(r_2.min());
-  REQUIRE(payload != nullptr);
-  REQUIRE(*payload == 0x2);
-  payload = space.find(r_2.max());
-  REQUIRE(payload != nullptr);
-  REQUIRE(*payload == 0x2);
+  REQUIRE(space.end() != space.find(r_1.min()));
+  auto spot = space.find(r_2.min());
+  REQUIRE(spot != space.end());
+  REQUIRE(std::get<1>(*spot) == 0x2);
+  spot = space.find(r_2.max());
+  REQUIRE(spot != space.end());
+  REQUIRE(std::get<1>(*spot) == 0x2);
 
   space.blend(r_3, 0x4, BF);
   REQUIRE(space.count() == 5);
-  payload = space.find(r_2.min());
-  REQUIRE(payload != nullptr);
-  REQUIRE(*payload == 0x6);
+  spot = space.find(r_2.min());
+  REQUIRE(spot != space.end());
+  REQUIRE(std::get<1>(*spot) == 0x6);
 
-  payload = space.find(r_3.min());
-  REQUIRE(payload != nullptr);
-  REQUIRE(*payload == 0x4);
+  spot = space.find(r_3.min());
+  REQUIRE(spot != space.end());
+  REQUIRE(std::get<1>(*spot) == 0x4);
 
-  payload = space.find(r_1.max());
-  REQUIRE(payload != nullptr);
-  REQUIRE(*payload == 0x5);
+  spot = space.find(r_1.max());
+  REQUIRE(spot != space.end());
+  REQUIRE(std::get<1>(*spot) == 0x5);
 
   space.blend(IPRange{r_2.min(), r_3.max()}, 0x6, BF);
   REQUIRE(space.count() == 4);
@@ -614,9 +614,9 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   }
 
   CHECK(7 == space.count());
-  CHECK(nullptr != space.find(IP4Addr{"100.0.4.16"}));
-  CHECK(nullptr != space.find(IPAddr{"100.0.4.16"}));
-  CHECK(nullptr != space.find(IPAddr{IPEndpoint{"100.0.4.16:80"}}));
+  CHECK(space.end() != space.find(IP4Addr{"100.0.4.16"}));
+  CHECK(space.end() != space.find(IPAddr{"100.0.4.16"}));
+  CHECK(space.end() != space.find(IPAddr{IPEndpoint{"100.0.4.16:80"}}));
 }
 
 TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
@@ -686,7 +686,6 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   Space space;
 
   for (auto && [text, bit_list] : ranges) {
-    std::cout << W().print("{} = {}\n", text, bit_list);
     space.blend(IPRange{text}, bit_list, blender);
   }
 

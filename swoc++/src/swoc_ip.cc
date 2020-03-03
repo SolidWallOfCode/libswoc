@@ -265,7 +265,7 @@ IP4Addr::load(std::string_view const&text) {
   while (n > 0 && !src.empty()) {
     TextView token{src.take_prefix_at('.')};
     auto x = svto_radix<10>(token);
-    if (token.empty() && 0 <= x && x <= std::numeric_limits<uint8_t>::max()) {
+    if (token.empty() && x <= std::numeric_limits<uint8_t>::max()) {
       octet[--n] = x;
     } else {
       break;
@@ -372,7 +372,7 @@ IP6Addr::load(std::string_view const&str) {
 
   // Sadly the empty quads can't be done in line because it's not possible to know the correct index
   // of the next present quad until the entire address has been parsed.
-  while (n < N_QUADS && !src.empty()) {
+  while (n < static_cast<int>(N_QUADS) && !src.empty()) {
     TextView token{src.take_prefix_at(':')};
     if (token.empty()) {
       if (empty_idx >= 0) { // two instances of "::", fail.
@@ -392,9 +392,9 @@ IP6Addr::load(std::string_view const&str) {
 
   // Handle empty quads - invalid if empty and still had a full set of quads
   if (empty_idx >= 0) {
-    if (n < N_QUADS) {
-      auto nil_idx = N_QUADS - (n - empty_idx);
-      auto delta = N_QUADS - n;
+    if (n < static_cast<int>(N_QUADS)) {
+      int nil_idx = N_QUADS - (n - empty_idx);
+      int delta = N_QUADS - n;
       for (int k = N_QUADS - 1; k >= empty_idx; --k) {
         quad[QUAD_IDX[k]] = (k >= nil_idx ? quad[QUAD_IDX[k - delta]] : 0);
       }
@@ -783,7 +783,8 @@ void IP4Range::NetSource::search_wider() {
 
 void IP4Range::NetSource::search_narrower() {
   while (! this->is_valid(_mask)) {
-    _mask._addr = (_mask._addr >>= 1) | (1<<(IP4Addr::WIDTH-1));
+    _mask._addr >>= 1;
+    _mask._addr |= 1<<(IP4Addr::WIDTH-1); // put top bit back.
     ++_cidr;
   }
 }

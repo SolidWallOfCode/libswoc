@@ -45,7 +45,8 @@ set(CC_FILES
     )
 
 add_library(swoc++ STATIC ${CC_FILES})
-add_compile_options(-Wall -Wextra -Werror -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-format-truncation -Wno-stringop-overflow -Wno-invalid-offsetof)
+#add_compile_options(-Wall -Wextra -Werror -Wno-unused-parameter -Wno-format-truncation -Wno-stringop-overflow -Wno-invalid-offsetof)
+target_compile_options(swoc++ PRIVATE -Wall -Wextra -Werror -Wno-unused-parameter -Wno-format-truncation -Wno-stringop-overflow -Wno-invalid-offsetof)
 
 # Not quite sure how this works, but I think it generates one of two paths depending on the context.
 # That is, the generator functions return non-empty strings only in the corresponding context.
