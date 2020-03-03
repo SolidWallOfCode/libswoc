@@ -713,9 +713,11 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   // Check iterator copying.
   idx = 0;
   Space::iterator iter;
+  IPRange range;
+  PAYLOAD bits;
   for (auto spot = space.begin(); spot != space.end() ; ++spot) {
     iter = spot;
-    auto const& [range, bits]{*iter};
+    std::tie(range, bits) = *iter;
     REQUIRE(idx < results.size());
     CHECK(bits == make_bits(results[idx]));
     ++idx;
