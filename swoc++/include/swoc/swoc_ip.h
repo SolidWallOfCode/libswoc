@@ -1497,6 +1497,12 @@ public:
     /// Default constructor.
     const_iterator() = default;
 
+    /// Copy constructor.
+    const_iterator(self_type const& that);
+
+    /// Assignment.
+    self_type & operator=(self_type const& that);
+
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
@@ -1579,6 +1585,12 @@ public:
     /// Default constructor.
     iterator() = default;
 
+    /// Copy constructor.
+    iterator(self_type const& that);
+
+    /// Assignment.
+    self_type & operator=(self_type const& that);
+
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
@@ -1643,6 +1655,19 @@ IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator con
   } else if (_iter_6.has_next()) {
     new(&_value) value_type{_iter_6->range(), _iter_6->payload()};
   }
+}
+
+template<typename PAYLOAD>
+IPSpace<PAYLOAD>::const_iterator::const_iterator(self_type const& that) {
+  *this = that;
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::const_iterator::operator=(self_type const& that) -> self_type &{
+  _iter_4 = that._iter_4;
+  _iter_6 = that._iter_6;
+  new(&_value) value_type{that._value};
+  return *this;
 }
 
 template<typename PAYLOAD>
@@ -1721,6 +1746,17 @@ template<typename PAYLOAD>
 bool
 IPSpace<PAYLOAD>::const_iterator::operator!=(self_type const& that) const {
   return _iter_4 != that._iter_4 || _iter_6 != that._iter_6;
+}
+
+template<typename PAYLOAD>
+IPSpace<PAYLOAD>::iterator::iterator(self_type const& that) {
+  *this = that;
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::iterator::operator=(self_type const& that) -> self_type & {
+  this->super_type::operator=(that);
+  return *this;
 }
 
 template<typename PAYLOAD>
