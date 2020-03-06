@@ -38,6 +38,6 @@
 namespace swoc
 {
 static constexpr unsigned MAJOR_VERSION = 1;
-static constexpr unsigned MINOR_VERSION = 0;
-static constexpr unsigned POINT_VERSION = 14;
+static constexpr unsigned MINOR_VERSION = 1;
+static constexpr unsigned POINT_VERSION = 0;
 } // namespace swoc
