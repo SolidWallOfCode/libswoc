@@ -63,6 +63,9 @@ union IPEndpoint {
   // Construct from @a IPAddr
   explicit IPEndpoint(IPAddr const& addr);
 
+  // Construct from @c sockaddr
+  IPEndpoint(sockaddr const * sa);
+
   /** Break a string in to IP address relevant tokens.
    *
    * @param [in] src Source tex.t
@@ -1958,6 +1961,10 @@ inline IPEndpoint::IPEndpoint() {
 
 inline IPEndpoint::IPEndpoint(IPAddr const& addr) {
   this->assign(addr);
+}
+
+inline IPEndpoint::IPEndpoint(sockaddr const * sa) {
+  this->assign(sa);
 }
 
 inline IPEndpoint&
