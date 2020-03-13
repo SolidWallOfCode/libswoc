@@ -92,6 +92,10 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(a6_3 < a6_2);
   REQUIRE(a6_2 > a6_3);
 
+  REQUIRE(-1 == a6_3.cmp(a6_2));
+  REQUIRE(0 == a6_2.cmp(a6_2));
+  REQUIRE(1 == a6_1.cmp(a6_2));
+
   // Little bit of IP4 address arithmetic / comparison testing.
   IP4Addr a4_null;
   IP4Addr a4_1{"172.28.56.33"};
@@ -114,6 +118,16 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(a4_3 != a4_2);
   REQUIRE(a4_3 < a4_2);
   REQUIRE(a4_2 > a4_3);
+
+  REQUIRE(IPAddr(a4_1) > IPAddr(a4_2));
+  REQUIRE(IPAddr(a4_1) >= IPAddr(a4_2));
+  REQUIRE(false == (IPAddr(a4_1) < IPAddr(a4_2)));
+  REQUIRE(IPAddr(a6_2) < IPAddr(a6_1));
+  REQUIRE(IPAddr(a6_2) <= IPAddr(a6_1));
+  REQUIRE(false == (IPAddr(a6_2) > IPAddr(a6_1)));
+  REQUIRE(IPAddr(a4_3) == IPAddr(a4_3));
+  REQUIRE(IPAddr(a4_3) <= IPAddr(a4_3));
+  REQUIRE(IPAddr(a4_3) >= IPAddr(a4_3));
 
   // For this data, the bytes should be in IPv6 network order.
   static const std::tuple<TextView, bool, IP6Addr::raw_type> ipv6_ex[] = {

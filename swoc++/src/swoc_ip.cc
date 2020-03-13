@@ -291,6 +291,10 @@ sockaddr_in *IP4Addr::fill(sockaddr_in *sa, in_port_t port) const {
   return sa;
 }
 
+int IP6Addr::cmp(const self_type &that) const {
+  return *this < that ? -1 : *this > that ? 1 : 0;
+}
+
 IP6Addr& IP6Addr::operator<<=(unsigned int n) {
   static constexpr auto MASK = ~word_type{0};
   if (n < WORD_WIDTH) {
@@ -464,6 +468,40 @@ IPAddr::assign(sockaddr const *addr) {
   }
   _family = AF_UNSPEC;
   return *this;
+}
+
+bool IPAddr::operator<(self_type const& that) const {
+  if (AF_INET == _family) {
+    switch (that._family) {
+      case AF_INET: return _addr._ip4 < that._addr._ip4;
+      case AF_INET6: return false;
+      default: return true;
+    }
+  } else if (AF_INET6 == _family) {
+    switch (that._family) {
+      case AF_INET: return true;
+      case AF_INET6: return _addr._ip6 < that._addr._ip6;
+      default: return true;
+    }
+  }
+  return false;
+}
+
+int IPAddr::cmp(self_type const& that) const {
+  if (AF_INET == _family) {
+    switch (that._family) {
+      case AF_INET: return _addr._ip4.cmp(that._addr._ip4);
+      case AF_INET6: return -1;
+      default: return 1;
+    }
+  } else if (AF_INET6 == _family) {
+    switch (that._family) {
+      case AF_INET: return 1;
+      case AF_INET6: return _addr._ip6.cmp(that._addr._ip6);
+      default: return 1;
+    }
+  }
+  return 0;
 }
 
 IPAddr::self_type& IPAddr::operator&=(IPMask const& mask) {

@@ -61,7 +61,7 @@ union IPEndpoint {
   IPEndpoint(string_view const& text);
 
   // Construct from @a IPAddr
-  IPEndpoint(IPAddr const& addr);
+  explicit IPEndpoint(IPAddr const& addr);
 
   /** Break a string in to IP address relevant tokens.
    *
@@ -248,7 +248,9 @@ public:
   bool load(string_view const& text);
 
   /// Standard ternary compare.
-  int cmp(self_type const& that) const;
+  int cmp(self_type const& that) const {
+    return _addr < that._addr ? -1 : _addr > that._addr ? 1 : 0;
+  }
 
   /// Get the IP address family.
   /// @return @c AF_INET
@@ -382,7 +384,7 @@ public:
   IP6Addr(string_view const& text);
 
   /// Construct from generic @a addr.
-  IP6Addr(IPAddr const& addr);
+  explicit IP6Addr(IPAddr const& addr);
 
   /** Left shift.
    *
@@ -565,6 +567,13 @@ public:
   /// Assign from IPv6 raw address.
   self_type& operator=(in6_addr const& ip);
 
+  bool operator==(self_type const& that) const;
+  bool operator!=(self_type const& that) const;
+  bool operator< (self_type const& that) const;
+  bool operator> (self_type const& that) const;
+  bool operator<=(self_type const& that) const;
+  bool operator>=(self_type const& that) const;
+
   /// Assign from @c sockaddr
   self_type& operator=(sockaddr const *addr);
 
@@ -625,8 +634,6 @@ public:
   static self_type const INVALID;
 
 protected:
-  friend bool operator==(self_type const&, self_type const&);
-
   friend IP4Addr;
   friend IP6Addr;
 
@@ -1854,25 +1861,6 @@ IPAddr::is_loopback() const {
          (AF_INET6 == _family && IN6_IS_ADDR_LOOPBACK(&_addr._ip6));
 }
 
-inline bool
-operator==(IPAddr const& lhs, IPAddr const& rhs) {
-  if (lhs._family != rhs._family) {
-    return false;
-  }
-  switch (lhs._family) {
-    case AF_INET:return lhs._addr._ip4 == rhs._addr._ip4;
-    case AF_INET6:return 0 == memcmp(&lhs._addr._ip6, &rhs._addr._ip6, IP6Addr::SIZE);
-    case AF_UNSPEC:return true;
-    default:break;
-  }
-  return false;
-}
-
-inline bool
-operator!=(IPAddr const& lhs, IPAddr const& rhs) {
-  return !(lhs == rhs);
-}
-
 inline IPAddr&
 IPAddr::assign(in_addr_t addr) {
   _family = AF_INET;
@@ -1956,26 +1944,6 @@ operator!=(IPAddr const& lhs, IPEndpoint const& rhs) {
 inline bool
 operator!=(IPEndpoint const& lhs, IPAddr const& rhs) {
   return !(rhs == &lhs.sa);
-}
-
-inline bool
-operator<(IPAddr const& lhs, IPAddr const& rhs) {
-  return -1 == lhs.cmp(rhs);
-}
-
-inline bool
-operator>=(IPAddr const& lhs, IPAddr const& rhs) {
-  return lhs.cmp(rhs) >= 0;
-}
-
-inline bool
-operator>(IPAddr const& lhs, IPAddr const& rhs) {
-  return 1 == lhs.cmp(rhs);
-}
-
-inline bool
-operator<=(IPAddr const& lhs, IPAddr const& rhs) {
-  return lhs.cmp(rhs) <= 0;
 }
 
 inline IP4Addr const& IPAddr::ip4() const { return _addr._ip4; }
@@ -2280,6 +2248,33 @@ inline IP6Addr& IP6Addr::operator|=(IPMask const& mask) {
   return *this;
 }
 
+// --- //
+
+inline bool IPAddr::operator==(self_type const& that) const {
+  switch (_family) {
+    case AF_INET: return that._family == AF_INET && _addr._ip4 == that._addr._ip4;
+    case AF_INET6: return that._family == AF_INET6 && _addr._ip6 == that._addr._ip6;
+    default: return false;
+  }
+}
+
+inline bool
+IPAddr::operator!=(self_type const& that) const {
+  return !(*this == that);
+}
+
+inline bool IPAddr::operator>(self_type const& that) const {
+  return that < *this;
+}
+
+inline bool IPAddr::operator<=(self_type const& that) const {
+  return !(that < *this);
+}
+
+inline bool IPAddr::operator>=(self_type const& that) const {
+  return !(*this < that);
+}
+
 // Disambiguating comparisons.
 
 inline bool operator==(IPAddr const& lhs, IP4Addr const& rhs) {
@@ -2307,11 +2302,11 @@ inline bool operator!=(IPAddr const& lhs, IP6Addr const& rhs) {
 }
 
 inline bool operator==(IP6Addr const& lhs, IPAddr const& rhs) {
-  return rhs.is_ip6() && lhs == static_cast<IP6Addr const&>(rhs);
+  return rhs.is_ip6() && lhs == rhs.ip6();
 }
 
 inline bool operator!=(IP6Addr const& lhs, IPAddr const& rhs) {
-  return !rhs.is_ip6() || lhs != static_cast<IP6Addr const&>(rhs);
+  return !rhs.is_ip6() || lhs != rhs.ip6();
 }
 
 // +++ IPRange +++
@@ -2384,7 +2379,7 @@ inline IP4Addr IPMask::as_ip4() const {
   return IP4Addr{addr};
 }
 
-// +++ mixed operators +++
+// +++ mixed mask operators +++
 
 inline IP4Addr operator&(IP4Addr const& addr, IPMask const& mask) {
   return IP4Addr{addr} &= mask;
