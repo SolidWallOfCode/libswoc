@@ -631,6 +631,58 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   CHECK(space.end() != space.find(IP4Addr{"100.0.4.16"}));
   CHECK(space.end() != space.find(IPAddr{"100.0.4.16"}));
   CHECK(space.end() != space.find(IPAddr{IPEndpoint{"100.0.4.16:80"}}));
+
+  auto b2 = [] (unsigned &lhs, unsigned const& rhs) { lhs = rhs; return true; };
+
+  std::array<std::tuple<TextView, unsigned>, 31> r2 = {
+      {
+          {"2001:4998:58:400::1/128", 1} // 1
+          , {"2001:4998:58:400::2/128", 1}
+          , {"2001:4998:58:400::3/128", 1}
+          , {"2001:4998:58:400::4/128", 1}
+          , {"2001:4998:58:400::5/128", 1}
+          , {"2001:4998:58:400::6/128", 1}
+          , {"2001:4998:58:400::7/128", 1}
+          , {"2001:4998:58:400::8/128", 1}
+          , {"2001:4998:58:400::9/128", 1}
+          , {"2001:4998:58:400::A/127", 1}
+          , {"2001:4998:58:400::10/127", 1} // 2
+          , {"2001:4998:58:400::12/127", 1}
+          , {"2001:4998:58:400::14/127", 1}
+          , {"2001:4998:58:400::16/127", 1}
+          , {"2001:4998:58:400::18/127", 1}
+          , {"2001:4998:58:400::1a/127", 1}
+          , {"2001:4998:58:400::1c/127", 1}
+          , {"2001:4998:58:400::1e/127", 1}
+          , {"2001:4998:58:400::20/127", 1}
+          , {"2001:4998:58:400::22/127", 1}
+          , {"2001:4998:58:400::24/127", 1}
+          , {"2001:4998:58:400::26/127", 1}
+          , {"2001:4998:58:400::2a/127", 1} // 3
+          , {"2001:4998:58:400::2c/127", 1}
+          , {"2001:4998:58:400::2e/127", 1}
+          , {"2001:4998:58:400::30/127", 1}
+          , {"2001:4998:58:400::140/127", 1} // 4
+          , {"2001:4998:58:400::142/127", 1}
+          , {"2001:4998:58:400::146/127", 1} // 5
+          , {"2001:4998:58:400::148/127", 1}
+          , {"2001:4998:58:400::150/127", 1} // 6
+      }};
+
+  space.clear();
+  for (auto &&[text, value] : r2) {
+    IPRange range{text};
+    space.blend(IPRange{text}, value, b2);
+  }
+  CHECK(6 == space.count());
+  for (auto &&[text, value] : r2) {
+    IPRange range{text};
+    space.blend(IPRange{text}, value, b2);
+  }
+  CHECK(6 == space.count());
+  // Drop a non-intersecting range between existing ranges 1 and 2, make sure both sides coalesce.
+  space.blend(IPRange{"2001:4998:58:400::C/126"_tv}, 1, b2);
+  CHECK(5 == space.count());
 }
 
 TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
@@ -736,155 +788,3 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
     ++idx;
   }
 }
-
-#if 0
-TEST_CASE("IP Space YNETDB", "[libswoc][ipspace][ynetdb]") {
-  std::set<std::string_view> Locations;
-  std::set<std::string_view> Owners;
-  std::set<std::string_view> Descriptions;
-  swoc::MemArena arena;
-  auto Localize = [&](TextView const&view) -> TextView {
-    auto span = arena.alloc(view.size() + 1).rebind<char>();
-    memcpy(span, view);
-    span[view.size()] = '\0';
-    return span.view();
-  };
-
-  struct Payload {
-    std::string_view _colo;
-    std::string_view _owner;
-    std::string_view _descr;
-    unsigned int _internal_p : 1;
-    unsigned int _prod_p : 1;
-    unsigned int _corp_p : 1;
-    unsigned int _flakey_p : 1;
-    unsigned int _secure_p : 1;
-
-    Payload() {
-      _internal_p = _prod_p = _corp_p = _flakey_p = _secure_p = false;
-    }
-
-    bool operator==(Payload const&that) {
-      return
-          this->_colo == that._colo &&
-          this->_owner == that._owner &&
-          this->_descr == that._descr &&
-          this->_corp_p == that._corp_p &&
-          this->_internal_p == that._internal_p &&
-          this->_prod_p == that._prod_p &&
-          this->_flakey_p == that._flakey_p &&
-          this->_secure_p == that._secure_p;
-    }
-  };
-
-  using Space = swoc::IPSpace<Payload>;
-
-  Space space;
-
-  std::error_code ec;
-  swoc::file::path csv{"/tmp/ynetdb.csv"};
-
-  // Force these so I can easily change the set of tests.
-  auto start            = std::chrono::high_resolution_clock::now();
-  auto delta = std::chrono::high_resolution_clock::now() - start;
-
-  auto file_content{swoc::file::load(csv, ec)};
-  TextView content{file_content};
-
-  delta = std::chrono::high_resolution_clock::now() - start;
-  std::cout << "File load " << delta.count() << "ns or " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
-            << "ms" << std::endl;
-
-  start = std::chrono::high_resolution_clock::now();
-  while (content) {
-    Payload payload;
-
-    auto line = content.take_prefix_at('\n');
-    if (line.trim_if(&isspace).empty() || *line == '#') {
-      continue;
-    }
-
-    auto range_token{line.take_prefix_at(',')};
-    auto internal_token{line.take_prefix_at(',')};
-    auto owner_token{line.take_prefix_at(',')};
-    auto colo_token{line.take_prefix_at(',')};
-    auto flags_token{line.take_prefix_at(',')};
-    auto descr_token{line.take_prefix_at(',')};
-
-    if (auto spot{Owners.find(owner_token)}; spot != Owners.end()) {
-      payload._owner = *spot;
-    } else {
-      payload._owner = Localize(owner_token);
-      Owners.insert(payload._owner);
-    }
-
-    if (auto spot{Descriptions.find(owner_token)}; spot != Descriptions.end()) {
-      payload._descr = *spot;
-    } else {
-      payload._descr = Localize(owner_token);
-      Descriptions.insert(payload._descr);
-    }
-
-    if (auto spot{Locations.find(owner_token)}; spot != Locations.end()) {
-      payload._colo = *spot;
-    } else {
-      payload._colo = Localize(owner_token);
-      Locations.insert(payload._colo);
-    }
-
-    static constexpr TextView INTERNAL_TAG{"yahoo"};
-    static constexpr TextView FLAKEY_TAG{"flakey"};
-    static constexpr TextView PROD_TAG{"prod"};
-    static constexpr TextView CORP_TAG{"corp"};
-    static constexpr TextView SECURE_TAG { "secure" };
-
-    if (0 == strcasecmp(internal_token, INTERNAL_TAG)) {
-      payload._internal_p = true;
-    }
-
-    if (flags_token != "-"_sv) {
-      while (flags_token) {
-        auto key = flags_token.take_prefix_at(';').trim_if(&isspace);
-        if (0 == strcasecmp(key, FLAKEY_TAG)) {
-          payload._flakey_p = true;
-        } else if (0 == strcasecmp(key, PROD_TAG)) {
-          payload._prod_p = true;
-        } else if (0 == strcasecmp(key, CORP_TAG)) {
-          payload._corp_p = true;
-        } else if (0 == strcasecmp(key, SECURE_TAG)) {
-          payload._secure_p = true;
-        } else {
-          throw std::domain_error("Bad flag tag");
-        }
-      }
-    }
-
-    auto BF = [](Payload&lhs, Payload const&rhs) -> bool {
-      if (! lhs._colo.empty()) {
-        std::cout << "Overlap " << lhs._descr << " with " << rhs._descr << std::endl;
-      }
-      return true;
-    };
-    swoc::LocalBufferWriter<1024> bw;
-    swoc::IPRange range;
-    if (range.load(range_token)) {
-      space.blend(range, payload, BF);
-    } else {
-      std::cout << "Failed to parse range " << range_token << std::endl;
-    }
-  }
-  delta = std::chrono::high_resolution_clock::now() - start;
-  std::cout << "Space load " << delta.count() << "ns or " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
-            << "ms" << std::endl;
-
-  static constexpr size_t N_LOOPS = 1000000;
-  start = std::chrono::high_resolution_clock::now();
-  for ( size_t idx = 0 ; idx < N_LOOPS ; ++idx ) {
-    space.find(IP4Addr(static_cast<in_addr_t>(idx * 2500)));
-  }
-  delta = std::chrono::high_resolution_clock::now() - start;
-  std::cout << "Space IP4 lookup " << delta.count() << "ns or " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
-            << "ms" << std::endl;
-
-}
-#endif

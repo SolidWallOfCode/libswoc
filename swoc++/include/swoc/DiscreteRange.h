@@ -242,9 +242,7 @@ public:
    */
   EdgeRelation left_edge_relationship(self_type const& that) const {
     if (_max < that._max) {
-      auto tmp{_max};
-      ++tmp;
-      return tmp < that._max ? EdgeRelation::GAP : EdgeRelation::ADJ;
+      return ++metric_type(_max) < that._max ? EdgeRelation::GAP : EdgeRelation::ADJ;
     }
     return _min >= that._min ? EdgeRelation::NONE : EdgeRelation::OVLP;
   }
@@ -1215,7 +1213,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
                                       , F &&blender) -> self_type & {
   // Do a base check for the color to use on unmapped values. If self blending on @a color
   // is @c false, then do not color currently unmapped values.
-  auto plain_color = PAYLOAD();
+  auto plain_color = PAYLOAD{};
   bool plain_color_p = blender(plain_color, color);
 
   auto node_cleaner = [&] (Node * ptr) -> void { _fa.destroy(ptr); };
@@ -1238,28 +1236,52 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
 
   // Process @a n, covering the values from the previous range to @a n.max
   while (n) {
-    // Always look back at prev, so if there's no overlap at all, skip it.
+    // If there's no overlap, skip because this will be checked next loop, or it's the last node
+    // and will be checked post loop. Loop logic is simpler if n->max() >= remaining.min()
     if (n->max() < remaining.min()) {
       n = next(n);
       continue;
     }
-
     // Invariant - n->max() >= remaining.min();
+
     Node* pred = prev(n);
 
     // Check for left extension. If found, clip that node to be adjacent and put in a
     // temporary that covers the overlap with the original payload.
     if (n->min() < remaining.min()) {
-      auto stub = _fa.make(remaining.min(), n->max(), n->payload());
-      auto x { remaining.min() };
-      --x;
-      n->assign_max(x);
-      this->insert_after(n, stub);
-      pred = n;
-      n = stub;
+      // @a fill is inserted iff n->max() < remaining.max(), in which case the max is correct.
+      // This is needed in other cases only for the color blending result.
+      unique_node fill { _fa.make(remaining.min(), n->max(), n->payload()), node_cleaner };
+      bool fill_p = blender(fill->payload(), color); // fill or clear?
+
+      if (fill_p) {
+        bool same_color_p = fill->payload() == n->payload();
+        if (same_color_p && n->max() >= remaining.max()) {
+          return *this; // incoming range is completely covered by @a n in the same color, done.
+        }
+        remaining.assign_min(++METRIC(n->max())); // going to fill up n->max(), clip target.
+        if (! same_color_p) {
+          n->assign_max(--METRIC(remaining.min())); // clip @a n down.
+          this->insert_after(n, fill.get()); // add intersection node in different color.
+          n = fill.release();
+        }
+      } else { // clear, don't fill.
+        auto max = n->max(); // cache this before reassigning.
+        if (max > remaining.max()) { // overhang on the right, must split.
+          fill.release();
+          this->insert_before(n, _fa.make(n->min(), --METRIC(remaining.min()), n->payload()));
+          n->assign_min(++METRIC(remaining.max()));
+          return *this;
+        }
+        n->assign_max(--METRIC(remaining.min())); // clip @a n down.
+        if (max == remaining.max()) {
+          return *this;
+        }
+        remaining.assign_min(++METRIC(max));
+      }
+      continue;
     }
 
-    auto pred_edge = pred ? remaining.left_edge_relationship(pred->range()) : DiscreteRangeEdgeRelation::NONE;
     // invariant - pred->max() < remaining.min()
 
     // Calculate and cache key relationships between @a n and @a remaining.
@@ -1269,12 +1291,14 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
     // @a n strictly right overlaps with @a remaining.
     bool right_overlap_p = remaining.contains(n->min());
     // @a n is adjacent on the right to @a remaining.
-    bool right_adj_p = remaining.is_left_adjacent_to(n->range());
+    bool right_adj_p = !right_overlap_p && remaining.is_left_adjacent_to(n->range());
     // @a n has the same color as would be used for unmapped values.
     bool n_plain_colored_p = plain_color_p && (n->payload() == plain_color);
-    // @a rped has the same color as would be used for unmapped values.
+    // @a pred has the same color as would be used for unmapped values.
     bool pred_plain_colored_p =
-        (DiscreteRangeEdgeRelation::NONE != pred_edge && DiscreteRangeEdgeRelation::GAP != pred_edge) &&
+        pred &&
+        pred->max() < remaining.min() &&
+        ++metric_type(pred->max()) == remaining.min() &&
         pred->payload() == plain_color;
 
     // Check for no right overlap - that means @a n is past the target range.
@@ -1336,8 +1360,8 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
         } else {
           n->assign_min(range_max_plus_1);
           this->insert_before(n, fill.release());
-          return *this;
         }
+        return *this; // @a n extends past @a remaining, -> all done.
       } else {
         // Collapse in to previous range if it's adjacent and the color matches.
         if (nullptr != (pred = prev(n)) && pred->range().is_left_adjacent_to(fill->range()) && pred->payload() == fill->payload()) {
@@ -1361,7 +1385,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
 
   // Arriving here means there are no more ranges past @a range (those cases return from the loop).
   // Therefore the final fill node is always last in the tree.
-  if (plain_color_p && remaining.min() <= range.max()) {
+  if (plain_color_p && ! remaining.empty()) {
     // Check if the last node can be extended to cover because it's left adjacent.
     // Can decrement @a range_min because if there's a range to the left, @a range_min is not minimal.
     n = _list.tail();
