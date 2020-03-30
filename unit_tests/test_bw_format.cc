@@ -32,6 +32,7 @@
 #include "catch.hpp"
 
 using namespace std::literals;
+using namespace swoc::literals;
 using swoc::TextView;
 using swoc::bwprint;
 
@@ -58,56 +59,44 @@ TEST_CASE("bwprint basics", "[bwprint]")
 
   bw.print(fmt1);
   REQUIRE(bw.view() == fmt1);
-  bw.clear();
-  bw.print("Arg {}", 1);
+  bw.clear().print("Some text"); // check that a literal string works as expected.
+  REQUIRE(bw.view() == fmt1);
+  bw.clear().print("Some text"_tv); // check that a literal TextView works.
+  REQUIRE(bw.view() == fmt1);
+  bw.clear().print("Arg {}", 1);
   REQUIRE(bw.view() == "Arg 1");
-  bw.clear();
-  bw.print("arg 1 {1} and 2 {2} and 0 {0}", "zero", "one", "two");
+  bw.clear().print("arg 1 {1} and 2 {2} and 0 {0}", "zero", "one", "two");
   REQUIRE(bw.view() == "arg 1 one and 2 two and 0 zero");
-  bw.clear();
-  bw.print("args {2}{0}{1}", "zero", "one", "two");
+  bw.clear().print("args {2}{0}{1}", "zero", "one", "two");
   REQUIRE(bw.view() == "args twozeroone");
-  bw.clear();
-  bw.print("left |{:<10}|", "text");
+  bw.clear().print("left |{:<10}|", "text");
   REQUIRE(bw.view() == "left |text      |");
-  bw.clear();
-  bw.print("right |{:>10}|", "text");
+  bw.clear().print("right |{:>10}|", "text");
   REQUIRE(bw.view() == "right |      text|");
-  bw.clear();
-  bw.print("right |{:.>10}|", "text");
+  bw.clear().print("right |{:.>10}|", "text");
   REQUIRE(bw.view() == "right |......text|");
-  bw.clear();
-  bw.print("center |{:.^10}|", "text");
+  bw.clear().print("center |{:.^10}|", "text");
   REQUIRE(bw.view() == "center |...text...|");
-  bw.clear();
-  bw.print("center |{:.^11}|", "text");
+  bw.clear().print("center |{:.^11}|", "text");
   REQUIRE(bw.view() == "center |...text....|");
-  bw.clear();
-  bw.print("center |{:^^10}|", "text");
+  bw.clear().print("center |{:^^10}|", "text");
   REQUIRE(bw.view() == "center |^^^text^^^|");
-  bw.clear();
-  bw.print("center |{:%3A^10}|", "text");
+  bw.clear().print("center |{:%3A^10}|", "text");
   REQUIRE(bw.view() == "center |:::text:::|");
-  bw.clear();
-  bw.print("left >{0:<9}< right >{0:>9}< center >{0:^9}<", 956);
+  bw.clear().print("left >{0:<9}< right >{0:>9}< center >{0:^9}<", 956);
   REQUIRE(bw.view() == "left >956      < right >      956< center >   956   <");
 
-  bw.clear();
-  bw.print("Format |{:>#010x}|", -956);
+  bw.clear().print("Format |{:>#010x}|", -956);
   REQUIRE(bw.view() == "Format |0000-0x3bc|");
-  bw.clear();
-  bw.print("Format |{:<#010x}|", -956);
+  bw.clear().print("Format |{:<#010x}|", -956);
   REQUIRE(bw.view() == "Format |-0x3bc0000|");
-  bw.clear();
-  bw.print("Format |{:#010x}|", -956);
+  bw.clear().print("Format |{:#010x}|", -956);
   REQUIRE(bw.view() == "Format |-0x00003bc|");
 
-  bw.clear();
-  bw.print("{{BAD_ARG_INDEX:{} of {}}}", 17, 23);
+  bw.clear().print("{{BAD_ARG_INDEX:{} of {}}}", 17, 23);
   REQUIRE(bw.view() == "{BAD_ARG_INDEX:17 of 23}");
 
-  bw.clear();
-  bw.print("Arg {0} Arg {3}", 0, 1);
+  bw.clear().print("Arg {0} Arg {3}", 0, 1);
   REQUIRE(bw.view() == "Arg 0 Arg {BAD_ARG_INDEX:3 of 2}");
 
   bw.clear().print("{{stuff}} Arg {0} Arg {}", 0, 1, 2);

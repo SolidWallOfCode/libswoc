@@ -51,7 +51,7 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   // Declare the IPSpace.
   using Space = swoc::IPSpace<PAYLOAD>;
   // Example data type.
-  using Data = std::tuple<TextView, std::initializer_list<unsigned>>;
+  using Data = std::tuple<TextView, PAYLOAD>;
 
   // Dump the ranges to stdout.
   auto dump = [](Space&space) -> void {
@@ -64,10 +64,10 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   };
 
   // Convert a list of bit indices into a bitset.
-  auto make_bits = [](std::initializer_list<unsigned> idx) -> PAYLOAD {
+  auto make_bits = [](std::initializer_list<unsigned> indices) -> PAYLOAD {
     PAYLOAD bits;
-    for (auto bit : idx) {
-      bits[bit] = true;
+    for (auto idx : indices) {
+      bits[idx] = true;
     }
     return bits;
   };
@@ -81,8 +81,8 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   // Example marking functor.
   auto marker = [&](Space & space, swoc::MemSpan<Data> ranges) -> void {
     // For each test range, compute the bitset from the list of bit indices.
-    for (auto &&[text, bit_list] : ranges) {
-      space.blend(IPRange{text}, make_bits(bit_list), blender);
+    for (auto &&[text, bits] : ranges) {
+      space.blend(IPRange{text}, bits, blender);
     }
   };
 
@@ -91,13 +91,13 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
 
   // test ranges 1
   std::array<Data, 7> ranges_1 = {{
-        { "100.0.0.0-100.0.0.255", { 0 } }
-      , { "100.0.1.0-100.0.1.255", { 1 } }
-      , { "100.0.2.0-100.0.2.255", { 2 } }
-      , { "100.0.3.0-100.0.3.255", { 3 } }
-      , { "100.0.4.0-100.0.4.255", { 4 } }
-      , { "100.0.5.0-100.0.5.255", { 5 } }
-      , { "100.0.6.0-100.0.6.255", { 6 } }
+        { "100.0.0.0-100.0.0.255", make_bits({ 0 }) }
+      , { "100.0.1.0-100.0.1.255", make_bits({ 1 }) }
+      , { "100.0.2.0-100.0.2.255", make_bits({ 2 }) }
+      , { "100.0.3.0-100.0.3.255", make_bits({ 3 }) }
+      , { "100.0.4.0-100.0.4.255", make_bits({ 4 }) }
+      , { "100.0.5.0-100.0.5.255", make_bits({ 5 }) }
+      , { "100.0.6.0-100.0.6.255", make_bits({ 6 }) }
   }};
 
   marker(space, MemSpan<Data>{ranges_1.data(), ranges_1.size()});
@@ -105,9 +105,9 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
 
   // test ranges 2
   std::array<Data, 3> ranges_2 = {{
-      { "100.0.0.0-100.0.0.255", { 31 } }
-    , { "100.0.1.0-100.0.1.255", { 30 } }
-    , { "100.0.2.128-100.0.3.127", { 29 }}
+      { "100.0.0.0-100.0.0.255", make_bits({ 31 }) }
+    , { "100.0.1.0-100.0.1.255", make_bits({ 30 }) }
+    , { "100.0.2.128-100.0.3.127", make_bits({ 29 }) }
   }};
 
   marker(space, MemSpan<Data>{ranges_2.data(), ranges_2.size()});
@@ -115,7 +115,7 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
 
   // test ranges 3
   std::array<Data, 1> ranges_3 = {{
-      { "100.0.2.0-100.0.4.255", { 2, 3, 29 }}
+      { "100.0.2.0-100.0.4.255", make_bits({ 2, 3, 29 })}
   }};
 
   marker(space, MemSpan<Data>{ranges_3.data(), ranges_3.size()});
