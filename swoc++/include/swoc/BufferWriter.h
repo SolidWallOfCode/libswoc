@@ -243,7 +243,7 @@ public:
    * - A conversion to @c bool that indicates if there is data left.
    * - A function of the signature <tt>bool ex(std::string_view& lit, bwf::Spec & spec)</tt>
    *
-   * The latter must return whether a specificer was parsed, while filling in @a lit and @a spec
+   * The latter must return whether a specifier was parsed, while filling in @a lit and @a spec
    * as appropriate for the next chunk of format string. No literal is represented by a empty
    * @a lit.
    *
