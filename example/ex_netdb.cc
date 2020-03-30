@@ -259,6 +259,105 @@ void process(Space& space, TextView content) {
   }
 }
 
+void post_processing_performance_test(Space & old_space) {
+  Space space;
+
+  swoc::file::path vz_db_path{"vz_netdb.csv"};
+  std::error_code ec;
+  auto t0 = std::chrono::system_clock::now();
+  std::string content = swoc::file::load(vz_db_path, ec);
+
+  TextView text{content};
+  unsigned line_no = 0;
+  for  (TextView line ; ! (line = text.take_prefix_at('\n')).empty() ; ) {
+    ++line_no;
+    // Get the range, make sure it's a valid range.
+    auto range_token = line.take_prefix_at(',');
+    IPRange range{range_token};
+
+    // Get the owner / type.
+    auto pod_type = PodTypeNames[line.take_prefix_at(',')];
+    auto owner = line.take_prefix_at(',');
+    auto pod_token = line.take_prefix_at(',');
+    auto flag_token = line.take_prefix_at(',');
+    FlagSet flags;
+    // Loop over the token, picking out keys
+    for ( TextView key ; ! (key = flag_token.take_prefix_at(';')).empty() ; ) {
+      auto idx = FlagNames[key]; // look up the key.
+      if (Flag::INVALID == idx) {
+        std::cerr << W().print("Invalid flag '{}'\n", key);
+        continue;
+      }
+      flags[int(idx)] = true;
+    }
+
+    // Everything went OK, create the payload and put it in the space.
+    Payload payload{pod_type, owner, pod_token, {}, flags};
+    space.mark(range, payload);
+  }
+  auto vz_delta = std::chrono::system_clock::now() - t0;
+  std::cout << W().print("Reload time - {} ms\n",
+      std::chrono::duration_cast<std::chrono::milliseconds>(vz_delta).count());
+  if (line_no != space.count()) {
+    std::cerr << W().print("Space count {} does not match line count {}\n", space.count(), line_no);
+  }
+
+  std::vector<IP4Addr> a4;
+  std::vector<IP6Addr> a6;
+  for ( auto && [ r, p] : space) {
+    if (r.is_ip4()) {
+      IP4Addr a = r.min().ip4();
+      a4.push_back(a);
+      a4.push_back(--IP4Addr(a));
+      a4.push_back(++IP4Addr(a));
+      a = r.max().ip4();
+      a4.push_back(a);
+      a4.push_back(--IP4Addr(a));
+      a4.push_back(++IP4Addr(a));
+    } else if (r.is_ip6()) {
+      IP6Addr a = r.min().ip6();
+      a6.push_back(a);
+      a6.push_back(--IP6Addr(a));
+      a6.push_back(++IP6Addr(a));
+      a = r.max().ip6();
+      a6.push_back(a);
+      a6.push_back(--IP6Addr(a));
+      a6.push_back(++IP6Addr(a));
+    }
+  }
+  t0 = std::chrono::system_clock::now();
+  for ( auto const& addr : a4) {
+    [[maybe_unused]] auto spot = space.find(addr);
+  }
+  vz_delta = std::chrono::system_clock::now() - t0;
+  std::cout << W().print("IPv4 time - {} addresses, {} ns total, {} ns per lookup\n",
+    a4.size(), vz_delta.count(), vz_delta.count() / a4.size());
+
+  t0 = std::chrono::system_clock::now();
+  for ( auto const& addr : a6) {
+    [[maybe_unused]] auto spot = space.find(addr);
+  }
+  vz_delta = std::chrono::system_clock::now() - t0;
+  std::cout << W().print("IPv6 time - {} addresses, {} ns total, {} ns per lookup\n",
+      a4.size(), vz_delta.count(), vz_delta.count() / a4.size());
+
+  t0 = std::chrono::system_clock::now();
+  for ( auto const& addr : a4) {
+    [[maybe_unused]] auto spot = old_space.find(addr);
+  }
+  vz_delta = std::chrono::system_clock::now() - t0;
+  std::cout << W().print("IPv4 time (pre-cleaning) - {} addresses, {} ns total, {} ns per lookup\n",
+      a4.size(), vz_delta.count(), vz_delta.count() / a4.size());
+
+  t0 = std::chrono::system_clock::now();
+  for ( auto const& addr : a6) {
+    [[maybe_unused]] auto spot = old_space.find(addr);
+  }
+  vz_delta = std::chrono::system_clock::now() - t0;
+  std::cout << W().print("IPv6 time (pre-cleaning) - {} addresses, {} ns total, {} ns per lookup\n",
+      a4.size(), vz_delta.count(), vz_delta.count() / a4.size());
+}
+
 int main(int argc, char *argv[]) {
   Space space;
 
@@ -273,6 +372,7 @@ int main(int argc, char *argv[]) {
     std::cerr << W().print("Unable to open output file: {}", swoc::bwf::Errno{errno});
   }
 
+  auto t0 = std::chrono::system_clock::now();
   // Process the files in the command line.
   for ( int idx = 1 ; idx < argc ; ++idx ) {
     swoc::file::path path(argv[idx]);
@@ -283,6 +383,7 @@ int main(int argc, char *argv[]) {
       process(space, content);
     }
   }
+  auto read_delta = std::chrono::system_clock::now() - t0;
 
   // Dump the resulting space.
   std::cout << W().print("{} ranges\n", space.count());
@@ -291,5 +392,12 @@ int main(int argc, char *argv[]) {
     output << W().print("{},{},{},{},{}\n", r, p._type, p._owner, p._pod, p._flags);
   }
 
+  auto write_delta = std::chrono::system_clock::now() - t0;
+
+  std::cout << W().print("Read & process time - {} ms, write time {} ms\n",
+    std::chrono::duration_cast<std::chrono::milliseconds>(read_delta).count(),
+    std::chrono::duration_cast<std::chrono::milliseconds>(write_delta - read_delta).count());
+
+  post_processing_performance_test(space);
   return 0;
 }
