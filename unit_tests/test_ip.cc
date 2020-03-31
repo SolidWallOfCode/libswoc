@@ -673,16 +673,42 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   for (auto &&[text, value] : r2) {
     IPRange range{text};
     space.blend(IPRange{text}, value, b2);
+    REQUIRE(space.end() != space.find(range.min()));
+    REQUIRE(space.end() != space.find(range.max()));
   }
   CHECK(6 == space.count());
   for (auto &&[text, value] : r2) {
     IPRange range{text};
     space.blend(IPRange{text}, value, b2);
+    REQUIRE(space.end() != space.find(range.min()));
+    REQUIRE(space.end() != space.find(range.max()));
   }
   CHECK(6 == space.count());
+  for (auto &&[text, value] : r2) {
+    IPRange range{text};
+    REQUIRE(space.end() != space.find(range.min()));
+    REQUIRE(space.end() != space.find(range.max()));
+  }
   // Drop a non-intersecting range between existing ranges 1 and 2, make sure both sides coalesce.
   space.blend(IPRange{"2001:4998:58:400::C/126"_tv}, 1, b2);
   CHECK(5 == space.count());
+  // Verify all the data is in the ranges.
+  for (auto &&[text, value] : r2) {
+    IPRange range{text};
+    REQUIRE(space.end() != space.find(range.min()));
+    REQUIRE(space.end() != space.find(range.max()));
+  }
+
+  // Check some syntax.
+  {
+    auto && [ r, p ] = *space.find(IPAddr{"2001:4998:58:400::1E"});
+    REQUIRE(false == r.empty());
+    REQUIRE(p == 1);
+  }
+  {
+    auto && [ r, p ] = *space.find(IPAddr{"2001:4997:58:400::1E"});
+    REQUIRE(true == r.empty());
+  }
 }
 
 TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {

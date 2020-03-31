@@ -472,12 +472,7 @@ DiscreteRange<T>::is_left_adjacent_to(DiscreteRange::self_type const &that) cons
    * T has a modulus and not depend on ++t > t always being true. However, we know that if t1 >
    * t0 then ++t0 > t0.
    */
-
-  if (_max < that._min) {
-    T x(_max);
-    return ++x == that._min;
-  }
-  return false;
+  return _max < that._min && ++metric_type(_max) == that._min;
 }
 
 template <typename T>
@@ -836,16 +831,16 @@ DiscreteSpace<METRIC, PAYLOAD>::Node::assign(PAYLOAD const &payload) -> self_typ
 
 template<typename METRIC, typename PAYLOAD>
 void DiscreteSpace<METRIC, PAYLOAD>::Node::structure_fixup() {
-  if (_left) {
-    if (_right) {
-      _hull = this->left()->_hull.hull(this->right()->_hull);
-    } else {
-      _hull = this->left()->_hull;
-    }
+  // Invariant: The hulls of all children are correct.
+  if (_left && _right) {
+    // If both children, local range must be inside the hull of the children and irrelevant.
+    _hull.assign(this->left()->_hull.min(), this->right()->_hull.max());
+  } else if (_left) {
+    _hull.assign(this->left()->_hull.min(), _range.max());
   } else if (_right) {
-    _hull = this->right()->_hull;
+    _hull.assign(_range.min(), this->right()->_hull.max());
   } else {
-    _hull = _range; // always contain at least self in the hull.
+    _hull = _range;
   }
 }
 
@@ -951,8 +946,7 @@ DiscreteSpace<METRIC, PAYLOAD>::insert_before(DiscreteSpace::Node *spot, Discret
 template <typename METRIC, typename PAYLOAD>
 void
 DiscreteSpace<METRIC, PAYLOAD>::insert_after(DiscreteSpace::Node *spot, DiscreteSpace::Node *node) {
-  Node *c = right(spot);
-  if (!c) {
+  if (right(spot) == nullptr) {
     spot->set_child(node, Direction::RIGHT);
   } else {
     // If there's a right child, there's a successor node, and therefore @a _next is valid.
@@ -1259,25 +1253,25 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
         if (same_color_p && n->max() >= remaining.max()) {
           return *this; // incoming range is completely covered by @a n in the same color, done.
         }
-        remaining.assign_min(++METRIC(n->max())); // going to fill up n->max(), clip target.
+        remaining.assign_min(++metric_type(n->max())); // going to fill up n->max(), clip target.
         if (! same_color_p) {
-          n->assign_max(--METRIC(remaining.min())); // clip @a n down.
+          n->assign_max(--metric_type(remaining.min())); // clip @a n down.
           this->insert_after(n, fill.get()); // add intersection node in different color.
-          n = fill.release();
+          n = fill.release(); // skip to use new node as current node.
         }
       } else { // clear, don't fill.
-        auto max = n->max(); // cache this before reassigning.
-        if (max > remaining.max()) { // overhang on the right, must split.
-          fill.release();
-          this->insert_before(n, _fa.make(n->min(), --METRIC(remaining.min()), n->payload()));
-          n->assign_min(++METRIC(remaining.max()));
+        auto n_r = n->range(); // cache to avoid ordering requirements.
+        if (n_r.max() > remaining.max()) { // overhang on the right, must split.
+          fill.release(); // not going to use it,
+          n->assign_min(++metric_type(remaining.max()));
+          this->insert_before(n, _fa.make(n_r.min(), --metric_type(remaining.min()), n->payload()));
           return *this;
         }
-        n->assign_max(--METRIC(remaining.min())); // clip @a n down.
-        if (max == remaining.max()) {
+        n->assign_max(--metric_type(remaining.min())); // clip @a n down.
+        if (n_r.max() == remaining.max()) {
           return *this;
         }
-        remaining.assign_min(++METRIC(max));
+        remaining.assign_min(++metric_type(n_r.max()));
       }
       continue;
     }
@@ -1308,8 +1302,9 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
       if (right_adj_p && n_plain_colored_p) { // can pull @a n left to cover
         n->assign_min(remaining.min());
         if (pred_plain_colored_p) { // if that touches @a pred with same color, collapse.
-          n->assign_min(pred->min());
+          auto pred_min = pred->min();
           this->remove(pred);
+          n->assign_min(pred_min);
         }
       } else if (pred_plain_colored_p) { // can pull @a pred right to cover.
         pred->assign_max(remaining.max());
@@ -1389,7 +1384,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
     // Check if the last node can be extended to cover because it's left adjacent.
     // Can decrement @a range_min because if there's a range to the left, @a range_min is not minimal.
     n = _list.tail();
-    if (n && n->max() >= --METRIC{remaining.min()} && n->payload() == plain_color) {
+    if (n && n->max() >= --metric_type{remaining.min()} && n->payload() == plain_color) {
       n->assign_max(range.max());
     } else {
       this->append(_fa.make(remaining.min(), remaining.max(), plain_color));
