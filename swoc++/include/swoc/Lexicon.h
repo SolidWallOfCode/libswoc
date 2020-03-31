@@ -139,7 +139,7 @@ public:
    *
    * @param items A list of initializers, each of which is a name and a list of values.
    * @param handler_1 A default handler.
-   * @param handler_2 A default hander.
+   * @param handler_2 A default handler.
    *
    * Each item in the intializers must be a @c Pair, that is a name and a value.
    *
@@ -150,6 +150,18 @@ public:
    */
   explicit Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1 = DefaultHandler{},
                    DefaultHandler handler_2 = DefaultHandler{});
+
+  /** Construct with only default values / handlers.
+   *
+   * @param handler_1 A default handler.
+   * @param handler_2 A default handler.
+   *
+   * @a handler_2 is optional can be be omitted. The argument values are the same as for
+   * @c set_default.
+   *
+   * @see set_default.
+   */
+  explicit Lexicon(DefaultHandler handler_1, DefaultHandler handler_2 = DefaultHandler{});
 
   /** Get the name for a @a value.
    *
@@ -442,26 +454,29 @@ template <typename E> Lexicon<E>::Lexicon() {}
 
 template <typename E>
 Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1, DefaultHandler handler_2) {
-  for (auto const &item : items)
-  {
+  for (auto const &item : items) {
     this->define(item.value, item.names);
   }
 
-  for (auto &&h : {handler_1, handler_2})
-  {
+  for (auto &&h : {handler_1, handler_2}) {
     this->set_default(h);
   }
 }
 
 template <typename E>
 Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1, DefaultHandler handler_2) {
-  for (auto const &item : items)
-  {
+  for (auto const &item : items) {
     this->define(item);
   }
 
-  for (auto &&h : {handler_1, handler_2})
-  {
+  for (auto &&h : {handler_1, handler_2}) {
+    this->set_default(h);
+  }
+}
+
+template <typename E>
+Lexicon<E>::Lexicon(DefaultHandler handler_1, DefaultHandler handler_2) {
+  for (auto &&h : {handler_1, handler_2}) {
     this->set_default(h);
   }
 }

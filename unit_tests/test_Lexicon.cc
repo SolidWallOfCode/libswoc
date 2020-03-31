@@ -53,6 +53,11 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]")
                         {Example::Value_3, "three"},
                         {Example::INVALID, "INVALID"}};
 
+  // Check constructing with just defaults.
+  ExampleNames def_names_1 { Example::INVALID };
+  ExampleNames def_names_2 { "INVALID" };
+  ExampleNames def_names_3 { Example::INVALID, "INVALID" };
+
   exnames.set_default(Example::INVALID).set_default("INVALID");
 
   REQUIRE(exnames[Example::INVALID] == "INVALID");
@@ -65,6 +70,11 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]")
   REQUIRE(exnames["Evil Dave"] == Example::INVALID);
   REQUIRE(exnames[static_cast<Example>(0xBADD00D)] == "INVALID");
   REQUIRE(exnames[exnames[static_cast<Example>(0xBADD00D)]] == Example::INVALID);
+
+  REQUIRE(def_names_1["zero"] == Example::INVALID);
+  REQUIRE(def_names_2[Example::Value_0] == "INVALID");
+  REQUIRE(def_names_3["zero"] == Example::INVALID);
+  REQUIRE(def_names_3[Example::Value_0] == "INVALID");
 
   enum class Radio { INVALID, ALPHA, BRAVO, CHARLIE, DELTA };
   using Lex = swoc::Lexicon<Radio>;
