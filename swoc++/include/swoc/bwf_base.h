@@ -766,6 +766,8 @@ namespace bwf
   class ArgPack
   {
   public:
+    virtual ~ArgPack() = default; /// Force virtual destructor for subclasses.
+
     /** Get argument at index @a idx.
      *
      * @param idx Argument index.
