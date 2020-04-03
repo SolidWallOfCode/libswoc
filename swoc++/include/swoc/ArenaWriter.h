@@ -1,16 +1,16 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Verizon Media 2020
 /** @file
  * @c BufferWriter for a @c MemArena.
- *
- * Copyright 2019, Oath Inc.
- * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
+#include "swoc/swoc_version.h"
 #include "swoc/MemSpan.h"
 #include "swoc/bwf_base.h"
 #include "swoc/MemArena.h"
 
-namespace swoc
+namespace SWOC_NAMESPACE
 {
 /** Buffer writer for a @c MemArena.
  *
@@ -61,4 +61,4 @@ protected:
 
 inline swoc::ArenaWriter::ArenaWriter(swoc::MemArena &arena) : super_type(arena.remnant()), _arena(arena) {}
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE

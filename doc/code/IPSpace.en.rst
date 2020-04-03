@@ -12,7 +12,7 @@ IP Networking
 Synopsis
 ********
 
-:code:`#include <swoc/swoc_ip.h>`
+:code:`#include "swoc/swoc_ip.h"`
 
 Usage
 *****

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Apache Software Foundation 2019
 /** @file
 
     Minimalist version of std::filesystem.
@@ -23,9 +25,9 @@
 #include "swoc/swoc_file.h"
 #include "swoc/bwf_base.h"
 
-using namespace swoc::literals;
+using namespace SWOC_NAMESPACE::literals;
 
-namespace swoc
+namespace SWOC_NAMESPACE
 {
 namespace file
 {
@@ -143,4 +145,4 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, file::path const &p)
   return bwformat(w, spec, p.string());
 }
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE

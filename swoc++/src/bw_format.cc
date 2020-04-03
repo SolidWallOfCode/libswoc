@@ -32,12 +32,12 @@
 #include "swoc/swoc_meta.h"
 
 using namespace std::literals;
-using namespace swoc::literals;
+using namespace SWOC_NAMESPACE::literals;
 
 swoc::bwf::ExternalNames swoc::bwf::Global_Names;
 using swoc::svto_radix;
 
-namespace swoc
+namespace SWOC_NAMESPACE
 {
 namespace bwf
 {
@@ -990,7 +990,7 @@ namespace
 {
 } // namespace
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE
 
 namespace std
 {

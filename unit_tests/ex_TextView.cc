@@ -24,13 +24,13 @@
 
 #include <array>
 #include <functional>
-#include <swoc/swoc_file.h>
+#include "swoc/swoc_file.h"
 
 #include "swoc/TextView.h"
 #include "catch.hpp"
 
 using swoc::TextView;
-using namespace swoc::literals;
+using namespace SWOC_NAMESPACE::literals;
 
 // CSV parsing.
 namespace
@@ -219,7 +219,7 @@ TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
 };
 
 #include <set>
-#include <swoc/swoc_ip.h>
+#include "swoc/swoc_ip.h"
 
 TEST_CASE("TextView misc", "[libswoc][example][textview][misc]")
 {

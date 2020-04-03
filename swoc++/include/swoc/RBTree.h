@@ -1,13 +1,15 @@
-#pragma once
 // SPDX-License-Identifier: Apache-2.0
+// Copyright Apache Software Foundation 2019
 /** @file
 
    Red/Black tree.
 */
 
-#include <swoc/IntrusiveDList.h>
+#pragma once
+#include "swoc/swoc_version.h"
+#include "swoc/IntrusiveDList.h"
 
-namespace swoc
+namespace SWOC_NAMESPACE
 {
 namespace detail
 {
@@ -225,4 +227,4 @@ namespace detail
 
 } // namespace detail
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE

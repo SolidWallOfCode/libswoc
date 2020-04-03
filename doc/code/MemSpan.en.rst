@@ -25,7 +25,7 @@ MemSpan
 Synopsis
 ********
 
-:code:`#include <swoc/MemSpan.h>`
+:code:`#include "swoc/MemSpan.h"`
 
 .. class:: template < typename T > MemSpan
 

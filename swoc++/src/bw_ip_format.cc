@@ -21,9 +21,9 @@
 #include "swoc/swoc_ip.h"
 #include "swoc/bwf_ip.h"
 
-using namespace swoc::literals;
+using namespace SWOC_NAMESPACE::literals;
 
-namespace swoc
+namespace SWOC_NAMESPACE
 {
 using bwf::Spec;
 
@@ -304,4 +304,4 @@ bwformat(BufferWriter & w, Spec const& spec, IPRange const& range) {
 }
 
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE

@@ -27,7 +27,7 @@
 #include <cstdint>
 #include "swoc/TextView.h"
 
-namespace swoc
+namespace SWOC_NAMESPACE
 {
 struct Hash32FNV1a {
 protected:
@@ -190,4 +190,4 @@ Hash64FNV1a::hash_immediate(std::string_view const &data) -> value_type
   return this->update(data).final().get();
 }
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE

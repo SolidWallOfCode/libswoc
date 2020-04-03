@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2014 Network Geographics
-
 /** @file
 
     IP address support testing.
@@ -10,14 +9,14 @@
 
 #include <set>
 
-#include <swoc/TextView.h>
-#include <swoc/swoc_ip.h>
-#include <swoc/bwf_ip.h>
-#include <swoc/bwf_std.h>
-#include <swoc/swoc_file.h>
+#include "swoc/TextView.h"
+#include "swoc/swoc_ip.h"
+#include "swoc/bwf_ip.h"
+#include "swoc/bwf_std.h"
+#include "swoc/swoc_file.h"
 
 using namespace std::literals;
-using namespace swoc::literals;
+using namespace SWOC_NAMESPACE::literals;
 using swoc::TextView;
 using swoc::IPEndpoint;
 

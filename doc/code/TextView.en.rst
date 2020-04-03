@@ -27,7 +27,7 @@ TextView
 Synopsis
 ********
 
-:code:`#include <swoc/TextView.h>`
+:code:`#include "swoc/TextView.h"`
 
 .. class:: TextView
 

@@ -6,6 +6,7 @@ if [ -z "$3" ] ; then
 fi
 
 # Header
+sed -i swoc++/include/swoc/swoc_version.h --expr "s/SWOC_namespace SWOC_NAMESPACE_(?:\d+)_(?:\d+)_(?:\d+)/SWOC_namespace SWOC_NAMESPACE_$1_$2_$3/"
 sed -i swoc++/include/swoc/swoc_version.h --expr "s/\(MAJOR_VERSION *= *\).*\$/\\1$1;/"
 sed -i swoc++/include/swoc/swoc_version.h --expr "s/\(MINOR_VERSION *= *\).*\$/\\1$2;/"
 sed -i swoc++/include/swoc/swoc_version.h --expr "s/\(POINT_VERSION *= *\).*\$/\\1$3;/"

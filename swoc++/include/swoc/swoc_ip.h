@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// Copyright Network Geographics 2014
 /** @file
    IP address and network related classes.
  */
@@ -8,12 +9,13 @@
 #include <string_view>
 #include <variant>
 
-#include <swoc/TextView.h>
-#include <swoc/DiscreteRange.h>
-#include <swoc/RBTree.h>
+#include "swoc/swoc_version.h"
+#include "swoc/TextView.h"
+#include "swoc/DiscreteRange.h"
+#include "swoc/RBTree.h"
 #include <values.h>
 
-namespace swoc {
+namespace SWOC_NAMESPACE {
 
 class IP4Addr;
 class IP6Addr;
@@ -2686,7 +2688,7 @@ auto IPSpace<PAYLOAD>::end() const -> const_iterator {
   return const_iterator(nc_this->_ip4.end(), nc_this->_ip6.end());
 }
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE
 
 namespace std {
 
@@ -2746,7 +2748,7 @@ public:
 
 } // namespace std
 
-namespace swoc {
+namespace SWOC_NAMESPACE {
 
 template<size_t IDX> typename std::tuple_element<IDX, IP4Net>::type
 get(swoc::IP4Net const& net) {
@@ -2775,4 +2777,4 @@ get(swoc::IPNet const& net) {
   }
 }
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE

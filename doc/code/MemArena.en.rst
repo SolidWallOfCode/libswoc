@@ -25,7 +25,7 @@ MemArena
 Synopsis
 ********
 
-:code:`#include <swoc/MemArena.h>`
+:code:`#include "swoc/MemArena.h"`
 
 .. class:: template < typename T > MemArena
 

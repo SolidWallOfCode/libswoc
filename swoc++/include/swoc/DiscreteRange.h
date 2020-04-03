@@ -1,8 +1,5 @@
-#pragma once
-
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2014 Network Geographics
-
 /** @file
     Support classes for creating intervals of numeric values.
 
@@ -10,14 +7,16 @@
     used as a base class if additional functionality is required.
  */
 
+#pragma once
 #include <limits>
 #include <functional>
 
-#include <swoc/swoc_meta.h>
-#include <swoc/RBTree.h>
-#include <swoc/MemArena.h>
+#include "swoc/swoc_version.h"
+#include "swoc/swoc_meta.h"
+#include "swoc/RBTree.h"
+#include "swoc/MemArena.h"
 
-namespace swoc
+namespace SWOC_NAMESPACE
 {
 /// Internal implementation namespace.
 namespace detail
@@ -1394,4 +1393,4 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const&range, U c
   return *this;
 }
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE
