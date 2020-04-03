@@ -1,11 +1,9 @@
-#pragma once
-#pragma once
-#pragma once
 // SPDX-License-Identifier: Apache-2.0
 /** @file
    IP address and network related classes.
  */
 
+#pragma once
 #include <netinet/in.h>
 #include <string_view>
 #include <variant>
@@ -16,24 +14,16 @@
 #include <values.h>
 
 namespace swoc {
+
 class IP4Addr;
-
 class IP6Addr;
-
 class IPAddr;
-
 class IPMask;
-
 class IP4Range;
-
 class IP6Range;
-
 class IPRange;
-
 class IP4Net;
-
 class IP6Net;
-
 class IPNet;
 
 using ::std::string_view;

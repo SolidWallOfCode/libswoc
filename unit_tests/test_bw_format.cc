@@ -36,8 +36,7 @@ using namespace swoc::literals;
 using swoc::TextView;
 using swoc::bwprint;
 
-TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
-{
+TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]") {
   swoc::LocalBufferWriter<50> bw;
 
   bw << "The" << ' ' << "quick" << ' ' << "brown fox";
@@ -49,9 +48,8 @@ TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
   REQUIRE(bw.view() == "x=50");
 }
 
-TEST_CASE("bwprint basics", "[bwprint]")
-{
-  swoc::LocalBufferWriter<256> bw;
+TEST_CASE("bwprint basics", "[bwprint]") {
+  swoc::LocalBufferWriter<256> bw;s
   std::string_view fmt1{"Some text"sv};
   swoc::bwf::Format fmt2("left >{0:<9}< right >{0:>9}< center >{0:^9}<");
   std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
@@ -134,8 +132,7 @@ TEST_CASE("bwprint basics", "[bwprint]")
   REQUIRE(bw.view() == " Some text");
 }
 
-TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
-{
+TEST_CASE("BWFormat numerics", "[bwprint][bwformat]") {
   swoc::LocalBufferWriter<256> bw;
 
   void *ptr = reinterpret_cast<void *>(0XBADD0956);
@@ -245,8 +242,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "Byte '97'");
 }
 
-TEST_CASE("bwstring", "[bwprint][bwstring]")
-{
+TEST_CASE("bwstring", "[bwprint][bwstring]") {
   std::string s;
   swoc::TextView fmt("{} -- {}");
   std::string_view text{"e99a18c428cb38d5f260853678922e03"};
@@ -301,12 +297,11 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
   REQUIRE(s == "Null 0x0.0X0.null.NULL");
 }
 
-TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
-{
+TEST_CASE("BWFormat integral", "[bwprint][bwformat]") {
   swoc::LocalBufferWriter<256> bw;
   swoc::bwf::Spec spec;
   uint32_t num = 30;
-  int num_neg  = -30;
+  int num_neg = -30;
 
   // basic
   bwformat(bw, spec, num);
@@ -319,7 +314,7 @@ TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
   // radix
   swoc::bwf::Spec spec_hex;
   spec_hex._radix_lead_p = true;
-  spec_hex._type         = 'x';
+  spec_hex._type = 'x';
   bwformat(bw, spec_hex, num);
   REQUIRE(bw.view() == "0x1e");
   bw.clear();
@@ -332,24 +327,24 @@ TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
 
   swoc::bwf::Spec spec_bin;
   spec_bin._radix_lead_p = true;
-  spec_bin._type         = 'b';
+  spec_bin._type = 'b';
   bwformat(bw, spec_bin, num);
   REQUIRE(bw.view() == "0b11110");
   bw.clear();
 
-  int one     = 1;
-  int two     = 2;
+  int one = 1;
+  int two = 2;
   int three_n = -3;
   // alignment
   swoc::bwf::Spec left;
   left._align = swoc::bwf::Spec::Align::LEFT;
-  left._min   = 5;
+  left._min = 5;
   swoc::bwf::Spec right;
   right._align = swoc::bwf::Spec::Align::RIGHT;
-  right._min   = 5;
+  right._min = 5;
   swoc::bwf::Spec center;
   center._align = swoc::bwf::Spec::Align::CENTER;
-  center._min   = 5;
+  center._min = 5;
 
   bwformat(bw, left, one);
   bwformat(bw, right, two);
@@ -367,8 +362,7 @@ TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "ax == 1");
 }
 
-TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
-{
+TEST_CASE("BWFormat floating", "[bwprint][bwformat]") {
   swoc::LocalBufferWriter<256> bw;
   swoc::bwf::Spec spec;
 
@@ -389,7 +383,7 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "long 64.90000000000");
   bw.clear();
 
-  double n   = 180.278;
+  double n = 180.278;
   double neg = -238.47;
   bwformat(bw, spec, n);
   REQUIRE(bw.view() == "180.28");
@@ -406,7 +400,7 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "-238.47000");
   bw.clear();
 
-  float f    = 1234;
+  float f = 1234;
   float fneg = -1;
   bwformat(bw, spec, f);
   REQUIRE(bw.view() == "1234");
@@ -414,7 +408,7 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   bwformat(bw, spec, fneg);
   REQUIRE(bw.view() == "-1");
   bw.clear();
-  f          = 1234.5667;
+  f = 1234.5667;
   spec._prec = 4;
   bwformat(bw, spec, f);
   REQUIRE(bw.view() == "1234.5667");
@@ -434,7 +428,7 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   bw.clear();
 
   double edge = 0.345;
-  spec._prec  = 3;
+  spec._prec = 3;
   bwformat(bw, spec, edge);
   REQUIRE(bw.view() == "0.345");
   bw.clear();
@@ -448,18 +442,18 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   bw.clear();
 
   // alignment
-  double first  = 1.23;
+  double first = 1.23;
   double second = 2.35;
-  double third  = -3.5;
+  double third = -3.5;
   swoc::bwf::Spec left;
   left._align = swoc::bwf::Spec::Align::LEFT;
-  left._min   = 5;
+  left._min = 5;
   swoc::bwf::Spec right;
   right._align = swoc::bwf::Spec::Align::RIGHT;
-  right._min   = 5;
+  right._min = 5;
   swoc::bwf::Spec center;
   center._align = swoc::bwf::Spec::Align::CENTER;
-  center._min   = 5;
+  center._min = 5;
 
   bwformat(bw, left, first);
   bwformat(bw, right, second);
@@ -473,7 +467,7 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   double over = 1.4444444;
   swoc::bwf::Spec over_min;
   over_min._prec = 7;
-  over_min._min  = 5;
+  over_min._min = 5;
   bwformat(bw, over_min, over);
   REQUIRE(bw.view() == "1.4444444");
   bw.clear();
@@ -499,8 +493,7 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   bw.clear();
 }
 
-TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
-{
+TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
   std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
   swoc::LocalBufferWriter<120> w;
 
@@ -587,12 +580,10 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]")
   w.clear().print("Upper - |{:S}|", text);
   REQUIRE(w.view() == "Upper - |0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ|");
 
-  w.clear().print("Leading{}{}{}.", swoc::bwf::Optional(" | {}  |", s1), swoc::bwf::Optional(" <{}>", empty),
-                  swoc::bwf::If(!s3.empty(), " [{}]", s3));
+  w.clear().print("Leading{}{}{}.", swoc::bwf::Optional(" | {}  |", s1), swoc::bwf::Optional(" <{}>", empty), swoc::bwf::If(!s3.empty(), " [{}]", s3));
   REQUIRE(w.view() == "Leading | Persia  | [Leif].");
   // Do it again, but this time as C strings (char * variants).
-  w.clear().print("Leading{}{}{}.", swoc::bwf::Optional(" | {}  |", s3.data()), swoc::bwf::Optional(" <{}>", empty),
-                  swoc::bwf::If(!s3.empty(), " [{}]", s1.c_str()));
+  w.clear().print("Leading{}{}{}.", swoc::bwf::Optional(" | {}  |", s3.data()), swoc::bwf::Optional(" <{}>", empty), swoc::bwf::If(!s3.empty(), " [{}]", s1.c_str()));
   REQUIRE(w.view() == "Leading | Leif  | [Persia].");
   // Play with string_view
   w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
