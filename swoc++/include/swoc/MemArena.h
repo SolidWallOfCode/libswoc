@@ -485,4 +485,4 @@ void FixedArena<T>::clear() {
   _list._next = nullptr;
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

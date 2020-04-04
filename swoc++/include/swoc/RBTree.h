@@ -221,4 +221,4 @@ RBNode::structure_validate() {
 }
 
 } // namespace detail
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

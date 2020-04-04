@@ -48,4 +48,4 @@ ArenaWriter::realloc(size_t n)
   memcpy(_buffer, text.data(), text.size());
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

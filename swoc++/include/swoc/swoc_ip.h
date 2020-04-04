@@ -2794,4 +2794,4 @@ get(swoc::IPNet const& net) {
   }
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

@@ -915,7 +915,7 @@ MemSpan<void>::view() const {
   return {static_cast<char const *>(_ptr), _size};
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc
 
 /// @cond NO_DOXYGEN
 // STL tuple support - this allows the @c MemSpan to be used as a tuple of a pointer

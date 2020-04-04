@@ -210,4 +210,4 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::SubText<Args...> const& su
   return w;
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

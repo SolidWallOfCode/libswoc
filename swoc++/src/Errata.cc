@@ -185,4 +185,4 @@ operator<<(std::ostream& os, Errata const& err) {
   return err.write(os);
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

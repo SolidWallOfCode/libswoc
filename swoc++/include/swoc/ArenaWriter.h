@@ -61,4 +61,4 @@ protected:
 inline swoc::ArenaWriter::ArenaWriter(swoc::MemArena& arena)
     : super_type(arena.remnant()), _arena(arena) {}
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

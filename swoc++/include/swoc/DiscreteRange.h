@@ -1409,4 +1409,4 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
   return *this;
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

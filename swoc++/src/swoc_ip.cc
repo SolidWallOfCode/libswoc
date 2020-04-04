@@ -966,4 +966,4 @@ void IP6Range::NetSource::search_narrower() {
   }
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

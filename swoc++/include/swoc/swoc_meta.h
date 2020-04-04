@@ -192,4 +192,4 @@ template<typename... Types> struct type_list {
 };
 
 } // namespace meta
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

@@ -859,7 +859,7 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata::Annotatio
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata const &);
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc
 
 // Tuple / structured binding support.
 namespace std

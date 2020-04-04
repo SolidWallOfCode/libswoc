@@ -993,7 +993,7 @@ tag_label(std::ostream& w) {
   return w;
 }
 } // namespace detail
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc
 
 namespace std
 {

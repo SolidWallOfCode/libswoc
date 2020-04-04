@@ -350,4 +350,4 @@ RBNode::left_most_descendant() const -> self_type * {
 }
 
 } // namespace detail
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

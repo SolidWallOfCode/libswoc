@@ -626,7 +626,7 @@ inline FixedBufferWriter::operator std::string_view() const {
 // --- LocalBufferWriter ---
 template<size_t N> LocalBufferWriter<N>::LocalBufferWriter() : super_type(_arr, N) {}
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc
 
 namespace std
 {

@@ -886,4 +886,4 @@ IntrusiveDList<L>::apply(F&& f) -> self_type& {
   return detail::Intrusive_DList_Apply(*this, f);
 };
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

@@ -682,4 +682,4 @@ IntrusiveHashMap<H>::get_expansion_limit() const {
   return _expansion_limit;
 }
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc

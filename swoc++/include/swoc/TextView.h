@@ -1644,7 +1644,7 @@ namespace literals
   constexpr swoc::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
 } // namespace literals
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc
 
 namespace std {
 /// Write the contents of @a view to the stream @a os.

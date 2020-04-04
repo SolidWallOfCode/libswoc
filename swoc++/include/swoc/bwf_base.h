@@ -1198,4 +1198,4 @@ As_Hex(T const& t) {
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::HexDump const& hex);
 
-}} // namespace SWOC_NAMESPACE
+}} // namespace swoc
