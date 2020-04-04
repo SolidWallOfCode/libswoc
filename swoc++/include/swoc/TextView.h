@@ -71,8 +71,8 @@ strcmp(const std::string_view &lhs, const std::string_view &rhs) {
   return memcmp(lhs, rhs);
 }
 
-namespace SWOC_NAMESPACE
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
+
 class TextView;
 
 /** A read only view of a contiguous piece of memory.
@@ -1644,12 +1644,11 @@ namespace literals
   constexpr swoc::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
 } // namespace literals
 
-}; // namespace SWOC_NAMESPACE
+}} // namespace SWOC_NAMESPACE
 
-namespace std
-{
+namespace std {
 /// Write the contents of @a view to the stream @a os.
-ostream &operator<<(ostream &os, const swoc::TextView &view);
+ostream& operator<<(ostream& os, const swoc::TextView& view);
 
 /// @cond INTERNAL_DETAIL
 /* For interaction with specific STL interfaces, primarily std::filesystem. Along with the
@@ -1657,18 +1656,18 @@ ostream &operator<<(ostream &os, const swoc::TextView &view);
  * even if the internal view is not nul terminated.
  * @note Putting these directly in the class doesn't seem to work.
  */
-template <> struct iterator_traits<swoc::TextView> {
+template<> struct iterator_traits<swoc::TextView> {
   using value_type        = char;
   using pointer_type      = const char *;
-  using reference_type    = const char &;
+  using reference_type    = const char&;
   using difference_type   = ssize_t;
   using iterator_category = forward_iterator_tag;
 };
 
-template <typename X, typename V> struct iterator_traits<swoc::TransformView<X, V>> {
+template<typename X, typename V> struct iterator_traits<swoc::TransformView<X, V>> {
   using value_type        = typename swoc::TransformView<X, V>::value_type;
   using pointer_type      = const value_type *;
-  using reference_type    = const value_type &;
+  using reference_type    = const value_type&;
   using difference_type   = ssize_t;
   using iterator_category = forward_iterator_tag;
 };

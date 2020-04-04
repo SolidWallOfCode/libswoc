@@ -21,8 +21,7 @@
 
 #include "swoc/swoc_version.h"
 
-namespace SWOC_NAMESPACE
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
 /** A span of contiguous piece of memory.
 
     A @c MemSpan does not own the memory to which it refers, it is simply a span of part of some
@@ -916,7 +915,7 @@ MemSpan<void>::view() const {
   return {static_cast<char const *>(_ptr), _size};
 }
 
-} // namespace SWOC_NAMESPACE
+}} // namespace SWOC_NAMESPACE
 
 /// @cond NO_DOXYGEN
 // STL tuple support - this allows the @c MemSpan to be used as a tuple of a pointer

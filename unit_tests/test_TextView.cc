@@ -28,7 +28,7 @@
 
 using swoc::TextView;
 using namespace std::literals;
-using namespace SWOC_NAMESPACE::literals;
+using namespace swoc::literals;
 
 TEST_CASE("TextView Constructor", "[libswoc][TextView]")
 {

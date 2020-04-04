@@ -17,7 +17,7 @@
 #include "swoc/bwf_std.h"
 
 using namespace std::literals;
-using namespace SWOC_NAMESPACE::literals;
+using namespace swoc::literals;
 using swoc::TextView;
 using swoc::IPEndpoint;
 

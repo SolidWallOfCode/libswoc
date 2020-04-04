@@ -14,29 +14,37 @@
 #include "swoc/bwf_base.h"
 #include "swoc/swoc_ip.h"
 
-namespace SWOC_NAMESPACE
-{
-// All of these expect the address to be in network order.
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, in6_addr const &addr);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);
-// Use class information for ordering.
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP4Addr const &addr);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP6Addr const &addr);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPAddr const &addr);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP4Range const &Range);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP6Range const &Range);
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPRange const &Range);
+namespace swoc { inline namespace SWOC_VERSION_NS {
 
-inline BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, IPEndpoint const &addr) {
+// All of these expect the address to be in network order.
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, sockaddr const *addr);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, in6_addr const& addr);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, sockaddr const *addr);
+
+// Use class information for ordering.
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP4Addr const& addr);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP6Addr const& addr);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IPAddr const& addr);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP4Range const& Range);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP6Range const& Range);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IPRange const& Range);
+
+inline BufferWriter&
+bwformat(BufferWriter& w, bwf::Spec const& spec, IPEndpoint const& addr) {
   return bwformat(w, spec, &addr.sa);
 }
 
 /// Buffer space sufficient for printing any basic IP address type.
 static const size_t IP_STREAM_SIZE = 80;
 
-} // namespace SWOC_NAMESPACE
+}} // namespace swoc
 
 namespace std {
 inline ostream &

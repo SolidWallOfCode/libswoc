@@ -15,17 +15,26 @@
 #include "swoc/RBTree.h"
 #include <values.h>
 
-namespace SWOC_NAMESPACE {
+namespace swoc { inline namespace SWOC_VERSION_NS {
 
 class IP4Addr;
+
 class IP6Addr;
+
 class IPAddr;
+
 class IPMask;
+
 class IP4Range;
+
 class IP6Range;
+
 class IPRange;
+
 class IP4Net;
+
 class IP6Net;
+
 class IPNet;
 
 using ::std::string_view;
@@ -56,7 +65,7 @@ union IPEndpoint {
   explicit IPEndpoint(IPAddr const& addr);
 
   // Construct from @c sockaddr
-  IPEndpoint(sockaddr const * sa);
+  IPEndpoint(sockaddr const *sa);
 
   /** Break a string in to IP address relevant tokens.
    *
@@ -563,10 +572,15 @@ public:
   self_type& operator=(in6_addr const& ip);
 
   bool operator==(self_type const& that) const;
+
   bool operator!=(self_type const& that) const;
-  bool operator< (self_type const& that) const;
-  bool operator> (self_type const& that) const;
+
+  bool operator<(self_type const& that) const;
+
+  bool operator>(self_type const& that) const;
+
   bool operator<=(self_type const& that) const;
+
   bool operator>=(self_type const& that) const;
 
   /// Assign from @c sockaddr
@@ -1052,6 +1066,7 @@ public:
   bool empty() const;
 
   IP4Range const& ip4() const { return _range._ip4; }
+
   IP6Range const& ip6() const { return _range._ip6; }
 
   class NetSource;
@@ -1330,12 +1345,14 @@ public:
   IPRange as_range() const;
 
   bool is_ip4() const { return _addr.is_ip4(); }
+
   bool is_ip6() const { return _addr.is_ip6(); }
 
   sa_family_t family() const { return _addr.family(); }
 
   IP4Net ip4() const { return IP4Net{_addr.ip4(), _mask}; }
-  IP6Net ip6() const { return IP6Net{_addr.ip6(), _mask};}
+
+  IP6Net ip6() const { return IP6Net{_addr.ip6(), _mask}; }
 
   /** Assign an @a addr and @a mask to @a this.
    *
@@ -1472,7 +1489,7 @@ public:
     const_iterator(self_type const& that);
 
     /// Assignment.
-    self_type & operator=(self_type const& that);
+    self_type& operator=(self_type const& that);
 
     /// Pre-increment.
     /// Move to the next element in the list.
@@ -1560,7 +1577,7 @@ public:
     iterator(self_type const& that);
 
     /// Assignment.
-    self_type & operator=(self_type const& that);
+    self_type& operator=(self_type const& that);
 
     /// Pre-increment.
     /// Move to the next element in the list.
@@ -1632,7 +1649,7 @@ public:
    * @return The payload if any, @c nullptr if the address is not in the space.
    */
   iterator find(IP6Addr const& addr) {
-    return { _ip4.end(), _ip6.find(addr) };
+    return {_ip4.end(), _ip6.find(addr)};
   }
 
   /// @return A constant iterator to the first element.
@@ -1667,7 +1684,7 @@ IPSpace<PAYLOAD>::const_iterator::const_iterator(self_type const& that) {
 }
 
 template<typename PAYLOAD>
-auto IPSpace<PAYLOAD>::const_iterator::operator=(self_type const& that) -> self_type &{
+auto IPSpace<PAYLOAD>::const_iterator::operator=(self_type const& that) -> self_type& {
   _iter_4 = that._iter_4;
   _iter_6 = that._iter_6;
   new(&_value) value_type{that._value};
@@ -1758,7 +1775,7 @@ IPSpace<PAYLOAD>::iterator::iterator(self_type const& that) {
 }
 
 template<typename PAYLOAD>
-auto IPSpace<PAYLOAD>::iterator::operator=(self_type const& that) -> self_type & {
+auto IPSpace<PAYLOAD>::iterator::operator=(self_type const& that) -> self_type& {
   this->super_type::operator=(that);
   return *this;
 }
@@ -1792,7 +1809,7 @@ inline constexpr IPAddr::raw_addr_type::raw_addr_type() : _ip4(INADDR_ANY) {}
 
 inline IPAddr::IPAddr(in_addr_t addr) : _addr(addr), _family(AF_INET) {}
 
-inline IPAddr::IPAddr(in6_addr const& addr) :  _addr(addr), _family(AF_INET6) {}
+inline IPAddr::IPAddr(in6_addr const& addr) : _addr(addr), _family(AF_INET6) {}
 
 inline IPAddr::IPAddr(sockaddr const *addr) {
   this->assign(addr);
@@ -1955,7 +1972,7 @@ inline IPEndpoint::IPEndpoint(IPAddr const& addr) {
   this->assign(addr);
 }
 
-inline IPEndpoint::IPEndpoint(sockaddr const * sa) {
+inline IPEndpoint::IPEndpoint(sockaddr const *sa) {
   this->assign(sa);
 }
 
@@ -2472,7 +2489,7 @@ inline IPMask::raw_type IPNet::width() const { return _mask.width(); }
 
 inline IPMask const& IPNet::mask() const { return _mask; }
 
-inline IPRange IPNet::as_range() const { return {this->lower_bound(), this->upper_bound()};}
+inline IPRange IPNet::as_range() const { return {this->lower_bound(), this->upper_bound()}; }
 
 inline IPNet::self_type& IPNet::assign(IPAddr const& addr, IPMask const& mask) {
   _addr = addr & mask;
@@ -2488,19 +2505,19 @@ inline bool IPNet::operator!=(IPNet::self_type const& that) const {
   return _mask != that._mask || _addr != that._addr;
 }
 
-inline bool operator == (IPNet const& lhs, IP4Net const& rhs) {
+inline bool operator==(IPNet const& lhs, IP4Net const& rhs) {
   return lhs.is_ip4() && lhs.ip4() == rhs;
 }
 
-inline bool operator == (IP4Net const& lhs, IPNet const& rhs) {
+inline bool operator==(IP4Net const& lhs, IPNet const& rhs) {
   return rhs.is_ip4() && rhs.ip4() == lhs;
 }
 
-inline bool operator == (IPNet const& lhs, IP6Net const& rhs) {
+inline bool operator==(IPNet const& lhs, IP6Net const& rhs) {
   return lhs.is_ip6() && lhs.ip6() == rhs;
 }
 
-inline bool operator == (IP6Net const& lhs, IPNet const& rhs) {
+inline bool operator==(IP6Net const& lhs, IPNet const& rhs) {
   return rhs.is_ip6() && rhs.ip6() == lhs;
 }
 
@@ -2568,10 +2585,10 @@ inline bool IP6Range::NetSource::operator!=(IP6Range::NetSource::self_type const
 
 inline IPRange::NetSource::NetSource(IPRange::NetSource::range_type const& range) {
   if (range.is_ip4()) {
-    new (&_ip4) decltype(_ip4)(range.ip4());
+    new(&_ip4) decltype(_ip4)(range.ip4());
     _family = AF_INET;
   } else if (range.is_ip6()) {
-    new (&_ip6) decltype(_ip6)(range.ip6());
+    new(&_ip6) decltype(_ip6)(range.ip6());
     _family = AF_INET6;
   }
 }
@@ -2582,8 +2599,8 @@ inline auto IPRange::NetSource::begin() const -> iterator {
 
 inline auto IPRange::NetSource::end() const -> iterator {
   return AF_INET == _family ? self_type{IP4Range{}}
-  : AF_INET6 == _family ? self_type{IP6Range{}}
-  : self_type{IPRange{}};
+                            : AF_INET6 == _family ? self_type{IP6Range{}}
+                                                  : self_type{IPRange{}};
 }
 
 inline IPAddr IPRange::NetSource::addr() const {
@@ -2605,10 +2622,10 @@ inline IPMask IPRange::NetSource::mask() const {
 }
 
 inline IPNet IPRange::NetSource::operator*() const {
-  return { this->addr(), this->mask() };
+  return {this->addr(), this->mask()};
 }
 
-inline auto IPRange::NetSource::operator++() -> self_type & {
+inline auto IPRange::NetSource::operator++() -> self_type& {
   if (AF_INET == _family) {
     ++_ip4;
   } else if (AF_INET6 == _family) {
@@ -2688,7 +2705,7 @@ auto IPSpace<PAYLOAD>::end() const -> const_iterator {
   return const_iterator(nc_this->_ip4.end(), nc_this->_ip6.end());
 }
 
-} // namespace SWOC_NAMESPACE
+}} // namespace swoc
 
 namespace std {
 
@@ -2748,7 +2765,7 @@ public:
 
 } // namespace std
 
-namespace SWOC_NAMESPACE {
+namespace swoc { inline namespace SWOC_VERSION_NS {
 
 template<size_t IDX> typename std::tuple_element<IDX, IP4Net>::type
 get(swoc::IP4Net const& net) {
@@ -2777,4 +2794,4 @@ get(swoc::IPNet const& net) {
   }
 }
 
-} // namespace SWOC_NAMESPACE
+}} // namespace SWOC_NAMESPACE

@@ -27,7 +27,7 @@
 #include "catch.hpp"
 
 using swoc::TextView;
-using namespace SWOC_NAMESPACE::literals;
+using namespace swoc::literals;
 
 struct A {
   int _value;

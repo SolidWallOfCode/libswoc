@@ -19,14 +19,15 @@
 #include "swoc/TextView.h"
 #include "swoc/MemSpan.h"
 
-namespace SWOC_NAMESPACE
-{
-namespace bwf
-{
-  struct Spec;
-  class Format;
-  class NameBinding;
-  class ArgPack;
+namespace swoc { inline namespace SWOC_VERSION_NS {
+namespace bwf {
+struct Spec;
+
+class Format;
+
+class NameBinding;
+
+class ArgPack;
 } // namespace bwf
 
 /** Wrapper for operations on a buffer.
@@ -46,7 +47,7 @@ public:
    * @param c Character to write.
    * @return @a this.
    */
-  virtual BufferWriter &write(char c) = 0;
+  virtual BufferWriter& write(char c) = 0;
 
   /** Write @a length bytes starting at @a data to the buffer.
    *
@@ -58,7 +59,7 @@ public:
    * subclasses will override this method to use more efficient mechanisms, dependent on the type of
    * output buffer.
    */
-  virtual BufferWriter &write(void const *data, size_t length);
+  virtual BufferWriter& write(void const *data, size_t length);
 
   /** Add the contents of @a sv to the buffer, up to the size of the view.
 
@@ -68,7 +69,7 @@ public:
 
       @return @c *this
   */
-  BufferWriter &write(const std::string_view &sv);
+  BufferWriter& write(const std::string_view& sv);
 
   /// Address of the first byte in the output buffer.
   virtual const char *data() const = 0;
@@ -134,13 +135,13 @@ public:
    * The buffer content is unchanged, only the extent value is adjusted. This effectively discards
    * @a n bytes of already written data.
    */
-  virtual BufferWriter &discard(size_t n) = 0;
+  virtual BufferWriter& discard(size_t n) = 0;
 
   /// Reduce the capacity by @a n bytes
   /// If the capacity is reduced below the current @c size the instance goes in to an error state.
   /// @see restore
   /// @return @c *this
-  virtual BufferWriter &restrict(size_t n) = 0;
+  virtual BufferWriter& restrict(size_t n) = 0;
 
   /// Restore @a n bytes of capacity.
   /// If there is an error condition, this function clears it and sets the extent to the size.  It
@@ -148,7 +149,7 @@ public:
   /// @note This does not make the internal buffer size larger. It can only restore capacity earlier
   /// removed by @c restrict.
   /// @see restrict
-  virtual BufferWriter &restore(size_t n) = 0;
+  virtual BufferWriter& restore(size_t n) = 0;
 
   /** Copy data from one part of the buffer to another.
    *
@@ -164,7 +165,7 @@ public:
    *
    * @internal This is used to perform justification for formatting.
    */
-  virtual BufferWriter &copy(size_t dst, size_t src, size_t n) = 0;
+  virtual BufferWriter& copy(size_t dst, size_t src, size_t n) = 0;
 
   // Force virtual destructor.
   virtual ~BufferWriter();
@@ -182,7 +183,7 @@ public:
    * @note This must be declared here, but the implementation is in @c bwf_base.h. That file does
    * not need to be included if formatted output is not used.
    */
-  template <typename... Args> BufferWriter &print(const TextView &fmt, Args &&... args);
+  template<typename... Args> BufferWriter& print(const TextView& fmt, Args&& ... args);
 
   /** Formatted output to the buffer.
    *
@@ -195,7 +196,8 @@ public:
    * output should gather their formatting arguments into a tuple, usually using
    * @c std::forward_as_tuple().
    */
-  template <typename... Args> BufferWriter &print_v(const TextView &fmt, const std::tuple<Args...> &args);
+  template<typename... Args>
+  BufferWriter& print_v(const TextView& fmt, const std::tuple<Args...>& args);
 
   /** Formatted output to the buffer.
    *
@@ -204,7 +206,7 @@ public:
    * @param args Arguments for the format string.
    * @return @a this.
    */
-  template <typename... Args> BufferWriter &print(const bwf::Format &fmt, Args &&... args);
+  template<typename... Args> BufferWriter& print(const bwf::Format& fmt, Args&& ... args);
 
   /** Formatted output to the buffer.
    *
@@ -217,7 +219,8 @@ public:
    * output should gather their formatting arguments into a tuple, usually using
    * @c std::forward_as_tuple().
    */
-  template <typename... Args> BufferWriter &print_v(const bwf::Format &fmt, const std::tuple<Args...> &args);
+  template<typename... Args>
+  BufferWriter& print_v(const bwf::Format& fmt, const std::tuple<Args...>& args);
 
   /** Write formatted output of @a args to @a this buffer.
    *
@@ -244,8 +247,8 @@ public:
    *
    * @see NameBinding
    */
-  template <typename Binding, typename Extractor>
-  BufferWriter &print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &args);
+  template<typename Binding, typename Extractor>
+  BufferWriter& print_nfv(Binding&& names, Extractor&& ex, bwf::ArgPack const& args);
 
   /** Write formatted output of @a args to @a this buffer.
    *
@@ -257,7 +260,8 @@ public:
    * @note This is primarily an internal convenience for certain situations where a format parameter
    * tuple is not needed and difficult to create.
    */
-  template <typename Binding, typename Extractor> BufferWriter &print_nfv(Binding const &names, Extractor &&ex);
+  template<typename Binding, typename Extractor>
+  BufferWriter& print_nfv(Binding const& names, Extractor&& ex);
 
   /** Write formatted output to @a this buffer.
    *
@@ -267,7 +271,7 @@ public:
    * This is intended to be use with context name binding where @a names has the bindings and the
    * format string @a fmt contains only references to those names, not to any arguments.
    */
-  template <typename Binding> BufferWriter &print_n(Binding const &names, TextView const &fmt);
+  template<typename Binding> BufferWriter& print_n(Binding const& names, TextView const& fmt);
 
   /** IO stream operator.
    *
@@ -276,7 +280,7 @@ public:
    *
    * Write the buffer contents to @a stream.
    */
-  virtual std::ostream &operator>>(std::ostream &stream) const = 0;
+  virtual std::ostream& operator>>(std::ostream& stream) const = 0;
 };
 
 /** A concrete @c BufferWriter class for a fixed buffer.
@@ -294,34 +298,34 @@ public:
   FixedBufferWriter(char *buffer, size_t capacity);
 
   /// Construct using the memory @a span as the buffer.
-  FixedBufferWriter(MemSpan<void> const &span);
+  FixedBufferWriter(MemSpan<void> const& span);
 
   /// Construct using the memory @a span as the buffer.
-  FixedBufferWriter(MemSpan<char> const &span);
+  FixedBufferWriter(MemSpan<char> const& span);
 
   /** Constructor an empty buffer with no capacity.
    * This can be useful to measure the extent of the output before allocating memory.
    */
   FixedBufferWriter(std::nullptr_t);
 
-  FixedBufferWriter(const FixedBufferWriter &) = delete;
+  FixedBufferWriter(const FixedBufferWriter&) = delete;
 
-  FixedBufferWriter &operator=(const FixedBufferWriter &) = delete;
+  FixedBufferWriter& operator=(const FixedBufferWriter&) = delete;
 
   /// Move constructor.
-  FixedBufferWriter(FixedBufferWriter &&that);
+  FixedBufferWriter(FixedBufferWriter&& that);
 
   /// Move assignment.
-  FixedBufferWriter &operator=(FixedBufferWriter &&that);
+  FixedBufferWriter& operator=(FixedBufferWriter&& that);
 
   /// Reset buffer.
-  self_type &assign(MemSpan<char> const &span);
+  self_type& assign(MemSpan<char> const& span);
 
   /// Write a single character @a c to the buffer.
-  FixedBufferWriter &write(char c) override;
+  FixedBufferWriter& write(char c) override;
 
   /// Write @a length bytes, starting at @a data, to the buffer.
-  FixedBufferWriter &write(const void *data, size_t length) override;
+  FixedBufferWriter& write(const void *data, size_t length) override;
 
   // Bring in non-overridden methods.
   using super_type::write;
@@ -345,16 +349,16 @@ public:
   bool commit(size_t n) override;
 
   /// Drop @a n characters from the end of the buffer.
-  self_type &discard(size_t n) override;
+  self_type& discard(size_t n) override;
 
   /// Reduce the capacity by @a n.
-  self_type &restrict(size_t n) override;
+  self_type& restrict(size_t n) override;
 
   /// Restore @a n bytes of the capacity.
-  self_type &restore(size_t n) override;
+  self_type& restore(size_t n) override;
 
   /// Copy data in the buffer.
-  FixedBufferWriter &copy(size_t dst, size_t src, size_t n) override;
+  FixedBufferWriter& copy(size_t dst, size_t src, size_t n) override;
 
   /// Erase the buffer, reset to empty (no valid data).
   /// This is a convenience for reusing a buffer. For instance
@@ -362,9 +366,10 @@ public:
   ///   bw.clear().print("....."); // clear old data and print new data.
   /// @endcode
   /// This is equivalent to @c w.discard(w.size()) but clearer for that case.
-  self_type &clear();
+  self_type& clear();
 
-  self_type &detach();
+  self_type& detach();
+
   /// @return The used part of the buffer as a @c std::string_view.
   std::string_view view() const;
 
@@ -372,16 +377,17 @@ public:
   operator std::string_view() const;
 
   /// Output the buffer contents to the @a stream.
-  std::ostream &operator>>(std::ostream &stream) const override;
+  std::ostream& operator>>(std::ostream& stream) const override;
 
   /// @cond COVARY
-  template <typename... Rest> self_type &print(TextView fmt, Rest &&... rest);
+  template<typename... Rest> self_type& print(TextView fmt, Rest&& ... rest);
 
-  template <typename... Args> self_type &print_v(TextView fmt, std::tuple<Args...> const &args);
+  template<typename... Args> self_type& print_v(TextView fmt, std::tuple<Args...> const& args);
 
-  template <typename... Args> self_type &print(bwf::Format const &fmt, Args &&... args);
+  template<typename... Args> self_type& print(bwf::Format const& fmt, Args&& ... args);
 
-  template <typename... Args> self_type &print_v(bwf::Format const &fmt, std::tuple<Args...> const &args);
+  template<typename... Args>
+  self_type& print_v(bwf::Format const& fmt, std::tuple<Args...> const& args);
   /// @endcond
 
 protected:
@@ -413,15 +419,17 @@ protected:
  * create_note(LocalBufferWriter<256>().print("Note {}", idx).view());
  * @endcode
  */
-template <size_t N> class LocalBufferWriter : public FixedBufferWriter {
+template<size_t N> class LocalBufferWriter : public FixedBufferWriter {
   using self_type  = LocalBufferWriter;
   using super_type = FixedBufferWriter;
 
 public:
   /// Construct an empty writer.
   LocalBufferWriter();
-  LocalBufferWriter(const LocalBufferWriter &that) = delete;
-  LocalBufferWriter &operator=(const LocalBufferWriter &that) = delete;
+
+  LocalBufferWriter(const LocalBufferWriter& that) = delete;
+
+  LocalBufferWriter& operator=(const LocalBufferWriter& that) = delete;
 
 protected:
   char _arr[N]; ///< output buffer.
@@ -431,19 +439,18 @@ protected:
 
 inline BufferWriter::~BufferWriter() {}
 
-inline BufferWriter &
+inline BufferWriter&
 BufferWriter::write(const void *data, size_t length) {
   const char *d = static_cast<const char *>(data);
 
-  while (length--)
-  {
+  while (length--) {
     this->write(*(d++));
   }
   return *this;
 }
 
-inline BufferWriter &
-BufferWriter::write(const std::string_view &sv) {
+inline BufferWriter&
+BufferWriter::write(const std::string_view& sv) {
   return this->write(sv.data(), sv.size());
 }
 
@@ -463,54 +470,54 @@ BufferWriter::remaining() const {
 }
 
 // --- FixedBufferWriter ---
-inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buffer(buffer), _capacity(capacity) {
-  if (_capacity != 0 && buffer == nullptr)
-  {
-    throw(std::invalid_argument{"FixedBufferWriter created with null buffer and non-zero size."});
+inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity)
+    : _buffer(buffer), _capacity(capacity) {
+  if (_capacity != 0 && buffer == nullptr) {
+    throw (std::invalid_argument{"FixedBufferWriter created with null buffer and non-zero size."});
   };
 }
 
-inline FixedBufferWriter::FixedBufferWriter(MemSpan<void> const &span)
-  : _buffer{static_cast<char *>(span.data())}, _capacity{span.size()} {}
+inline FixedBufferWriter::FixedBufferWriter(MemSpan<void> const& span)
+    : _buffer{static_cast<char *>(span.data())}, _capacity{span.size()} {}
 
-inline FixedBufferWriter::FixedBufferWriter(MemSpan<char> const &span) : _buffer{span.begin()}, _capacity{span.size()} {}
+inline FixedBufferWriter::FixedBufferWriter(MemSpan<char> const& span) : _buffer{span.begin()}
+                                                                         , _capacity{span.size()} {}
 
 inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buffer(nullptr), _capacity(0) {}
 
-inline FixedBufferWriter::self_type &
+inline FixedBufferWriter::self_type&
 FixedBufferWriter::detach() {
   const_cast<char *&>(_buffer) = nullptr;
-  _capacity                    = 0;
-  _attempted                   = 0;
+  _capacity = 0;
+  _attempted = 0;
   return *this;
 }
 
-inline FixedBufferWriter::FixedBufferWriter(FixedBufferWriter &&that)
-  : _buffer(that._buffer), _capacity(that._capacity), _attempted(that._attempted) {
+inline FixedBufferWriter::FixedBufferWriter(FixedBufferWriter&& that)
+    : _buffer(that._buffer), _capacity(that._capacity), _attempted(that._attempted) {
   that.detach();
 }
 
-inline FixedBufferWriter::self_type &
-FixedBufferWriter::assign(MemSpan<char> const &span) {
+inline FixedBufferWriter::self_type&
+FixedBufferWriter::assign(MemSpan<char> const& span) {
   const_cast<char *&>(_buffer) = span.data();
-  _capacity                    = span.size();
-  _attempted                   = 0;
+  _capacity = span.size();
+  _attempted = 0;
   return *this;
 }
 
-inline FixedBufferWriter &
-FixedBufferWriter::operator=(FixedBufferWriter &&that) {
+inline FixedBufferWriter&
+FixedBufferWriter::operator=(FixedBufferWriter&& that) {
   const_cast<char *&>(_buffer) = that._buffer;
-  _capacity                    = that._capacity;
-  _attempted                   = that._attempted;
+  _capacity = that._capacity;
+  _attempted = that._attempted;
   that.detach();
   return *this;
 }
 
-inline FixedBufferWriter &
+inline FixedBufferWriter&
 FixedBufferWriter::write(char c) {
-  if (_attempted < _capacity)
-  {
+  if (_attempted < _capacity) {
     _buffer[_attempted] = c;
   }
   ++_attempted;
@@ -518,17 +525,16 @@ FixedBufferWriter::write(char c) {
   return *this;
 }
 
-inline FixedBufferWriter &
+inline FixedBufferWriter&
 FixedBufferWriter::write(const void *data, size_t length) {
   const size_t newSize = _attempted + length;
 
-  if (_buffer)
-  {
-    if (newSize <= _capacity)
-    {
+  if (_buffer) {
+    if (newSize <= _capacity) {
       std::memcpy(_buffer + _attempted, data, length);
-    } else if (_attempted < _capacity)
-    { std::memcpy(_buffer + _attempted, data, _capacity - _attempted); }
+    } else if (_attempted < _capacity) {
+      std::memcpy(_buffer + _attempted, data, _capacity - _attempted);
+    }
   }
   _attempted = newSize;
 
@@ -569,19 +575,17 @@ FixedBufferWriter::extent() const {
 }
 
 inline auto
-FixedBufferWriter::restrict(size_t n) -> self_type & {
-  if (n > _capacity)
-  {
-    throw(std::invalid_argument{"FixedBufferWriter restrict value more than capacity"});
+FixedBufferWriter::restrict(size_t n) -> self_type& {
+  if (n > _capacity) {
+    throw (std::invalid_argument{"FixedBufferWriter restrict value more than capacity"});
   }
   _capacity -= n;
   return *this;
 }
 
 inline auto
-FixedBufferWriter::restore(size_t n) -> self_type & {
-  if (error())
-  {
+FixedBufferWriter::restore(size_t n) -> self_type& {
+  if (error()) {
     _attempted = _capacity;
   }
   _capacity += n;
@@ -589,19 +593,19 @@ FixedBufferWriter::restore(size_t n) -> self_type & {
 }
 
 inline auto
-FixedBufferWriter::discard(size_t n) -> self_type & {
+FixedBufferWriter::discard(size_t n) -> self_type& {
   _attempted -= std::min(_attempted, n);
   return *this;
 }
 
 inline auto
-FixedBufferWriter::clear() -> self_type & {
+FixedBufferWriter::clear() -> self_type& {
   _attempted = 0;
   return *this;
 }
 
 inline auto
-FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type & {
+FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type& {
   auto limit = std::min<size_t>(_capacity, _attempted); // max offset of region possible.
   MemSpan<char> src_span{_buffer + src, std::min(limit, src + n)};
   MemSpan<char> dst_span{_buffer + dst, std::min(limit, dst + n)};
@@ -620,9 +624,9 @@ inline FixedBufferWriter::operator std::string_view() const {
 }
 
 // --- LocalBufferWriter ---
-template <size_t N> LocalBufferWriter<N>::LocalBufferWriter() : super_type(_arr, N) {}
+template<size_t N> LocalBufferWriter<N>::LocalBufferWriter() : super_type(_arr, N) {}
 
-} // namespace SWOC_NAMESPACE
+}} // namespace SWOC_NAMESPACE
 
 namespace std
 {

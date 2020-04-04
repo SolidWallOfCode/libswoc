@@ -6,8 +6,8 @@
 
 #include "swoc/ArenaWriter.h"
 
-namespace SWOC_NAMESPACE
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
+
 ArenaWriter &
 ArenaWriter::write(char c)
 {
@@ -48,4 +48,4 @@ ArenaWriter::realloc(size_t n)
   memcpy(_buffer, text.data(), text.size());
 }
 
-} // namespace SWOC_NAMESPACE
+}} // namespace SWOC_NAMESPACE

@@ -40,7 +40,7 @@
 #include "swoc/Lexicon.h"
 
 using namespace std::literals;
-using namespace SWOC_NAMESPACE::literals;
+using namespace swoc::literals;
 
 using swoc::TextView;
 using swoc::IPEndpoint;
@@ -100,7 +100,7 @@ swoc::Lexicon<PodType> PodTypeNames {{
                                }};
 
 // Create BW formatters for the types so they can be used for output.
-namespace SWOC_NAMESPACE {
+namespace swoc { inline namespace SWOC_VERSION_NS {
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, PodType pt) {
   return w.write(PodTypeNames[pt]);

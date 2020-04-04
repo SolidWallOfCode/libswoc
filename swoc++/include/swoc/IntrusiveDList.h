@@ -18,8 +18,7 @@
 
 #include "swoc/swoc_version.h"
 
-namespace SWOC_NAMESPACE
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
 /** Intrusive doubly linked list container.
 
     This holds items in a doubly linked list using links in the items. Items are placed in the list
@@ -69,7 +68,7 @@ namespace SWOC_NAMESPACE
     between item pointers and iterators.
 
   */
-template <typename L> class IntrusiveDList {
+template<typename L> class IntrusiveDList {
   friend class iterator;
 
 public:
@@ -79,7 +78,7 @@ public:
   // qualifiers. @c nullptr is used instead of the pointer type because this is done precisely
   // to find that type.
   using value_type = typename std::remove_pointer<
-    typename std::remove_reference<typename std::invoke_result<decltype(L::next_ptr), nullptr_t>::type>::type>::type;
+      typename std::remove_reference<typename std::invoke_result<decltype(L::next_ptr), nullptr_t>::type>::type>::type;
 
   /// Const iterator.
   class const_iterator {
@@ -92,7 +91,7 @@ public:
     // STL algorithm compliance.
     using iterator_category = std::bidirectional_iterator_tag;
     using pointer           = value_type *;
-    using reference         = value_type &;
+    using reference         = value_type&;
     using difference_type   = int;
 
     /// Default constructor.
@@ -101,12 +100,12 @@ public:
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
-    self_type &operator++();
+    self_type& operator++();
 
     /// Pre-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator.
-    self_type &operator--();
+    self_type& operator--();
 
     /// Post-increment.
     /// Move to the next element in the list.
@@ -120,7 +119,7 @@ public:
 
     /// Dereference.
     /// @return A reference to the referent.
-    value_type &operator*() const;
+    value_type& operator*() const;
 
     /// Dereference.
     /// @return A pointer to the referent.
@@ -132,10 +131,10 @@ public:
     operator value_type *() const;
 
     /// Equality
-    bool operator==(self_type const &that) const;
+    bool operator==(self_type const& that) const;
 
     /// Inequality
-    bool operator!=(self_type const &that) const;
+    bool operator!=(self_type const& that) const;
 
     /// Check if @c std::prev would be valid.
     /// @return @c true if calling @c std::prev would yield a valid iterator.
@@ -181,7 +180,7 @@ public:
     // STL algorithm compliance.
     using iterator_category = std::bidirectional_iterator_tag;
     using pointer           = value_type *;
-    using reference         = value_type &;
+    using reference         = value_type&;
 
     /// Default constructor.
     iterator();
@@ -189,12 +188,12 @@ public:
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
-    self_type &operator++();
+    self_type& operator++();
 
     /// Pre-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator.
-    self_type &operator--();
+    self_type& operator--();
 
     /// Post-increment.
     /// Move to the next element in the list.
@@ -208,7 +207,7 @@ public:
 
     /// Dereference.
     /// @return A reference to the referent.
-    value_type &operator*() const;
+    value_type& operator*() const;
 
     /// Dereference.
     /// @return A pointer to the referent.
@@ -227,15 +226,16 @@ public:
   /// Construct to empty list.
   IntrusiveDList() = default;
 
-  IntrusiveDList(self_type const &that) = delete;
+  IntrusiveDList(self_type const& that) = delete;
 
   /// Move list to @a this and leave @a that empty.
-  IntrusiveDList(self_type &&that);
+  IntrusiveDList(self_type&& that);
 
   /// No copy assignment because items can't be in two lists and can't copy items.
-  self_type &operator=(const self_type &that) = delete;
+  self_type& operator=(const self_type& that) = delete;
+
   /// Move @a that to @a this.
-  self_type &operator=(self_type &&that);
+  self_type& operator=(self_type&& that);
 
   /// Empty check.
   /// @return @c true if the list is empty.
@@ -247,11 +247,11 @@ public:
 
   /// Add @a elt as the first element in the list.
   /// @return This container.
-  self_type &prepend(value_type *v);
+  self_type& prepend(value_type *v);
 
   /// Add @a elt as the last element in the list.
   /// @return This container.
-  self_type &append(value_type *v);
+  self_type& append(value_type *v);
 
   /// Remove the first element of the list.
   /// @return A poiner to the removed item, or @c nullptr if the list was empty.
@@ -264,22 +264,22 @@ public:
   /// Insert a new element @a elt after @a target.
   /// The caller is responsible for ensuring @a target is in this list and @a elt is not in a list.
   /// @return This list.
-  self_type &insert_after(value_type *target, value_type *v);
+  self_type& insert_after(value_type *target, value_type *v);
 
   /// Insert a new element @a v before @a target.
   /// The caller is responsible for ensuring @a target is in this list and @a elt is not in a list.
   /// @return This list.
-  self_type &insert_before(value_type *target, value_type *v);
+  self_type& insert_before(value_type *target, value_type *v);
 
   /// Insert a new element @a elt after @a target.
   /// If @a target is the end iterator, @a v is appended to the list.
   /// @return This list.
-  self_type &insert_after(iterator const &target, value_type *v);
+  self_type& insert_after(iterator const& target, value_type *v);
 
   /// Insert a new element @a v before @a target.
   /// If @a target is the end iterator, @a v is appended to the list.
   /// @return This list.
-  self_type &insert_before(iterator const &target, value_type *v);
+  self_type& insert_before(iterator const& target, value_type *v);
 
   /// Take @a v out of this list.
   /// @return The element after @a v.
@@ -287,17 +287,17 @@ public:
 
   /// Take the element at @a loc out of this list.
   /// @return Iterator for the next element.
-  iterator erase(const iterator &loc);
+  iterator erase(const iterator& loc);
 
   /// Take elements out of the list.
   /// Remove elements start with @a start up to but not including @a limit.
   /// @return @a limit
-  iterator erase(const iterator &start, const iterator &limit);
+  iterator erase(const iterator& start, const iterator& limit);
 
   /// Remove all elements.
   /// @note @b No memory management is done!
   /// @return This container.
-  self_type &clear();
+  self_type& clear();
 
   /// @return Number of elements in the list.
   size_t count() const;
@@ -323,20 +323,23 @@ public:
    * @return An @c iterator that refers to @a v.
    */
   iterator iterator_for(value_type *v);
+
   const_iterator iterator_for(const value_type *v) const;
 
   /// Get the first element.
   value_type *head();
+
   const value_type *head() const;
 
   /// Get the last element.
   value_type *tail();
+
   const value_type *tail() const;
 
   /** Apply a functor to every element in the list.
    * This iterates over the list correctly even if the functor destroys or removes elements.
    */
-  template <typename F> self_type &apply(F &&f);
+  template<typename F> self_type& apply(F&& f);
 
 protected:
   value_type *_head{nullptr}; ///< First element in list.
@@ -364,17 +367,18 @@ protected:
  *   using Linkage = swoc::IntrusiveLinkage<Thing>;
  * @endcode
  */
-template <typename T, T *(T::*NEXT) = &T::_next, T *(T::*PREV) = &T::_prev> struct IntrusiveLinkage {
-  static T *&next_ptr(T *thing); ///< Retrieve reference to next pointer.
-  static T *&prev_ptr(T *thing); ///< Retrive reference to previous pointer.
+template<typename T, T *(T::*NEXT) = &T::_next, T *(T::*PREV) = &T::_prev> struct IntrusiveLinkage {
+  static T *& next_ptr(T *thing); ///< Retrieve reference to next pointer.
+  static T *& prev_ptr(T *thing); ///< Retrive reference to previous pointer.
 };
 
-template <typename T, T *(T::*NEXT), T *(T::*PREV)>
+template<typename T, T *(T::*NEXT), T *(T::*PREV)>
 T *&
 IntrusiveLinkage<T, NEXT, PREV>::next_ptr(T *thing) {
   return thing->*NEXT;
 }
-template <typename T, T *(T::*NEXT), T *(T::*PREV)>
+
+template<typename T, T *(T::*NEXT), T *(T::*PREV)>
 T *&
 IntrusiveLinkage<T, NEXT, PREV>::prev_ptr(T *thing) {
   return thing->*PREV;
@@ -406,9 +410,9 @@ IntrusiveLinkage<T, NEXT, PREV>::prev_ptr(T *thing) {
  * This is both convenient and gets around aliasing warnings from the compiler that can arise from
  * using @c reinterpret_cast.
  */
-template <typename T, typename P>
+template<typename T, typename P>
 T *&
-ptr_ref_cast(P *&p) {
+ptr_ref_cast(P *& p) {
   union {
     P **_p;
     T **_t;
@@ -436,18 +440,18 @@ ptr_ref_cast(P *&p) {
  *   using Linkage = swoc::IntrusiveLinkage<Thing>;
  * @endcode
  */
-template <typename T, typename L> struct IntrusiveLinkageRebind {
-  static T *&next_ptr(T *thing); ///< Retrieve reference to next pointer.
-  static T *&prev_ptr(T *thing); ///< Retrive reference to previous pointer.
+template<typename T, typename L> struct IntrusiveLinkageRebind {
+  static T *& next_ptr(T *thing); ///< Retrieve reference to next pointer.
+  static T *& prev_ptr(T *thing); ///< Retrive reference to previous pointer.
 };
 
-template <typename T, typename L>
+template<typename T, typename L>
 T *&
 IntrusiveLinkageRebind<T, L>::next_ptr(T *thing) {
   return ptr_ref_cast<T>(L::next_ptr(thing));
 }
 
-template <typename T, typename L>
+template<typename T, typename L>
 T *&
 IntrusiveLinkageRebind<T, L>::prev_ptr(T *thing) {
   return ptr_ref_cast<T>(L::prev_ptr(thing));
@@ -455,31 +459,32 @@ IntrusiveLinkageRebind<T, L>::prev_ptr(T *thing) {
 
 // --- Implementation ---
 
-template <typename L> IntrusiveDList<L>::const_iterator::const_iterator() {}
+template<typename L> IntrusiveDList<L>::const_iterator::const_iterator() {}
 
-template <typename L>
+template<typename L>
 IntrusiveDList<L>::const_iterator::const_iterator(const list_type *list, value_type *v)
-  : _list(const_cast<list_type *>(list)), _v(const_cast<typename list_type::value_type *>(v)) {}
+    : _list(const_cast<list_type *>(list)), _v(const_cast<typename list_type::value_type *>(v)) {}
 
-template <typename L> IntrusiveDList<L>::iterator::iterator() {}
+template<typename L> IntrusiveDList<L>::iterator::iterator() {}
 
-template <typename L> IntrusiveDList<L>::iterator::iterator(list_type *list, value_type *v) : super_type(list, v) {}
+template<typename L>
+IntrusiveDList<L>::iterator::iterator(list_type *list, value_type *v) : super_type(list, v) {}
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::const_iterator::operator++() -> self_type & {
+IntrusiveDList<L>::const_iterator::operator++() -> self_type& {
   _v = L::next_ptr(_v);
   return *this;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::iterator::operator++() -> self_type & {
+IntrusiveDList<L>::iterator::operator++() -> self_type& {
   this->super_type::operator++();
   return *this;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::const_iterator::operator++(int) -> self_type {
   self_type tmp(*this);
@@ -487,7 +492,7 @@ IntrusiveDList<L>::const_iterator::operator++(int) -> self_type {
   return tmp;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::iterator::operator++(int) -> self_type {
   self_type tmp(*this);
@@ -495,25 +500,23 @@ IntrusiveDList<L>::iterator::operator++(int) -> self_type {
   return tmp;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::const_iterator::operator--() -> self_type & {
-  if (_v)
-  {
+IntrusiveDList<L>::const_iterator::operator--() -> self_type& {
+  if (_v) {
     _v = L::prev_ptr(_v);
-  } else if (_list)
-  { _v = _list->_tail; }
+  } else if (_list) { _v = _list->_tail; }
   return *this;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::iterator::operator--() -> self_type & {
+IntrusiveDList<L>::iterator::operator--() -> self_type& {
   this->super_type::operator--();
   return *this;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::const_iterator::operator--(int) -> self_type {
   self_type tmp(*this);
@@ -521,7 +524,7 @@ IntrusiveDList<L>::const_iterator::operator--(int) -> self_type {
   return tmp;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::iterator::operator--(int) -> self_type {
   self_type tmp(*this);
@@ -529,74 +532,74 @@ IntrusiveDList<L>::iterator::operator--(int) -> self_type {
   return tmp;
 }
 
-template <typename L> auto IntrusiveDList<L>::const_iterator::operator-> () const -> value_type * {
+template<typename L> auto IntrusiveDList<L>::const_iterator::operator->() const -> value_type * {
   return _v;
 }
 
-template <typename L> auto IntrusiveDList<L>::iterator::operator-> () const -> value_type * {
+template<typename L> auto IntrusiveDList<L>::iterator::operator->() const -> value_type * {
   return super_type::_v;
 }
 
-template <typename L> IntrusiveDList<L>::const_iterator::operator value_type *() const {
+template<typename L> IntrusiveDList<L>::const_iterator::operator value_type *() const {
   return _v;
 }
 
-template <typename L> auto IntrusiveDList<L>::const_iterator::operator*() const -> value_type & {
+template<typename L> auto IntrusiveDList<L>::const_iterator::operator*() const -> value_type& {
   return *_v;
 }
 
-template <typename L> auto IntrusiveDList<L>::iterator::operator*() const -> value_type & {
+template<typename L> auto IntrusiveDList<L>::iterator::operator*() const -> value_type& {
   return *super_type::_v;
 }
 
-template <typename L> IntrusiveDList<L>::iterator::operator value_type *() const {
+template<typename L> IntrusiveDList<L>::iterator::operator value_type *() const {
   return super_type::_v;
 }
 
 /// --- Main class
 
-template <typename L>
-IntrusiveDList<L>::IntrusiveDList(self_type &&that) : _head(that._head), _tail(that._tail), _count(that._count) {
+template<typename L>
+IntrusiveDList<L>::IntrusiveDList(self_type&& that)
+    : _head(that._head), _tail(that._tail), _count(that._count) {
   that.clear();
 }
 
-template <typename L>
+template<typename L>
 bool
 IntrusiveDList<L>::empty() const {
   return _head == nullptr;
 }
 
-template <typename L>
+template<typename L>
 bool
 IntrusiveDList<L>::contains(const value_type *v) const {
-  for (auto thing = _head; thing; thing = L::next_ptr(thing))
-  {
+  for (auto thing = _head; thing; thing = L::next_ptr(thing)) {
     if (thing == v)
       return true;
   }
   return false;
 }
 
-template <typename L>
+template<typename L>
 bool
-IntrusiveDList<L>::const_iterator::operator==(self_type const &that) const {
+IntrusiveDList<L>::const_iterator::operator==(self_type const& that) const {
   return this->_v == that._v;
 }
 
-template <typename L>
+template<typename L>
 bool
-IntrusiveDList<L>::const_iterator::operator!=(self_type const &that) const {
+IntrusiveDList<L>::const_iterator::operator!=(self_type const& that) const {
   return this->_v != that._v;
 }
 
 template<typename L>
 bool IntrusiveDList<L>::const_iterator::has_predecessor() const {
-  return _v ? nullptr != L::prev_ptr(_v) : ! _list->empty();
+  return _v ? nullptr != L::prev_ptr(_v) : !_list->empty();
 }
 
 template<typename L>
 bool IntrusiveDList<L>::const_iterator::has_prev() const {
-  return _v ? nullptr != L::prev_ptr(_v) : ! _list->empty();
+  return _v ? nullptr != L::prev_ptr(_v) : !_list->empty();
 }
 
 template<typename L>
@@ -609,15 +612,13 @@ bool IntrusiveDList<L>::const_iterator::has_next() const {
   return nullptr != _v;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::prepend(value_type *v) -> self_type & {
+IntrusiveDList<L>::prepend(value_type *v) -> self_type& {
   L::prev_ptr(v) = nullptr;
-  if (nullptr != (L::next_ptr(v) = _head))
-  {
+  if (nullptr != (L::next_ptr(v) = _head)) {
     L::prev_ptr(_head) = v;
-  } else
-  {
+  } else {
     _tail = v; // transition empty -> non-empty
   }
   _head = v;
@@ -625,15 +626,13 @@ IntrusiveDList<L>::prepend(value_type *v) -> self_type & {
   return *this;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::append(value_type *v) -> self_type & {
+IntrusiveDList<L>::append(value_type *v) -> self_type& {
   L::next_ptr(v) = nullptr;
-  if (nullptr != (L::prev_ptr(v) = _tail))
-  {
+  if (nullptr != (L::prev_ptr(v) = _tail)) {
     L::next_ptr(_tail) = v;
-  } else
-  {
+  } else {
     _head = v; // transition empty -> non-empty
   }
   _tail = v;
@@ -641,110 +640,92 @@ IntrusiveDList<L>::append(value_type *v) -> self_type & {
   return *this;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::take_head() -> value_type * {
   value_type *zret = _head;
-  if (_head)
-  {
-    if (nullptr == (_head = L::next_ptr(_head)))
-    {
+  if (_head) {
+    if (nullptr == (_head = L::next_ptr(_head))) {
       _tail = nullptr; // transition non-empty -> empty
-    } else
-    { L::prev_ptr(_head) = nullptr; }
+    } else { L::prev_ptr(_head) = nullptr; }
     L::next_ptr(zret) = L::prev_ptr(zret) = nullptr;
     --_count;
   }
   return zret;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::take_tail() -> value_type * {
   value_type *zret = _tail;
-  if (_tail)
-  {
-    if (nullptr == (_tail = L::prev_ptr(_tail)))
-    {
+  if (_tail) {
+    if (nullptr == (_tail = L::prev_ptr(_tail))) {
       _head = nullptr; // transition non-empty -> empty
-    } else
-    { L::next_ptr(_tail) = nullptr; }
+    } else { L::next_ptr(_tail) = nullptr; }
     L::next_ptr(zret) = L::prev_ptr(zret) = nullptr;
     --_count;
   }
   return zret;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::insert_after(value_type *target, value_type *v) -> self_type & {
-  if (target)
-  {
-    if (nullptr != (L::next_ptr(v) = L::next_ptr(target)))
-    {
+IntrusiveDList<L>::insert_after(value_type *target, value_type *v) -> self_type& {
+  if (target) {
+    if (nullptr != (L::next_ptr(v) = L::next_ptr(target))) {
       L::prev_ptr(L::next_ptr(v)) = v;
-    } else if (_tail == target)
-    { _tail = v; }
-    L::prev_ptr(v)      = target;
+    } else if (_tail == target) { _tail = v; }
+    L::prev_ptr(v) = target;
     L::next_ptr(target) = v;
 
     ++_count;
-  } else
-  { this->append(v); }
+  } else { this->append(v); }
   return *this;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::insert_after(iterator const &target, value_type *v) -> self_type & {
+IntrusiveDList<L>::insert_after(iterator const& target, value_type *v) -> self_type& {
   return this->insert_after(target._v, v);
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::insert_before(value_type *target, value_type *v) -> self_type & {
-  if (target)
-  {
-    if (nullptr != (L::prev_ptr(v) = L::prev_ptr(target)))
-    {
+IntrusiveDList<L>::insert_before(value_type *target, value_type *v) -> self_type& {
+  if (target) {
+    if (nullptr != (L::prev_ptr(v) = L::prev_ptr(target))) {
       L::next_ptr(L::prev_ptr(v)) = v;
-    } else if (target == _head)
-    { _head = v; }
-    L::next_ptr(v)      = target;
+    } else if (target == _head) { _head = v; }
+    L::next_ptr(v) = target;
     L::prev_ptr(target) = v;
 
     ++_count;
-  } else
-  { this->append(v); }
+  } else { this->append(v); }
   return *this;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::insert_before(iterator const &target, value_type *v) -> self_type & {
+IntrusiveDList<L>::insert_before(iterator const& target, value_type *v) -> self_type& {
   return this->insert_before(target._v, v);
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::erase(value_type *v) -> value_type * {
   value_type *zret{nullptr};
 
-  if (L::prev_ptr(v))
-  {
+  if (L::prev_ptr(v)) {
     L::next_ptr(L::prev_ptr(v)) = L::next_ptr(v);
   }
-  if (L::next_ptr(v))
-  {
-    zret                        = L::next_ptr(v);
+  if (L::next_ptr(v)) {
+    zret = L::next_ptr(v);
     L::prev_ptr(L::next_ptr(v)) = L::prev_ptr(v);
   }
-  if (v == _head)
-  {
+  if (v == _head) {
     _head = L::next_ptr(v);
   }
-  if (v == _tail)
-  {
+  if (v == _tail) {
     _tail = L::prev_ptr(v);
   }
   L::prev_ptr(v) = L::next_ptr(v) = nullptr;
@@ -753,164 +734,156 @@ IntrusiveDList<L>::erase(value_type *v) -> value_type * {
   return zret;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::erase(const iterator &loc) -> iterator {
+IntrusiveDList<L>::erase(const iterator& loc) -> iterator {
   return this->iterator_for(this->erase(loc._v));
 };
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::erase(const iterator &first, const iterator &limit) -> iterator {
+IntrusiveDList<L>::erase(const iterator& first, const iterator& limit) -> iterator {
   value_type *spot = first;
   value_type *prev{L::prev_ptr(spot)};
-  if (prev)
-  {
+  if (prev) {
     L::next_ptr(prev) = limit;
   }
-  if (spot == _head)
-  {
+  if (spot == _head) {
     _head = limit;
   }
   // tail is only updated if @a limit is @a end (e.g., @c nullptr).
-  if (nullptr == limit)
-  {
+  if (nullptr == limit) {
     _tail = prev;
-  } else
-  { L::prev_ptr(limit) = prev; }
+  } else { L::prev_ptr(limit) = prev; }
   // Clear links in removed elements.
-  while (spot != limit)
-  {
+  while (spot != limit) {
     value_type *target{spot};
-    spot                = L::next_ptr(spot);
+    spot = L::next_ptr(spot);
     L::prev_ptr(target) = L::next_ptr(target) = nullptr;
   };
 
   return {limit._v, this};
 };
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::operator=(self_type &&that) -> self_type & {
-  if (this != &that)
-  {
-    this->_head  = that._head;
-    this->_tail  = that._tail;
+IntrusiveDList<L>::operator=(self_type&& that) -> self_type& {
+  if (this != &that) {
+    this->_head = that._head;
+    this->_tail = that._tail;
     this->_count = that._count;
     that.clear();
   }
   return *this;
 }
 
-template <typename L>
+template<typename L>
 size_t
 IntrusiveDList<L>::count() const {
   return _count;
 };
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::begin() const -> const_iterator {
   return const_iterator{this, _head};
 };
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::begin() -> iterator {
   return iterator{this, _head};
 };
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::end() const -> const_iterator {
   return const_iterator{this, nullptr};
 };
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::end() -> iterator {
   return iterator{this, nullptr};
 };
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::iterator_for(value_type *v) -> iterator {
   return iterator{this, v};
 };
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::iterator_for(const value_type *v) const -> const_iterator {
   return const_iterator{this, v};
 };
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::tail() -> value_type * {
   return _tail;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::tail() const -> const value_type * {
   return _tail;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::head() -> value_type * {
   return _head;
 }
 
-template <typename L>
+template<typename L>
 auto
 IntrusiveDList<L>::head() const -> const value_type * {
   return _head;
 }
 
-template <typename L>
+template<typename L>
 auto
-IntrusiveDList<L>::clear() -> self_type & {
+IntrusiveDList<L>::clear() -> self_type& {
   _head = _tail = nullptr;
-  _count        = 0;
+  _count = 0;
   return *this;
 };
 
-namespace detail
-{
-  // Make @c apply more convenient by allowing the function to take a reference type or pointer type
-  // to the container elements. The pointer type is the base, plus a shim to convert from a reference
-  // type functor to a pointer pointer type. The complex return type definition forces only one, but
-  // not both, to be valid for a particular functor. This also must be done via free functions and not
-  // method overloads because the compiler forces a match up of method definitions and declarations
-  // before any template instantiation.
+namespace detail {
+// Make @c apply more convenient by allowing the function to take a reference type or pointer type
+// to the container elements. The pointer type is the base, plus a shim to convert from a reference
+// type functor to a pointer pointer type. The complex return type definition forces only one, but
+// not both, to be valid for a particular functor. This also must be done via free functions and not
+// method overloads because the compiler forces a match up of method definitions and declarations
+// before any template instantiation.
 
-  template <typename L, typename F>
-  auto
-  Intrusive_DList_Apply(IntrusiveDList<L> &list, F &&f)
-    -> decltype(f(*static_cast<typename IntrusiveDList<L>::value_type *>(nullptr)), list) {
-    return list.apply([&f](typename IntrusiveDList<L>::value_type *v) { return f(*v); });
-  }
+template<typename L, typename F>
+auto
+Intrusive_DList_Apply(IntrusiveDList<L>& list, F&& f)
+-> decltype(f(*static_cast<typename IntrusiveDList<L>::value_type *>(nullptr)), list) {
+  return list.apply([&f](typename IntrusiveDList<L>::value_type *v) { return f(*v); });
+}
 
-  template <typename L, typename F>
-  auto
-  Intrusive_DList_Apply(IntrusiveDList<L> &list, F &&f)
-    -> decltype(f(static_cast<typename IntrusiveDList<L>::value_type *>(nullptr)), list) {
-    auto spot{list.begin()};
-    auto limit{list.end()};
-    while (spot != limit)
-    {
-      f(spot++); // post increment means @a spot is updated before @a f is applied.
-    }
-    return list;
+template<typename L, typename F>
+auto
+Intrusive_DList_Apply(IntrusiveDList<L>& list, F&& f)
+-> decltype(f(static_cast<typename IntrusiveDList<L>::value_type *>(nullptr)), list) {
+  auto spot{list.begin()};
+  auto limit{list.end()};
+  while (spot != limit) {
+    f(spot++); // post increment means @a spot is updated before @a f is applied.
   }
+  return list;
+}
 } // namespace detail
 
-template <typename L>
-template <typename F>
+template<typename L>
+template<typename F>
 auto
-IntrusiveDList<L>::apply(F &&f) -> self_type & {
+IntrusiveDList<L>::apply(F&& f) -> self_type& {
   return detail::Intrusive_DList_Apply(*this, f);
 };
 
-} // namespace SWOC_NAMESPACE
+}} // namespace SWOC_NAMESPACE

@@ -46,8 +46,7 @@
 #include "swoc/bwf_base.h"
 #include "swoc/IntrusiveDList.h"
 
-namespace SWOC_NAMESPACE
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
 /// Severity levels for Errata.
 enum class Severity : uint8_t {
   DIAG,  ///< Diagnostic (internal use).
@@ -860,7 +859,7 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata::Annotatio
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata const &);
 
-} // namespace SWOC_NAMESPACE
+}} // namespace SWOC_NAMESPACE
 
 // Tuple / structured binding support.
 namespace std
@@ -881,17 +880,16 @@ template <typename R> class tuple_size<swoc::Rv<R>> : public std::integral_const
 
 } // namespace std
 
-namespace SWOC_NAMESPACE
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
 // Not sure how much of this is needed, but experimentally all of these were needed in one
 // use case or another of structured binding. I wasn't able to make this work if this was
 // defined in namespace @c std. Also, because functions can't be partially specialized, it is
 // necessary to use @c constexpr @c if to handle the case. This should roll up nicely when
 // compiled.
 
-template <size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type &
-get(swoc::Rv<R> &&rv) {
+template<size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type&
+get(swoc::Rv<R>&& rv) {
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
@@ -899,9 +897,9 @@ get(swoc::Rv<R> &&rv) {
   }
 }
 
-template <size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type &
-get(swoc::Rv<R> &rv) {
+template<size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type&
+get(swoc::Rv<R>& rv) {
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
@@ -909,9 +907,9 @@ get(swoc::Rv<R> &rv) {
   }
 }
 
-template <size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type const &
-get(swoc::Rv<R> const &rv) {
+template<size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type const&
+get(swoc::Rv<R> const& rv) {
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
@@ -919,4 +917,4 @@ get(swoc::Rv<R> const &rv) {
   }
 }
 
-} // namespace SWOC_NAMESPACE
+}} // namespace swoc

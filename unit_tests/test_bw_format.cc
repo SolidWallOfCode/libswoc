@@ -18,7 +18,7 @@
 #include "catch.hpp"
 
 using namespace std::literals;
-using namespace SWOC_NAMESPACE::literals;
+using namespace swoc::literals;
 using swoc::TextView;
 using swoc::bwprint;
 
