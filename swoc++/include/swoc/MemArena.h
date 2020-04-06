@@ -1,19 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Verizon Media 2020
 /** @file
 
     Memory arena for allocations
-
-    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
-    agreements.  See the NOTICE file distributed with this work for additional information regarding
-    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in com1pliance with the License.  You may
-    obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software distributed under the
-    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-    express or implied. See the License for the specific language governing permissions and
-    limitations under the License.
  */
 
 #pragma once
@@ -28,8 +17,7 @@
 #include "swoc/Scalar.h"
 #include "swoc/IntrusiveDList.h"
 
-namespace swoc
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
 /** A memory arena.
 
     The intended use is for allocating many small chunks of memory - few, large allocations are best
@@ -38,8 +26,7 @@ namespace swoc
     chunks are presumed to have similar lifetimes so all of the memory in the arena can be released
     when the arena is destroyed.
  */
-class MemArena
-{
+class MemArena {
   using self_type = MemArena; ///< Self reference type.
 
 public:
@@ -73,7 +60,7 @@ public:
      *
      * @return @a this.
      */
-    Block &discard();
+    Block& discard();
 
     /** Check if the byte at address @a ptr is in this block.
      *
@@ -112,9 +99,9 @@ public:
       Block *_next{nullptr};
       Block *_prev{nullptr};
 
-      static Block *&next_ptr(Block *);
+      static Block *& next_ptr(Block *);
 
-      static Block *&prev_ptr(Block *);
+      static Block *& prev_ptr(Block *);
     } _link;
   };
 
@@ -136,16 +123,17 @@ public:
   explicit MemArena(size_t n = DEFAULT_BLOCK_SIZE);
 
   /// no copying
-  MemArena(self_type const &that) = delete;
+  MemArena(self_type const& that) = delete;
 
   /// Allow moving the arena.
-  MemArena(self_type &&that);
+  MemArena(self_type&& that);
 
   /// Destructor.
   ~MemArena();
 
-  self_type &operator=(self_type const &that) = delete;
-  self_type &operator                         =(self_type &&that);
+  self_type& operator=(self_type const& that) = delete;
+
+  self_type& operator=(self_type&& that);
 
   /** Make a self-contained instance.
    *
@@ -197,7 +185,7 @@ public:
       general it is a bad idea to make objects in the Arena that own memory that is not also in the
       Arena.
   */
-  template <typename T, typename... Args> T *make(Args &&... args);
+  template<typename T, typename... Args> T *make(Args&& ... args);
 
   /** Freeze reserved memory.
 
@@ -209,7 +197,7 @@ public:
       @param n Target number of available bytes in the next reserved internal block.
       @return @c *this
    */
-  MemArena &freeze(size_t n = 0);
+  MemArena& freeze(size_t n = 0);
 
   /** Unfreeze arena.
    *
@@ -217,7 +205,7 @@ public:
    *
    * @return @c *this
    */
-  self_type &thaw();
+  self_type& thaw();
 
   /** Release all memory.
 
@@ -231,7 +219,7 @@ public:
       @see discard
 
    */
-  MemArena &clear(size_t hint = 0);
+  MemArena& clear(size_t hint = 0);
 
   /** Discard all allocations.
    *
@@ -243,7 +231,7 @@ public:
    *
    * @see clear
    */
-  MemArena &discard(size_t hint = 0);
+  MemArena& discard(size_t hint = 0);
 
   /// @return The amount of memory allocated.
   size_t size() const;
@@ -262,7 +250,7 @@ public:
    * This forces the @c remnant to be at least @a n bytes of contiguous memory. A subsequent
    * @c alloc will use this space if the allocation size is at most the remnant size.
    */
-  self_type &require(size_t n);
+  self_type& require(size_t n);
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -284,10 +272,12 @@ public:
 
   /// Iterate over active blocks.
   const_iterator begin() const;
+
   const_iterator end() const;
 
   /// Iterator over frozen blocks.
   const_iterator frozen_begin() const;
+
   const_iterator frozen_end() const;
 
 protected:
@@ -309,10 +299,11 @@ protected:
 
   static constexpr size_t ALLOC_HEADER_SIZE = 16; ///< Guess of overhead of @c malloc
   /// Initial block size to allocate if not specified via API.
-  static constexpr size_t DEFAULT_BLOCK_SIZE = Page::SCALE - Paragraph{round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
+  static constexpr size_t DEFAULT_BLOCK_SIZE =
+      Page::SCALE - Paragraph{round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
 
   size_t _active_allocated = 0; ///< Total allocations in the active generation.
-  size_t _active_reserved  = 0; ///< Total current reserved memory.
+  size_t _active_reserved = 0; ///< Total current reserved memory.
   /// Total allocations in the previous generation. This is only non-zero while the arena is frozen.
   size_t _frozen_allocated = 0;
   /// Total frozen reserved memory.
@@ -337,8 +328,7 @@ protected:
  * A pool of unused / free instances of @a T is kept for reuse. If none are available then a new
  * instance is allocated from the arena.
  */
-template <typename T> class FixedArena
-{
+template<typename T> class FixedArena {
   using self_type = FixedArena; ///< Self reference type.
 protected:
   /// Rebinding type for instances on the free list.
@@ -347,14 +337,14 @@ protected:
   };
 
   Item _list{nullptr}; ///< List of dead instances.
-  MemArena &_arena;    ///< Memory source.
+  MemArena& _arena;    ///< Memory source.
 
 public:
   /** Construct a pool.
    *
    * @param arena The arena for memory.
    */
-  explicit FixedArena(MemArena &arena);
+  explicit FixedArena(MemArena& arena);
 
   /** Create a new instance.
    *
@@ -362,7 +352,7 @@ public:
    * @param args Constructor arguments.
    * @return A new instance of @a T.
    */
-  template <typename... Args> T *make(Args... args);
+  template<typename... Args> T *make(Args... args);
 
   /** Destroy an instance.
    *
@@ -409,17 +399,16 @@ inline bool MemArena::Block::is_full() const {
 }
 
 inline MemSpan<void> MemArena::Block::alloc(size_t n) {
-  if (n > this->remaining())
-  {
-    throw(std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
+  if (n > this->remaining()) {
+    throw (std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
   }
   MemSpan<void> zret = this->remnant().prefix(n);
   allocated += n;
   return zret;
 }
 
-template <typename T, typename... Args> T *MemArena::make(Args &&... args) {
-  return new (this->alloc(sizeof(T)).data()) T(std::forward<Args>(args)...);
+template<typename T, typename... Args> T *MemArena::make(Args&& ... args) {
+  return new(this->alloc(sizeof(T)).data()) T(std::forward<Args>(args)...);
 }
 
 inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
@@ -428,7 +417,7 @@ inline MemSpan<void> MemArena::Block::remnant() {
   return {this->data() + allocated, this->remaining()};
 }
 
-inline MemArena::Block &MemArena::Block::discard() {
+inline MemArena::Block& MemArena::Block::discard() {
   allocated = 0;
   return *this;
 }
@@ -469,23 +458,23 @@ inline auto MemArena::frozen_end() const -> const_iterator {
   return _frozen.end();
 }
 
-template <typename T> FixedArena<T>::FixedArena(MemArena &arena) : _arena(arena) {
+template<typename T> FixedArena<T>::FixedArena(MemArena& arena) : _arena(arena) {
   static_assert(sizeof(T) >= sizeof(T *));
 }
 
-template <typename T> template <typename... Args> T *FixedArena<T>::make(Args... args) {
+template<typename T> template<typename... Args> T *FixedArena<T>::make(Args... args) {
   if (_list._next) {
-    void *t     = _list._next;
+    void *t = _list._next;
     _list._next = _list._next->_next;
-    return new (t) T(std::forward<Args>(args)...);
+    return new(t) T(std::forward<Args>(args)...);
   }
   return _arena.template make<T>(std::forward<Args>(args)...);
 }
 
-template <typename T> void FixedArena<T>::destroy(T *t) {
+template<typename T> void FixedArena<T>::destroy(T *t) {
   if (t) {
     t->~T(); // destructor.
-    auto item   = reinterpret_cast<Item *>(t);
+    auto item = reinterpret_cast<Item *>(t);
     item->_next = _list._next;
     _list._next = item;
   }
@@ -496,4 +485,4 @@ void FixedArena<T>::clear() {
   _list._next = nullptr;
 }
 
-} // namespace swoc
+}} // namespace swoc

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Apache Software Foundation 2019
 /** @file
 
     Class for handling "views" of a buffer. Views presume the memory for the
@@ -7,21 +9,6 @@
     better string parsing, particularly token based parsing.
 */
 
-/*  Licensed to the Apache Software Foundation (ASF) under one or more
-    contributor license agreements.  See the NOTICE file distributed with this
-    work for additional information regarding copyright ownership.  The ASF
-    licenses this file to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-    License for the specific language governing permissions and limitations under
-    the License.
-*/
 #include "swoc/TextView.h"
 #include <cctype>
 #include <sstream>
@@ -67,39 +54,40 @@ strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
   return r ? r : zret;
 }
 
+namespace swoc { inline namespace SWOC_VERSION_NS {
+
 /// @cond INTERNAL_DETAIL
-const int8_t swoc::svtoi_convert[256] = {
-  /* [can't do this nicely because clang format won't allow exdented comments]
-   0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
-  */
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 10
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 20
-  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  -1, -1, -1, -1, -1, -1, // 30
-  -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 40
-  25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 50
-  -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 60
-  25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 70
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 80
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 90
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // A0
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // B0
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // C0
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // D0
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // E0
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // F0
+const int8_t svtoi_convert[256] = {
+    /* [can't do this nicely because clang format won't allow exdented comments]
+     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+    */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 10
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 20
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1, // 30
+    -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 40
+    25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 50
+    -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 60
+    25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 70
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 80
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 90
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // A0
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // B0
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // C0
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // D0
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // E0
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // F0
 };
 /// @endcond
 
 intmax_t
-swoc::svtoi(TextView src, TextView *out, int base)
-{
+svtoi(TextView src, TextView *out, int base) {
   intmax_t zret = 0;
 
   if (src.ltrim_if(&isspace) && src) {
     TextView parsed;
     const char *start = src.data();
-    bool neg          = false;
+    bool neg = false;
     if ('-' == *src) {
       ++src;
       neg = true;
@@ -120,8 +108,7 @@ swoc::svtoi(TextView src, TextView *out, int base)
 }
 
 uintmax_t
-swoc::svtou(TextView src, TextView *out, int base)
-{
+svtou(TextView src, TextView *out, int base) {
   uintmax_t zret = 0;
 
   if (out) {
@@ -148,26 +135,24 @@ swoc::svtou(TextView src, TextView *out, int base)
 
     // For performance in common cases, use the templated conversion.
     switch (base) {
-    case 8:
-      zret = svto_radix<8>(src);
-      break;
-    case 10:
-      zret = svto_radix<10>(src);
-      break;
-    case 16:
-      zret = svto_radix<16>(src);
-      break;
-    default:
-      while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) && v < base) {
-        auto n = zret * base + v;
-        if (n < zret) {
-          zret = std::numeric_limits<uintmax_t>::max();
-          break; // overflow, stop parsing.
+      case 8:zret = svto_radix<8>(src);
+        break;
+      case 10:zret = svto_radix<10>(src);
+        break;
+      case 16:zret = svto_radix<16>(src);
+        break;
+      default:
+        while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) &&
+               v < base) {
+          auto n = zret * base + v;
+          if (n < zret) {
+            zret = std::numeric_limits<uintmax_t>::max();
+            break; // overflow, stop parsing.
+          }
+          zret = n;
+          ++src;
         }
-        zret = n;
-        ++src;
-      }
-      break;
+        break;
     }
 
     if (out) {
@@ -177,8 +162,10 @@ swoc::svtou(TextView src, TextView *out, int base)
   return zret;
 }
 
-// Do the template instantions.
-template std::ostream &swoc::TextView::stream_write(std::ostream &, const swoc::TextView &) const;
+// Do the template instantiations.
+template std::ostream& TextView::stream_write(std::ostream&, const TextView&) const;
+
+}} // namespace swoc
 
 namespace std
 {

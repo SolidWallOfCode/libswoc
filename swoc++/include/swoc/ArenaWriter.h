@@ -1,17 +1,16 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Verizon Media 2020
 /** @file
  * @c BufferWriter for a @c MemArena.
- *
- * Copyright 2019, Oath Inc.
- * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
+#include "swoc/swoc_version.h"
 #include "swoc/MemSpan.h"
 #include "swoc/bwf_base.h"
 #include "swoc/MemArena.h"
 
-namespace swoc
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
 /** Buffer writer for a @c MemArena.
  *
  * This provides formatted output to the remnant of a @c MemArena. The output resides in uncommitted
@@ -27,7 +26,7 @@ public:
    *
    * @param arena Arena to use for storage.
    */
-  ArenaWriter(MemArena &arena);
+  ArenaWriter(MemArena& arena);
 
   /** Write data to the buffer.
    *
@@ -35,10 +34,10 @@ public:
    * @param n Amount of data in bytes.
    * @return @a this
    */
-  ArenaWriter &write(void const *data, size_t n) override;
+  ArenaWriter& write(void const *data, size_t n) override;
 
   /// Write a single character @a c to the buffer.
-  ArenaWriter &write(char c) override;
+  ArenaWriter& write(char c) override;
 
   using super_type::write; // import super class write.
 
@@ -50,7 +49,7 @@ public:
   bool commit(size_t n) override;
 
 protected:
-  MemArena &_arena; ///< Arena for the buffer.
+  MemArena& _arena; ///< Arena for the buffer.
 
   /** Reallocate the buffer to increase the capacity.
    *
@@ -59,6 +58,7 @@ protected:
   void realloc(size_t n);
 };
 
-inline swoc::ArenaWriter::ArenaWriter(swoc::MemArena &arena) : super_type(arena.remnant()), _arena(arena) {}
+inline swoc::ArenaWriter::ArenaWriter(swoc::MemArena& arena)
+    : super_type(arena.remnant()), _arena(arena) {}
 
-} // namespace swoc
+}} // namespace swoc

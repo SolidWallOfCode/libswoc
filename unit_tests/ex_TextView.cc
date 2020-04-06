@@ -24,7 +24,7 @@
 
 #include <array>
 #include <functional>
-#include <swoc/swoc_file.h>
+#include "swoc/swoc_file.h"
 
 #include "swoc/TextView.h"
 #include "catch.hpp"
@@ -219,7 +219,7 @@ TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
 };
 
 #include <set>
-#include <swoc/swoc_ip.h>
+#include "swoc/swoc_ip.h"
 
 TEST_CASE("TextView misc", "[libswoc][example][textview][misc]")
 {

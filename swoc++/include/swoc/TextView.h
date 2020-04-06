@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Apache Software Foundation 2019
 /** @file
 
    Class for handling "views" of text. Views presume the memory for the buffer is managed
@@ -9,27 +11,14 @@
    class.
 */
 
-/*
-   Licensed to the Apache Software Foundation (ASF) under one or more contributor license
-   agreements.  See the NOTICE file distributed with this work for additional information regarding
-   copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
-   (the "License"); you may not use this file except in compliance with the License.  You may obtain
-   a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software distributed under the License
-   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-   or implied. See the License for the specific language governing permissions and limitations under
-   the License.
- */
-
 #pragma once
 #include <bitset>
 #include <iosfwd>
 #include <memory.h>
 #include <string>
 #include <string_view>
+
+#include "swoc/swoc_version.h"
 
 /** Compare views with ordering, ignoring case.
  *
@@ -82,8 +71,8 @@ strcmp(const std::string_view &lhs, const std::string_view &rhs) {
   return memcmp(lhs, rhs);
 }
 
-namespace swoc
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
+
 class TextView;
 
 /** A read only view of a contiguous piece of memory.
@@ -1655,12 +1644,11 @@ namespace literals
   constexpr swoc::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
 } // namespace literals
 
-}; // namespace swoc
+}} // namespace swoc
 
-namespace std
-{
+namespace std {
 /// Write the contents of @a view to the stream @a os.
-ostream &operator<<(ostream &os, const swoc::TextView &view);
+ostream& operator<<(ostream& os, const swoc::TextView& view);
 
 /// @cond INTERNAL_DETAIL
 /* For interaction with specific STL interfaces, primarily std::filesystem. Along with the
@@ -1668,18 +1656,18 @@ ostream &operator<<(ostream &os, const swoc::TextView &view);
  * even if the internal view is not nul terminated.
  * @note Putting these directly in the class doesn't seem to work.
  */
-template <> struct iterator_traits<swoc::TextView> {
+template<> struct iterator_traits<swoc::TextView> {
   using value_type        = char;
   using pointer_type      = const char *;
-  using reference_type    = const char &;
+  using reference_type    = const char&;
   using difference_type   = ssize_t;
   using iterator_category = forward_iterator_tag;
 };
 
-template <typename X, typename V> struct iterator_traits<swoc::TransformView<X, V>> {
+template<typename X, typename V> struct iterator_traits<swoc::TransformView<X, V>> {
   using value_type        = typename swoc::TransformView<X, V>::value_type;
   using pointer_type      = const value_type *;
-  using reference_type    = const value_type &;
+  using reference_type    = const value_type&;
   using difference_type   = ssize_t;
   using iterator_category = forward_iterator_tag;
 };

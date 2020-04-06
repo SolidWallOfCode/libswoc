@@ -1,19 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Network Geographics 2014
 /** @file
 
     Assistant class for translating strings to and from enumeration values.
-
-    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
-    agreements.  See the NOTICE file distributed with this work for additional information regarding
-    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with the License.  You may
-    obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software distributed under the
-    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-    express or implied. See the License for the specific language governing permissions and
-    limitations under the License.
  */
 
 #pragma once
@@ -25,30 +14,29 @@
 #include <array>
 #include <variant>
 
+#include "swoc/swoc_version.h"
 #include "swoc/IntrusiveHashMap.h"
 #include "swoc/MemArena.h"
 #include "swoc/bwf_base.h"
 #include "swoc/ext/HashFNV.h"
 
-namespace swoc
-{
-namespace detail
-{
-  /** Create an r-value reference to a temporary formatted string.
-   *
-   * @tparam Args Format string argument types.
-   * @param fmt Format string.
-   * @param args Arguments to format string.
-   * @return r-value reference to a @c std::string containing the formatted string.
-   *
-   * This is used when throwing exceptions.
-   */
-  template <typename... Args>
-  std::string
-  what(std::string_view const &fmt, Args &&... args) {
-    std::string zret;
-    return swoc::bwprint_v(zret, fmt, std::forward_as_tuple(args...));
-  }
+namespace swoc { inline namespace SWOC_VERSION_NS {
+namespace detail {
+/** Create an r-value reference to a temporary formatted string.
+ *
+ * @tparam Args Format string argument types.
+ * @param fmt Format string.
+ * @param args Arguments to format string.
+ * @return r-value reference to a @c std::string containing the formatted string.
+ *
+ * This is used when throwing exceptions.
+ */
+template<typename... Args>
+std::string
+what(std::string_view const& fmt, Args&& ... args) {
+  std::string zret;
+  return swoc::bwprint_v(zret, fmt, std::forward_as_tuple(args...));
+}
 } // namespace detail
 
 /** A bidirectional mapping between names and enumeration values.
@@ -73,7 +61,7 @@ namespace detail
     @note All names and value must be unique across the Lexicon. All name comparisons are case
     insensitive.
  */
-template <typename E> class Lexicon {
+template<typename E> class Lexicon {
   using self_type = Lexicon; ///< Self reference type.
 
 protected:
@@ -110,8 +98,8 @@ public:
 
   /// Element of an initializer list that contains secondary names.
   struct Definition {
-    const E &value;                                       ///< Value for definition.
-    const std::initializer_list<std::string_view> &names; ///< Primary then secondary names.
+    const E& value;                                       ///< Value for definition.
+    const std::initializer_list<std::string_view>& names; ///< Primary then secondary names.
   };
 
   /// Construct empty instance.
@@ -132,8 +120,9 @@ public:
    *
    * @see set_default.
    */
-  explicit Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1 = DefaultHandler{},
-                   DefaultHandler handler_2 = DefaultHandler{});
+  explicit Lexicon(const std::initializer_list<Definition>& items
+                   , DefaultHandler handler_1 = DefaultHandler{}
+                   , DefaultHandler handler_2 = DefaultHandler{});
 
   /** Construct with names / value pairs, and optional default handlers.
    *
@@ -148,8 +137,9 @@ public:
    *
    * @see set_default.
    */
-  explicit Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1 = DefaultHandler{},
-                   DefaultHandler handler_2 = DefaultHandler{});
+  explicit Lexicon(const std::initializer_list<Pair>& items
+                   , DefaultHandler handler_1 = DefaultHandler{}
+                   , DefaultHandler handler_2 = DefaultHandler{});
 
   /** Construct with only default values / handlers.
    *
@@ -175,23 +165,24 @@ public:
    * @param name Name to look up.
    * @return The value for the @a name.
    */
-  E operator[](std::string_view const &name) const;
+  E operator[](std::string_view const& name) const;
 
   /// Define the @a names for a @a value.
   /// The first name is the primary name. All @a names must be convertible to @c std::string_view.
   /// <tt>lexicon.define(Value, primary, [secondary, ... ]);</tt>
-  template <typename... Args> self_type &define(E value, Args &&... names);
+  template<typename... Args> self_type& define(E value, Args&& ... names);
+
   // These are really for consistency with constructors, they're not expected to be commonly used.
   /// Define a value and names.
   /// <tt>lexicon.define(Value, { primary, [secondary, ...] });</tt>
-  self_type &define(E value, const std::initializer_list<std::string_view> &names);
+  self_type& define(E value, const std::initializer_list<std::string_view>& names);
 
   /** Define a name, value pair.
    *
    * @param pair A @c Pair of the name and value to define.
    * @return @a this.
    */
-  self_type &define(const Pair &pair);
+  self_type& define(const Pair& pair);
 
   /** Define a name with a primary and secondary values.
    *
@@ -203,7 +194,7 @@ public:
    * secondary values are not. This is to make it possible to define all values in this style
    * even if some do not have secondary values.
    */
-  self_type &define(const Definition &init);
+  self_type& define(const Definition& init);
 
   /** Set default handler.
    *
@@ -224,7 +215,7 @@ public:
    * - A @c DefaultValueHandler. This is a functor that takes a name as a @c string_view and returns
    *   an enumeration value as the value for any name that is not found.
    */
-  self_type &set_default(DefaultHandler const &handler);
+  self_type& set_default(DefaultHandler const& handler);
 
   /// Get the number of values with definitions.
   size_t count() const;
@@ -236,30 +227,39 @@ public:
   public:
     using value_type        = const Pair;
     using pointer           = value_type *;
-    using reference         = value_type &;
+    using reference         = value_type&;
     using difference_type   = ptrdiff_t;
     using iterator_category = std::bidirectional_iterator_tag;
 
-    const_iterator()                      = default;
-    const_iterator(self_type const &that) = default;
-    const_iterator(self_type &&that)      = default;
+    const_iterator() = default;
+
+    const_iterator(self_type const& that) = default;
+
+    const_iterator(self_type&& that) = default;
 
     reference operator*() const;
+
     pointer operator->() const;
 
-    self_type &operator=(self_type const &that) = default;
-    bool operator==(self_type const &that) const;
-    bool operator!=(self_type const &that) const;
+    self_type& operator=(self_type const& that) = default;
 
-    self_type &operator++();
+    bool operator==(self_type const& that) const;
+
+    bool operator!=(self_type const& that) const;
+
+    self_type& operator++();
+
     self_type operator++(int);
 
-    self_type &operator--();
+    self_type& operator--();
+
     self_type operator--(int);
 
   protected:
     const_iterator(const Item *item);
+
     void update();
+
     const Item *_item{nullptr};
     typename std::remove_const<value_type>::type _v;
 
@@ -270,6 +270,7 @@ public:
   using iterator = const_iterator;
 
   const_iterator begin() const;
+
   const_iterator end() const;
 
 protected:
@@ -283,17 +284,17 @@ protected:
     E _value;
 
     std::string_view
-    operator()(std::monostate const &) const {
+    operator()(std::monostate const&) const {
       throw std::domain_error(detail::what("Lexicon: invalid enumeration value {}", static_cast<int>(_value)).data());
     }
 
     std::string_view
-    operator()(std::string_view const &name) const {
+    operator()(std::string_view const& name) const {
       return name;
     }
 
     std::string_view
-    operator()(UnknownValueHandler const &handler) const {
+    operator()(UnknownValueHandler const& handler) const {
       return handler(_value);
     }
   };
@@ -303,17 +304,17 @@ protected:
     std::string_view _name;
 
     E
-    operator()(std::monostate const &) const {
+    operator()(std::monostate const&) const {
       throw std::domain_error(detail::what("Lexicon: Unknown name \"{}\"", _name).data());
     }
 
     E
-    operator()(E const &value) const {
+    operator()(E const& value) const {
       return value;
     }
 
     E
-    operator()(UnknownNameHandler const &handler) const {
+    operator()(UnknownNameHandler const& handler) const {
       return handler(_name);
     }
   };
@@ -337,15 +338,15 @@ protected:
       Item *_next{nullptr};
       Item *_prev{nullptr};
 
-      static Item *&next_ptr(Item *);
+      static Item *& next_ptr(Item *);
 
-      static Item *&prev_ptr(Item *);
+      static Item *& prev_ptr(Item *);
 
       static std::string_view key_of(Item *);
 
       static uint32_t hash_of(std::string_view s);
 
-      static bool equal(std::string_view const &lhs, std::string_view const &rhs);
+      static bool equal(std::string_view const& lhs, std::string_view const& rhs);
     } _name_link;
 
     /// Intrusive linkage for value lookup.
@@ -353,9 +354,9 @@ protected:
       Item *_next{nullptr};
       Item *_prev{nullptr};
 
-      static Item *&next_ptr(Item *);
+      static Item *& next_ptr(Item *);
 
-      static Item *&prev_ptr(Item *);
+      static Item *& prev_ptr(Item *);
 
       static E key_of(Item *);
 
@@ -366,7 +367,7 @@ protected:
   };
 
   /// Copy @a name in to local storage.
-  std::string_view localize(std::string_view const &name);
+  std::string_view localize(std::string_view const& name);
 
   /// Storage for names.
   MemArena _arena{1024};
@@ -384,64 +385,65 @@ protected:
 // ----
 // Item
 
-template <typename E> Lexicon<E>::Item::Item(E value, std::string_view name) : _value(value), _name(name) {}
+template<typename E>
+Lexicon<E>::Item::Item(E value, std::string_view name) : _value(value), _name(name) {}
 
-template <typename E>
+template<typename E>
 auto
 Lexicon<E>::Item::NameLinkage::next_ptr(Item *item) -> Item *& {
   return item->_name_link._next;
 }
 
-template <typename E>
+template<typename E>
 auto
 Lexicon<E>::Item::NameLinkage::prev_ptr(Item *item) -> Item *& {
   return item->_name_link._prev;
 }
 
-template <typename E>
+template<typename E>
 auto
 Lexicon<E>::Item::ValueLinkage::next_ptr(Item *item) -> Item *& {
   return item->_value_link._next;
 }
 
-template <typename E>
+template<typename E>
 auto
 Lexicon<E>::Item::ValueLinkage::prev_ptr(Item *item) -> Item *& {
   return item->_value_link._prev;
 }
 
-template <typename E>
+template<typename E>
 std::string_view
 Lexicon<E>::Item::NameLinkage::key_of(Item *item) {
   return item->_name;
 }
 
-template <typename E>
+template<typename E>
 E
 Lexicon<E>::Item::ValueLinkage::key_of(Item *item) {
   return item->_value;
 }
 
-template <typename E>
+template<typename E>
 uint32_t
 Lexicon<E>::Item::NameLinkage::hash_of(std::string_view s) {
   return Hash32FNV1a().hash_immediate(transform_view_of(&toupper, s));
 }
 
-template <typename E>
+template<typename E>
 uintmax_t
 Lexicon<E>::Item::ValueLinkage::hash_of(E value) {
   // In almost all cases, the values will be (roughly) sequential, so an identity hash works well.
   return static_cast<uintmax_t>(value);
 }
 
-template <typename E>
+template<typename E>
 bool
-Lexicon<E>::Item::NameLinkage::equal(std::string_view const &lhs, std::string_view const &rhs) {
+Lexicon<E>::Item::NameLinkage::equal(std::string_view const& lhs, std::string_view const& rhs) {
   return 0 == strcasecmp(lhs, rhs);
 }
 
-template <typename E>
+template<typename E>
 bool
 Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs) {
   return lhs == rhs;
@@ -450,143 +452,133 @@ Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs) {
 // -------
 // Lexicon
 
-template <typename E> Lexicon<E>::Lexicon() {}
+template<typename E> Lexicon<E>::Lexicon() {}
 
-template <typename E>
-Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1, DefaultHandler handler_2) {
-  for (auto const &item : items) {
+template<typename E>
+Lexicon<E>::Lexicon(const std::initializer_list<Definition>& items, DefaultHandler handler_1
+                    , DefaultHandler handler_2) {
+  for (auto const& item : items) {
     this->define(item.value, item.names);
   }
 
-  for (auto &&h : {handler_1, handler_2}) {
+  for (auto&& h : {handler_1, handler_2}) {
     this->set_default(h);
   }
 }
 
-template <typename E>
-Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1, DefaultHandler handler_2) {
-  for (auto const &item : items) {
+template<typename E>
+Lexicon<E>::Lexicon(const std::initializer_list<Pair>& items, DefaultHandler handler_1
+                    , DefaultHandler handler_2) {
+  for (auto const& item : items) {
     this->define(item);
   }
 
-  for (auto &&h : {handler_1, handler_2}) {
+  for (auto&& h : {handler_1, handler_2}) {
     this->set_default(h);
   }
 }
 
-template <typename E>
+template<typename E>
 Lexicon<E>::Lexicon(DefaultHandler handler_1, DefaultHandler handler_2) {
-  for (auto &&h : {handler_1, handler_2}) {
+  for (auto&& h : {handler_1, handler_2}) {
     this->set_default(h);
   }
 }
 
-template <typename E>
+template<typename E>
 std::string_view
-Lexicon<E>::localize(std::string_view const &name) {
+Lexicon<E>::localize(std::string_view const& name) {
   auto span = _arena.alloc(name.size());
   memcpy(span.data(), name.data(), name.size());
   return span.view();
 }
 
-template <typename E> std::string_view Lexicon<E>::operator[](E value) const {
+template<typename E> std::string_view Lexicon<E>::operator[](E value) const {
   auto spot = _by_value.find(value);
-  if (spot != _by_value.end())
-  {
+  if (spot != _by_value.end()) {
     return spot->_name;
   }
   return std::visit(NameDefaultVisitor{value}, _name_default);
 }
 
-template <typename E> E Lexicon<E>::operator[](std::string_view const &name) const {
+template<typename E> E Lexicon<E>::operator[](std::string_view const& name) const {
   auto spot = _by_name.find(name);
-  if (spot != _by_name.end())
-  {
+  if (spot != _by_name.end()) {
     return spot->_value;
   }
   return std::visit(ValueDefaultVisitor{name}, _value_default);
 }
 
-template <typename E>
+template<typename E>
 auto
-Lexicon<E>::define(E value, const std::initializer_list<std::string_view> &names) -> self_type & {
-  if (names.size() < 1)
-  {
+Lexicon<E>::define(E value, const std::initializer_list<std::string_view>& names) -> self_type& {
+  if (names.size() < 1) {
     throw std::invalid_argument("A defined value must have at least a primary name");
   }
-  for (auto name : names)
-  {
-    if (_by_name.find(name) != _by_name.end())
-    {
+  for (auto name : names) {
+    if (_by_name.find(name) != _by_name.end()) {
       throw std::invalid_argument(detail::what("Duplicate name '{}' in Lexicon", name));
     }
     auto i = new Item(value, this->localize(name));
     _by_name.insert(i);
     // Only put primary names in the value table.
-    if (_by_value.find(value) == _by_value.end())
-    {
+    if (_by_value.find(value) == _by_value.end()) {
       _by_value.insert(i);
     }
   }
   return *this;
 }
 
-template <typename E>
-template <typename... Args>
+template<typename E>
+template<typename... Args>
 auto
-Lexicon<E>::define(E value, Args &&... names) -> self_type & {
+Lexicon<E>::define(E value, Args&& ... names) -> self_type& {
   static_assert(sizeof...(Args) > 0, "A defined value must have at least a priamry name");
   return this->define(value, {std::forward<Args>(names)...});
 }
 
-template <typename E>
+template<typename E>
 auto
-Lexicon<E>::define(const Pair &pair) -> self_type & {
+Lexicon<E>::define(const Pair& pair) -> self_type& {
   return this->define(std::get<0>(pair), {std::get<1>(pair)});
 }
 
-template <typename E>
+template<typename E>
 auto
-Lexicon<E>::define(const Definition &init) -> self_type & {
+Lexicon<E>::define(const Definition& init) -> self_type& {
   return this->define(init.value, init.names);
 }
 
-template <typename E>
+template<typename E>
 auto
-Lexicon<E>::set_default(DefaultHandler const &handler) -> self_type & {
-  switch (handler.index())
-  {
-  case 0:
-    break;
-  case 1:
-    _value_default = std::get<1>(handler);
-    break;
-  case 3:
-    _value_default = std::get<3>(handler);
-    break;
-  case 2:
-    _name_default = std::get<2>(handler);
-    break;
-  case 4:
-    _name_default = std::get<4>(handler);
-    break;
+Lexicon<E>::set_default(DefaultHandler const& handler) -> self_type& {
+  switch (handler.index()) {
+    case 0:break;
+    case 1:_value_default = std::get<1>(handler);
+      break;
+    case 3:_value_default = std::get<3>(handler);
+      break;
+    case 2:_name_default = std::get<2>(handler);
+      break;
+    case 4:_name_default = std::get<4>(handler);
+      break;
   }
   return *this;
 }
 
-template <typename E>
+template<typename E>
 size_t
 Lexicon<E>::count() const {
   return _by_value.count();
 }
 
-template <typename E>
+template<typename E>
 auto
 Lexicon<E>::begin() const -> const_iterator {
   return const_iterator{static_cast<const Item *>(_by_value.begin())};
 }
 
-template <typename E>
+template<typename E>
 auto
 Lexicon<E>::end() const -> const_iterator {
   return {};
@@ -594,51 +586,49 @@ Lexicon<E>::end() const -> const_iterator {
 
 // Iterators
 
-template <typename E>
+template<typename E>
 void
 Lexicon<E>::const_iterator::update() {
   std::get<0>(_v) = _item->_value;
   std::get<1>(_v) = _item->_name;
 }
 
-template <typename E> Lexicon<E>::const_iterator::const_iterator(const Item *item) : _item(item) {
-  if (_item)
-  {
+template<typename E> Lexicon<E>::const_iterator::const_iterator(const Item *item) : _item(item) {
+  if (_item) {
     this->update();
   };
 }
 
-template <typename E> auto Lexicon<E>::const_iterator::operator*() const -> reference {
+template<typename E> auto Lexicon<E>::const_iterator::operator*() const -> reference {
   return _v;
 }
 
-template <typename E> auto Lexicon<E>::const_iterator::operator-> () const -> pointer {
+template<typename E> auto Lexicon<E>::const_iterator::operator->() const -> pointer {
   return &_v;
 }
 
-template <typename E>
+template<typename E>
 bool
-Lexicon<E>::const_iterator::operator==(self_type const &that) const {
+Lexicon<E>::const_iterator::operator==(self_type const& that) const {
   return _item == that._item;
 }
 
-template <typename E>
+template<typename E>
 bool
-Lexicon<E>::const_iterator::operator!=(self_type const &that) const {
+Lexicon<E>::const_iterator::operator!=(self_type const& that) const {
   return _item != that._item;
 }
 
-template <typename E>
+template<typename E>
 auto
-Lexicon<E>::const_iterator::operator++() -> self_type & {
-  if (nullptr != (_item = _item->_value_link._next))
-  {
+Lexicon<E>::const_iterator::operator++() -> self_type& {
+  if (nullptr != (_item = _item->_value_link._next)) {
     this->update();
   }
   return *this;
 }
 
-template <typename E>
+template<typename E>
 auto
 Lexicon<E>::const_iterator::operator++(int) -> self_type {
   self_type tmp{*this};
@@ -646,17 +636,16 @@ Lexicon<E>::const_iterator::operator++(int) -> self_type {
   return tmp;
 }
 
-template <typename E>
+template<typename E>
 auto
-Lexicon<E>::const_iterator::operator--() -> self_type & {
-  if (nullptr != (_item = _item->_value_link->_prev))
-  {
+Lexicon<E>::const_iterator::operator--() -> self_type& {
+  if (nullptr != (_item = _item->_value_link->_prev)) {
     this->update();
   }
   return *this;
 }
 
-template <typename E>
+template<typename E>
 auto
 Lexicon<E>::const_iterator::operator--(int) -> self_type {
   self_type tmp;
@@ -664,4 +653,4 @@ Lexicon<E>::const_iterator::operator--(int) -> self_type {
   return tmp;
 }
 
-} // namespace swoc
+}} // namespace swoc

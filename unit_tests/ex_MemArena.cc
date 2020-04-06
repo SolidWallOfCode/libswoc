@@ -19,7 +19,7 @@
 #include <string_view>
 #include <memory>
 #include <random>
-#include <swoc/BufferWriter.h>
+#include "swoc/BufferWriter.h"
 #include "swoc/MemArena.h"
 #include "swoc/TextView.h"
 #include "swoc/IntrusiveHashMap.h"

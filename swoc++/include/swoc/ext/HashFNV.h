@@ -25,10 +25,11 @@
 #pragma once
 
 #include <cstdint>
+
 #include "swoc/TextView.h"
 
-namespace swoc
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
+
 struct Hash32FNV1a {
 protected:
   using self_type                = Hash32FNV1a;
@@ -39,19 +40,19 @@ public:
 
   Hash32FNV1a() = default;
 
-  self_type &update(std::string_view const &data);
+  self_type& update(std::string_view const& data);
 
-  self_type & final();
+  self_type& final();
 
   value_type get() const;
 
-  self_type &clear();
+  self_type& clear();
 
-  template <typename X, typename V> self_type &update(TransformView<X, V> view);
+  template<typename X, typename V> self_type& update(TransformView <X, V> view);
 
-  template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
+  template<typename X, typename V> value_type hash_immediate(TransformView <X, V> const& view);
 
-  value_type hash_immediate(std::string_view const &data);
+  value_type hash_immediate(std::string_view const& data);
 
 private:
   value_type hval{INIT};
@@ -67,19 +68,19 @@ public:
 
   Hash64FNV1a() = default;
 
-  self_type &update(std::string_view const &data);
+  self_type& update(std::string_view const& data);
 
-  self_type & final();
+  self_type& final();
 
   value_type get() const;
 
-  self_type &clear();
+  self_type& clear();
 
-  template <typename X, typename V> self_type &update(TransformView<X, V> view);
+  template<typename X, typename V> self_type& update(TransformView <X, V> view);
 
-  template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
+  template<typename X, typename V> value_type hash_immediate(TransformView <X, V> const& view);
 
-  value_type hash_immediate(std::string_view const &data);
+  value_type hash_immediate(std::string_view const& data);
 
 private:
   value_type hval{INIT};
@@ -91,16 +92,14 @@ private:
 // -- 32 --
 
 inline auto
-Hash32FNV1a::clear() -> self_type &
-{
+Hash32FNV1a::clear() -> self_type& {
   hval = INIT;
   return *this;
 }
 
-template <typename X, typename V>
+template<typename X, typename V>
 auto
-Hash32FNV1a::update(TransformView<X, V> view) -> self_type &
-{
+Hash32FNV1a::update(TransformView <X, V> view) -> self_type& {
   for (; view; ++view) {
     hval ^= static_cast<value_type>(*view);
     hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
@@ -109,49 +108,42 @@ Hash32FNV1a::update(TransformView<X, V> view) -> self_type &
 }
 
 inline auto
-Hash32FNV1a::update(std::string_view const &data) -> self_type &
-{
+Hash32FNV1a::update(std::string_view const& data) -> self_type& {
   return this->update(transform_view_of(data));
 }
 
 inline auto
-Hash32FNV1a::final() -> self_type &
-{
+Hash32FNV1a::final() -> self_type& {
   return *this;
 }
 
 inline auto
-Hash32FNV1a::get() const -> value_type
-{
+Hash32FNV1a::get() const -> value_type {
   return hval;
 }
 
-template <typename X, typename V>
+template<typename X, typename V>
 auto
-Hash32FNV1a::hash_immediate(swoc::TransformView<X, V> const &view) -> value_type
-{
+Hash32FNV1a::hash_immediate(swoc::TransformView<X, V> const& view) -> value_type {
   return this->update(view).get();
 }
 
 inline auto
-Hash32FNV1a::hash_immediate(std::string_view const &data) -> value_type
-{
+Hash32FNV1a::hash_immediate(std::string_view const& data) -> value_type {
   return this->update(data).final().get();
 }
 
 // -- 64 --
 
 inline auto
-Hash64FNV1a::clear() -> self_type &
-{
+Hash64FNV1a::clear() -> self_type& {
   hval = INIT;
   return *this;
 }
 
-template <typename X, typename V>
+template<typename X, typename V>
 auto
-Hash64FNV1a::update(TransformView<X, V> view) -> self_type &
-{
+Hash64FNV1a::update(TransformView <X, V> view) -> self_type& {
   for (; view; ++view) {
     hval ^= static_cast<value_type>(*view);
     hval += (hval << 1) + (hval << 4) + (hval << 5) + (hval << 7) + (hval << 8) + (hval << 40);
@@ -160,34 +152,29 @@ Hash64FNV1a::update(TransformView<X, V> view) -> self_type &
 }
 
 inline auto
-Hash64FNV1a::update(std::string_view const &data) -> self_type &
-{
+Hash64FNV1a::update(std::string_view const& data) -> self_type& {
   return this->update(transform_view_of(data));
 }
 
 inline auto
-Hash64FNV1a::final() -> self_type &
-{
+Hash64FNV1a::final() -> self_type& {
   return *this;
 }
 
 inline auto
-Hash64FNV1a::get() const -> value_type
-{
+Hash64FNV1a::get() const -> value_type {
   return hval;
 }
 
-template <typename X, typename V>
+template<typename X, typename V>
 auto
-Hash64FNV1a::hash_immediate(swoc::TransformView<X, V> const &view) -> value_type
-{
+Hash64FNV1a::hash_immediate(swoc::TransformView<X, V> const& view) -> value_type {
   return this->update(view).final().get();
 }
 
 inline auto
-Hash64FNV1a::hash_immediate(std::string_view const &data) -> value_type
-{
+Hash64FNV1a::hash_immediate(std::string_view const& data) -> value_type {
   return this->update(data).final().get();
 }
 
-} // namespace swoc
+}} // namespace swoc

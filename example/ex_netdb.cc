@@ -31,13 +31,13 @@
 #include <unordered_set>
 #include <fstream>
 
-#include <swoc/TextView.h>
-#include <swoc/swoc_ip.h>
-#include <swoc/bwf_ip.h>
-#include <swoc/bwf_std.h>
-#include <swoc/bwf_ex.h>
-#include <swoc/swoc_file.h>
-#include <swoc/Lexicon.h>
+#include "swoc/TextView.h"
+#include "swoc/swoc_ip.h"
+#include "swoc/bwf_ip.h"
+#include "swoc/bwf_std.h"
+#include "swoc/bwf_ex.h"
+#include "swoc/swoc_file.h"
+#include "swoc/Lexicon.h"
 
 using namespace std::literals;
 using namespace swoc::literals;
@@ -100,7 +100,7 @@ swoc::Lexicon<PodType> PodTypeNames {{
                                }};
 
 // Create BW formatters for the types so they can be used for output.
-namespace swoc {
+namespace swoc { inline namespace SWOC_VERSION_NS {
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, PodType pt) {
   return w.write(PodTypeNames[pt]);
@@ -121,7 +121,7 @@ BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, FlagSet const& fl
   return w;
 }
 
-} // namespace swoc
+} // namespace SWOC_NAMESPACE
 
 // These are used to keep pointers for the same string identical so the payloads
 // can be directly compared.

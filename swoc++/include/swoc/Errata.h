@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Network Geographics 2014
 /** @file
- *
     Stacking error message handling.
 
     The problem addressed by this library is the ability to pass back detailed error messages from
@@ -32,25 +33,11 @@
     acts on an erratum when it becomes unreferenced. The intended use is to send the messages to an
     output log. This makes reporting errors to a log from even deeply nested functions easy while
     preserving the ability of the top level logic to control such logging.
-
-    @section license License
-
-    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
-    agreements.  See the NOTICE file distributed with this work for additional information regarding
-    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with the License.  You may
-    obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software distributed under the
-    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-    express or implied. See the License for the specific language governing permissions and
-    limitations under the License.
  */
 
 #pragma once
 
+#include "swoc/swoc_version.h"
 #include <vector>
 #include <string_view>
 #include <functional>
@@ -59,8 +46,7 @@
 #include "swoc/bwf_base.h"
 #include "swoc/IntrusiveDList.h"
 
-namespace swoc
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
 /// Severity levels for Errata.
 enum class Severity : uint8_t {
   DIAG,  ///< Diagnostic (internal use).
@@ -873,7 +859,7 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata::Annotatio
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata const &);
 
-} // namespace swoc
+}} // namespace swoc
 
 // Tuple / structured binding support.
 namespace std
@@ -894,17 +880,16 @@ template <typename R> class tuple_size<swoc::Rv<R>> : public std::integral_const
 
 } // namespace std
 
-namespace swoc
-{
+namespace swoc { inline namespace SWOC_VERSION_NS {
 // Not sure how much of this is needed, but experimentally all of these were needed in one
 // use case or another of structured binding. I wasn't able to make this work if this was
 // defined in namespace @c std. Also, because functions can't be partially specialized, it is
 // necessary to use @c constexpr @c if to handle the case. This should roll up nicely when
 // compiled.
 
-template <size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type &
-get(swoc::Rv<R> &&rv) {
+template<size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type&
+get(swoc::Rv<R>&& rv) {
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
@@ -912,9 +897,9 @@ get(swoc::Rv<R> &&rv) {
   }
 }
 
-template <size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type &
-get(swoc::Rv<R> &rv) {
+template<size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type&
+get(swoc::Rv<R>& rv) {
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
@@ -922,9 +907,9 @@ get(swoc::Rv<R> &rv) {
   }
 }
 
-template <size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type const &
-get(swoc::Rv<R> const &rv) {
+template<size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type const&
+get(swoc::Rv<R> const& rv) {
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
@@ -932,4 +917,4 @@ get(swoc::Rv<R> const &rv) {
   }
 }
 
-} // namespace swoc
+}} // namespace swoc

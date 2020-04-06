@@ -8,7 +8,7 @@ function rewrite {
   sed -i -E --expr 's!swoc/ext/catch.hpp!catch.hpp!g' $1
   sed -i -E --expr 's!swoc::!ts::!g' $1
   sed -i -E --expr 's!swoc/!tscpp/util/!g' $1
-  sed -i -E --expr 's!namespace swoc!namespace ts!g' $1
+  sed -i -E --expr 's!namespace SWOC_NAMESPACE!namespace ts!g' $1
   sed -i -E --expr 's!ts/swoc_meta!tscpp/util/ts_meta!g' $1
   sed -i -E --expr 's!swoc_meta!ts_meta!g' $1
   sed -i -E --expr 's![[]libswoc[]]![libtscpputil]!' $1

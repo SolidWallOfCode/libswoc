@@ -11,10 +11,10 @@
 #include <memory>
 #include <limits>
 
-#include <swoc/TextView.h>
-#include <swoc/swoc_ip.h>
-#include <swoc/bwf_ip.h>
-#include <swoc/bwf_std.h>
+#include "swoc/TextView.h"
+#include "swoc/swoc_ip.h"
+#include "swoc/bwf_ip.h"
+#include "swoc/bwf_std.h"
 
 using namespace std::literals;
 using namespace swoc::literals;

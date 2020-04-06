@@ -1,24 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Network Geographics 2014
 /** @file
 
   IP address support.
-
-  @section license License
-
-  Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
-  See the NOTICE file distributed with this work for additional information regarding copyright
-  ownership.  The ASF licenses this file to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance with the License.  You may obtain a
-  copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software distributed under the License
-  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-  or implied. See the License for the specific language governing permissions and limitations under
-  the License.
  */
 
-#include <swoc/swoc_ip.h>
 #include "swoc/swoc_ip.h"
 #include "swoc/swoc_meta.h"
 
@@ -49,7 +35,8 @@ Set_Sockaddr_Len(T *addr) {
 
 } // namespace
 
-namespace swoc {
+namespace swoc { inline namespace SWOC_VERSION_NS {
+
 IPAddr const IPAddr::INVALID;
 IP4Addr const IP4Addr::MIN{INADDR_ANY};
 IP4Addr const IP4Addr::MAX{INADDR_BROADCAST};
@@ -76,7 +63,7 @@ IPEndpoint::assign(sockaddr *dst, sockaddr const *src) {
 }
 
 IPEndpoint&
-IPEndpoint::assign(IPAddr const&src, in_port_t port) {
+IPEndpoint::assign(IPAddr const& src, in_port_t port) {
   switch (src.family()) {
     case AF_INET: {
       memset(&sa4, 0, sizeof sa4);
@@ -158,7 +145,7 @@ IPEndpoint::tokenize(std::string_view str, std::string_view *addr, std::string_v
 }
 
 bool
-IPEndpoint::parse(std::string_view const&str) {
+IPEndpoint::parse(std::string_view const& str) {
   TextView addr_str, port_str, rest;
   TextView src{TextView{str}.trim_if(&isspace)};
 
@@ -253,7 +240,7 @@ IPEndpoint::set_to_loopback(int family) {
 }
 
 bool
-IP4Addr::load(std::string_view const&text) {
+IP4Addr::load(std::string_view const& text) {
   TextView src{text};
   int n = SIZE; /// # of octets
 
@@ -291,7 +278,7 @@ sockaddr_in *IP4Addr::fill(sockaddr_in *sa, in_port_t port) const {
   return sa;
 }
 
-int IP6Addr::cmp(const self_type &that) const {
+int IP6Addr::cmp(const self_type& that) const {
   return *this < that ? -1 : *this > that ? 1 : 0;
 }
 
@@ -336,7 +323,7 @@ IP6Addr& IP6Addr::operator|=(self_type const& that) {
 }
 
 bool
-IP6Addr::load(std::string_view const&str) {
+IP6Addr::load(std::string_view const& str) {
   TextView src{str};
   int n = 0;
   int empty_idx = -1;
@@ -418,18 +405,18 @@ IP6Addr::load(std::string_view const&str) {
 
 // These are Intel correct, at some point will need to be architecture dependent.
 
-void IP6Addr::reorder(in6_addr&dst, raw_type const&src) {
+void IP6Addr::reorder(in6_addr& dst, raw_type const& src) {
   self_type::reorder(dst.s6_addr, src.data());
   self_type::reorder(dst.s6_addr + WORD_SIZE, src.data() + WORD_SIZE);
 }
 
-void IP6Addr::reorder(raw_type&dst, in6_addr const&src) {
+void IP6Addr::reorder(raw_type& dst, in6_addr const& src) {
   self_type::reorder(dst.data(), src.s6_addr);
   self_type::reorder(dst.data() + WORD_SIZE, src.s6_addr + WORD_SIZE);
 }
 
 bool
-IPAddr::load(const std::string_view&text) {
+IPAddr::load(const std::string_view& text) {
   TextView src{text};
   src.ltrim_if(&isspace);
 
@@ -603,12 +590,12 @@ IPAddr::is_multicast() const {
          (AF_INET6 == _family && IN6_IS_ADDR_MULTICAST(&_addr._ip6));
 }
 
-IPEndpoint::IPEndpoint(std::string_view const&text) {
+IPEndpoint::IPEndpoint(std::string_view const& text) {
   this->invalidate();
   this->parse(text);
 }
 
-bool IPMask::load(string_view const&text) {
+bool IPMask::load(string_view const& text) {
   TextView parsed;
   _cidr = swoc::svtou(text, &parsed);
   if (parsed.size() != text.size()) {
@@ -618,7 +605,7 @@ bool IPMask::load(string_view const&text) {
   return true;
 }
 
-IPMask IPMask::mask_for(IPAddr const&addr) {
+IPMask IPMask::mask_for(IPAddr const& addr) {
   if (addr.is_ip4()) {
     return self_type::mask_for(static_cast<IP4Addr const&>(addr));
   } else if (addr.is_ip6()) {
@@ -643,9 +630,9 @@ auto IPMask::mask_for_quad(IP6Addr::quad_type q) -> raw_type {
 IPMask IPMask::mask_for(IP4Addr const& addr) {
   auto n = addr.host_order();
   raw_type cidr = 0;
-  if (auto q = (n & IP6Addr::QUAD_MASK) ; q != 0) {
+  if (auto q = (n & IP6Addr::QUAD_MASK); q != 0) {
     cidr = IP6Addr::QUAD_WIDTH + self_type::mask_for_quad(q);
-  } else if (auto q = ((n >> IP6Addr::QUAD_WIDTH) & IP6Addr::QUAD_MASK) ; q != 0) {
+  } else if (auto q = ((n >> IP6Addr::QUAD_WIDTH) & IP6Addr::QUAD_MASK); q != 0) {
     cidr = self_type::mask_for_quad(q);
   }
   return self_type(cidr);
@@ -653,7 +640,7 @@ IPMask IPMask::mask_for(IP4Addr const& addr) {
 
 IPMask IPMask::mask_for(IP6Addr const& addr) {
   auto cidr = IP6Addr::WIDTH;
-  for ( unsigned idx = IP6Addr::N_QUADS ; idx > 0 ; ) {
+  for (unsigned idx = IP6Addr::N_QUADS; idx > 0;) {
     auto q = addr._addr._quad[IP6Addr::QUAD_IDX[--idx]];
     cidr -= IP6Addr::QUAD_WIDTH;
     if (q != 0) {
@@ -667,11 +654,11 @@ IPMask IPMask::mask_for(IP6Addr const& addr) {
 IP6Addr IPMask::as_ip6() const {
   static constexpr auto MASK = ~IP6Addr::word_type{0};
   if (_cidr <= IP6Addr::WORD_WIDTH) {
-    return { MASK << (IP6Addr::WORD_WIDTH - _cidr), 0};
+    return {MASK << (IP6Addr::WORD_WIDTH - _cidr), 0};
   } else if (_cidr < 2 * IP6Addr::WORD_WIDTH) {
     return {MASK, MASK << (2 * IP6Addr::WORD_WIDTH - _cidr)};
   }
-  return { MASK, MASK };
+  return {MASK, MASK};
 }
 
 // ++ IPNet ++
@@ -736,11 +723,11 @@ bool IPNet::load(TextView text) {
 
 // +++ IP4Range +++
 
-IP4Range::IP4Range(swoc::IP4Addr const&addr, swoc::IPMask const&mask) {
+IP4Range::IP4Range(swoc::IP4Addr const& addr, swoc::IPMask const& mask) {
   this->assign(addr, mask);
 }
 
-IP4Range&IP4Range::assign(swoc::IP4Addr const&addr, swoc::IPMask const&mask) {
+IP4Range& IP4Range::assign(swoc::IP4Addr const& addr, swoc::IPMask const& mask) {
   // Special case the cidr sizes for 0, maximum
   if (0 == mask.width()) {
     _min = metric_type::MIN;
@@ -784,14 +771,14 @@ bool IP4Range::load(string_view text) {
   return false;
 }
 
-IP4Range::NetSource::NetSource(IP4Range::NetSource::range_type const&range) : _range(range) {
+IP4Range::NetSource::NetSource(IP4Range::NetSource::range_type const& range) : _range(range) {
   if (!_range.empty()) {
     this->search_wider();
   }
 }
 
-auto IP4Range::NetSource::operator++() -> self_type & {
-  auto upper (IP4Addr{_range._min._addr | ~_mask._addr} );
+auto IP4Range::NetSource::operator++() -> self_type& {
+  auto upper(IP4Addr{_range._min._addr | ~_mask._addr});
   if (upper >= _range.max()) {
     _range.clear();
   } else {
@@ -820,16 +807,16 @@ void IP4Range::NetSource::search_wider() {
 }
 
 void IP4Range::NetSource::search_narrower() {
-  while (! this->is_valid(_mask)) {
+  while (!this->is_valid(_mask)) {
     _mask._addr >>= 1;
-    _mask._addr |= 1<<(IP4Addr::WIDTH-1); // put top bit back.
+    _mask._addr |= 1 << (IP4Addr::WIDTH - 1); // put top bit back.
     ++_cidr;
   }
 }
 
 // +++ IP6Range +++
 
-IP6Range&IP6Range::assign(IP6Addr const&addr, IPMask const&mask) {
+IP6Range& IP6Range::assign(IP6Addr const& addr, IPMask const& mask) {
   static constexpr auto FULL_MASK{std::numeric_limits<uint64_t>::max()};
   auto cidr = mask.width();
   if (cidr == 0) {
@@ -893,7 +880,7 @@ IPRange::IPRange(IPAddr const& min, IPAddr const& max) {
   }
 }
 
-bool IPRange::load(std::string_view const&text) {
+bool IPRange::load(std::string_view const& text) {
   static const string_view CHARS{".:"};
   auto idx = text.find_first_of(CHARS);
   if (idx != text.npos) {
@@ -939,13 +926,13 @@ bool IPRange::empty() const {
   return true;
 }
 
-IP6Range::NetSource::NetSource(IP6Range::NetSource::range_type const&range) : _range(range) {
+IP6Range::NetSource::NetSource(IP6Range::NetSource::range_type const& range) : _range(range) {
   if (!_range.empty()) {
     this->search_wider();
   }
 }
 
-auto IP6Range::NetSource::operator++() -> self_type & {
+auto IP6Range::NetSource::operator++() -> self_type& {
   auto upper = _range.min() | _mask;
   if (upper >= _range.max()) {
     _range.clear();
@@ -974,9 +961,9 @@ void IP6Range::NetSource::search_wider() {
 }
 
 void IP6Range::NetSource::search_narrower() {
-  while (! this->is_valid(_mask)) {
+  while (!this->is_valid(_mask)) {
     _mask >>= 1;
   }
 }
 
-} // namespace swoc
+}} // namespace swoc

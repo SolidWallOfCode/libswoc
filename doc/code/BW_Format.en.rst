@@ -26,7 +26,7 @@ BufferWriter Formatting
 Synopsis
 ********
 
-:code:`#include <swoc/bwf_base.h>`
+:code:`#include "swoc/bwf_base.h"`
 
 Formatted output was added to :class:`BufferWriter` for several reasons.
 
@@ -486,7 +486,7 @@ Specific types
 .. _ip_addr_fmt:
 
 :code:`sockaddr const *`
-   :code:`#include <swoc/bwf_ip.h>`
+   :code:`#include "swoc/bwf_ip.h"`
 
    The IP address is printed. Fill is used to fill in address segments if provided, not to the
    minimum width if specified. :libswoc:`IPEndpoint` and :libswoc:`IPAddr` are supported with the

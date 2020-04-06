@@ -25,7 +25,7 @@ BufferWriter
 Synopsis
 ********
 
-:code:`#include <swoc/BufferWriter.h>`
+:code:`#include "swoc/BufferWriter.h"`
 
 .. class:: BufferWriter
 
