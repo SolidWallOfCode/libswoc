@@ -100,7 +100,7 @@ swoc::Lexicon<PodType> PodTypeNames {{
                                }};
 
 // Create BW formatters for the types so they can be used for output.
-namespace swoc { inline namespace SWOC_VERSION_NS {
+namespace swoc {
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, PodType pt) {
   return w.write(PodTypeNames[pt]);

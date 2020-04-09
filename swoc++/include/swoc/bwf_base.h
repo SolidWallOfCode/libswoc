@@ -683,7 +683,7 @@ Tuple_Nth(T const& t, size_t idx) {
 /// provide one.
 template<typename F>
 auto
-arg_capture(F&& f, BufferWriter&, Spec const&, std::any&&, swoc::meta::CaseTag<0>) -> void {
+arg_capture(F&&, BufferWriter&, Spec const&, std::any&&, swoc::meta::CaseTag<0>) -> void {
   throw std::runtime_error("Capture specification used in format extractor that does not support capture");
 }
 
@@ -718,7 +718,7 @@ extractor_spec_type(bool (EXTRACTOR::*m)(VIEW, SPEC)) -> SPEC {
  *
  * @internal After much consideration, I decided this was the correct choice, to enable type
  * erasure of the arguments to the base formatting logic. This costs a virtual function dispatch
- * but prevents the formatting logic from being dpulicated for every permutation of arguments.
+ * but prevents the formatting logic from being duplicated for every permutation of arguments.
  * Overall, for any reasonably sized project, I think this is the better option.
  *
  * This also supports passing arguments in other than a tuple, which is necessary in order to
@@ -740,12 +740,13 @@ public:
 
   /** Generate formatted output for an argument.
    *
-   * @param idx Argument index.
    * @param w Output.
    * @param spec Formatting specifier.
+   * @param idx Argument index.
+   *
    * @return @a w
    */
-  virtual BufferWriter& print(unsigned idx, BufferWriter& w, Spec const& spec) const = 0;
+  virtual BufferWriter& print(BufferWriter& w, Spec const& spec, unsigned idx) const = 0;
 
   /// Number of arguments in the pack.
   virtual unsigned count() const = 0;
@@ -764,12 +765,16 @@ public:
   ArgTuple(std::tuple<Args...> const& tuple) : _tuple(tuple) {}
 
 protected:
+  /// Numnber of arguments in the tuple.
   unsigned count() const override;
 
-  BufferWriter& print(unsigned idx, BufferWriter& w, Spec const& spec) const override;
+  /// Generate formatted output on @a w for argument at @a idx.
+  BufferWriter& print(BufferWriter& w, Spec const& spec, unsigned idx) const override;
 
+  /// Capture the @a idx argument for later use.
   std::any capture(unsigned idx) const override;
 
+  /// The source arguments.
   std::tuple<Args...> const& _tuple;
 };
 
@@ -781,7 +786,7 @@ ArgTuple<Args...>::count() const {
 
 template<typename... Args>
 BufferWriter&
-ArgTuple<Args...>::print(unsigned idx, BufferWriter& w, Spec const& spec) const {
+ArgTuple<Args...>::print(BufferWriter& w, Spec const& spec, unsigned idx) const {
   static const auto _fa{
       bwf::Get_Arg_Formatter_Array<std::tuple<Args...>>(std::index_sequence_for<Args...>{})};
   return _fa[idx](w, spec, _tuple);
@@ -793,7 +798,7 @@ ArgTuple<Args...>::capture(unsigned idx) const {
   return {Tuple_Nth(_tuple, idx)};
 }
 
-}; // namespace bwf
+} // namespace bwf
 
 template<typename Binding, typename Extractor>
 BufferWriter&
@@ -836,7 +841,7 @@ BufferWriter::print_nfv(Binding&& names, Extractor&& ex, bwf::ArgPack const& arg
             if (spec._type == bwf::Spec::CAPTURE_TYPE) {
               bwf::arg_capture(ex, lw, spec, args.capture(spec._idx), swoc::meta::CaseArg);
             } else {
-              args.print(spec._idx, lw, spec);
+              args.print(lw, spec, spec._idx);
             }
           } else {
             bwf::Err_Bad_Arg_Index(lw, spec._idx, N);
@@ -942,7 +947,7 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, MemSpan<T> const& span) {
     s._prec = sizeof(T);
   }
   return bwformat(w, s, span.template rebind<void>());
-};
+}
 
 template<size_t N>
 BufferWriter&
@@ -980,7 +985,7 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, TextView tv) {
 
 template<typename X, typename V>
 BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, TransformView<X, V>&& view) {
+bwformat(BufferWriter& w, bwf::Spec const&, TransformView<X, V>&& view) {
   while (view)
     w.write(char(*(view++)));
   return w;

@@ -170,7 +170,7 @@ public:
    *
    * @note @c c_str must be a null terminated string. The null byte is not included in the view.
    */
-  self_type& assign(char const* c_str);;
+  self_type& assign(char const* c_str);
 
   /// Explicitly set the start @a ptr and size @a n of the view.
   self_type &assign(char const *ptr, size_t n);
@@ -819,7 +819,7 @@ svto_radix(swoc::TextView &src) {
     ++src;
   }
   return zret;
-};
+}
 
 template <int N>
 uintmax_t

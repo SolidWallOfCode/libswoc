@@ -30,7 +30,7 @@ MemArena::MemArena(swoc::MemArena::self_type&& that)
 
 MemArena *
 MemArena::construct_self_contained(size_t n) {
-  MemArena tmp;
+  MemArena tmp{n};
   return tmp.make<MemArena>(std::move(tmp));
 }
 

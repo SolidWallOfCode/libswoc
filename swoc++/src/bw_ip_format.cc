@@ -259,16 +259,26 @@ bwformat(BufferWriter& w, Spec const& spec, IPAddr const& addr) {
 
 BufferWriter&
 bwformat(BufferWriter& w, Spec const& spec, IP4Range const& range) {
-  return range.empty()
-         ? w.write("*-*"_tv)
-         : w.print("{}-{}", range.min(), range.max());
+  if (range.empty()) {
+    w.write("*-*"_tv);
+  } else {
+    bwformat(w, spec, range.min());
+    w.write('-');
+    bwformat(w, spec, range.max());
+  }
+  return w;
 }
 
 BufferWriter&
 bwformat(BufferWriter& w, Spec const& spec, IP6Range const& range) {
-  return range.empty()
-         ? w.write("*-*"_tv)
-         : w.print("{}-{}", range.min(), range.max());
+  if (range.empty()) {
+    w.write("*-*"_tv);
+  } else {
+    bwformat(w, spec, range.min());
+    w.write('-');
+    bwformat(w, spec, range.max());
+  }
+  return w;
 }
 
 BufferWriter&

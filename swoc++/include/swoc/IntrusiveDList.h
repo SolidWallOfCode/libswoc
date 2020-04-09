@@ -418,7 +418,7 @@ ptr_ref_cast(P *& p) {
     T **_t;
   } u{&p};
   return *(u._t);
-};
+}
 
 /** Utility class to provide intrusive links.
  *
@@ -738,7 +738,7 @@ template<typename L>
 auto
 IntrusiveDList<L>::erase(const iterator& loc) -> iterator {
   return this->iterator_for(this->erase(loc._v));
-};
+}
 
 template<typename L>
 auto
@@ -763,7 +763,7 @@ IntrusiveDList<L>::erase(const iterator& first, const iterator& limit) -> iterat
   };
 
   return {limit._v, this};
-};
+}
 
 template<typename L>
 auto
@@ -781,43 +781,43 @@ template<typename L>
 size_t
 IntrusiveDList<L>::count() const {
   return _count;
-};
+}
 
 template<typename L>
 auto
 IntrusiveDList<L>::begin() const -> const_iterator {
   return const_iterator{this, _head};
-};
+}
 
 template<typename L>
 auto
 IntrusiveDList<L>::begin() -> iterator {
   return iterator{this, _head};
-};
+}
 
 template<typename L>
 auto
 IntrusiveDList<L>::end() const -> const_iterator {
   return const_iterator{this, nullptr};
-};
+}
 
 template<typename L>
 auto
 IntrusiveDList<L>::end() -> iterator {
   return iterator{this, nullptr};
-};
+}
 
 template<typename L>
 auto
 IntrusiveDList<L>::iterator_for(value_type *v) -> iterator {
   return iterator{this, v};
-};
+}
 
 template<typename L>
 auto
 IntrusiveDList<L>::iterator_for(const value_type *v) const -> const_iterator {
   return const_iterator{this, v};
-};
+}
 
 template<typename L>
 auto
@@ -849,7 +849,7 @@ IntrusiveDList<L>::clear() -> self_type& {
   _head = _tail = nullptr;
   _count = 0;
   return *this;
-};
+}
 
 namespace detail {
 // Make @c apply more convenient by allowing the function to take a reference type or pointer type
@@ -884,6 +884,6 @@ template<typename F>
 auto
 IntrusiveDList<L>::apply(F&& f) -> self_type& {
   return detail::Intrusive_DList_Apply(*this, f);
-};
+}
 
 }} // namespace swoc
