@@ -14,6 +14,8 @@ src_files = [
     "src/TextView.cc",
 ]
 
-env.Part("swoc++-static.part", package_group="libswoc", src_files=src_files)
-env.Part("swoc++-shared.part", package_group="libswoc", src_files=src_files)
-env.Part("swoc++-headers.part", package_group="libswoc")
+env.Part("libswoc.static.part", package_group="libswoc", src_files=src_files)
+env.Part("libswoc.shared.part", package_group="libswoc", src_files=src_files)
+
+inc_files = Pattern(src_dir="include", includes=["swoc/*.h"])
+env.InstallInclude(inc_files)
