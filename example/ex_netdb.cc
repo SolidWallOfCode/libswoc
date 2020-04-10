@@ -100,7 +100,7 @@ swoc::Lexicon<PodType> PodTypeNames {{
                                }};
 
 // Create BW formatters for the types so they can be used for output.
-namespace swoc { inline namespace SWOC_VERSION_NS {
+namespace swoc {
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, PodType pt) {
   return w.write(PodTypeNames[pt]);
@@ -120,7 +120,6 @@ BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, FlagSet const& fl
   }
   return w;
 }
-
 } // namespace SWOC_NAMESPACE
 
 // These are used to keep pointers for the same string identical so the payloads
