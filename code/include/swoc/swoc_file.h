@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <chrono>
 
 #include "swoc/swoc_version.h"
 #include "swoc/TextView.h"
@@ -98,18 +99,15 @@ protected:
   struct ::stat _stat; ///< File information.
 
   friend self_type status(const path& file, std::error_code& ec) noexcept;
-
   friend int file_type(const self_type&);
-
   friend off_t file_size(const self_type&);
-
   friend bool is_regular_file(const file_status&);
-
   friend bool is_dir(const file_status&);
-
   friend bool is_char_device(const file_status&);
-
   friend bool is_block_device(const file_status&);
+  friend std::chrono::system_clock::time_point modify_time(file_status const& fs);
+  friend std::chrono::system_clock::time_point access_time(file_status const& fs);
+  friend std::chrono::system_clock::time_point status_time(file_status const& fs);
 };
 
 /** Get the status of the file at @a p.
@@ -143,6 +141,10 @@ off_t file_size(const file_status& fs);
 
 /// Check if file is readable.
 bool is_readable(const path& s);
+
+std::chrono::system_clock::time_point modify_time(file_status const& fs);
+std::chrono::system_clock::time_point access_time(file_status const& fs);
+std::chrono::system_clock::time_point status_time(file_status const& fs);
 
 /** Load the file at @a p into a @c std::string.
  *
