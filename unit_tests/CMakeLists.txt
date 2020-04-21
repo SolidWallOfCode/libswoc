@@ -28,5 +28,8 @@ add_executable(test_libswoc
 
 target_link_libraries(test_libswoc PUBLIC swoc++)
 set_target_properties(test_libswoc PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(test_libswoc PRIVATE -Wall -Wextra -Werror -Wno-unused-parameter -Wno-format-truncation -Wno-stringop-overflow -Wno-invalid-offsetof)
+if(UNIX)
+    target_compile_options(test_libswoc PRIVATE -Wall -Wextra -Werror -Wno-unused-parameter -Wno-format-truncation -Wno-stringop-overflow -Wno-invalid-offsetof)
+endif()
+
 #add_definitions(-DVERBOSE_EXAMPLE_OUTPUT=1)

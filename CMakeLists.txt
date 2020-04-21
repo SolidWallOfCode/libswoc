@@ -11,7 +11,7 @@ add_subdirectory(doc EXCLUDE_FROM_ALL)
 
 # Find all of the directories subject to clang formatting and make a target to do the format.
 set(_CLANG_DIRS "")
-get_target_property(_TMP swoc++ CLANG_FORMAT_DIRS)
+get_target_property(_TMP libswoc CLANG_FORMAT_DIRS)
 list(APPEND _CLANG_DIRS ${_TMP})
 get_target_property(_TMP test_libswoc CLANG_FORMAT_DIRS)
 list(APPEND _CLANG_DIRS ${_TMP})
