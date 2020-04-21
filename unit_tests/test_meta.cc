@@ -53,6 +53,9 @@ TEST_CASE("Meta Example", "[meta][example]")
   REQUIRE(true == swoc::meta::is_any_of<A, A>::value);
   REQUIRE(false == swoc::meta::is_any_of<A, D>::value);
   REQUIRE(false == swoc::meta::is_any_of<A>::value); // verify degenerate use case.
+
+  REQUIRE(true == swoc::meta::is_any_of_v<A, A, B, C>);
+  REQUIRE(false == swoc::meta::is_any_of_v<D, A, B, C>);
 }
 
 // Start of ts::meta testing.
