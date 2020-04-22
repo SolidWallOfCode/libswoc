@@ -36,7 +36,7 @@ using swoc::IPRange;
 /// Type for temporary buffer writer output.
 using W = swoc::LocalBufferWriter<512>;
 
-/// IPSpace for mapping address to @c Payload
+/// IPSpace for mapping address. Treating it as a set so use a no-data payload.
 using Space = swoc::IPSpace<std::monostate>;
 
 /// Process the @a content of a file in to @a space.
@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
 
   // Dump the resulting space.
   unsigned n_nets = 0;
-  for ( auto && [ r, p] : space) {
-    for ( auto && net : r.networks()) {
+  for ( auto && [range, payload] : space ) {
+    for ( auto && net : range.networks() ) {
       ++n_nets;
       std::cout << W().print("{}\n", net);
     }
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 
   auto delta = std::chrono::system_clock::now() - t0;
 
-  std::cout << W().print("{} ranges in, {} ranges condensed, {} networks out in {} ms\n"
+  std::cerr << W().print("{} ranges in, {} ranges condensed, {} networks out in {} ms\n"
     , n_ranges, space.count(), n_nets
     , std::chrono::duration_cast<std::chrono::milliseconds>(delta).count());
 

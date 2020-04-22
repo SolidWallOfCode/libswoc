@@ -163,6 +163,16 @@ public:
    */
   metric_type const& max() const;
 
+  /// Test for equality.
+  bool operator == (self_type const& that) const {
+    return _min == that._min && _max == that._max;
+  }
+
+  /// Test for inequality.
+  bool operator != (self_type const& that) const {
+    return _min != that._min | _max != that._max;
+  }
+
   /** Check if a value is in @a this range.
    *
    * @param m Metric value to check.
@@ -973,22 +983,52 @@ DiscreteSpace<METRIC, PAYLOAD>::insert_after(DiscreteSpace::Node *spot, Discrete
 
 template<typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD>&
+DiscreteSpace<METRIC, PAYLOAD>::erase(DiscreteSpace::range_type const& range) {
+  Node *n = this->lower_bound(range.min()); // current node.
+  while (n) {
+    auto nn = next(n); // cache in case @a n disappears.
+    if (n->min() > range.max()) { // cleared the target range, done.
+      break;
+    }
+
+    if (n->max() >= range.min()) { // some overlap
+      if (n->max() <= range.max()) { // pure left overlap, clip.
+        if (n->min() >= range.min()) { // covered, remove.
+          this->remove(n);
+        } else { // stub on the left, clip to that.
+          n->assign_max(--metric_type{range.min()});
+        }
+      } else if (n->min() >= range.min()) { // pure left overlap, clip.
+        n->assign_min(++metric_type{range.max()});
+      } else { // @a n covers @a range, must split.
+        auto y = _fa.make(range_type{n->min(), --metric_type{range.min()}}, n->payload());
+        n->assign_min(++metric_type{range.max()});
+        this->insert_before(n, y);
+        break;
+      }
+    }
+    n = nn;
+  }
+  return *this;
+}
+
+template<typename METRIC, typename PAYLOAD>
+DiscreteSpace<METRIC, PAYLOAD>&
 DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const& range
                                      , PAYLOAD const& payload) {
   Node *n = this->lower_bound(range.min()); // current node.
   Node *x = nullptr;                       // New node, gets set if we re-use an existing one.
   Node *y = nullptr;                       // Temporary for removing and advancing.
 
-  METRIC max_plus_1 = range.max();
-  ++max_plus_1; // careful to use this only in places there's no chance of overflow.
+  // Use carefully, only in situations where it is known there is no overflow.
+  auto max_plus_1 = ++metric_type{range.max()};
 
   /*  We have lots of special cases here primarily to minimize memory
       allocation by re-using an existing node as often as possible.
   */
   if (n) {
     // Watch for wrap.
-    METRIC min_minus_1 = range.min();
-    --min_minus_1;
+    auto min_minus_1 = --metric_type{range.min()};
     if (n->min() == range.min()) {
       // Could be another span further left which is adjacent.
       // Coalesce if the data is the same. min_minus_1 is OK because
@@ -1006,7 +1046,7 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const& range
         return *this; // request is covered by existing span with the same data
       } else {
         // request span is covered by existing span.
-        x = new Node{range, payload}; //
+        x = _fa.make(range, payload); //
         n->assign_min(max_plus_1);    // clip existing.
         this->insert_before(n, x);
         return *this;
@@ -1187,7 +1227,7 @@ DiscreteSpace<METRIC, PAYLOAD>::fill(DiscreteSpace::range_type const& range
         }
       } else {               // no carry node.
         if (max < n->_min) { // entirely before next span.
-          this->insert_before(n, new Node(min, max, payload));
+          this->insert_before(n, _fa.make(min, max, payload));
           return *this;
         } else {
           if (min < n->_min) { // leading section, need node.

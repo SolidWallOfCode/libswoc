@@ -1034,6 +1034,20 @@ public:
    */
   IPRange(string_view const& text);
 
+  /// Equality
+  bool operator == (self_type const& that) const {
+    if (_family != that._family) {
+      return false;
+    }
+    if (this->is_ip4()) {
+      return _range._ip4 == that._range._ip4;
+    }
+    if (this->is_ip6()) {
+      return _range._ip6 == that._range._ip6;
+    }
+    return true;
+  }
+
   /// @return @c true if this is an IPv4 range, @c false if not.
   bool is_ip4() const { return AF_INET == _family; }
 
@@ -1400,6 +1414,7 @@ template<typename PAYLOAD> class IPSpace {
 
 public:
   using payload_t = PAYLOAD; ///< Export payload type.
+  using value_type = std::tuple<IPRange const, PAYLOAD&>;
 
   /// Construct an empty space.
   IPSpace() = default;
@@ -1423,6 +1438,13 @@ public:
    * Addresses in @a range are set to have @a payload if the address does not already have a payload.
    */
   self_type& fill(IPRange const& range, PAYLOAD const& payload);
+
+  /** Erase addresses in @a range.
+   *
+   * @param range Address range.
+   * @return @a this
+   */
+  self_type& erase(IPRange const& range);
 
   /** Blend @a color in to the @a range.
    *
@@ -2672,6 +2694,16 @@ auto IPSpace<PAYLOAD>::fill(IPRange const& range, PAYLOAD const& payload) -> sel
     _ip6.fill(range.ip6(), payload);
   } else if (range.is(AF_INET)) {
     _ip4.fill(range.ip4(), payload);
+  }
+  return *this;
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::erase(IPRange const& range) -> self_type& {
+  if (range.is(AF_INET)) {
+    _ip4.erase(range.ip4());
+  } else if (range.is(AF_INET6)) {
+    _ip6.erase(range.ip6());
   }
   return *this;
 }
