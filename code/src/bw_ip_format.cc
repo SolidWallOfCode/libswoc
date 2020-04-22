@@ -290,5 +290,35 @@ bwformat(BufferWriter& w, Spec const& spec, IPRange const& range) {
            : w.write("*-*"_tv);
 }
 
+BufferWriter&
+bwformat(BufferWriter& w, Spec const& spec, IP4Net const& net) {
+  bwformat(w, spec, net.lower_bound());
+  w.write('/');
+  bwformat(w, Spec{}, net.mask().width());
+  return w;
+}
+
+BufferWriter&
+bwformat(BufferWriter& w, Spec const& spec, IP6Net const& net) {
+  bwformat(w, spec, net.lower_bound());
+  w.write('/');
+  bwformat(w, Spec{}, net.mask().width());
+  return w;
+}
+
+BufferWriter&
+bwformat(BufferWriter& w, Spec const& spec, IPNet const& net) {
+  if (net.is_ip6()) {
+    return bwformat(w, spec, net.ip6());
+  } else if (net.is_ip4()) {
+    return bwformat(w, spec, net.ip4());
+  }
+  return w.write("*invalid*");
+}
+
+BufferWriter&
+bwformat(BufferWriter& w, Spec const& spec, IPMask const& mask) {
+  return bwformat(w, spec, mask.width());
+}
 
 }} // namespace swoc

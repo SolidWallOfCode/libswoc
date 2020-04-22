@@ -30,11 +30,19 @@ BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP6Addr const& ad
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IPAddr const& addr);
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP4Range const& Range);
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP4Range const& range);
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP6Range const& Range);
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP6Range const& range);
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IPRange const& Range);
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IPRange const& range);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IPNet const& net);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP4Net const& net);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IP6Net const& net);
+
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, IPMask const& mask);
 
 inline BufferWriter&
 bwformat(BufferWriter& w, bwf::Spec const& spec, IPEndpoint const& addr) {
