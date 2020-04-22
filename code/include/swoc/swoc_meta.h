@@ -152,6 +152,10 @@ template<typename T, typename... Types> struct is_any_of {
   static constexpr bool value = std::disjunction<std::is_same<T, Types>...>::value;
 };
 
+/// Helper variable template for is_any_of
+template <typename T, typename... Types>
+inline constexpr bool is_any_of_v = is_any_of<T, Types...>::value;
+
 /** Type list support class.
  *
  * @tparam Types List of types.

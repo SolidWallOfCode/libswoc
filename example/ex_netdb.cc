@@ -120,7 +120,6 @@ BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, FlagSet const& fl
   }
   return w;
 }
-
 } // namespace SWOC_NAMESPACE
 
 // These are used to keep pointers for the same string identical so the payloads
