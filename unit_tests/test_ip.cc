@@ -538,8 +538,8 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
 }
 
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
-  using int_space = swoc::IPSpace<unsigned>;
-  int_space space;
+  using uint_space = swoc::IPSpace<unsigned>;
+  uint_space space;
 
   REQUIRE(space.count() == 0);
 
@@ -627,12 +627,43 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   }
 
   CHECK(7 == space.count());
+  // Make sure all of these addresses yield the same result.
   CHECK(space.end() != space.find(IP4Addr{"100.0.4.16"}));
   CHECK(space.end() != space.find(IPAddr{"100.0.4.16"}));
   CHECK(space.end() != space.find(IPAddr{IPEndpoint{"100.0.4.16:80"}}));
+  // same for negative result
+  CHECK(space.end() == space.find(IP4Addr{"10.0.4.16"}));
+  CHECK(space.end() == space.find(IPAddr{"10.0.4.16"}));
+  CHECK(space.end() == space.find(IPAddr{IPEndpoint{"10.0.4.16:80"}}));
 
+  std::array<std::tuple<TextView, int>, 3> r_clear = {
+      {
+            {"2.2.2.2-2.2.2.40", 0}
+          , {"2.2.2.50-2.2.2.60", 1}
+          , {"2.2.2.70-2.2.2.100", 2}
+      }};
+  space.clear();
+  for (auto &&[text, value] : r_clear) {
+    IPRange range{text};
+    space.mark(IPRange{text}, value);
+  }
+  CHECK(space.count() == 3);
+  space.erase(IPRange{"2.2.2.35-2.2.2.75"});
+  CHECK(space.count() == 2);
+  {
+    spot = space.begin();
+    auto [ r0, p0 ] = *spot;
+    auto [ r2, p2 ] = *++spot;
+    CHECK(r0 == IPRange{"2.2.2.2-2.2.2.34"});
+    CHECK(p0 == 0);
+    CHECK(r2 == IPRange{"2.2.2.76-2.2.2.100"});
+    CHECK(p2 == 2);
+  }
+
+  // This is about testing repeated colorings of the same addresses, which happens quite a
+  // bit in normal network datasets. In fact, the test dataset is based on such a dataset
+  // and its use.
   auto b2 = [] (unsigned &lhs, unsigned const& rhs) { lhs = rhs; return true; };
-
   std::array<std::tuple<TextView, unsigned>, 31> r2 = {
       {
           {"2001:4998:58:400::1/128", 1} // 1
@@ -669,6 +700,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
       }};
 
   space.clear();
+  // Start with basic blending.
   for (auto &&[text, value] : r2) {
     IPRange range{text};
     space.blend(IPRange{text}, value, b2);
@@ -676,6 +708,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
     REQUIRE(space.end() != space.find(range.max()));
   }
   CHECK(6 == space.count());
+  // Do the exact same networks again, should not change the range count.
   for (auto &&[text, value] : r2) {
     IPRange range{text};
     space.blend(IPRange{text}, value, b2);
@@ -683,12 +716,13 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
     REQUIRE(space.end() != space.find(range.max()));
   }
   CHECK(6 == space.count());
+  // Verify that earlier ranges are still valid after the double blend.
   for (auto &&[text, value] : r2) {
     IPRange range{text};
     REQUIRE(space.end() != space.find(range.min()));
     REQUIRE(space.end() != space.find(range.max()));
   }
-  // Drop a non-intersecting range between existing ranges 1 and 2, make sure both sides coalesce.
+  // Color the non-intersecting range between ranges 1 and 2, verify coalesce.
   space.blend(IPRange{"2001:4998:58:400::C/126"_tv}, 1, b2);
   CHECK(5 == space.count());
   // Verify all the data is in the ranges.

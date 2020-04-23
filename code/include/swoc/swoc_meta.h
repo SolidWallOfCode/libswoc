@@ -54,9 +54,12 @@ namespace meta {
  * method to verify it will compile. It is annoying to type it twice but there's not a better
  * option.
  *
- * Note @c decltype does not accept explicit types - to have the type of "int" an @c int must be
- * constructed. This is easy for builtin types except @c void. @c CaseVoidFunc is provided for that
- * situation, e.g. <tt>decltype(CaseVoidFunc())</tt> provides @c void via @c decltype.
+ * Note @c decltype does not accept explicit types - to have the type of "int" a function returning
+ * @c int must be provided.  This is easy for simple builtin types such as @c int - use the
+ * constructor @c int(). For @c void and non-simple types (such as @c int* ) this is a bit more
+ * challenging. A general utility is provided for this - @c TypeFunc. For the @c void case this
+ * would be <tt>decltype(TypeFunc<void>())</tt>. For @c int* it would be
+ * <tt>decltype(TypeFunc<int *>()).
  */
 
 /// Case hierarchy.

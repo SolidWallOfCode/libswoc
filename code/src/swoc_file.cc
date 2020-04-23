@@ -19,7 +19,7 @@ path::parent_path() const {
   TextView parent{_path};
   parent.split_suffix_at(SEPARATOR);
   return parent ? parent : "/"_tv;
-};
+}
 
 path&
 path::operator/=(std::string_view that) {
@@ -78,6 +78,25 @@ is_regular_file(const file_status& fs) {
 bool
 is_dir(const file_status& fs) {
   return file_type(fs) == S_IFDIR;
+}
+
+namespace {
+inline std::chrono::system_clock::time_point chrono_cast(timespec const& ts) {
+  using namespace std::chrono;
+  return system_clock::time_point{duration_cast<system_clock::duration>(seconds{ts.tv_sec} + nanoseconds{ts.tv_nsec})};
+}
+} // namesapce
+
+std::chrono::system_clock::time_point modify_time(file_status const& fs) {
+  return chrono_cast(fs._stat.st_mtim);
+}
+
+std::chrono::system_clock::time_point access_time(file_status const& fs) {
+  return chrono_cast(fs._stat.st_atim);
+}
+
+std::chrono::system_clock::time_point status_time(file_status const& fs) {
+  return chrono_cast(fs._stat.st_ctim);
 }
 
 bool

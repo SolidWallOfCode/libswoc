@@ -275,6 +275,7 @@ auto IP4Addr::operator=(sockaddr_in const *sa) -> self_type& {
 
 sockaddr_in *IP4Addr::fill(sockaddr_in *sa, in_port_t port) const {
   sa->sin_addr.s_addr = this->network_order();
+  sa->sin_port = port;
   return sa;
 }
 

@@ -26,7 +26,7 @@ add_executable(test_libswoc
     ex_TextView.cc
     )
 
-target_link_libraries(test_libswoc PUBLIC swoc++)
+target_link_libraries(test_libswoc PUBLIC libswoc)
 set_target_properties(test_libswoc PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(test_libswoc PRIVATE -Wall -Wextra -Werror -Wno-unused-parameter -Wno-format-truncation -Wno-stringop-overflow -Wno-invalid-offsetof)
 #add_definitions(-DVERBOSE_EXAMPLE_OUTPUT=1)

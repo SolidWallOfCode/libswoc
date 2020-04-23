@@ -173,7 +173,7 @@ bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata::Severity level) {
 }
 
 BufferWriter&
-bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata const& errata) {
+bwformat(BufferWriter& bw, bwf::Spec const&, Errata const& errata) {
   for (auto& m : errata) {
     bw.print("{}[{}] {}\n", swoc::bwf::Pattern{int(m.level()), "  "}, m.severity(), m.text());
   }

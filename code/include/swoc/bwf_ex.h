@@ -82,7 +82,7 @@ FirstOf(Args&& ... args) {
       return s;
   }
   return std::string_view{};
-};
+}
 
 /** Wrapper for a sub-text, where the @a args are output according to @a fmt.
  *
