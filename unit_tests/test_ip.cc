@@ -768,6 +768,12 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
     space.mark(IPRange{text}, bits);
   }
   REQUIRE(space.count() == ranges.size());
+
+  // Check that if an IPv4 lookup misses, it doesn't pass on to the first IPv6
+  auto && [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
+  REQUIRE(true == r1.empty());
+  auto && [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.100"}));
+  REQUIRE(true == r2.empty());
 }
 
 TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {

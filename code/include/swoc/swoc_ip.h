@@ -1648,9 +1648,9 @@ public:
    */
   iterator find(IPAddr const& addr) {
     if (addr.is_ip4()) {
-      return iterator(_ip4.find(IP4Addr{addr}), _ip6.begin());
+      return this->find(addr.ip4());
     } else if (addr.is_ip6()) {
-      return iterator(_ip4.end(), _ip6.find(IP6Addr{addr}));
+      return this->find(addr.ip6());
     }
     return this->end();
   }
