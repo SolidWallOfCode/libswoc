@@ -103,7 +103,7 @@ swoc::Lexicon<PodType> PodTypeNames {{
 namespace swoc {
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, PodType pt) {
-  return w.write(PodTypeNames[pt]);
+  return bwformat(w, spec, (PodTypeNames[pt]);
 }
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, FlagSet const& flags) {
@@ -114,7 +114,7 @@ BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, FlagSet const& fl
       if (!first_p) {
         w.write(';');
       }
-      w.write(FlagNames[static_cast<Flag>(idx)]);
+      bwformat(w, spec, FlagNames[static_cast<Flag>(idx)]);
       first_p = false;
     }
   }

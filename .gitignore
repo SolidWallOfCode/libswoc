@@ -29,7 +29,7 @@
 *.out
 *.app
 
-.idea
+.idea/
 cmake-build-debug
 doc/_build
 doc/doxygen

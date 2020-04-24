@@ -10,7 +10,7 @@
 
     4441:34F8:1E40:1EF:0:0:A0:0/108
     192.168.12.1
-    10.0.23.0/23
+    10.0.23.0-10.0.14.255
 
     The output is the same set of addresses in as few networks as possible.
 */
@@ -30,7 +30,6 @@ using namespace swoc::literals;
 
 using swoc::TextView;
 
-using swoc::IPAddr;
 using swoc::IPRange;
 
 /// Type for temporary buffer writer output.
@@ -69,11 +68,12 @@ int main(int argc, char *argv[]) {
   Space space;
 
   if (argc < 2) {
-    std::cerr << W().print("Input file name required.");
+    std::cerr << W().print("Input file name required.\n");
     exit(1);
   }
 
-  auto t0 = std::chrono::system_clock::now();
+  auto t0 = std::chrono::system_clock::now(); // timing
+  // Load the file.
   swoc::file::path path{argv[1]};
   std::error_code ec;
   std::string content = swoc::file::load(path, ec);
@@ -81,9 +81,10 @@ int main(int argc, char *argv[]) {
     std::cerr << W().print(R"(Failed to open file "{}" - {}\n)", path, ec);
     exit(1);
   }
+  // Paint the IPSpace.
   auto n_ranges = process(space, content);
 
-  // Dump the resulting space.
+  // Dump the results.
   unsigned n_nets = 0;
   for ( auto && [range, payload] : space ) {
     for ( auto && net : range.networks() ) {
