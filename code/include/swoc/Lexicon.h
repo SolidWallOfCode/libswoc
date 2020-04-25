@@ -153,6 +153,8 @@ public:
    */
   explicit Lexicon(DefaultHandler handler_1, DefaultHandler handler_2 = DefaultHandler{});
 
+  Lexicon(self_type && that) = default;
+
   /** Get the name for a @a value.
    *
    * @param value Value to look up.
