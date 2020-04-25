@@ -158,6 +158,22 @@ TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
     mark[value] = true;
   }
   REQUIRE(mark.all());
+
+  ValueLexicon v2(std::move(vl));
+  REQUIRE(vl.count() == 0);
+
+  REQUIRE("LowValue" == v2[LowValue]);                 // Primary name
+  REQUIRE(NoValue == v2["NoValue"]);                   // Primary name
+  REQUIRE(NoValue == v2["garbage"]);                   // Secondary name
+
+  REQUIRE(HighValue == v2["highVALUE"]);
+  REQUIRE(HighValue == v2["HIGH_VALUE"]);
+  REQUIRE("HighValue" == v2[HighValue]); // Verify value -> primary name.
+
+  // A few more checks on primary/secondary.
+  REQUIRE("Priceless" == v2[Priceless]);
+  REQUIRE(Priceless == v2["unique"]);
+
 };
 
 TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")

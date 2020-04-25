@@ -175,6 +175,9 @@ public:
   /// This doubles as the default constructor.
   IntrusiveHashMap(size_t n = DEFAULT_BUCKET_COUNT);
 
+  /// Move constructor.
+  IntrusiveHashMap(self_type && that) = default;
+
   /** Remove all values from the table.
 
       The values are not cleaned up. The values are not touched in this method, therefore it is safe
