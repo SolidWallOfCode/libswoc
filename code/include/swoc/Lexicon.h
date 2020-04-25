@@ -222,7 +222,9 @@ public:
   /// Get the number of values with definitions.
   size_t count() const;
 
-  /// Iterator over pairs of values and primary name pairs.
+  /** Iterator over pairs of values and primary name pairs.
+   * Value is a 2-tuple of the enumeration type and the primary name.
+   */
   class const_iterator {
     using self_type = const_iterator;
 
@@ -233,46 +235,61 @@ public:
     using difference_type   = ptrdiff_t;
     using iterator_category = std::bidirectional_iterator_tag;
 
+    /// Default constructor.
     const_iterator() = default;
 
+    /// Copy constructor.
     const_iterator(self_type const& that) = default;
 
+    /// Move construcgtor.
     const_iterator(self_type&& that) = default;
 
+    /// Dereference.
     reference operator*() const;
 
+    /// Dereference.
     pointer operator->() const;
 
+    /// Assignment.
     self_type& operator=(self_type const& that) = default;
 
+    /// Equality.
     bool operator==(self_type const& that) const;
 
+    /// Inequality.
     bool operator!=(self_type const& that) const;
 
+    /// Increment.
     self_type& operator++();
 
+    /// Increment.
     self_type operator++(int);
 
+    /// Decrement.
     self_type& operator--();
 
+    /// Decrement.
     self_type operator--(int);
 
   protected:
-    const_iterator(const Item *item);
+    const_iterator(const Item *item); ///< Internal constructor.
 
+    /// Update the internal values after changing the iterator location.
     void update();
 
-    const Item *_item{nullptr};
-    typename std::remove_const<value_type>::type _v;
+    const Item *_item{nullptr}; ///< Current location in the container.
+    typename std::remove_const<value_type>::type _v; ///< Synthesized value for dereference.
 
     friend Lexicon;
   };
 
-  // Only constant iteratior allowed, values cannot be modified.
+  // Only constant iterator allowed, values cannot be modified.
   using iterator = const_iterator;
 
+  /// Iteration begin.
   const_iterator begin() const;
 
+  /// Iteration end.
   const_iterator end() const;
 
 protected:
@@ -653,6 +670,37 @@ Lexicon<E>::const_iterator::operator--(int) -> self_type {
   self_type tmp;
   ++*this;
   return tmp;
+}
+
+template <typename E>
+BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, Lexicon<E> const& lex) {
+  bool sep_p = false;
+  if (spec._type == 's' || spec._type == 'S') {
+    for ( auto && [ value, name ] : lex ) {
+      if (sep_p) {
+        w.write(',');
+      }
+      bwformat(w, spec, name);
+      sep_p = true;
+    }
+  } else if (spec.has_numeric_type()) {
+    for ( auto && [ value, name ] : lex ) {
+      if (sep_p) {
+        w.write(',');
+      }
+      bwformat(w, spec, unsigned(value));
+      sep_p = true;
+    }
+  } else {
+    for ( auto && [ value, name ] : lex ) {
+      if (sep_p) {
+        w.write(',');
+      }
+      w.print("[{},{}]", name, unsigned(value));
+      sep_p = true;
+    }
+  }
+  return w;
 }
 
 }} // namespace swoc
