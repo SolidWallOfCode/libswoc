@@ -72,7 +72,7 @@ FirstOfConverter(T&& t) {
 } // namespace detail
 
 /// Print the first of a list of strings that is not an empty string.
-/// All arguments must be convertible to @c std::string.
+/// All arguments must be convertible to @c std::string_view.
 template<typename... Args>
 std::string_view
 FirstOf(Args&& ... args) {
