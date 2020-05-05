@@ -7,5 +7,5 @@ Name: LibSWOC++
 Description: A collection of solid C++ utilities and classes.
 Version: pkg_version
 Requires:
-Libs: -l${libdir}swoc.pkg_version.a
+Libs: ${libdir}/libswoc.pkg_version.a
 Cflags: -I${includedir}
