@@ -6,7 +6,7 @@ DependsOn([ Component("libswoc") ])
 src_files = env.get("src_files")
 
 env.AppendUnique(
-    CCFLAGS=['-std=c++17' ],
+    CCFLAGS=['-std=c++17', '-fPIC' ],
     CPPPATH=['include'],
 )
 
