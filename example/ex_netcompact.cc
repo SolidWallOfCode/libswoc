@@ -44,9 +44,9 @@ unsigned process(Space& space, TextView content) {
   unsigned n_ranges = 0;
 
   // For each line in @a content
-  for  (TextView line ; ! (line = content.take_prefix_at('\n')).empty() ; ) {
+  while (content) {
+    TextView line = content.take_prefix_at('\n').trim_if(&isspace);
     ++line_no;
-    line.trim_if(&isspace);
     // Allow empty lines and '#' comments without error.
     if (line.empty() || '#' == *line) {
       continue;
