@@ -203,7 +203,7 @@ BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Date const& 
 
 template<typename... Args>
 BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::SubText<Args...> const& subtext) {
+bwformat(BufferWriter& w, bwf::Spec const&, bwf::SubText<Args...> const& subtext) {
   if (!subtext._fmt.empty()) {
     w.print_v(subtext._fmt, subtext._args);
   }

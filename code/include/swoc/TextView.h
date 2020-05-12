@@ -17,6 +17,7 @@
 #include <memory.h>
 #include <string>
 #include <string_view>
+#include <limits>
 
 #include "swoc/swoc_version.h"
 
