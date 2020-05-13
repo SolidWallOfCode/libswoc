@@ -11,7 +11,7 @@ env.AppendUnique(
 )
 
 # build the library
-out = env.StaticLibrary("${PART_ROOT_NAME}.${PART_VERSION}.a", src_files, LIBPREFIX="")
+out = env.StaticLibrary("${PART_ROOT_NAME}.static.${PART_VERSION}.a", src_files, LIBPREFIX="")
 env.InstallLib(out)
 
 # Export the package config.
