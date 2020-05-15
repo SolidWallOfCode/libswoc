@@ -1,6 +1,6 @@
 Import("*")
 PartName("libswoc")
-PartVersion("1.2.4")
+PartVersion("1.2.5")
 
 src_files = [
     "src/ArenaWriter.cc",
