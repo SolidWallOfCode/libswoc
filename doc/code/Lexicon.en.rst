@@ -23,7 +23,13 @@ Lexicon
 ****************
 
 |Lexicon| is a bidirectional mapping between strings and a numeric / enumeration type. It is intended
-to support parsing and diagnostics for enumerations.
+to support parsing and diagnostics for enumerations. It has some significant advantages over a simple
+array of strings.
+
+*  The integer can be looked up by string. This makes parsing much easier and more robust.
+*  The integers do not have to be contiguous or zero based.
+*  Multiple names can map to the same integer.
+*  Defaults for missing names or integers.
 
 Definition
 **********
@@ -35,9 +41,13 @@ Definition
 Usage
 *****
 
+Lexicons can be used in a dynamic or static fashion. The basic use is as a static translation object
+that converts between an enumeration and names. The constructors allow setting up the entire Lexicon.
 
 Examples
 ========
+
+
 
 Design Notes
 ************
