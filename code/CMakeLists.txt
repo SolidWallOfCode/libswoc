@@ -45,7 +45,9 @@ set(CC_FILES
     )
 
 add_library(libswoc STATIC ${CC_FILES})
-target_compile_options(libswoc PRIVATE -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
+if (CMAKE_COMPILER_IS_GNUCXX)
+    target_compile_options(libswoc PRIVATE -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
+endif()
 
 # Not quite sure how this works, but I think it generates one of two paths depending on the context.
 # That is, the generator functions return non-empty stri ngs only in the corresponding context.
