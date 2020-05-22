@@ -234,3 +234,6 @@ TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
   }
   REQUIRE(miss_p == false);
 };
+
+TEST_CASE("IntrusiveHashMap Utilities", "[IntrusiveHashMap]") {
+}

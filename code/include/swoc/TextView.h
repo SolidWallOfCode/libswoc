@@ -822,11 +822,28 @@ svto_radix(swoc::TextView &src) {
   return zret;
 }
 
+/// Convenience overload.
+/// @see @svto_radix(swoc::TextView &src)
 template <int N>
 uintmax_t
 svto_radix(swoc::TextView &&src) {
   return svto_radix<N>(src);
 }
+
+/** Parse @a text as a floating point number.
+ *
+ * @param text The input text.
+ * @param parsed Parsed text [out]
+ * @return The floating point value, or 0.0 if invalid input.
+ *
+ * If @a parsed is not @a nullptr then the span of characters parsed is put there. This can be
+ * used to check if the parse was scuccesful - on a failed parse, it will be empty.
+ *
+ * @note This should be within 1 epsilon of correct, although it doesn't guarantee picking
+ * the closest epsilon. It's more than sufficient for use in configurations, but possibly
+ * not for high precision work.
+ */
+double svtod(swoc::TextView text, swoc::TextView * parsed = nullptr);
 // ----------------------------------------------------------
 // Inline implementations.
 // Note: Why, you may ask, do I use @c TextView::self_type for return type instead of the
