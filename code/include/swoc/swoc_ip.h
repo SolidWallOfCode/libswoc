@@ -69,10 +69,10 @@ union IPEndpoint {
 
   /** Break a string in to IP address relevant tokens.
    *
-   * @param [in] src Source tex.t
-   * @param [out] host The host / address.
-   * @param [out] port The port.
-   * @param [out] rest Any text past the end of the IP address.
+   * @param src Source text. [in]
+   * @param host The host / address. [out]
+   * @param port The port. [out]
+   * @param rest Any text past the end of the IP address. [out]
    * @return @c true if an IP address was found, @c false otherwise.
    *
    * Any of the out parameters can be @c nullptr in which case they are not updated.

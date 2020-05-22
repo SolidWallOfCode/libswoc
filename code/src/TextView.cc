@@ -13,6 +13,8 @@
 #include <cctype>
 #include <sstream>
 
+using namespace swoc::literals;
+
 int
 memcmp(std::string_view const &lhs, std::string_view const &rhs)
 {
@@ -160,6 +162,84 @@ svtou(TextView src, TextView *out, int base) {
     }
   }
   return zret;
+}
+
+double svtod(swoc::TextView text, swoc::TextView *parsed) {
+  // @return 10^e
+  auto pow10 = [](int e) -> double  {
+    double zret = 1.0;
+    double scale = 10.0;
+    if (e < 0) { // flip the scale and make @a e positive.
+      e = -e;
+      scale = 0.1;
+    }
+
+    // Walk the bits in the exponent @a e and multiply the scale for set bits.
+    while (e) {
+      if (e & 1) {
+        zret *= scale;
+      }
+      scale *= scale;
+      e >>= 1;
+    }
+    return zret;
+  };
+
+  if (text.empty()) {
+    return 0;
+  }
+
+  auto org_text = text; // save this to update @a parsed.
+  // Check just once and dump to a local copy if needed.
+  TextView local_parsed;
+  if (! parsed) {
+    parsed = &local_parsed;
+  }
+
+  // Handle leading sign.
+  int sign = 1;
+  if (*text == '-') {
+    ++text;
+    sign = -1;
+  } else if (*text == '+') {
+    ++text;
+  }
+  // Parse the leading whole part as an integer.
+  intmax_t whole = svto_radix<10>(text);
+  parsed->assign(org_text.data(), text.data());
+
+  if (text.empty()) {
+    return whole;
+  }
+
+  double frac = 0.0;
+  if (*text == '.') { // fractional part.
+    ++text;
+    double scale = 0.1;
+    while (text && isdigit(*text)) {
+      frac += scale * (*text++ - '0');
+      scale /= 10.0;
+    }
+  }
+
+  double exp = 1.0;
+  if (text.starts_with_nocase("e")) {
+    int exp_sign = 1;
+    ++text;
+    if (text) {
+      if (*text == '+') {
+        ++text;
+      } else if (*text == '-') {
+        ++text;
+        exp_sign = -1;
+      }
+    }
+    auto exp_part = svto_radix<10>(text);
+    exp = pow10(exp_part * exp_sign);
+  }
+
+  parsed->assign(org_text.data(), text.data());
+  return sign * (whole + frac) * exp;
 }
 
 // Do the template instantiations.

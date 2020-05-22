@@ -377,6 +377,28 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
   x = n3;
   REQUIRE(25 == swoc::svto_radix<8>(x));
   REQUIRE(x.size() == 0);
+
+  // floating point is never exact, so "good enough" is all that is measureable. This checks the
+  // value is within one epsilon (minimum change possible) of the compiler generated value.
+  auto fcmp = [](double lhs, double rhs) {
+      double tolerance = std::max( { 1.0, std::fabs(lhs) , std::fabs(rhs) } ) * std::numeric_limits<double>::epsilon();
+      return std::fabs(lhs - rhs) <= tolerance ;
+  };
+
+  REQUIRE(1.0 == swoc::svtod("1.0"));
+  REQUIRE(2.0 == swoc::svtod("2.0"));
+  REQUIRE(true == fcmp(0.1, swoc::svtod("0.1")));
+  REQUIRE(true == fcmp(0.1, swoc::svtod(".1")));
+  REQUIRE(true == fcmp(0.02, swoc::svtod("0.02")));
+  REQUIRE(true == fcmp(2.718281828, swoc::svtod("2.718281828")));
+  REQUIRE(true == fcmp(-2.718281828, swoc::svtod("-2.718281828")));
+  REQUIRE(true == fcmp(2.718281828, swoc::svtod("+2.718281828")));
+  REQUIRE(true == fcmp(0.004, swoc::svtod("4e-3")));
+  REQUIRE(true == fcmp(4e-3, swoc::svtod("4e-3")));
+  REQUIRE(true == fcmp(500000, swoc::svtod("5e5")));
+  REQUIRE(true == fcmp(5e5, swoc::svtod("5e+5")));
+  REQUIRE(true == fcmp(678900, swoc::svtod("6.789E5")));
+  REQUIRE(true == fcmp(6.789e5, swoc::svtod("6.789E+5")));
 }
 
 TEST_CASE("TransformView", "[libswoc][TransformView]")
