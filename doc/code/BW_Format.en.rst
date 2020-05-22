@@ -347,7 +347,7 @@ width <bwf::Spec::_min>` in order to disable any framework alignment operation.
 It is important to note a formatter can call another formatter. For example, the formatter for
 :code:`std::string` looks like
 
-.. literalinclude:: ../../swoc++/include/swoc/bwf_base.h
+.. literalinclude:: ../../code/include/swoc/bwf_base.h
    :lines: 811-833
 
 The code first copies the format specification and forces a leading radix. Next it does special
