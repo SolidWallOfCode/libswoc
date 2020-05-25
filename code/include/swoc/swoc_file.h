@@ -203,6 +203,14 @@ path::operator/=(const self_type& that) {
   return *this /= std::string_view(that._path);
 }
 
+inline bool operator==(path const& lhs, path const& rhs) {
+  return lhs.view() == rhs.view();
+}
+
+inline bool operator!=(path const& lhs, path const& rhs) {
+  return lhs.view() != rhs.view();
+}
+
 /** Combine two strings as file paths.
 
      @return A @c path with the combined path.
@@ -236,3 +244,12 @@ struct Spec;
 
 BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, file::path const& p);
 }} // namespace swoc
+
+namespace std {
+/// Enable use of path as a key in STL hashed containers.
+template<> struct hash<swoc::file::path> {
+  size_t operator() (swoc::file::path const& path) const {
+    return hash<string_view>()(path.view());
+  }
+};
+} // namespace std

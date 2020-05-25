@@ -43,6 +43,12 @@ TEST_CASE("swoc_file", "[libts][swoc_file]")
   REQUIRE(p3.parent_path().string() == "/home/dave/git");
   REQUIRE(p3.parent_path().parent_path().string() == "/home/dave");
   REQUIRE(p1.parent_path().string() == "/");
+
+  REQUIRE(p1 == p1);
+  REQUIRE(p1 != p2);
+
+  // Verify path can be used as a hashed key for STL containers.
+  [[maybe_unused]] std::unordered_map<path, std::string> container;
 }
 
 TEST_CASE("swoc_file_io", "[libts][swoc_file_io]")
