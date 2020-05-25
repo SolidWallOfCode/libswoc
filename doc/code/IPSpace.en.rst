@@ -83,6 +83,8 @@ properly formatted, otherwise the range will be default constructed to an invali
 also the :libswoc:`swoc::IPRange::load` method which returns a :code:`bool` to indicate if the
 parsing was successful.
 
+.. _ip-space:
+
 IPSpace
 =======
 

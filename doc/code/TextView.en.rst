@@ -240,9 +240,12 @@ similar suffixes with the same meaning as the affix methods. This can be done fo
 character, one of a set of characters, or a predicate. The most common use is with the predicate
 :code:`isspace` which removes leading and/or trailing whitespace as needed.
 
-Numeric conversions are provided, in signed (:libswoc:`svtoi`) and unsigned (:libswoc:`svtou`) flavors.
-These functions are designed to be "complete" in the sense that any other string to integer conversion
-can be mapped to one of these functions.
+Numeric conversions are provided, in signed (:libswoc:`svtoi`), unsigned (:libswoc:`svtou`), and
+floating point (:libswoc:`svtod`) flavors. The integer functions are designed to be "complete" in
+the sense that any other string to integer conversion can be mapped to one of these functions. The
+floating point conversion is sufficiently accurate - it will return a floating point value that is
+within one epsilon of the exact value, but not always the closest. This is fine for general use such
+as in configurations, but possibly not quite enough for high precision work.
 
 The standard functions :code:`strcmp`, :code:`strcasecmp`, and :code:`memcmp` are overloaded when
 at least of the parameters is a |TV|. The length is taken from the view, rather than being an explicit

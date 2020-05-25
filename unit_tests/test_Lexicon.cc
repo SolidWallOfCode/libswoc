@@ -26,7 +26,7 @@ namespace
 };
 }
 
-TEST_CASE("Lexicon Example", "[libts][Lexicon]")
+TEST_CASE("Lexicon", "[libts][Lexicon]")
 {
   ExampleNames exnames{{Example::Value_0, {"zero", "0"}},
                        {Example::Value_1, {"one", "1"}},
