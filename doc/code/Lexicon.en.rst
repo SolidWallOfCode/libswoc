@@ -106,6 +106,12 @@ The file loading and parsing is then:
    :start-after: doc.load.begin
    :end-before: doc.load.end
 
+with the simulated file contents
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.file.begin
+   :end-before: doc.file.end
+
 This uses the Lexicon to convert the strings in the file to the enumeration values, which are the
 bitset indices. The defalt is set to ``INVALID`` so that any string that doesn't match a string
 in the Lexicon is mapped to ``INVALID``.
@@ -120,6 +126,54 @@ At this point ``flags`` has the set of flags stored for that address from the or
 can be accessed like ::
 
    if (flags[NetType::PROD]) { ... }
+
+Constructing
+============
+
+To make the class more flexible it can be constructed in a variety of ways. For static the entire
+class can be initialized in the constructor. For dynamic use any subset can be initialized. In
+the previous example, the instance was initialized with all of the defined values and a default
+for missing names. Because this fully constructs it, it can be marked ``const`` to prevent
+accidental changes. It could also have been constructed with a default name:
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.ctor.1.begin
+   :end-before: doc.ctor.1.end
+
+Note the default name was put before the default value. Because they are distinct types, the
+defaults can be added in either order, but must always follow the field defintions. The defaults can
+also be omitted entirely, which is common if the Lexicon is used for output and not parsing, where
+the enumeration is always valid because all enumeration values are in the Lexicon.
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.ctor.2.begin
+   :end-before: doc.ctor.2.end
+
+For dynamic use, it is common to have just the defaults, and not any of the fields, although of course
+if some "built in" names and values are needed those can be added as in the previous examples.
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.ctor.3.begin
+   :end-before: doc.ctor.3.end
+
+As before both, either, or none of the defaults are required.
+
+Finally, here is a example of using Lexicon to translate a boolean value, allowing for various alternative
+forms for the true and false names.
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.ctor.4.begin
+   :end-before: doc.ctor.4.end
+
+The set of value names is easily changed. The ``BoolTag`` type is used to be able to indicate when a
+name doesn't match anything in the Lexicon. Each field is a value and then a list of names, instead
+of just the pair of a value and name as in the previous examples. If a ``BoolTag`` was passed in to
+the Lexicon, it would return "true", "false", or throw an exception for ``BoolTag::INVALID`` because
+that value is missing and there is no default name. The strings returned are returned because they
+are the first elements in the list of names. This is fine for any debugging or diagnostic messages
+because only the ``true`` and ``false`` values would be stored, ``INVALID`` indicates a parsing
+error. The enumeration values were chosen so casting from ``bool`` to ``BoolTag`` yields the
+appropriate string.
 
 Design Notes
 ************
