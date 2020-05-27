@@ -38,6 +38,8 @@ using W = swoc::LocalBufferWriter<512>;
 /// IPSpace for mapping address. Treating it as a set so use a no-data payload.
 using Space = swoc::IPSpace<std::monostate>;
 
+void post_processing_performance_test(Space & space);
+
 /// Process the @a content of a file in to @a space.
 unsigned process(Space& space, TextView content) {
   int line_no = 0; /// Track for error reporting.
@@ -99,5 +101,50 @@ int main(int argc, char *argv[]) {
     , n_ranges, space.count(), n_nets
     , std::chrono::duration_cast<std::chrono::milliseconds>(delta).count());
 
+  post_processing_performance_test(space);
   return 0;
+}
+
+void post_processing_performance_test(Space & space) {
+  using swoc::IP4Addr;
+  using swoc::IP6Addr;
+
+  std::vector<IP4Addr> a4;
+  std::vector<IP6Addr> a6;
+  for ( auto && [ r, p] : space) {
+    if (r.is_ip4()) {
+      IP4Addr a = r.min().ip4();
+      a4.push_back(a);
+      a4.push_back(--IP4Addr(a));
+      a4.push_back(++IP4Addr(a));
+      a = r.max().ip4();
+      a4.push_back(a);
+      a4.push_back(--IP4Addr(a));
+      a4.push_back(++IP4Addr(a));
+    } else if (r.is_ip6()) {
+      IP6Addr a = r.min().ip6();
+      a6.push_back(a);
+      a6.push_back(--IP6Addr(a));
+      a6.push_back(++IP6Addr(a));
+      a = r.max().ip6();
+      a6.push_back(a);
+      a6.push_back(--IP6Addr(a));
+      a6.push_back(++IP6Addr(a));
+    }
+  }
+  auto t0 = std::chrono::system_clock::now();
+  for ( auto const& addr : a4) {
+    [[maybe_unused]] auto spot = space.find(addr);
+  }
+  auto delta = std::chrono::system_clock::now() - t0;
+  std::cout << W().print("IPv4 time - {} addresses, {} ns total, {} ns per lookup\n",
+    a4.size(), delta.count(), delta.count() / a4.size());
+
+  t0 = std::chrono::system_clock::now();
+  for ( auto const& addr : a6) {
+    [[maybe_unused]] auto spot = space.find(addr);
+  }
+  delta = std::chrono::system_clock::now() - t0;
+  std::cout << W().print("IPv6 time - {} addresses, {} ns total, {} ns per lookup\n",
+      a6.size(), delta.count(), delta.count() / a6.size());
 }

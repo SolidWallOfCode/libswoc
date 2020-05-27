@@ -338,7 +338,7 @@ void post_processing_performance_test(Space & old_space) {
   }
   vz_delta = std::chrono::system_clock::now() - t0;
   std::cout << W().print("IPv6 time - {} addresses, {} ns total, {} ns per lookup\n",
-      a4.size(), vz_delta.count(), vz_delta.count() / a4.size());
+      a6.size(), vz_delta.count(), vz_delta.count() / a6.size());
 
   t0 = std::chrono::system_clock::now();
   for ( auto const& addr : a4) {
@@ -354,7 +354,7 @@ void post_processing_performance_test(Space & old_space) {
   }
   vz_delta = std::chrono::system_clock::now() - t0;
   std::cout << W().print("IPv6 time (pre-cleaning) - {} addresses, {} ns total, {} ns per lookup\n",
-      a4.size(), vz_delta.count(), vz_delta.count() / a4.size());
+      a6.size(), vz_delta.count(), vz_delta.count() / a6.size());
 }
 
 int main(int argc, char *argv[]) {
