@@ -499,7 +499,7 @@ public:
 protected:
   size_t size() const override { return SIZE; }
   bool parse(TextView token, MemSpan<std::byte> span) override;
-  bool needs_localized_token() const { return true; }
+  bool needs_localized_token() const override { return true; }
 };
 
 // ---

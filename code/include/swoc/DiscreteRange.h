@@ -1307,12 +1307,12 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
         if (same_color_p && n->max() >= remaining.max()) {
           return *this; // incoming range is completely covered by @a n in the same color, done.
         }
-        remaining.assign_min(++metric_type(n->max())); // going to fill up n->max(), clip target.
         if (!same_color_p) {
           n->assign_max(--metric_type(remaining.min())); // clip @a n down.
           this->insert_after(n, fill.get()); // add intersection node in different color.
           n = fill.release(); // skip to use new node as current node.
         }
+        remaining.assign_min(++metric_type(n->max())); // going to fill up n->max(), clip target.
       } else { // clear, don't fill.
         auto n_r = n->range(); // cache to avoid ordering requirements.
         if (n_r.max() > remaining.max()) { // overhang on the right, must split.
