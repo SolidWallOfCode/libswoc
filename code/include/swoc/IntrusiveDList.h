@@ -78,7 +78,7 @@ public:
   // qualifiers. @c nullptr is used instead of the pointer type because this is done precisely
   // to find that type.
   using value_type = typename std::remove_pointer<
-      typename std::remove_reference<typename std::invoke_result<decltype(L::next_ptr), nullptr_t>::type>::type>::type;
+      typename std::remove_reference<typename std::invoke_result<decltype(L::next_ptr), std::nullptr_t>::type>::type>::type;
 
   /// Const iterator.
   class const_iterator {

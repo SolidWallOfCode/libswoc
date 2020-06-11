@@ -6,9 +6,16 @@ DependsOn([ Component("libswoc") ])
 src_files = env.get("src_files")
 
 env.AppendUnique(
-    CCFLAGS=['-std=c++17' ],
+    CCFLAGS=['-std=c++17', '-fPIC'],
     CPPPATH=['include'],
 )
+
+if env['CC'] == 'icc':
+    env.AppendUnique(
+        CCFLAGS=[
+            '-diag-warning=308',
+        ]
+    )
 
 # build the library
 out = env.StaticLibrary("${PART_ROOT_NAME}.static.${PART_VERSION}.a", src_files, LIBPREFIX="")
