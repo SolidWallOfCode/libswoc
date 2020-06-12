@@ -114,7 +114,7 @@ public:
     self_type *_prev{nullptr};
     /// @}}
     /// Intrusive list link descriptor.
-    using Linkage = swoc::IntrusiveLinkage<self_type>;
+    using Linkage = IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
 
     friend class Errata;
   };
