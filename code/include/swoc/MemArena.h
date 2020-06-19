@@ -72,17 +72,36 @@ public:
     /// @return @c true if the block has at least @c MIN_FREE_SPACE bytes free.
     bool is_full() const;
 
-    /** Override standard delete.
-     *
-     * This is required because the allocated memory size is larger than the class size which requires
-     * calling @c free differently.
-     *
-     * @param ptr Memory to be de-allocated.
-     */
-    static void operator delete(void *ptr);
 
   protected:
     friend MemArena;
+
+    /** Override @c operator @c delete.
+     *
+     * This is required because the allocated memory size is larger than the class size which
+     * requires calling @c free directly, skipping the destructor and avoiding complaints about size
+     * mismatches.
+     *
+     * @param ptr Memory to be de-allocated.
+     */
+    static void operator delete(void * ptr) noexcept;
+
+    /** Override placement (non-allocated) @c delete.
+     *
+     * @param ptr Pointer returned from @c new
+     * @param place Value passed to @c new.
+     *
+     * This is called only when the class constructor throws an exception during placement new.
+     *
+     * @note I think the parameters are described correctly, the documentation I can find is a bit
+     * vague on the source of these values. It is required even if the constructor is marked @c
+     * noexcept. Both are kept in order to be documented.
+     *
+     * @internal This is required by ICC, but not GCC. Annoying, but it appears this is a valid
+     * interpretation of the spec. In practice this is never called because the constructor does
+     * not throw.
+     */
+    static void operator delete([[maybe_unused]] void * ptr, void * place) noexcept;
 
     /** Construct to have @a n bytes of available storage.
      *
@@ -90,7 +109,7 @@ public:
      * memory already allocated immediately after this instance.
      * @param n The amount of storage.
      */
-    explicit Block(size_t n);
+    explicit Block(size_t n) noexcept;
 
     size_t size;         ///< Actual block size.
     size_t allocated{0}; ///< Current allocated (in use) bytes.
@@ -389,7 +408,7 @@ inline auto MemArena::Block::Linkage::prev_ptr(Block *b) -> Block *& {
   return b->_link._prev;
 }
 
-inline MemArena::Block::Block(size_t n) : size(n) {}
+inline MemArena::Block::Block(size_t n) noexcept : size(n) {}
 
 inline char *MemArena::Block::data() {
   return reinterpret_cast<char *>(this + 1);
@@ -440,6 +459,9 @@ inline MemArena::Block& MemArena::Block::discard() {
   allocated = 0;
   return *this;
 }
+
+inline void MemArena::Block::operator delete(void *ptr) noexcept { ::free(ptr); }
+inline void MemArena::Block::operator delete([[maybe_unused]] void * ptr, void * place) noexcept { ::free(place); }
 
 inline size_t MemArena::size() const {
   return _active_allocated;
