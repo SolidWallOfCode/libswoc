@@ -169,14 +169,28 @@ public:
    */
   MemSpan<void> alloc(size_t n);
 
-  /** Allocate and initialize a block of memory.
+  /** ALlocate a span of memory sufficient for @a n instance of @a T.
+   *
+   * @tparam T Element type.
+   * @param n Number of instances.
+   * @return A span large enough to hold @a n instances of @a T.
+   *
+   * The instances are @b not initialized / constructed. This only allocates the memory.
+   * This is handy for types that don't need initialization, such as built in types like @c int.
+   * @code
+   *   auto vec = arena.alloc_span<int>(20); // allocate space for 20 ints
+   * @endcode
+   */
+  template <typename T> MemSpan<T> alloc_span(size_t n);
+
+  /** Allocate and initialize a block of memory as an instance of @a T
 
       The template type specifies the type to create and any arguments are forwarded to the
       constructor. Example:
 
       @code
       struct Thing { ... };
-      Thing* thing = arena.make<Thing>(...constructor args...);
+      auto thing = arena.make<Thing>(...constructor args...);
       @endcode
 
       Do @b not call @c delete an object created this way - that will attempt to free the memory and
@@ -405,6 +419,11 @@ inline MemSpan<void> MemArena::Block::alloc(size_t n) {
   MemSpan<void> zret = this->remnant().prefix(n);
   allocated += n;
   return zret;
+}
+
+template<typename T>
+MemSpan<T> MemArena::alloc_span(size_t n) {
+  return this->alloc(sizeof(T) * n).rebind<T>();
 }
 
 template<typename T, typename... Args> T *MemArena::make(Args&& ... args) {
