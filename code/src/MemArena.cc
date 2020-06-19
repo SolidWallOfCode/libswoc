@@ -10,11 +10,6 @@
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
-void
-MemArena::Block::operator delete(void *ptr) {
-  ::free(ptr);
-}
-
 // Need to break these out because the default implementation doesn't clear the
 // integral values in @a that.
 
