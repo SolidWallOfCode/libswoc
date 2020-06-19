@@ -114,7 +114,10 @@ public:
     self_type *_prev{nullptr};
     /// @}}
     /// Intrusive list link descriptor.
-    using Linkage = IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
+    /// @note Must explicitly use defaults because ICC and clang consider them inaccessible
+    /// otherwise. I consider it a bug in the compiler that a default identical to an explicit
+    /// value has different behavior.
+    using Linkage = swoc::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
 
     friend class Errata;
   };
