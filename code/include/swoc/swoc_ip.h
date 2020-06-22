@@ -2069,7 +2069,7 @@ IPEndpoint::port(sockaddr *sa) {
     case AF_INET6:return reinterpret_cast<sockaddr_in6 *>(sa)->sin6_port;
   }
   // Force a failure upstream by returning a null reference.
-  return *static_cast<in_port_t *>(nullptr);
+  throw std::domain_error("sockaddr is not a valid IP address");
 }
 
 inline in_port_t
