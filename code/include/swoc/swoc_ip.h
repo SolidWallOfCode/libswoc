@@ -2211,9 +2211,11 @@ inline auto IP6Addr::operator=(in6_addr const& addr) -> self_type& {
 
 inline auto IP6Addr::operator=(sockaddr_in6 const *addr) -> self_type& {
   if (addr) {
-    return *this = addr->sin6_addr;
+    *this = addr->sin6_addr;
+  } else {
+    this->clear();
   }
-  this->clear();
+  return *this;
 }
 
 inline IP6Addr&
