@@ -810,7 +810,7 @@ void IP4Range::NetSource::search_wider() {
 void IP4Range::NetSource::search_narrower() {
   while (!this->is_valid(_mask)) {
     _mask._addr >>= 1;
-    _mask._addr |= 1 << (IP4Addr::WIDTH - 1); // put top bit back.
+    _mask._addr |= 1U << (IP4Addr::WIDTH - 1); // put top bit back.
     ++_cidr;
   }
 }
