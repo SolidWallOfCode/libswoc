@@ -912,6 +912,12 @@ template<typename METRIC, typename PAYLOAD>
 auto DiscreteSpace<METRIC, PAYLOAD>::lower_bound(METRIC const& target) -> Node * {
   Node *n = _root;   // current node to test.
   Node *zret = nullptr; // best node so far.
+
+  // Fast check for sequential insertion
+  if (auto ln = _list.tail() ; ln != nullptr && ln->max() < target) {
+    return ln;
+  }
+
   while (n) {
     if (target < n->min()) {
       n = left(n);
