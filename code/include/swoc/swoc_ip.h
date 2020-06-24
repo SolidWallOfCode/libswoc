@@ -38,6 +38,7 @@ class IP6Net;
 class IPNet;
 
 using ::std::string_view;
+extern void * const fake_nullptr_for_intel_compiler ;
 
 /** A union to hold @c sockaddr compliant IP address structures.
 
@@ -1556,11 +1557,11 @@ public:
     typename IP4Space::iterator _iter_4; ///< IPv4 sub-space iterator.
     typename IP6Space::iterator _iter_6; ///< IPv6 sub-space iterator.
     /// Current value.
-    value_type _value{IPRange{}, *null_payload};
+    value_type _value{IPRange{}, *static_cast<PAYLOAD*>(fake_nullptr_for_intel_compiler)};
 
     /// Dummy payload.
     /// @internal Used to initialize @c value_type for invalid iterators.
-    static constexpr PAYLOAD *null_payload = nullptr;
+//    static constexpr PAYLOAD * const null_payload = nullptr;
 
     /** Internal constructor.
      *
@@ -1731,7 +1732,7 @@ auto IPSpace<PAYLOAD>::const_iterator::operator++() -> self_type& {
       return *this;
     }
   }
-  new(&_value) value_type{IPRange{}, *null_payload};
+  new(&_value) value_type{IPRange{}, *static_cast<PAYLOAD*>(fake_nullptr_for_intel_compiler)};
   return *this;
 }
 
@@ -1754,7 +1755,7 @@ auto IPSpace<PAYLOAD>::const_iterator::operator--() -> self_type& {
     new(&_value) value_type{_iter_4->range(), _iter_4->payload()};
     return *this;
   }
-  new(&_value) value_type{IPRange{}, *null_payload};
+  new(&_value) value_type{IPRange{}, *static_cast<PAYLOAD*>(fake_nullptr_for_intel_compiler)};
   return *this;
 }
 
