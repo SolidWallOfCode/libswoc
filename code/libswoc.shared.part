@@ -10,6 +10,13 @@ env.AppendUnique(
     CPPPATH=['include'],
 )
 
+if env['CC'] == 'icc':
+    env.AppendUnique(
+        CCFLAGS=[
+            '-diag-warning=308',
+        ]
+    )
+
 # build the library
 out = env.SharedLibrary("${PART_ROOT_NAME}.${PART_VERSION}.so", src_files, SHLIBPREFIX="")
 env.InstallLib(out)
