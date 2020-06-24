@@ -44,6 +44,10 @@ IP6Addr const IP6Addr::MIN{0, 0};
 IP6Addr const IP6Addr::MAX{std::numeric_limits<uint64_t>::max()
                            , std::numeric_limits<uint64_t>::max()};
 
+// The Intel compiler won't let me directly use @c nullptr to construct a reference, so I need
+// to fake it out by using this psuedo-nullptr.
+void * const pseudo_nullptr = 0;
+
 bool
 IPEndpoint::assign(sockaddr *dst, sockaddr const *src) {
   size_t n = 0;
