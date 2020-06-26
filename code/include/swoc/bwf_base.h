@@ -711,7 +711,7 @@ arg_capture(F&& f, BufferWriter& w, Spec const& spec, std::any&& value, swoc::me
  */
 template<typename EXTRACTOR, typename VIEW, typename SPEC>
 auto
-extractor_spec_type(bool (EXTRACTOR::*m)(VIEW, SPEC)) -> SPEC {
+extractor_spec_type(bool (EXTRACTOR::*)(VIEW, SPEC)) -> SPEC {
 }
 
 /** A pack of arguments for formatting.
@@ -1134,7 +1134,7 @@ template<intmax_t N, typename C, typename T> class Scalar;
 namespace detail {
 template<typename T>
 auto
-tag_label(BufferWriter& w, const bwf::Spec&, meta::CaseTag<0>) -> void {
+tag_label(BufferWriter&, const bwf::Spec&, meta::CaseTag<0>) -> void {
 }
 
 template<typename T>
