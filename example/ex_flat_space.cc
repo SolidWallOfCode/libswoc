@@ -80,8 +80,8 @@ protected:
 
 // Standard binary search on a sorted array.
 template < typename METRIC, typename PAYLOAD > auto IPArray<METRIC, PAYLOAD>::find(METRIC const& addr) -> Node* {
-  size_t lidx = 0;
-  size_t ridx = _nodes.count() - 1;
+  ssize_t lidx = 0;
+  ssize_t ridx = _nodes.count() - 1;
 
   while (lidx <= ridx) {
     auto idx = (lidx + ridx) / 2;
@@ -217,6 +217,19 @@ int main(int argc, char const *argv[]) {
   A6 a_6 { mem6.rebind<A6::Node>() };
 
   std::cout << swoc::bwprint(err_text, "Mapped files in {} us\n", std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - t0).count());
+
+  #if 0
+  // performance testing.
+  t0 = std::chrono::system_clock::now();
+  auto step = ~0U / 10000000;
+  IP4Addr addr {in_addr_t(1)};
+  for ( unsigned idx = 0 ; idx < 10000000 ; ++idx ) {
+    [[maybe_unused]] auto n = a_4.find(addr);
+    addr = addr.host_order() + step;
+  }
+  auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - t0);
+  std::cout << swoc::bwprint(err_text, "Searched files in {} ns - {} ns / lookup\n", delta.count(), delta.count() / 10000000);
+  #endif
 
   // Now the in memory flat files can be searched.
   while (! args.empty()) {
