@@ -1484,6 +1484,9 @@ public:
   /// @return The number of distinct ranges.
   size_t count() const { return _ip4.count() + _ip6.count(); }
 
+  size_t count_ip4() const { return _ip4.count(); }
+  size_t count_ip6() const { return _ip6.count(); }
+
   /// Remove all ranges.
   void clear();
 
@@ -1684,6 +1687,12 @@ public:
   iterator begin() { return iterator{_ip4.begin(), _ip6.begin()}; }
 
   iterator end() { return iterator{_ip4.end(), _ip6.end()}; }
+
+  const_iterator begin_ip4() const;
+  const_iterator end_ip4() const;
+
+  const_iterator begin_ip6() const;
+  const_iterator end_ip6() const;
 
 protected:
   IP4Space _ip4; ///< Sub-space containing IPv4 ranges.
@@ -2738,6 +2747,28 @@ template<typename PAYLOAD>
 auto IPSpace<PAYLOAD>::end() const -> const_iterator {
   auto nc_this = const_cast<self_type *>(this);
   return const_iterator(nc_this->_ip4.end(), nc_this->_ip6.end());
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin_ip4() const -> const_iterator {
+  return this->begin();
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end_ip4() const -> const_iterator {
+  auto nc_this = const_cast<self_type *>(this);
+  return iterator(nc_this->_ip4.end(), nc_this->_ip6.begin());
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin_ip6() const -> const_iterator {
+  auto nc_this = const_cast<self_type *>(this);
+  return iterator(nc_this->_ip4.end(), nc_this->_ip6.begin());
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end_ip6() const -> const_iterator {
+  return this->end();
 }
 
 }} // namespace swoc

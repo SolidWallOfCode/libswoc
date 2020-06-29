@@ -903,21 +903,27 @@ get(swoc::Rv<R>&& rv) {
 template<size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type&
 get(swoc::Rv<R>& rv) {
+  static_assert(0 <= IDX && IDX <= 1, "Errata tuple index out of range (0..1)");
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
     return rv.errata();
   }
+  // Shouldn't need this due to the @c static_assert but the Intel compiler requires it.
+  throw std::domain_error("Errata index value out of bounds");
 }
 
 template<size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type const&
 get(swoc::Rv<R> const& rv) {
+  static_assert(0 <= IDX && IDX <= 1, "Errata tuple index out of range (0..1)");
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
     return rv.errata();
   }
+  // Shouldn't need this due to the @c static_assert but the Intel compiler requires it.
+  throw std::domain_error("Errata index value out of bounds");
 }
 
 }} // namespace swoc
