@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2014 Network Geographics
+// Copyright 2020 Verizon Media
 
 /** @file
 
@@ -29,12 +29,14 @@
 #include "swoc/bwf_ex.h"
 #include "swoc/bwf_std.h"
 #include "swoc/swoc_file.h"
+#include "swoc/Errata.h"
 
 using namespace std::literals;
 using namespace swoc::literals;
 
 using swoc::TextView;
 using swoc::MemSpan;
+using swoc::Errata;
 
 using swoc::IPRange;
 using swoc::IPAddr;
@@ -44,6 +46,110 @@ using swoc::IPSpace;
 
 // Temp for error messages.
 std::string err_text;
+
+/** Allocate a span of type @a T.
+ *
+ * @tparam T Element type.
+ * @param n Number of elements.
+ * @return A @c MemSpan<T> with @a n elements.
+ */
+template < typename T > MemSpan<T> span_alloc(size_t n) {
+  size_t bytes = sizeof(T) * n;
+  return { static_cast<T*>(malloc(bytes)), n };
+}
+
+// Array type for flat files.
+// Each flat file is an instance of this, which is a wrapper over an array of its nodes.
+template < typename METRIC, typename PAYLOAD > class IPArray {
+public:
+  struct Node {
+    METRIC _min;
+    METRIC _max;
+    PAYLOAD _payload;
+  };
+
+  /** Load from array already in memory.
+   *
+   * @param span Memory containing the array.
+   *
+   * The presumption is @a span has been brough in to memory from a file via @c mmap.
+   */
+  IPArray(MemSpan<Node> span) : _nodes(span) {}
+
+  /** Load from a @a space.
+   *
+   * @param space Populated IPSpace.
+   *
+   * This will allocate memory to hold an array that mirrors the data in @a space.
+   */
+  IPArray(IPSpace<PAYLOAD> const& space);
+
+  /** Find @a addr.
+   *
+   * @param addr Search value.
+   * @return The node that contains @a addr, or @c nullptr if not found.
+   */
+  Node* find(METRIC const& addr);
+
+  Errata store(swoc::file::path const& path);
+
+  size_t size() const { return _nodes.size(); }
+  void* data() const { return _nodes.data(); }
+
+protected:
+  /// Array memory.
+  MemSpan<Node> _nodes;
+};
+
+// Standard binary search on a sorted array.
+template < typename METRIC, typename PAYLOAD > auto IPArray<METRIC, PAYLOAD>::find(METRIC const& addr) -> Node* {
+  ssize_t lidx = 0;
+  ssize_t ridx = _nodes.count() - 1;
+
+  while (lidx <= ridx) { // still some array left to search.
+    auto idx = (lidx + ridx) / 2; // Look at the middle element.
+    auto n = _nodes.data() + idx;
+    if (addr < n->_min) { // target is to the left
+      ridx = idx - 1;
+    } else if (addr > n->_max) { // target is to the right
+      lidx = idx + 1;
+    } else { // target is right here, done.
+      return n;
+    }
+  }
+  return nullptr; // dropped out of the loop -> not found.
+}
+
+template < typename METRIC, typename PAYLOAD > IPArray<METRIC, PAYLOAD>::IPArray(IPSpace<PAYLOAD> const& space) {
+  auto n = space.count(METRIC::AF_value);
+  _nodes = { span_alloc<Node>(n) }; // In memory array.
+  auto node = _nodes.data();
+  // Update the array with all IPv4 ranges.
+  for ( auto spot = space.begin(METRIC::AF_value), limit = space.end(METRIC::AF_value) ; spot != limit ; ++spot, ++node ) {
+    auto && [ range, payload ] { *spot };
+    node->_min = static_cast<METRIC>(range.min());
+    node->_max = static_cast<METRIC>(range.max());
+    node->_payload = payload;
+  }
+
+}
+
+template < typename METRIC, typename PAYLOAD > Errata IPArray<METRIC, PAYLOAD>::store(swoc::file::path const& path) {
+  auto fd = ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
+  if (fd >= 0) {
+    auto written = ::write(fd, _nodes.data(), _nodes.size());
+    if (written != _nodes.size()) {
+      return Errata().error("Failed to write IP4 output - {} of {} bytes written to '{}' [{}]\n", written, _nodes.size(), path, swoc::bwf::Errno{});
+    }
+    close(fd);
+  } else {
+    return Errata().error("Failed to open IP4 output '{}' [{}]\n", path, swoc::bwf::Errno{});
+  }
+  return {};
+}
+
+using A4 = IPArray<IP4Addr, unsigned>;
+using A6 = IPArray<IP6Addr, unsigned>;
 
 // Load the CSV file @a src into @a space.
 void build(IPSpace<unsigned> & space, swoc::file::path src) {
@@ -58,100 +164,6 @@ void build(IPSpace<unsigned> & space, swoc::file::path src) {
     auto addr_token = line.take_prefix_at(',');
     IPRange range{addr_token};
     space.mark(range, swoc::svtou(line));
-  }
-}
-
-// Array type for flat files.
-// Each flat file is an instance of this, which is a wrapper over an array of its nodes.
-template < typename METRIC, typename PAYLOAD > class IPArray {
-public:
-  struct Node {
-    METRIC _min;
-    METRIC _max;
-    PAYLOAD _payload;
-  };
-
-  IPArray(MemSpan<Node> span) : _nodes(span) {}
-  Node* find(METRIC const& addr);
-
-protected:
-  MemSpan<Node> _nodes;
-};
-
-// Standard binary search on a sorted array.
-template < typename METRIC, typename PAYLOAD > auto IPArray<METRIC, PAYLOAD>::find(METRIC const& addr) -> Node* {
-  ssize_t lidx = 0;
-  ssize_t ridx = _nodes.count() - 1;
-
-  while (lidx <= ridx) {
-    auto idx = (lidx + ridx) / 2;
-    auto n = _nodes.data() + idx;
-    if (addr < n->_min) {
-      ridx = idx - 1;
-    } else if (addr > n->_max) {
-      lidx = idx + 1;
-    } else {
-      return n;
-    }
-  }
-  return nullptr;
-}
-
-// Helper to get a MemSpan based on a type and a count of instances.
-template < typename T > MemSpan<T> span_alloc(size_t n) {
-  size_t bytes = sizeof(T) * n;
-  return { static_cast<T*>(malloc(bytes)), n };
-}
-
-using A4 = IPArray<IP4Addr, unsigned>;
-using A6 = IPArray<IP6Addr, unsigned>;
-
-// Write out the flat file for IPv4 addresses in @a space.
-void write_flat_ip4(swoc::file::path const& path, IPSpace<unsigned> const& space) {
-  auto n = space.count_ip4();
-  MemSpan<A4::Node> span{ span_alloc<A4::Node>(n) }; // In memory array.
-  auto node = span.data();
-  // Update the array with all IPv4 ranges.
-  for ( auto spot = space.begin_ip4(), limit = space.end_ip4() ; spot != limit ; ++spot, ++node ) {
-    auto && [ range, payload ] { *spot };
-    node->_min = range.min().ip4();
-    node->_max = range.max().ip4();
-    node->_payload = payload;
-  }
-
-  // write it out.
-  auto fd = ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
-  if (fd >= 0) {
-    auto written = ::write(fd, span.data(), span.size());
-    if (written != span.size()) {
-      std::cerr << swoc::bwprint(err_text, "Failed to write IP4 output - {} of {} bytes written to '{}' [{}]\n", written, span.size(), path, swoc::bwf::Errno{});
-    }
-    close(fd);
-  } else {
-    std::cerr << swoc::bwprint(err_text, "Failed to open IP4 output '{}' [{}]\n", path, swoc::bwf::Errno{});
-  }
-}
-
-void write_flat_ip6(swoc::file::path const& path, IPSpace<unsigned> const& space) {
-  auto n = space.count_ip6();
-  MemSpan<A6::Node> span{ span_alloc<A6::Node>(n) };
-  auto node = span.data();
-  for ( auto spot = space.begin_ip6(), limit = space.end_ip6() ; spot != limit ; ++spot, ++node ) {
-    auto && [ range, payload ] { *spot };
-    node->_min = range.min().ip6();
-    node->_max = range.max().ip6();
-    node->_payload = payload;
-  }
-
-  auto fd = ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
-  if (fd >= 0) {
-    auto written = ::write(fd, span.data(), span.size());
-    if (written != span.size()) {
-      std::cerr << swoc::bwprint(err_text, "Failed to write IP6 output - {} of {} bytes written to '{}' [{}]\n", written, span.size(), path, swoc::bwf::Errno{});
-    }
-    close(fd);
-  } else {
-    std::cerr << swoc::bwprint(err_text, "Failed to open IP6 output '{}' [{}]\n", path, swoc::bwf::Errno{});
   }
 }
 
@@ -174,8 +186,14 @@ int main(int argc, char const *argv[]) {
       build(space, swoc::file::path(args[0]));
       args.remove_prefix(1);
     }
-    write_flat_ip4(path_4, space);
-    write_flat_ip6(path_6, space);
+    if ( auto errata = A4(space).store(path_4) ; !errata.is_ok() ) {
+      std::cerr << errata << std::endl;
+      exit(1);
+    }
+    if (auto errata = A6(space).store(path_6) ; !errata.is_ok()) {
+      std::cerr << errata << std::endl;
+      exit(1);
+    }
   }
 
   if (args.empty()) {

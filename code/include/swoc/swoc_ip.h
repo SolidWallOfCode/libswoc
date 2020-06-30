@@ -190,6 +190,7 @@ public:
   static constexpr size_t WIDTH = BITSPERBYTE * SIZE; ///< # of bits in an address.
   static const self_type MIN; ///< Minimum value.
   static const self_type MAX; ///< Maximum value.
+  static constexpr sa_family_t AF_value = AF_INET; ///< Address family type.
 
   constexpr IP4Addr() = default; ///< Default constructor - minimum address.
 
@@ -259,7 +260,8 @@ public:
 
   /// Get the IP address family.
   /// @return @c AF_INET
-  sa_family_t family() const { return AF_INET; }
+  /// @note Useful primarily for template classes.
+  sa_family_t family() const;
 
   /// Test for multicast
   bool is_multicast() const { return IN_MULTICAST(_addr); }
@@ -336,6 +338,7 @@ class IP6Addr {
 public:
   static constexpr size_t WIDTH = 128; ///< Number of bits in the address.
   static constexpr size_t SIZE = WIDTH / BITSPERBYTE;    ///< Size of address in bytes.
+  static constexpr sa_family_t AF_value = AF_INET6; ///< Address family type.
 
   using quad_type                      = uint16_t;            ///< Size of one segment of an IPv6 address.
   static constexpr size_t N_QUADS = SIZE / sizeof(quad_type); ///< # of quads in an IPv6 address.
@@ -458,7 +461,8 @@ public:
 
   /// Get the address family.
   /// @return The address family.
-  sa_family_t family() const { return AF_INET6; }
+  /// @note Useful primarily for templates.
+  sa_family_t family() const;
 
   /// Test for multicast
   bool is_loopback() const { return IN6_IS_ADDR_LOOPBACK(_addr._raw.data()); }
@@ -530,13 +534,13 @@ public:
   explicit IPAddr(in_addr_t addr);
 
   /// Construct using an IPv4 @a addr
-  IPAddr(IP4Addr const& addr) : _addr{addr}, _family(AF_INET) {}
+  IPAddr(IP4Addr const& addr) : _addr{addr}, _family(IP4Addr::AF_value) {}
 
   /// Construct using IPv6 @a addr.
   explicit IPAddr(in6_addr const& addr);
 
   /// construct using an IPv6 @a addr
-  IPAddr(IP6Addr const& addr) : _addr{addr}, _family(AF_INET6) {}
+  IPAddr(IP6Addr const& addr) : _addr{addr}, _family(IP6Addr::AF_value) {}
 
   /// Construct from @c sockaddr.
   explicit IPAddr(sockaddr const *addr);
@@ -1487,6 +1491,8 @@ public:
   size_t count_ip4() const { return _ip4.count(); }
   size_t count_ip6() const { return _ip6.count(); }
 
+  size_t count(sa_family_t f) const;
+
   /// Remove all ranges.
   void clear();
 
@@ -1684,15 +1690,35 @@ public:
   /// @return A constent iterator past the last element.
   const_iterator end() const;
 
-  iterator begin() { return iterator{_ip4.begin(), _ip6.begin()}; }
+  iterator begin();
 
-  iterator end() { return iterator{_ip4.end(), _ip6.end()}; }
+  iterator end();
 
+  /// Iterator to the first IPv4 address.
   const_iterator begin_ip4() const;
+  /// Iterator past the last IPv4 address.
   const_iterator end_ip4() const;
 
   const_iterator begin_ip6() const;
   const_iterator end_ip6() const;
+
+  const_iterator begin(sa_family_t family) const {
+    if (AF_INET == family) {
+      return this->begin_ip4();
+    } else if (AF_INET6 == family) {
+      return this->begin_ip6();
+    }
+    return this->end();
+  }
+
+  const_iterator end(sa_family_t family) const {
+    if (AF_INET == family) {
+      return this->end_ip4();
+    } else if (AF_INET6 == family) {
+      return this->end_ip6();
+    }
+    return this->end();
+  }
 
 protected:
   IP4Space _ip4; ///< Sub-space containing IPv4 ranges.
@@ -1835,13 +1861,19 @@ auto IPSpace<PAYLOAD>::iterator::operator--() -> self_type& {
 }
 
 // --------------------------------------------------------------------------
+// -- IP4Addr --
+inline sa_family_t IP4Addr::family() const { return AF_value; }
 
+// -- IP6Addr --
+inline sa_family_t IP6Addr::family() const { return AF_value; }
+
+// -- IPAddr --
 // @c constexpr constructor is required to initialize _something_, it can't be completely uninitializing.
 inline constexpr IPAddr::raw_addr_type::raw_addr_type() : _ip4(INADDR_ANY) {}
 
-inline IPAddr::IPAddr(in_addr_t addr) : _addr(addr), _family(AF_INET) {}
+inline IPAddr::IPAddr(in_addr_t addr) : _addr(addr), _family(IP4Addr::AF_value) {}
 
-inline IPAddr::IPAddr(in6_addr const& addr) : _addr(addr), _family(AF_INET6) {}
+inline IPAddr::IPAddr(in6_addr const& addr) : _addr(addr), _family(IP6Addr::AF_value) {}
 
 inline IPAddr::IPAddr(sockaddr const *addr) {
   this->assign(addr);
@@ -2769,6 +2801,19 @@ auto IPSpace<PAYLOAD>::begin_ip6() const -> const_iterator {
 template<typename PAYLOAD>
 auto IPSpace<PAYLOAD>::end_ip6() const -> const_iterator {
   return this->end();
+}
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin() -> iterator { return iterator{_ip4.begin(), _ip6.begin()}; }
+
+template<typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end() -> iterator { return iterator{_ip4.end(), _ip6.end()}; }
+
+template<typename PAYLOAD>
+size_t IPSpace<PAYLOAD>::count(sa_family_t f) const {
+  return IP4Addr::AF_value == f ? _ip4.count()
+                                : IP6Addr::AF_value == f ? _ip6.count()
+                                                         : 0;
 }
 
 }} // namespace swoc
