@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 // Copyright Network Geographics 2014
 /** @file
    IP address and network related classes.
@@ -58,6 +59,8 @@ union IPEndpoint {
 
   /// Default construct invalid instance.
   IPEndpoint();
+
+  IPEndpoint(self_type const& that);
 
   /// Construct from the @a text representation of an address.
   IPEndpoint(string_view const& text);
@@ -2038,6 +2041,9 @@ inline IPEndpoint::IPEndpoint(IPAddr const& addr) {
 
 inline IPEndpoint::IPEndpoint(sockaddr const *sa) {
   this->assign(sa);
+}
+
+inline IPEndpoint::IPEndpoint(IPEndpoint::self_type const& that) : self_type(&that.sa) {
 }
 
 inline IPEndpoint&
