@@ -8,13 +8,13 @@
     an integer value that is the sum of each integer and the token multiplier.
 */
 
+#include <unordered_map>
+
 #include "swoc/TextView.h"
-#include "swoc/Lexicon.h"
 #include "swoc/swoc_file.h"
 #include "catch.hpp"
 
 using swoc::TextView;
-using swoc::Lexicon;
 
 /** Numeric suffix parser.
  *
@@ -34,5 +34,6 @@ class NumericSuffixParser {
 public:
   intmax_t operator()(TextView text) const;
 protected:
-  Lexicon<std::string> _tokens;
+  /// Suffix mapping, name -> multiplier.
+  std::unordered_map<std::string, uintmax_t> _suffixes;
 };
