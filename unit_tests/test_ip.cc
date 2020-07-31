@@ -14,6 +14,7 @@
 #include "swoc/bwf_ip.h"
 #include "swoc/bwf_std.h"
 #include "swoc/swoc_file.h"
+#include "swoc/Lexicon.h"
 
 using namespace std::literals;
 using namespace swoc::literals;
@@ -1472,3 +1473,59 @@ TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
   }
 }
 
+TEST_CASE("IPSpace skew overlap blend", "[libswoc][ipspace][blend][skew]") {
+  std::string buff;
+  enum class Pod {
+    INVALID, zio, zaz, zlz
+  };
+  swoc::Lexicon<Pod> PodNames {{ { Pod::zio, "zio"}, { Pod::zaz, "zaz"} , { Pod::zlz, "zlz"} }, "-1"};
+
+  struct Data {
+    int _state = 0;
+    int _country = -1;
+    int _rack = 0;
+    Pod _pod = Pod::INVALID;
+    int _code = 0;
+
+    bool operator==(Data const& that) const {
+      return _pod == that._pod && _rack == that._rack && _code == that._code &&
+             _state == that._state && _country == that._country;
+    }
+  };
+
+  using Src_1 = std::tuple<int, Pod, int>; // rack, pod, code
+  using Src_2 = std::tuple<int, int>; // state, country.
+  auto blend_1 = [](Data& data, Src_1 const& src) {
+    std::tie(data._rack, data._pod, data._code) = src;
+    return true;
+  };
+  [[maybe_unused]] auto blend_2 = [](Data& data, Src_2 const& src) {
+    std::tie(data._state, data._country) = src;
+    return true;
+  };
+  swoc::IPSpace<Data> space;
+  space.blend(IPRange("14.6.128.0-14.6.191.255"), Src_2{32, 231}, blend_2);
+  space.blend(IPRange("14.6.192.0-14.6.223.255"), Src_2{32, 231}, blend_2);
+  REQUIRE(space.count() == 1);
+  space.blend(IPRange("14.6.160.0-14.6.160.1"), Src_1{1, Pod::zaz, 1}, blend_1);
+  REQUIRE(space.count() == 3);
+  space.blend(IPRange("14.6.160.64-14.6.160.95"), Src_1{1, Pod::zio, 1}, blend_1);
+  space.blend(IPRange("14.6.160.96-14.6.160.127"),Src_1{1, Pod::zlz, 1}, blend_1);
+  space.blend(IPRange("14.6.160.128-14.6.160.255"),Src_1{1, Pod::zlz, 1}, blend_1);
+  space.blend(IPRange("14.6.0.0-14.6.127.255"), Src_2{32, 231}, blend_2);
+
+  std::array<std::tuple<IPRange, Data>, 6> results = {
+      {{IPRange("14.6.0.0-14.6.159.255"), Data{32,231,0,Pod::INVALID,0} }
+      , {IPRange("14.6.160.0-14.6.160.1"), Data{32,231,1,Pod::zaz,1}}
+      , {IPRange("14.6.160.2-14.6.160.63"), Data{32,231,0,Pod::INVALID,0}}
+      , {IPRange("14.6.160.64-14.6.160.95"), Data{32,231,1,Pod::zio,1}}
+      , {IPRange("14.6.160.96-14.6.160.255"), Data{32,231,1,Pod::zlz,1}}
+      , {IPRange("14.6.161.0-14.6.223.255"), Data{32,231,0,Pod::INVALID,0}}
+  }};
+  REQUIRE(space.count() == results.size());
+  unsigned idx = 0;
+  for ( auto const& v : space ) {
+    REQUIRE(v == results[idx]);
+    ++idx;
+  }
+}

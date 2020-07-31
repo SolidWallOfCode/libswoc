@@ -1267,8 +1267,8 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
                                       , F&& blender) -> self_type& {
   // Do a base check for the color to use on unmapped values. If self blending on @a color
   // is @c false, then do not color currently unmapped values.
-  auto plain_color = PAYLOAD{};
-  bool plain_color_p = blender(plain_color, color);
+  PAYLOAD plain_color; // color to paint uncolored metrics.
+  bool plain_color_p = blender(plain_color, color); // start with default and blend in @a color.
 
   auto node_cleaner = [&](Node *ptr) -> void { _fa.destroy(ptr); };
   // Used to hold a temporary blended node - @c release if put in space, otherwise cleaned up.
@@ -1298,8 +1298,6 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
     }
     // Invariant - n->max() >= remaining.min();
 
-    Node *pred = prev(n);
-
     // Check for left extension. If found, clip that node to be adjacent and put in a
     // temporary that covers the overlap with the original payload.
     if (n->min() < remaining.min()) {
@@ -1314,9 +1312,16 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
           return *this; // incoming range is completely covered by @a n in the same color, done.
         }
         if (!same_color_p) {
+          auto fn = fill.release();
+          auto n_max = n->max(); // save this so @a n can be clipped.
           n->assign_max(--metric_type(remaining.min())); // clip @a n down.
-          this->insert_after(n, fill.get()); // add intersection node in different color.
-          n = fill.release(); // skip to use new node as current node.
+          this->insert_after(n, fn); // add intersection node in different color.
+          if (n_max > remaining.max()) { // right extent too - split and done.
+            fn->assign_max(remaining.max()); // fill node stops at end of target range.
+            this->insert_after(fn, _fa.make(++metric_type(remaining.max()), n_max, n->payload()));
+            return *this;
+          }
+          n = fn; // skip to use new node as current node.
         }
         remaining.assign_min(++metric_type(n->max())); // going to fill up n->max(), clip target.
       } else { // clear, don't fill.
@@ -1336,7 +1341,10 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
       continue;
     }
 
-    // invariant - pred->max() < remaining.min()
+    Node *pred = prev(n);
+    // invariant
+    // - remaining.min() <= n->max()
+    // - !pred || pred->max() < remaining.min()
 
     // Calculate and cache key relationships between @a n and @a remaining.
 
@@ -1348,17 +1356,17 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
     bool right_adj_p = !right_overlap_p && remaining.is_left_adjacent_to(n->range());
     // @a n has the same color as would be used for unmapped values.
     bool n_plain_colored_p = plain_color_p && (n->payload() == plain_color);
-    // @a pred has the same color as would be used for unmapped values.
-    bool pred_plain_colored_p =
-        pred &&
-        pred->max() < remaining.min() &&
-        ++metric_type(pred->max()) == remaining.min() &&
-        pred->payload() == plain_color;
 
     // Check for no right overlap - that means @a n is past the target range.
     // It may be possible to extend @a n or the previous range to cover
     // the target range. Regardless, all of @a range can be filled at this point.
     if (!right_overlap_p) {
+      // @a pred has the same color as would be used for unmapped values
+      // and is adjacent to @a remaining.
+      bool pred_plain_colored_p = pred &&
+          ++metric_type(pred->max()) == remaining.min() &&
+          pred->payload() == plain_color;
+
       if (right_adj_p && n_plain_colored_p) { // can pull @a n left to cover
         n->assign_min(remaining.min());
         if (pred_plain_colored_p) { // if that touches @a pred with same color, collapse.
@@ -1376,8 +1384,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
 
     // Invariant: @n has right overlap with @a remaining
 
-    // If there's a gap on the left, fill from @a min to @a n.min - 1
-    // Also see above - @a pred is set iff it is left overlapping or left adjacent.
+    // If there's a gap on the left, fill from @a r.min to @a n.min - 1
     if (plain_color_p && remaining.min() < n->min()) {
       if (n->payload() == plain_color) {
         if (pred && pred->payload() == n->payload()) {
@@ -1409,18 +1416,26 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
 
     // Clean up the range for @a n
     if (fill_p) {
+      // Check if @a pred is suitable for extending right to cover the target range.
+      bool pred_adj_p = nullptr != (pred = prev(n)) &&
+          pred->range().is_left_adjacent_to(fill->range()) &&
+          pred->payload() == fill->payload();
+
       if (right_ext_p) {
         if (n->payload() == fill->payload()) {
           n->assign_min(fill->min());
         } else {
           n->assign_min(range_max_plus_1);
-          this->insert_before(n, fill.release());
+          if (pred_adj_p) {
+            pred->assign_max(fill->max());
+          } else {
+            this->insert_before(n, fill.release());
+          }
         }
         return *this; // @a n extends past @a remaining, -> all done.
       } else {
         // Collapse in to previous range if it's adjacent and the color matches.
-        if (nullptr != (pred = prev(n)) && pred->range().is_left_adjacent_to(fill->range()) &&
-            pred->payload() == fill->payload()) {
+        if (pred_adj_p) {
           this->remove(n);
           pred->assign_max(fill->max());
         } else {
