@@ -148,10 +148,16 @@ union IPEndpoint {
   /// @return This object.
   self_type& set_to_any(int family);
 
+  /// @return @c true if this is the ANY address, @c false if not.
+  bool is_any() const;
+
   /// Set to be loopback address for family @a family.
   /// @a family must be @c AF_INET or @c AF_INET6.
   /// @return This object.
   self_type& set_to_loopback(int family);
+
+  /// @return @c true if this is a loopback address, @c false if not.
+  bool is_loopback() const;
 
   /// Port in network order.
   in_port_t& port();
@@ -264,13 +270,16 @@ public:
   /// Get the IP address family.
   /// @return @c AF_INET
   /// @note Useful primarily for template classes.
-  sa_family_t family() const;
+  constexpr sa_family_t family();
+
+  /// Test for ANY address.
+  bool is_any() const { return _addr == INADDR_ANY; }
 
   /// Test for multicast
   bool is_multicast() const { return IN_MULTICAST(_addr); }
 
   /// Test for loopback
-  bool is_loopback() const { return (*this)[0] == IN_LOOPBACKNET; }
+  bool is_loopback() const { return (*this)[3] == IN_LOOPBACKNET; }
 
   /** Left shift.
    *
@@ -465,13 +474,16 @@ public:
   /// Get the address family.
   /// @return The address family.
   /// @note Useful primarily for templates.
-  sa_family_t family() const;
+  constexpr sa_family_t family();
 
-  /// Test for multicast
-  bool is_loopback() const { return IN6_IS_ADDR_LOOPBACK(_addr._raw.data()); }
+  /// Test for ANY address.
+  bool is_any() const { return _addr._store[0] == 0 && _addr._store[1] == 0; }
 
   /// Test for loopback
-  bool is_multicast() const { return IN6_IS_ADDR_MULTICAST(_addr._raw.data()); }
+  bool is_loopback() const { return _addr._store[0] == 0 && _addr._store[1] == 1; }
+
+  /// Test for multicast
+  bool is_multicast() const { return _addr._raw[7] == 0xFF; }
 
   self_type& clear() {
     _addr._store[0] = _addr._store[1] = 0;
@@ -496,6 +508,9 @@ protected:
   friend bool operator<=(self_type const&, self_type const&);
 
   /// Type for digging around inside the address, with the various forms of access.
+  /// These are in sort of host order - @a _store elements are host order, but the
+  /// MSW and LSW are swapped (big-endian). This makes various bits of the implementation
+  /// easier. Conversion to and from network order is via the @c reorder method.
   union {
     word_store_type _store = {0}; ///< 0 is MSW, 1 is LSW.
     quad_store_type _quad; ///< By quad.
@@ -516,7 +531,7 @@ protected:
    * @param msw The most significant 64 bits, host order.
    * @param lsw The least significant 64 bits, host order.
    */
-  IP6Addr(word_store_type::value_type msw, word_store_type::value_type lsw) : _addr{msw, lsw} {}
+  IP6Addr(word_store_type::value_type msw, word_store_type::value_type lsw) : _addr{{msw, lsw}} {}
 
   friend IP6Addr operator&(IP6Addr const& addr, IPMask const& mask);
 
@@ -1865,10 +1880,10 @@ auto IPSpace<PAYLOAD>::iterator::operator--() -> self_type& {
 
 // --------------------------------------------------------------------------
 // -- IP4Addr --
-inline sa_family_t IP4Addr::family() const { return AF_value; }
+inline constexpr sa_family_t IP4Addr::family() { return AF_value; }
 
 // -- IP6Addr --
-inline sa_family_t IP6Addr::family() const { return AF_value; }
+inline constexpr sa_family_t IP6Addr::family() { return AF_value; }
 
 // -- IPAddr --
 // @c constexpr constructor is required to initialize _something_, it can't be completely uninitializing.
