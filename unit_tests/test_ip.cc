@@ -72,6 +72,23 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   CHECK(alpha == IP4Addr{IPAddr{"172.96.12.134"}});
   CHECK(alpha == IPAddr{IPEndpoint{"172.96.12.134:80"}});
 
+  IP4Addr lo{"127.0.0.1"};
+  REQUIRE(lo.is_loopback() == true);
+  REQUIRE(lo.is_any() == false);
+  IP4Addr any{"0.0.0.0"};
+  REQUIRE(any.is_loopback() == false);
+  REQUIRE(any.is_any() == true);
+  IP6Addr lo6{"::1"};
+  REQUIRE(lo6.is_loopback() == true);
+  REQUIRE(lo6.is_any() == false);
+  REQUIRE(lo6.is_multicast() == false);
+  IP6Addr any6{"::"};
+  REQUIRE(any6.is_loopback() == false);
+  REQUIRE(any6.is_any() == true);
+  IP6Addr multi6{"FF02::1"};
+  REQUIRE(multi6.is_loopback() == false);
+  REQUIRE(multi6.is_multicast() == true);
+
   // Do a bit of IPv6 testing.
   IP6Addr a6_null;
   IP6Addr a6_1{"fe80:88b5:4a:20c:29ff:feae:5587:1c33"};
@@ -105,6 +122,8 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   IP4Addr ip4_loopback{INADDR_LOOPBACK};
 
   REQUIRE(a4_loopback == ip4_loopback);
+  REQUIRE(a4_loopback.is_loopback() == true);
+  REQUIRE(ip4_loopback.is_loopback() == true);
 
   REQUIRE(a4_1 != a4_null);
   REQUIRE(a4_1 != a4_2);
@@ -168,6 +187,23 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(r4.max() == IP4Addr("2.2.2.2"));
   REQUIRE(r4.load("2.2.2.2.2") == false);
   REQUIRE(r4.load("2.2.2.2-fe80:20c::29ff:feae:5587::1c33") == false);
+
+  IPEndpoint ep;
+  ep.set_to_any(AF_INET);
+  REQUIRE(ep.is_loopback() == false);
+  REQUIRE(ep.is_any() == true);
+  ep.set_to_loopback(AF_INET6);
+  REQUIRE(ep.is_loopback() == true);
+  REQUIRE(ep.is_any() == false);
+  ep.set_to_any(AF_INET6);
+  REQUIRE(ep.is_loopback() == false);
+  REQUIRE(ep.is_any() == true);
+  ep.set_to_loopback(AF_INET);
+  REQUIRE(ep.is_loopback() == true);
+  REQUIRE(ep.is_any() == false);
+  IP4Addr a4 { &ep.sa4 };
+  REQUIRE(a4.is_loopback() == true);
+  REQUIRE(a4.is_any() == false);
 };
 
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {

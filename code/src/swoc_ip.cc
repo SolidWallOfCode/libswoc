@@ -168,30 +168,6 @@ IPEndpoint::parse(std::string_view const& str) {
   return false;
 }
 
-#if 0
-sockaddr *
-IPAddr::fill(sockaddr *sa, in_port_t port) const {
-  switch (sa->sa_family = _family) {
-    case AF_INET: {
-      auto sa4 = reinterpret_cast<sockaddr_in *>(sa);
-      memset(sa4, 0, sizeof(*sa4));
-      sa4->sin_addr.s_addr = _addr._ip4.network_order();
-      sa4->sin_port = port;
-      Set_Sockaddr_Len(sa4);
-    }
-      break;
-    case AF_INET6: {
-      auto sa6 = reinterpret_cast<sockaddr_in6 *>(sa);
-      memset(sa6, 0, sizeof(*sa6));
-      sa6->sin6_port = port;
-      Set_Sockaddr_Len(sa6);
-    }
-      break;
-  }
-  return sa;
-}
-#endif
-
 socklen_t
 IPEndpoint::size() const {
   switch (sa.sa_family) {
@@ -214,7 +190,7 @@ IPEndpoint::family_name(uint16_t family) {
 
 IPEndpoint&
 IPEndpoint::set_to_any(int family) {
-  memset(*this, 0, sizeof(*this));
+  memset(this, 0, sizeof(*this));
   if (AF_INET == family) {
     sa4.sin_family = family;
     sa4.sin_addr.s_addr = INADDR_ANY;
@@ -227,20 +203,39 @@ IPEndpoint::set_to_any(int family) {
   return *this;
 }
 
+bool
+IPEndpoint::is_any() const {
+  bool zret = false;
+  switch (this->family()) {
+    case AF_INET: zret = sa4.sin_addr.s_addr == INADDR_ANY; break;
+    case AF_INET6: zret = IN6_IS_ADDR_UNSPECIFIED(&sa6.sin6_addr); break;
+  }
+  return zret;
+}
+
 IPEndpoint&
 IPEndpoint::set_to_loopback(int family) {
-  memset(*this, 0, sizeof(*this));
+  memset(this, 0, sizeof(*this));
   if (AF_INET == family) {
     sa.sa_family = family;
     sa4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     Set_Sockaddr_Len(&sa4);
   } else if (AF_INET6 == family) {
-    static const in6_addr init = IN6ADDR_LOOPBACK_INIT;
     sa.sa_family = family;
-    sa6.sin6_addr = init;
+    sa6.sin6_addr = in6addr_loopback;
     Set_Sockaddr_Len(&sa6);
   }
   return *this;
+}
+
+bool
+IPEndpoint::is_loopback() const {
+  bool zret = false;
+  switch (this->family()) {
+    case AF_INET: zret = ((ntohl(sa4.sin_addr.s_addr) & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET; break;
+    case AF_INET6: zret = IN6_IS_ADDR_LOOPBACK(&sa6.sin6_addr); break;
+  }
+  return zret;
 }
 
 bool
