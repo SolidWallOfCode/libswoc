@@ -175,7 +175,6 @@ protected:
   std::unordered_map<std::string, uintmax_t> _suffixes;
 
 private:
-  friend class SuffixExpanderTestFixture; 
   uintmax_t sumUp() const {
     uintmax_t res = 0;
     for (auto const &tuple : _suffixes) {
@@ -201,10 +200,6 @@ private:
       }
     }
   }
-};
-
-// provide access to private members of NumericSuffixParser<>
-class SuffixExpanderTestFixture {
 };
 
 TEST_CASE("NumericSuffixParser free helper function test", "[libswoc][example][NumericSuffixParser][free helper functions]") {
@@ -419,7 +414,7 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
   }
 }
 
-TEST_CASE_METHOD(SuffixExpanderTestFixture, "parseSuffixes() test") {
+TEST_CASE("suffixExpander tests -- main logic", "[libswoc][example][NumericSuffixParser][main logic]") {
   TextView text = "100 KB50G 50 K 20";
   NumericSuffixParser<metric::Storage> parser;
   CHECK(parser(text) == static_cast<uintmax_t>(100L * (1 << 10) + 50L * (1 << 30) + 50L * (1 << 10) + 20L));
