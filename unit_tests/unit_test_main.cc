@@ -23,12 +23,12 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
-void EX_BWF_Format_Init();
+//void EX_BWF_Format_Init();
 
 int
 main(int argc, char *argv[])
 {
-  EX_BWF_Format_Init();
+  //EX_BWF_Format_Init();
 
   int result = Catch::Session().run(argc, argv);
 
