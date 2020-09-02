@@ -1,4 +1,4 @@
-# shortcuts for my own use
+# please ignore: shortcuts for my own use
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
