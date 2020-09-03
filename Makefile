@@ -29,3 +29,7 @@ cmake-gen:
 .PHONY: build
 build:
 	cd _build/ && make -j $(NCPU) && cd ..
+
+.PHONY: clang-format
+clang-format:
+	clang-format -style=file -i unit_tests/ex_suffix_expander.cc

@@ -9,9 +9,9 @@
 */
 
 #include <unordered_map>
-#include <cctype> // isdigit, isspace, tolower
+#include <cctype>    // isdigit, isspace, tolower
 #include <algorithm> // std::equal
-#include <iostream> // debug (TODO: remove)
+#include <iostream>  // debug (TODO: remove)
 
 #include "swoc/TextView.h"
 #include "swoc/swoc_file.h"
@@ -42,17 +42,16 @@ struct Metric {
 
 inline bool iequal(TextView const lhs, TextView const rhs) noexcept {
   struct Pred {
-    bool operator()(char const l, char const r) noexcept {
-      return tolower(l) == tolower(r);
-    }
+    bool operator()(char const l, char const r) noexcept { return tolower(l) == tolower(r); }
   };
   return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), Pred{});
 }
 
 // namespace enclosing classes that meet the requirements of the Metric concept
-namespace metric {
+namespace metric
+{
 struct Storage {
-  static constexpr TextView B = "B";
+  static constexpr TextView B  = "B";
   static constexpr TextView KB = "KB";
   static constexpr TextView MB = "MB";
   static constexpr TextView GB = "GB";
@@ -103,9 +102,9 @@ struct Storage {
 struct Duration {
   static constexpr TextView SECOND = "second";
   static constexpr TextView MINUTE = "minute";
-  static constexpr TextView HOUR = "hour";
-  static constexpr TextView DAY = "day";
-  static constexpr TextView WEEK = "week";
+  static constexpr TextView HOUR   = "hour";
+  static constexpr TextView DAY    = "day";
+  static constexpr TextView WEEK   = "week";
 
   static constexpr TextView baseUnit = "second";
 
@@ -143,43 +142,42 @@ struct Duration {
   }
 };
 
-}  // namespace metric
+} // namespace metric
 
 // (potentially) modifies the pass-in view. returns the unit
-template <typename Metric>
-inline TextView rExtractUnit(TextView &src) noexcept {
-    src.rtrim_if(&isspace);
-    if (isdigit(src.back())) {
-      // no unit specification, defaulting to the smallest unit
-      return Metric::baseUnit;
-    } else {
-      // take suffix from right to left -- from the first non-space char
-      // (inclusive) to the first digit (exclusive)
-      // can't call split/take_suffix_if because we don't want to discard any char
-      // can't call suffix_if because it can't deal with the edge case that
-      // [0, pos] is a multiplier (string)
-      auto const pos = src.rfind_if([](char const c){return isdigit(c) || c == ' ';});
-      auto const unit = src.substr(pos + 1);
-      src = src.prefix(pos + 1);
-      return unit;
-    }
+template <typename Metric> inline TextView rExtractUnit(TextView &src) noexcept {
+  src.rtrim_if(&isspace);
+  if (isdigit(src.back())) {
+    // no unit specification, defaulting to the smallest unit
+    return Metric::baseUnit;
+  } else {
+    // take suffix from right to left -- from the first non-space char
+    // (inclusive) to the first digit (exclusive)
+    // can't call split/take_suffix_if because we don't want to discard any char
+    // can't call suffix_if because it can't deal with the edge case that
+    // [0, pos] is a multiplier (string)
+    auto const pos  = src.rfind_if([](char const c) { return isdigit(c) || c == ' '; });
+    auto const unit = src.substr(pos + 1);
+    src             = src.prefix(pos + 1);
+    return unit;
+  }
 }
 
 // (potentially) modifies the pass-in view. returns the multiplier
 inline uintmax_t rExtractMultiplier(TextView &src) {
-    src.rtrim_if(&isspace);
-    auto const pos = src.rfind_if([](char const c){return !isdigit(c);});
-    if (pos == std::string_view::npos) {
-      // no more non-digit on the left which means this is the left-most
-      // multipler. parsing is complete
-      auto const multiplier = src;
-      src.clear();
-      return swoc::svtou(multiplier);
-    } else {
-      auto const multiplier = src.substr(pos + 1);
-      src = src.prefix(pos + 1);
-      return swoc::svtou(multiplier);
-    }
+  src.rtrim_if(&isspace);
+  auto const pos = src.rfind_if([](char const c) { return !isdigit(c); });
+  if (pos == std::string_view::npos) {
+    // no more non-digit on the left which means this is the left-most
+    // multipler. parsing is complete
+    auto const multiplier = src;
+    src.clear();
+    return swoc::svtou(multiplier);
+  } else {
+    auto const multiplier = src.substr(pos + 1);
+    src                   = src.prefix(pos + 1);
+    return swoc::svtou(multiplier);
+  }
 }
 
 /** Numeric suffix parser.
@@ -195,17 +193,16 @@ inline uintmax_t rExtractMultiplier(TextView &src) {
  *
  * The set of suffixes and their multipliers are local to an instance of the parser.
  */
-template <typename Metric>
-class NumericSuffixParser {
+template <typename Metric> class NumericSuffixParser {
   using self_type = NumericSuffixParser;
+
 public:
   intmax_t operator()(TextView text) {
     parseSuffixes(text);
     return sumUp();
   }
-  void clear() {
-    _suffixes.clear();
-  }
+  void clear() { _suffixes.clear(); }
+
 protected:
   /// Suffix mapping, name -> multiplier.
   std::unordered_map<std::string, uintmax_t> _suffixes;
@@ -229,8 +226,7 @@ private:
       auto const multiplier = rExtractMultiplier(text);
       // no heterogeneous lookup for std::unoredered_map until C++20. had to
       // construct the key type explicitly
-      auto const [it, inserted] = _suffixes.try_emplace(
-          std::string(unit), multiplier);
+      auto const [it, inserted] = _suffixes.try_emplace(std::string(unit), multiplier);
       if (!inserted) {
         it->second += multiplier;
       }
@@ -279,14 +275,7 @@ TEST_CASE("NumericSuffixParser free helper function test", "[libswoc][example][N
 TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSuffixParser][parsing]") {
   SECTION("1 pair, no default") {
     std::vector<TextView> views = {
-      "100M",
-      " 100M",
-      "100M ",
-      " 100M ",
-      "100 M",
-      " 100 M",
-      "100 M ",
-      " 100 M ",
+      "100M", " 100M", "100M ", " 100M ", "100 M", " 100 M", "100 M ", " 100 M ",
     };
     for (auto const view : views) {
       auto original = view;
@@ -296,18 +285,7 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
   }
   SECTION("1 pair, with default") {
     std::vector<TextView> views = {
-      "100",
-      " 100",
-      "100 ",
-      " 100 ",
-      "100B",
-      " 100B",
-      "100B ",
-      " 100B ",
-      "100 B",
-      " 100 B",
-      "100 B ",
-      " 100 B ",
+      "100", " 100", "100 ", " 100 ", "100B", " 100B", "100B ", " 100B ", "100 B", " 100 B", "100 B ", " 100 B ",
     };
     for (auto const view : views) {
       auto original = view;
@@ -317,45 +295,21 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
   }
   SECTION("2 pairs, no default") {
     std::vector<TextView> views = {
-      "50G100M",
-      " 50G100M",
-      "50G100M ",
-      " 50G100M ",
+      "50G100M",    " 50G100M",    "50G100M ",    " 50G100M ",
 
-      "50G 100M",
-      " 50G 100M",
-      "50G 100M ",
-      " 50G 100M ",
+      "50G 100M",   " 50G 100M",   "50G 100M ",   " 50G 100M ",
 
-      "50 G 100M",
-      " 50 G 100M",
-      "50 G 100M ",
-      " 50 G 100M ",
+      "50 G 100M",  " 50 G 100M",  "50 G 100M ",  " 50 G 100M ",
 
-      "50 G100M",
-      " 50 G100M",
-      "50 G100M ",
-      " 50 G100M ",
+      "50 G100M",   " 50 G100M",   "50 G100M ",   " 50 G100M ",
 
-      "50G 100 M",
-      " 50G 100 M",
-      "50G 100 M ",
-      " 50G 100 M ",
+      "50G 100 M",  " 50G 100 M",  "50G 100 M ",  " 50G 100 M ",
 
-      "50G100 M",
-      " 50G100 M",
-      "50G100 M ",
-      " 50G100 M ",
+      "50G100 M",   " 50G100 M",   "50G100 M ",   " 50G100 M ",
 
-      "50 G 100 M",
-      " 50 G 100 M",
-      "50 G 100 M ",
-      " 50 G 100 M ",
+      "50 G 100 M", " 50 G 100 M", "50 G 100 M ", " 50 G 100 M ",
 
-      "50 G100 M",
-      " 50 G100 M",
-      "50 G100 M ",
-      " 50 G100 M ",
+      "50 G100 M",  " 50 G100 M",  "50 G100 M ",  " 50 G100 M ",
     };
     for (auto const view : views) {
       INFO("src=\"" << view << "\"");
@@ -370,25 +324,13 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
   }
   SECTION("2 pairs, with defaults on the right") {
     std::vector<TextView> views = {
-      "50G100",
-      " 50G100",
-      "50G100 ",
-      " 50G100 ",
+      "50G100",   " 50G100",   "50G100 ",   " 50G100 ",
 
-      "50G 100",
-      " 50G 100",
-      "50G 100 ",
-      " 50G 100 ",
+      "50G 100",  " 50G 100",  "50G 100 ",  " 50G 100 ",
 
-      "50 G 100",
-      " 50 G 100",
-      "50 G 100 ",
-      " 50 G 100 ",
+      "50 G 100", " 50 G 100", "50 G 100 ", " 50 G 100 ",
 
-      "50 G100",
-      " 50 G100",
-      "50 G100 ",
-      " 50 G100 ",
+      "50 G100",  " 50 G100",  "50 G100 ",  " 50 G100 ",
     };
     for (auto const view : views) {
       INFO("src=\"" << view << "\"");
@@ -403,15 +345,9 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
   }
   SECTION("2 pairs, with defaults on the left") {
     std::vector<TextView> views = {
-      "50 100M",
-      " 50 100M",
-      "50 100M ",
-      " 50 100M ",
+      "50 100M",  " 50 100M",  "50 100M ",  " 50 100M ",
 
-      "50 100 M",
-      " 50 100 M",
-      "50 100 M ",
-      " 50 100 M ",
+      "50 100 M", " 50 100 M", "50 100 M ", " 50 100 M ",
     };
     for (auto const view : views) {
       INFO("src=\"" << view << "\"");
@@ -456,5 +392,4 @@ TEST_CASE("NumericSuffixParser end-to-end tests", "[libswoc][example][NumericSuf
     NumericSuffixParser<metric::Duration> parser;
     CHECK(parser(text) == static_cast<uintmax_t>(100L + 10L * 3'600 + 5 * 60 + 3));
   }
-
 }
