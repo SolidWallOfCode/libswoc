@@ -19,6 +19,8 @@
 
 using swoc::TextView;
 
+// TODO: some comments here stating the assumptions I've made
+
 // The Metric concept
 // A metric is a measurement system which can be computer storage, time duration
 // etc.
@@ -27,7 +29,7 @@ struct Metric {
   // the base (smallest) unit of the metric system
   static constexpr TextView baseUnit = "";
 
-  // convert different units to a multiple to base unit
+  // convert different units to a multiply of the base unit
   static inline uintmax_t convertToBase(TextView const unit);
 
   // canonicalize the spelling of the metric. e.g. both "b" and "byte" mean the
@@ -47,7 +49,7 @@ inline bool iequal(TextView const lhs, TextView const rhs) noexcept {
   return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), Pred{});
 }
 
-// for classes that meet the requirements of the Metric concept
+// namespace enclosing classes that meet the requirements of the Metric concept
 namespace metric {
 struct Storage {
   static constexpr TextView B = "B";
@@ -106,6 +108,39 @@ struct Duration {
   static constexpr TextView WEEK = "week";
 
   static constexpr TextView baseUnit = "second";
+
+  static uintmax_t convertToBase(TextView const unit) {
+    if (unit == SECOND) {
+      return static_cast<uintmax_t>(1);
+    } else if (unit == MINUTE) {
+      return static_cast<uintmax_t>(60);
+    } else if (unit == HOUR) {
+      return static_cast<uintmax_t>(3'600);
+    } else if (unit == DAY) {
+      return static_cast<uintmax_t>(86'400);
+    } else if (unit == WEEK) {
+      return static_cast<uintmax_t>(604'800);
+    } else {
+      // TODO: error handling
+      return 0;
+    }
+  }
+  static inline TextView canonicalize(TextView unit) {
+    if (iequal(unit, "s") || iequal(unit, "sec") || iequal(unit, "second")) {
+      return SECOND;
+    } else if (iequal(unit, "m") || iequal(unit, "min") || iequal(unit, "minute")) {
+      return MINUTE;
+    } else if (iequal(unit, "h") || iequal(unit, "hour")) {
+      return HOUR;
+    } else if (iequal(unit, "d") || iequal(unit, "day")) {
+      return DAY;
+    } else if (iequal(unit, "w") || iequal(unit, "week")) {
+      return WEEK;
+    } else {
+      // TODO: error handling
+      return SECOND;
+    }
+  }
 };
 
 }  // namespace metric
@@ -121,7 +156,8 @@ inline TextView rExtractUnit(TextView &src) noexcept {
       // take suffix from right to left -- from the first non-space char
       // (inclusive) to the first digit (exclusive)
       // can't call split/take_suffix_if because we don't want to discard any char
-      // can't call suffix_if because it could be the beginning of the string
+      // can't call suffix_if because it can't deal with the edge case that
+      // [0, pos] is a multiplier (string)
       auto const pos = src.rfind_if([](char const c){return isdigit(c) || c == ' ';});
       auto const unit = src.substr(pos + 1);
       src = src.prefix(pos + 1);
@@ -176,11 +212,11 @@ protected:
 
 private:
   uintmax_t sumUp() const {
-    uintmax_t res = 0;
+    uintmax_t sum = 0;
     for (auto const &tuple : _suffixes) {
-      res += Metric::convertToBase(tuple.first) * (tuple.second);
+      sum += Metric::convertToBase(tuple.first) * (tuple.second);
     }
-    return res;
+    return sum;
   }
 
   void parseSuffixes(TextView text) {
@@ -253,7 +289,6 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
       " 100 M ",
     };
     for (auto const view : views) {
-      // make a copy
       auto original = view;
       CHECK("M" == rExtractUnit<metric::Storage>(original));
       CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(original));
@@ -275,7 +310,6 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
       " 100 B ",
     };
     for (auto const view : views) {
-      // make a copy
       auto original = view;
       CHECK("B" == rExtractUnit<metric::Storage>(original));
       CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(original));
@@ -324,7 +358,6 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
       " 50 G100 M ",
     };
     for (auto const view : views) {
-      // make a copy
       INFO("src=\"" << view << "\"");
       auto src = view;
       CHECK("M" == rExtractUnit<metric::Storage>(src));
@@ -358,7 +391,6 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
       " 50 G100 ",
     };
     for (auto const view : views) {
-      // make a copy
       INFO("src=\"" << view << "\"");
       auto src = view;
       CHECK("B" == rExtractUnit<metric::Storage>(src));
@@ -382,7 +414,6 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
       " 50 100 M ",
     };
     for (auto const view : views) {
-      // make a copy
       INFO("src=\"" << view << "\"");
       auto src = view;
       CHECK("M" == rExtractUnit<metric::Storage>(src));
@@ -401,7 +432,6 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
       " 50 100 ",
     };
     for (auto const view : views) {
-      // make a copy
       INFO("src=\"" << view << "\"");
       auto src = view;
       CHECK("B" == rExtractUnit<metric::Storage>(src));
@@ -414,8 +444,17 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
   }
 }
 
-TEST_CASE("suffixExpander tests -- main logic", "[libswoc][example][NumericSuffixParser][main logic]") {
-  TextView text = "100 KB50G 50 K 20";
-  NumericSuffixParser<metric::Storage> parser;
-  CHECK(parser(text) == static_cast<uintmax_t>(100L * (1 << 10) + 50L * (1 << 30) + 50L * (1 << 10) + 20L));
+TEST_CASE("NumericSuffixParser end-to-end tests", "[libswoc][example][NumericSuffixParser][e2e tests]") {
+  SECTION("Storage metrics") {
+    TextView text = "100 kb50G 50 K 20 ";
+    NumericSuffixParser<metric::Storage> parser;
+    CHECK(parser(text) == static_cast<uintmax_t>(100L * (1 << 10) + 50L * (1 << 30) + 50L * (1 << 10) + 20L));
+  }
+
+  SECTION("Time duration metrics") {
+    TextView text = " 100 sec10H 5m3s ";
+    NumericSuffixParser<metric::Duration> parser;
+    CHECK(parser(text) == static_cast<uintmax_t>(100L + 10L * 3'600 + 5 * 60 + 3));
+  }
+
 }
