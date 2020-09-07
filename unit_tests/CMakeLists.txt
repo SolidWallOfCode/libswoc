@@ -25,6 +25,7 @@ add_executable(test_libswoc
     ex_Lexicon.cc
     ex_MemArena.cc
     ex_TextView.cc
+    ex_UnitParser.cc
     )
 
 target_link_libraries(test_libswoc PUBLIC libswoc)
