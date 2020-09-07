@@ -179,7 +179,7 @@ Optional(meta::CaseTag<0>, TextView fmt, T&& t) -> SubText<T> {
  * @a charlie, each of which could be null, which should be output with space separators,
  * this would be
  * @code
- * w.print("Leading text{}{}{}.", Optiona(" {}", alpha)
+ * w.print("Leading text{}{}{}.", Optional(" {}", alpha)
  *                              , Optional(" {}", bravo)
  *                              , Optional(" {}", charlie));
  * @endcode

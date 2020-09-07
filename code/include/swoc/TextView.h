@@ -318,8 +318,10 @@ public:
   /** Get a view of a prefix bounded by a character in @a delimiters.
    *
    * @param delimiters A set of characters.
-   * @return A view of the prefix bounded by any character in @a delimiters, or all of @a this if
-   * none are found.
+   *
+   * @return A view of the prefix bounded by any character in @a delimiters, or empty if none are
+   * found.
+   *
    * @note The delimiter character is not included in the returned view.
    */
   self_type prefix_at(std::string_view const &delimiters) const;
@@ -331,8 +333,10 @@ public:
    * pred is @c true.
    *
    * @param pred A character predicate.
-   * @return A view of the prefix bounded by @a pred or all of @a this if
-   * @a pred is not @c true for any characer.
+   *
+   * @return A view of the prefix bounded by @a pred or empty if @a pred is not @c true for any
+   * characer.
+   *
    * @note The deliminting character is not included in the returned view.
    */
   template <typename F> self_type prefix_if(F const &pred) const;
@@ -355,7 +359,7 @@ public:
    *
    * @param c Delimiter character.
    * @return @a this.
-   * @note The first occurence of character @a c is removed along with all preceeding characters, or
+   * @note The first occurrence of character @a c is removed along with all preceding characters, or
    * the view is cleared if @a c is not found.
    */
   self_type &remove_prefix_at(char c);
@@ -364,7 +368,7 @@ public:
    *
    * @param delimiters Characters to match.
    * @return @a this.
-   * @note The first occurence of any character in @a delimiters is removed along with all preceeding
+   * @note The first occurrence of any character in @a delimiters is removed along with all preceding
    * characters, or the view is cleared if none are found.
    */
   self_type &remove_prefix_at(std::string_view const &delimiters);
@@ -508,8 +512,10 @@ public:
   /** Get a view of a suffix bounded by a character in @a delimiters.
    *
    * @param delimiters A set of characters.
-   * @return A view of the suffix bounded by any character in @a delimiters, or all of @a this if
-   * none are found.
+   *
+   * @return A view of the suffix bounded by any character in @a delimiters, or mepty if none are
+   * found.
+   *
    * @note The delimiter character is not included in the returned view.
    */
   self_type suffix_at(std::string_view const &delimiters) const;
@@ -521,9 +527,11 @@ public:
    * pred is @c true.
    *
    * @param pred A character predicate.
-   * @return A view of the suffix bounded by @a pred or all of @a this if
-   * @a pred is not @c true for any characer.
-   * @note The deliminting character is not included in the returned view.
+   *
+   * @return A view of the suffix bounded by @a pred or empty if @a pred is not @c true for any
+   * character.
+   *
+   * @note The delimiting character is not included in the returned view.
    */
   template <typename F> self_type suffix_if(F const &pred) const;
 
@@ -531,7 +539,8 @@ public:
    *
    * @param c Delimiter character.
    * @return @a this.
-   * @note The last occurence of character @a c is removed along with all succeeding characters, or
+   *
+   * @note The last occurrence of character @a c is removed along with all succeeding characters, or
    * the view is cleared if @a c is not found.
    */
   self_type &remove_suffix_at(char c);
@@ -540,7 +549,7 @@ public:
    *
    * @param delimiters Characters to match.
    * @return @a this.
-   * @note The first occurence of any character in @a delimiters is removed along with all preceeding
+   * @note The first occurrence of any character in @a delimiters is removed along with all preceding
    * characters, or the view is cleared if none are found.
    */
   self_type &remove_suffix_at(std::string_view const &delimiters);
