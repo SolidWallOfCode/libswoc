@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <cctype>    // isdigit, isspace, tolower
 #include <algorithm> // std::equal
-#include <iostream>  // debug (TODO: remove)
+#include <stdexcept> // std::runtime_error
 
 #include "swoc/TextView.h"
 #include "swoc/swoc_file.h"
@@ -44,6 +44,10 @@ struct Metric {
 namespace metric
 {
 struct Storage {
+  struct UnrecognizedUnit : std::runtime_error {
+    UnrecognizedUnit(TextView const msg)
+      : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
+  };
   static constexpr TextView B  = "B";
   static constexpr TextView KB = "KB";
   static constexpr TextView MB = "MB";
@@ -67,8 +71,7 @@ struct Storage {
     } else if (unit == PB) {
       return static_cast<uintmax_t>(1) << 50;
     } else {
-      // TODO: error handling
-      return static_cast<uintmax_t>(0);
+      throw UnrecognizedUnit(unit); 
     }
   }
 
@@ -86,13 +89,17 @@ struct Storage {
     } else if (!strcasecmp(unit, "p") || !strcasecmp(unit, "pb")) {
       return PB;
     } else {
-      // TODO: error handling
+      throw UnrecognizedUnit(unit); 
       return B;
     }
   }
 };
 
 struct Duration {
+  struct UnrecognizedUnit : std::runtime_error {
+    UnrecognizedUnit(TextView const msg)
+      : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
+  };
   static constexpr TextView SECOND = "second";
   static constexpr TextView MINUTE = "minute";
   static constexpr TextView HOUR   = "hour";
@@ -113,7 +120,7 @@ struct Duration {
     } else if (unit == WEEK) {
       return static_cast<uintmax_t>(604'800);
     } else {
-      // TODO: error handling
+      throw UnrecognizedUnit(unit); 
       return 0;
     }
   }
@@ -129,7 +136,7 @@ struct Duration {
     } else if (!strcasecmp(unit, "w") || !strcasecmp(unit, "week")) {
       return WEEK;
     } else {
-      // TODO: error handling
+      throw UnrecognizedUnit(unit); 
       return SECOND;
     }
   }
@@ -145,10 +152,8 @@ template <typename Metric> inline TextView rExtractUnit(TextView &src) noexcept 
   } else {
     // take suffix from right to left -- from the first non-space char
     // (inclusive) to the first digit (exclusive)
-    // can't call split/take_suffix_if because we don't want to discard any char
-    // can't call suffix_if because it can't deal with the edge case that
     // [0, pos] is a multiplier (string)
-    auto const pos  = src.rfind_if([](char const c) { return isdigit(c) || c == ' '; });
+    auto const pos  = src.rfind_if([](char const c) { return isdigit(c) || isspace(c); });
     auto const unit = src.substr(pos + 1);
     src             = src.prefix(pos + 1);
     return unit;
@@ -188,6 +193,11 @@ template <typename Metric> class NumericSuffixParser {
   using self_type = NumericSuffixParser;
 
 public:
+  struct ParsingError : std::runtime_error {
+    ParsingError(TextView const msg)
+      : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
+  };
+
   intmax_t operator()(TextView text) {
     parseSuffixes(text);
     return sumUp();
@@ -213,6 +223,7 @@ private:
       auto const unit = Metric::canonicalize(rExtractUnit<Metric>(text));
       if (text.rtrim_if(&isspace).empty()) {
         // TODO: error handling: missing multipler for a unit
+        throw ParsingError("Missing multiplier for unit(s)");
       }
       auto const multiplier = rExtractMultiplier(text);
       // no heterogeneous lookup for std::unoredered_map until C++20. had to
@@ -334,5 +345,35 @@ TEST_CASE("NumericSuffixParser end-to-end tests", "[libswoc][example][NumericSuf
     TextView text = " 100 sec10H 5m3s ";
     NumericSuffixParser<metric::Duration> parser;
     CHECK(parser(text) == static_cast<uintmax_t>(100L + 10L * 3'600 + 5 * 60 + 3));
+  }
+}
+
+TEST_CASE("NumericSuffixParser error handling", "[libswoc][example][NumericSuffixParser][error handlling]") {
+  SECTION("Storage metrics") {
+    NumericSuffixParser<metric::Storage> parser;
+
+    SECTION("UnrecognizedUnit") {
+      TextView text = "hour";
+      CHECK_THROWS_AS(parser(text), metric::Storage::UnrecognizedUnit);
+    }
+
+    SECTION("Parsing Error") {
+      TextView text = "G";
+      CHECK_THROWS_AS(parser(text), NumericSuffixParser<metric::Storage>::ParsingError);
+    }
+  }
+
+  SECTION("Time duration metrics") {
+    NumericSuffixParser<metric::Duration> parser;
+
+    SECTION("UnrecognizedUnit") {
+      TextView text = "kb";
+      CHECK_THROWS_AS(parser(text), metric::Duration::UnrecognizedUnit);
+    }
+
+    SECTION("Parsing Error") {
+      TextView text = "hour";
+      CHECK_THROWS_AS(parser(text), NumericSuffixParser<metric::Duration>::ParsingError);
+    }
   }
 }
