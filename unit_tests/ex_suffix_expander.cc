@@ -40,13 +40,6 @@ struct Metric {
 };
 */
 
-inline bool iequal(TextView const lhs, TextView const rhs) noexcept {
-  struct Pred {
-    bool operator()(char const l, char const r) noexcept { return tolower(l) == tolower(r); }
-  };
-  return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), Pred{});
-}
-
 // namespace enclosing classes that meet the requirements of the Metric concept
 namespace metric
 {
@@ -80,17 +73,17 @@ struct Storage {
   }
 
   static inline TextView canonicalize(TextView unit) {
-    if (iequal(unit, "b") || iequal(unit, "byte")) {
+    if (!strcasecmp(unit, "b") || !strcasecmp(unit, "byte")) {
       return B;
-    } else if (iequal(unit, "k") || iequal(unit, "kb")) {
+    } else if (!strcasecmp(unit, "k") || !strcasecmp(unit, "kb")) {
       return KB;
-    } else if (iequal(unit, "m") || iequal(unit, "mb")) {
+    } else if (!strcasecmp(unit, "m") || !strcasecmp(unit, "mb")) {
       return MB;
-    } else if (iequal(unit, "g") || iequal(unit, "gb")) {
+    } else if (!strcasecmp(unit, "g") || !strcasecmp(unit, "gb")) {
       return GB;
-    } else if (iequal(unit, "t") || iequal(unit, "tb")) {
+    } else if (!strcasecmp(unit, "t") || !strcasecmp(unit, "tb")) {
       return TB;
-    } else if (iequal(unit, "p") || iequal(unit, "pb")) {
+    } else if (!strcasecmp(unit, "p") || !strcasecmp(unit, "pb")) {
       return PB;
     } else {
       // TODO: error handling
@@ -125,15 +118,15 @@ struct Duration {
     }
   }
   static inline TextView canonicalize(TextView unit) {
-    if (iequal(unit, "s") || iequal(unit, "sec") || iequal(unit, "second")) {
+    if (!strcasecmp(unit, "s") || !strcasecmp(unit, "sec") || !strcasecmp(unit, "second")) {
       return SECOND;
-    } else if (iequal(unit, "m") || iequal(unit, "min") || iequal(unit, "minute")) {
+    } else if (!strcasecmp(unit, "m") || !strcasecmp(unit, "min") || !strcasecmp(unit, "minute")) {
       return MINUTE;
-    } else if (iequal(unit, "h") || iequal(unit, "hour")) {
+    } else if (!strcasecmp(unit, "h") || !strcasecmp(unit, "hour")) {
       return HOUR;
-    } else if (iequal(unit, "d") || iequal(unit, "day")) {
+    } else if (!strcasecmp(unit, "d") || !strcasecmp(unit, "day")) {
       return DAY;
-    } else if (iequal(unit, "w") || iequal(unit, "week")) {
+    } else if (!strcasecmp(unit, "w") || !strcasecmp(unit, "week")) {
       return WEEK;
     } else {
       // TODO: error handling
@@ -233,44 +226,6 @@ private:
     }
   }
 };
-
-TEST_CASE("NumericSuffixParser free helper function test", "[libswoc][example][NumericSuffixParser][free helper functions]") {
-  SECTION("iequal", "positive") {
-    CHECK(iequal("a", "A"));
-    CHECK(iequal("a", "a"));
-    CHECK(iequal("A", "a"));
-
-    CHECK(iequal("ab", "ab"));
-    CHECK(iequal("ab", "Ab"));
-    CHECK(iequal("ab", "aB"));
-    CHECK(iequal("ab", "AB"));
-
-    CHECK(iequal("Ab", "ab"));
-    CHECK(iequal("Ab", "aB"));
-    CHECK(iequal("Ab", "Ab"));
-    CHECK(iequal("Ab", "AB"));
-
-    CHECK(iequal("aB", "ab"));
-    CHECK(iequal("aB", "Ab"));
-    CHECK(iequal("aB", "aB"));
-    CHECK(iequal("aB", "AB"));
-
-    CHECK(iequal("AB", "ab"));
-    CHECK(iequal("AB", "Ab"));
-    CHECK(iequal("AB", "aB"));
-    CHECK(iequal("AB", "AB"));
-  }
-
-  SECTION("iequal", "negative") {
-    CHECK(!iequal("a", ""));
-    CHECK(!iequal("a", "b"));
-    CHECK(!iequal("a", "aB"));
-
-    CHECK(!iequal("", "a"));
-    CHECK(!iequal("", "B"));
-    CHECK(!iequal("", "aB"));
-  }
-}
 
 TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSuffixParser][parsing]") {
   SECTION("1 pair, no default") {
