@@ -19,7 +19,18 @@
 
 using swoc::TextView;
 
-// TODO: some comments here stating the assumptions I've made
+// homework assumptions:
+// 1. the NumericSuffixParser class always clears its states automatically when
+//    parsing a (new) string
+// 2. the input string has alternating patterns and numeric multipliers and
+//    units
+// 3. there can be zero or more spaces between a multiplier and its unit;
+//    or between a unit and the multiplier (belonging to a different pair) on
+//    the right
+// 4. there cannot be any space that breaks up a single multiplier or a unit
+// 5. at compile time (by the time the writer writes the parsing code), s/he
+//    already knows what kind of metric system (time duration, computer storage
+//    etc.) that s/he is parsing
 
 // The Metric concept
 // A metric is a measurement system which can be computer storage, time duration
@@ -222,7 +233,6 @@ private:
     while (text.rtrim_if(&isspace)) {
       auto const unit = Metric::canonicalize(rExtractUnit<Metric>(text));
       if (text.rtrim_if(&isspace).empty()) {
-        // TODO: error handling: missing multipler for a unit
         throw ParsingError("Missing multiplier for unit(s)");
       }
       auto const multiplier = rExtractMultiplier(text);
