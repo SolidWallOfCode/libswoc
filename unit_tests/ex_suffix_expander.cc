@@ -56,8 +56,7 @@ namespace metric
 {
 struct Storage {
   struct UnrecognizedUnit : std::runtime_error {
-    UnrecognizedUnit(TextView const msg)
-      : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
+    UnrecognizedUnit(TextView const msg) : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
   };
   static constexpr TextView B  = "B";
   static constexpr TextView KB = "KB";
@@ -82,7 +81,7 @@ struct Storage {
     } else if (unit == PB) {
       return static_cast<uintmax_t>(1) << 50;
     } else {
-      throw UnrecognizedUnit(unit); 
+      throw UnrecognizedUnit(unit);
     }
   }
 
@@ -100,7 +99,7 @@ struct Storage {
     } else if (!strcasecmp(unit, "p") || !strcasecmp(unit, "pb")) {
       return PB;
     } else {
-      throw UnrecognizedUnit(unit); 
+      throw UnrecognizedUnit(unit);
       return B;
     }
   }
@@ -108,8 +107,7 @@ struct Storage {
 
 struct Duration {
   struct UnrecognizedUnit : std::runtime_error {
-    UnrecognizedUnit(TextView const msg)
-      : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
+    UnrecognizedUnit(TextView const msg) : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
   };
   static constexpr TextView SECOND = "second";
   static constexpr TextView MINUTE = "minute";
@@ -131,7 +129,7 @@ struct Duration {
     } else if (unit == WEEK) {
       return static_cast<uintmax_t>(604'800);
     } else {
-      throw UnrecognizedUnit(unit); 
+      throw UnrecognizedUnit(unit);
       return 0;
     }
   }
@@ -147,7 +145,7 @@ struct Duration {
     } else if (!strcasecmp(unit, "w") || !strcasecmp(unit, "week")) {
       return WEEK;
     } else {
-      throw UnrecognizedUnit(unit); 
+      throw UnrecognizedUnit(unit);
       return SECOND;
     }
   }
@@ -205,8 +203,7 @@ template <typename Metric> class NumericSuffixParser {
 
 public:
   struct ParsingError : std::runtime_error {
-    ParsingError(TextView const msg)
-      : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
+    ParsingError(TextView const msg) : std::runtime_error::runtime_error(std::string(msg).c_str()) {}
   };
 
   intmax_t operator()(TextView text) {
