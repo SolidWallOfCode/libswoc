@@ -139,7 +139,6 @@ struct Duration {
 
 // (potentially) modifies the pass-in view. returns the unit
 template <typename Metric> inline TextView rExtractUnit(TextView &src) noexcept {
-  src.rtrim_if(&isspace);
   if (isdigit(src.back())) {
     // no unit specification, defaulting to the smallest unit
     return Metric::baseUnit;
@@ -158,7 +157,6 @@ template <typename Metric> inline TextView rExtractUnit(TextView &src) noexcept 
 
 // (potentially) modifies the pass-in view. returns the multiplier
 inline uintmax_t rExtractMultiplier(TextView &src) {
-  src.rtrim_if(&isspace);
   auto const pos = src.rfind_if([](char const c) { return !isdigit(c); });
   if (pos == std::string_view::npos) {
     // no more non-digit on the left which means this is the left-most
@@ -232,20 +230,22 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
     std::vector<TextView> views = {
       "100M", " 100M", "100M ", " 100M ", "100 M", " 100 M", "100 M ", " 100 M ",
     };
-    for (auto const view : views) {
-      auto original = view;
-      CHECK("M" == rExtractUnit<metric::Storage>(original));
-      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(original));
+    for (auto view : views) {
+      view.rtrim_if(&isspace);
+      CHECK("M" == rExtractUnit<metric::Storage>(view));
+      view.rtrim_if(&isspace);
+      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(view));
     }
   }
   SECTION("1 pair, with default") {
     std::vector<TextView> views = {
       "100", " 100", "100 ", " 100 ", "100B", " 100B", "100B ", " 100B ", "100 B", " 100 B", "100 B ", " 100 B ",
     };
-    for (auto const view : views) {
-      auto original = view;
-      CHECK("B" == rExtractUnit<metric::Storage>(original));
-      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(original));
+    for (auto view : views) {
+      view.rtrim_if(&isspace);
+      CHECK("B" == rExtractUnit<metric::Storage>(view));
+      view.rtrim_if(&isspace);
+      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(view));
     }
   }
   SECTION("2 pairs, no default") {
@@ -266,15 +266,18 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
 
       "50 G100 M",  " 50 G100 M",  "50 G100 M ",  " 50 G100 M ",
     };
-    for (auto const view : views) {
+    for (auto view : views) {
       INFO("src=\"" << view << "\"");
-      auto src = view;
-      CHECK("M" == rExtractUnit<metric::Storage>(src));
-      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(src));
-      CHECK("G" == rExtractUnit<metric::Storage>(src));
-      CHECK(static_cast<uintmax_t>(50) == rExtractMultiplier(src));
-      src.rtrim_if(&isspace);
-      CHECK(src.empty());
+      view.rtrim_if(&isspace);
+      CHECK("M" == rExtractUnit<metric::Storage>(view));
+      view.rtrim_if(&isspace);
+      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(view));
+      view.rtrim_if(&isspace);
+      CHECK("G" == rExtractUnit<metric::Storage>(view));
+      view.rtrim_if(&isspace);
+      CHECK(static_cast<uintmax_t>(50) == rExtractMultiplier(view));
+      view.rtrim_if(&isspace);
+      CHECK(view.empty());
     }
   }
   SECTION("2 pairs, with defaults on the right") {
@@ -287,15 +290,10 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
 
       "50 G100",  " 50 G100",  "50 G100 ",  " 50 G100 ",
     };
-    for (auto const view : views) {
+    for (auto view : views) {
       INFO("src=\"" << view << "\"");
-      auto src = view;
-      CHECK("B" == rExtractUnit<metric::Storage>(src));
-      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(src));
-      CHECK("G" == rExtractUnit<metric::Storage>(src));
-      CHECK(static_cast<uintmax_t>(50) == rExtractMultiplier(src));
-      src.rtrim_if(&isspace);
-      CHECK(src.empty());
+      NumericSuffixParser<metric::Storage> parser;
+      CHECK(parser(view) == static_cast<uintmax_t>(50L * (1L << 30) + 100L));
     }
   }
   SECTION("2 pairs, with defaults on the left") {
@@ -304,15 +302,10 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
 
       "50 100 M", " 50 100 M", "50 100 M ", " 50 100 M ",
     };
-    for (auto const view : views) {
+    for (auto view : views) {
       INFO("src=\"" << view << "\"");
-      auto src = view;
-      CHECK("M" == rExtractUnit<metric::Storage>(src));
-      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(src));
-      CHECK("B" == rExtractUnit<metric::Storage>(src));
-      CHECK(static_cast<uintmax_t>(50) == rExtractMultiplier(src));
-      src.rtrim_if(&isspace);
-      CHECK(src.empty());
+      NumericSuffixParser<metric::Storage> parser;
+      CHECK(static_cast<uintmax_t>(50L + 100L * (1L << 20)) == parser(view));
     }
   }
   SECTION("2 pairs, both are defaults") {
@@ -322,15 +315,10 @@ TEST_CASE("NumericSuffixParser parsing algorithm", "[libswoc][example][NumericSu
       "50 100 ",
       " 50 100 ",
     };
-    for (auto const view : views) {
+    for (auto view : views) {
       INFO("src=\"" << view << "\"");
-      auto src = view;
-      CHECK("B" == rExtractUnit<metric::Storage>(src));
-      CHECK(static_cast<uintmax_t>(100) == rExtractMultiplier(src));
-      CHECK("B" == rExtractUnit<metric::Storage>(src));
-      CHECK(static_cast<uintmax_t>(50) == rExtractMultiplier(src));
-      src.rtrim_if(&isspace);
-      CHECK(src.empty());
+      NumericSuffixParser<metric::Storage> parser;
+      CHECK(static_cast<uintmax_t>(150L) == parser(view));
     }
   }
 }
