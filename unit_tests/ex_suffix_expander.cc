@@ -100,7 +100,6 @@ struct Storage {
       return PB;
     } else {
       throw UnrecognizedUnit(unit);
-      return B;
     }
   }
 };
@@ -130,7 +129,6 @@ struct Duration {
       return static_cast<uintmax_t>(604'800);
     } else {
       throw UnrecognizedUnit(unit);
-      return 0;
     }
   }
   static inline TextView canonicalize(TextView unit) {
@@ -146,7 +144,6 @@ struct Duration {
       return WEEK;
     } else {
       throw UnrecognizedUnit(unit);
-      return SECOND;
     }
   }
 };
