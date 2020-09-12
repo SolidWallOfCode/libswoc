@@ -125,20 +125,6 @@ public:
    */
   template <size_t N> constexpr TextView(const char (&s)[N]);
 
-  /** Construct from character buffer.
-
-      Construct directly from an array of characters with an explicit size. This is useful to
-      - Construct from a temporary buffer which may be larger than the actual string.
-      - To force the inclusion of a terminating null byte.
-
-      @code
-        char buffer[N];
-        // Fill @a k characters in @a buffer.
-        TextView a(buffer, k);
-      @endcode
-   */
-  template <size_t N> constexpr TextView(const char (&s)[N], size_t n);
-
   /** Construct from nullptr.
       This implicitly makes the length 0.
   */
@@ -866,7 +852,7 @@ inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) : super_type(that) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1) {}
-template <size_t N> constexpr TextView::TextView(const char (&s)[N], size_t n) : super_type(s, n) {}
+//template <size_t N> constexpr TextView::TextView(const char (&s)[N], size_t n) : super_type(s, n) {}
 
 inline void
 TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set) {
