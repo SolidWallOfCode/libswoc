@@ -10,13 +10,6 @@
 #include "swoc/swoc_file.h"
 #include "swoc/bwf_base.h"
 
-// Some portability defines for Apple's stat structure. See stat(2) man page.
-#if __APPLE__
-#define st_atim st_atimespec
-#define st_ctim st_ctimespec
-#define st_mtim st_mtimespec
-#endif
-
 using namespace swoc::literals;
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
@@ -92,18 +85,45 @@ inline std::chrono::system_clock::time_point chrono_cast(timespec const& ts) {
   using namespace std::chrono;
   return system_clock::time_point{duration_cast<system_clock::duration>(seconds{ts.tv_sec} + nanoseconds{ts.tv_nsec})};
 }
-} // namesapce
+
+// Apple has different names for these members, need to have accessors that account for that.
+// Under -O2 these are completely elided.
+template < typename S > auto a_time(S const& s) -> decltype(S::st_atim) {
+  return s.st_atim;
+}
+
+template < typename S > auto a_time(S const& s) -> decltype(S::st_atimespec) {
+  return s.st_atimespec;
+}
+
+template < typename S > auto m_time(S const& s) -> decltype(S::st_mtim) {
+  return s.st_mtim;
+}
+
+template < typename S > auto m_time(S const& s) -> decltype(S::st_mtimespec) {
+  return s.st_mtimespec;
+}
+
+template < typename S > auto c_time(S const& s) -> decltype(S::st_ctim) {
+  return s.st_ctim;
+}
+
+template < typename S > auto c_time(S const& s) -> decltype(S::st_ctimespec) {
+  return s.st_ctimespec;
+}
+
+} // namespace
 
 std::chrono::system_clock::time_point modify_time(file_status const& fs) {
-  return chrono_cast(fs._stat.st_mtim);
+  return chrono_cast(m_time(fs._stat));
 }
 
 std::chrono::system_clock::time_point access_time(file_status const& fs) {
-  return chrono_cast(fs._stat.st_atim);
+  return chrono_cast(a_time(fs._stat));
 }
 
 std::chrono::system_clock::time_point status_time(file_status const& fs) {
-  return chrono_cast(fs._stat.st_ctim);
+  return chrono_cast(c_time(fs._stat));
 }
 
 bool
