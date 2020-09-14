@@ -18,6 +18,7 @@
 #include <functional>
 #include <tuple>
 #include <any>
+#include <array>
 
 #include "swoc/swoc_version.h"
 #include "swoc/TextView.h"

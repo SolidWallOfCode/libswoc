@@ -178,7 +178,7 @@ IPEndpoint::size() const {
 }
 
 std::string_view
-IPEndpoint::family_name(uint16_t family) {
+IPEndpoint::family_name(sa_family_t family) {
   switch (family) {
     case AF_INET:return "ipv4"_sv;
     case AF_INET6:return "ipv6"_sv;
@@ -587,7 +587,7 @@ IPAddr::cmp(self_type const &that) const
 bool
 IPAddr::is_multicast() const {
   return (AF_INET == _family && 0xe == (_addr._octet[0] >> 4)) ||
-         (AF_INET6 == _family && IN6_IS_ADDR_MULTICAST(&_addr._ip6));
+         (AF_INET6 == _family && _addr._ip6.is_multicast());
 }
 
 IPEndpoint::IPEndpoint(std::string_view const& text) {

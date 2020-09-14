@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include <limits.h>
 #include <netinet/in.h>
 #include <string_view>
 #include <variant>
@@ -14,7 +15,6 @@
 #include "swoc/TextView.h"
 #include "swoc/DiscreteRange.h"
 #include "swoc/RBTree.h"
-#include <values.h>
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
@@ -196,7 +196,7 @@ class IP4Addr {
 
 public:
   static constexpr size_t SIZE = sizeof(in_addr_t); ///< Size of IPv4 address in bytes.
-  static constexpr size_t WIDTH = BITSPERBYTE * SIZE; ///< # of bits in an address.
+  static constexpr size_t WIDTH = std::numeric_limits<unsigned char>::digits * SIZE; ///< # of bits in an address.
   static const self_type MIN; ///< Minimum value.
   static const self_type MAX; ///< Maximum value.
   static constexpr sa_family_t AF_value = AF_INET; ///< Address family type.
@@ -349,7 +349,7 @@ class IP6Addr {
 
 public:
   static constexpr size_t WIDTH = 128; ///< Number of bits in the address.
-  static constexpr size_t SIZE = WIDTH / BITSPERBYTE;    ///< Size of address in bytes.
+  static constexpr size_t SIZE = WIDTH / std::numeric_limits<unsigned char>::digits;    ///< Size of address in bytes.
   static constexpr sa_family_t AF_value = AF_INET6; ///< Address family type.
 
   using quad_type                      = uint16_t;            ///< Size of one segment of an IPv6 address.
@@ -364,7 +364,7 @@ public:
   using quad_store_type = std::array<quad_type, N_QUADS>;
 
   /// Number of bits per quad.
-  static constexpr size_t QUAD_WIDTH = BITSPERBYTE * sizeof(quad_type);
+  static constexpr size_t QUAD_WIDTH = std::numeric_limits<unsigned char>::digits * sizeof(quad_type);
 
   /// A bit mask of all 1 bits the size of a quad.
   static constexpr quad_type QUAD_MASK = ~quad_type{0};
@@ -375,7 +375,7 @@ public:
   static constexpr size_t WORD_SIZE = sizeof(word_type);
 
   /// Number of bits per word.
-  static constexpr size_t WORD_WIDTH = BITSPERBYTE * WORD_SIZE;
+  static constexpr size_t WORD_WIDTH = std::numeric_limits<unsigned char>::digits * WORD_SIZE;
 
   /// Number of words used for basic address storage.
   static constexpr size_t N_STORE = SIZE / sizeof(word_type);
@@ -1952,7 +1952,7 @@ IPAddr::isCompatibleWith(self_type const& that) {
 inline bool
 IPAddr::is_loopback() const {
   return (AF_INET == _family && 0x7F == _addr._octet[0]) ||
-         (AF_INET6 == _family && IN6_IS_ADDR_LOOPBACK(&_addr._ip6));
+         (AF_INET6 == _family && _addr._ip6.is_loopback());
 }
 
 inline IPAddr&
