@@ -94,14 +94,17 @@ class TextView : public std::string_view {
 
 public:
   /// Default constructor (empty buffer).
-  constexpr TextView() = default;
+  constexpr TextView() noexcept = default;
 
   /** Construct from pointer and size.
    *
    * @param ptr Pointer to first character.
    * @param n Number of characters.
+   *
+   * If @a n is @c npos then @c ptr is presumed to be a C string and checked for length. If @c ptr
+   * is @c nullptr the length is 0. Otherwise @c strlen is used to calculate the length.
    */
-  constexpr TextView(const char *ptr, size_t n);
+  constexpr TextView(const char *ptr, size_t n) noexcept;
 
   /** Construct from a half open range [first, last).
    *
@@ -110,7 +113,7 @@ public:
    *
    * The character at @a first will be in the view, but the character at @a last will not.
    */
-  constexpr TextView(char const *first, char const *last);
+  constexpr TextView(char const *first, char const *last) noexcept;
 
   /** Construct from literal string.
 
@@ -123,22 +126,22 @@ public:
       @endcode
       The last character in @a a will be 'g'.
    */
-  template <size_t N> constexpr TextView(const char (&s)[N]);
+  template <size_t N> constexpr TextView(const char (&s)[N]) noexcept;
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
   */
-  constexpr TextView(std::nullptr_t);
+  constexpr TextView(std::nullptr_t) noexcept;
 
   /// Construct from a @c std::string_view.
   /// @note This provides an user defined conversion from @c std::string_view to @c TextView. The
   /// reverse conversion is implicit in @c TextView being a subclass of @c std::string_view.
-  constexpr TextView(super_type const &that);
+  constexpr TextView(super_type const &that) noexcept;
 
   /// Construct from @c std::string, referencing the entire string contents.
   /// @internal This can't be @c constexpr because this uses methods in @c std::string that may
   /// not be @c constexpr.
-  TextView(std::string const &str);
+  TextView(std::string const &str) noexcept;
 
   /// Assign a super class instance, @c std::string_view  to @a this.
   self_type &operator=(super_type const &that);
@@ -181,7 +184,7 @@ public:
       @return The first byte in the view, or a nul character if the view is empty.
   */
   /// @return The first byte in the view.
-  char operator*() const;
+  constexpr char operator*() const;
 
   /** Discard the first byte of the view.
    *
@@ -204,11 +207,11 @@ public:
 
   /// Check for empty view.
   /// @return @c true if the view has a nullptr @b or zero size.
-  bool operator!() const;
+  constexpr bool operator!() const noexcept;
 
   /// Check for non-empty view.
   /// @return @c true if the view refers to a non-empty range of bytes.
-  explicit operator bool() const;
+  explicit constexpr operator bool() const noexcept;
 
   /// Clear the view (become an empty view).
   self_type &clear();
@@ -291,7 +294,7 @@ public:
    * @param n Number of chars in the prefix.
    * @return A view of the first @a n characters in @a this, bounded by the size of @a this.
    */
-  self_type prefix(size_t n) const;
+  constexpr self_type prefix(size_t n) const noexcept;
 
   /** Get a view of a prefix bounded by @a c.
    *
@@ -485,7 +488,7 @@ public:
    * @param n Number of chars in the prefix.
    * @return A view of the last @a n characters in @a this, bounded by the size of @a this.
    */
-  self_type suffix(size_t n) const;
+  constexpr self_type suffix(size_t n) const noexcept;
 
   /** Get a view of a suffix bounded by @a c.
    *
@@ -663,7 +666,7 @@ public:
    * @note This is provided primarily for co-variance, i.e. the returned view is a @c TextView
    * instead of a @c std::string_view.
    */
-  self_type substr(size_type pos = 0, size_type count = npos) const;
+  constexpr self_type substr(size_type pos = 0, size_type count = npos) const noexcept;
 
   /** Check if the view begins with a specific @a prefix.
    *
@@ -671,7 +674,7 @@ public:
    * @return @c true if <tt>this->prefix(prefix.size()) == prefix</tt>, @c false otherwise.
    * @internal C++20 preview.
    */
-  bool starts_with(std::string_view const &prefix) const;
+  bool starts_with(std::string_view const &prefix) const noexcept;
 
   /** Check if the view begins with a specific @a prefix, ignoring case.
    *
@@ -679,7 +682,7 @@ public:
    * @return @c true if <tt>this->prefix(prefix.size()) == prefix</tt> without regard to case, @c false otherwise.
    * @internal C++20 preview.
    */
-  bool starts_with_nocase(std::string_view const &prefix) const;
+  bool starts_with_nocase(std::string_view const &prefix) const noexcept;
 
   /** Check if the view ends with a specific @a suffix.
    *
@@ -687,7 +690,7 @@ public:
    * @return @c true if <tt>this->suffix(suffix.size()) == suffix</tt>, @c false otherwise.
    * @internal C++20 preview.
    */
-  bool ends_with(std::string_view const &suffix) const;
+  bool ends_with(std::string_view const &suffix) const noexcept;
 
   /** Check if the view starts with a specific @a prefix, ignoring case.
    *
@@ -695,13 +698,13 @@ public:
    * @return @c true if <tt>this->suffix(suffix.size()) == suffix</tt> without regard to case, @c false otherwise.
    * @internal C++20 preview.
    */
-  bool ends_with_nocase(std::string_view const &suffix) const;
+  bool ends_with_nocase(std::string_view const &suffix) const noexcept;
 
   // Functors for using this class in STL containers.
   /// Ordering functor, lexicographic comparison.
   struct LessThan {
     bool
-    operator()(self_type const &lhs, self_type const &rhs) {
+    operator()(self_type const &lhs, self_type const &rhs) const noexcept {
       return -1 == strcmp(lhs, rhs);
     }
   };
@@ -709,7 +712,7 @@ public:
   /// Ordering functor, case ignoring lexicographic comparison.
   struct LessThanNoCase {
     bool
-    operator()(self_type const &lhs, self_type const &rhs) {
+    operator()(self_type const &lhs, self_type const &rhs) const noexcept {
       return -1 == strcasecmp(lhs, rhs);
     }
   };
@@ -721,7 +724,7 @@ public:
    * This is effectively @c std::string_view::end() except it explicit returns a pointer and not
    * (potentially) an iterator class, to match up with @c data().
    */
-  char const *data_end() const;
+  constexpr char const *data_end() const noexcept;
 
   /// Specialized stream operator implementation.
   /// @note Use the standard stream operator unless there is a specific need for this, which is unlikely.
@@ -733,10 +736,10 @@ public:
   /// @cond OVERLOAD
   // These methods are all overloads of other methods, defined in order to make the API more
   // convenient to use. Mostly these overload @c int for @c size_t so naked numbers work as expected.
-  self_type prefix(int n) const;
+  constexpr self_type prefix(int n) const noexcept;
   self_type take_suffix(int n);
   self_type split_prefix(int n);
-  self_type suffix(int n) const;
+  constexpr self_type suffix(int n) const noexcept;
   self_type split_suffix(int n);
   /// @endcond
 
@@ -846,13 +849,13 @@ double svtod(swoc::TextView text, swoc::TextView * parsed = nullptr);
 // definition and the reference documentation is messed up. Sigh.
 
 // === TextView Implementation ===
-inline constexpr TextView::TextView(const char *ptr, size_t n) : super_type(ptr, n) {}
-inline constexpr TextView::TextView(char const *first, char const *last) : super_type(first, last - first) {}
-inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0) {}
-inline TextView::TextView(std::string const &str) : super_type(str) {}
-inline constexpr TextView::TextView(super_type const &that) : super_type(that) {}
-template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1) {}
-//template <size_t N> constexpr TextView::TextView(const char (&s)[N], size_t n) : super_type(s, n) {}
+inline constexpr TextView::TextView(const char *ptr, size_t n) noexcept
+  : super_type(ptr, n == npos ? ( ptr ? ::strlen(ptr) : 0 ) : n) {}
+inline constexpr TextView::TextView(char const *first, char const *last) noexcept : super_type(first, last - first) {}
+inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullptr, 0) {}
+inline TextView::TextView(std::string const &str) noexcept : super_type(str) {}
+inline constexpr TextView::TextView(super_type const &that) noexcept : super_type(that) {}
+template <size_t N> constexpr TextView::TextView(const char (&s)[N]) noexcept : super_type(s, s[N - 1] ? N : N - 1) {}
 
 inline void
 TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set) {
@@ -867,15 +870,15 @@ TextView::clear() {
   return *this;
 }
 
-inline char TextView::operator*() const {
+inline constexpr char TextView::operator*() const {
   return this->empty() ? char(0) : *(this->data());
 }
 
-inline bool TextView::operator!() const {
+inline constexpr bool TextView::operator!() const noexcept {
   return this->empty();
 }
 
-inline TextView::operator bool() const {
+inline constexpr TextView::operator bool() const noexcept {
   return !this->empty();
 }
 
@@ -939,13 +942,13 @@ TextView::assign(char const *b, char const *e) {
   return *this;
 }
 
-inline TextView
-TextView::prefix(size_t n) const {
+inline constexpr TextView
+TextView::prefix(size_t n) const noexcept {
   return {this->data(), std::min(n, this->size())};
 }
 
-inline TextView
-TextView::prefix(int n) const {
+inline constexpr TextView
+TextView::prefix(int n) const noexcept {
   return {this->data(), std::min<size_t>(n, this->size())};
 }
 
@@ -1070,14 +1073,14 @@ TextView::take_prefix_if(F const &pred) {
   return this->take_prefix(this->find_if(pred));
 }
 
-inline TextView
-TextView::suffix(size_t n) const {
+inline constexpr TextView
+TextView::suffix(size_t n) const noexcept {
   n = std::min(n, this->size());
   return {this->data_end() - n, n};
 }
 
-inline TextView
-TextView::suffix(int n) const {
+inline constexpr TextView
+TextView::suffix(int n) const noexcept {
   return this->suffix(size_t(n));
 }
 
@@ -1332,13 +1335,13 @@ TextView::trim_if(F const &pred) {
   return this->ltrim_if(pred).rtrim_if(pred);
 }
 
-inline char const *
-TextView::data_end() const {
+constexpr inline char const *
+TextView::data_end() const noexcept {
   return this->data() + this->size();
 }
 
-inline TextView
-TextView::substr(size_type pos, size_type count) const {
+inline constexpr TextView
+TextView::substr(size_type pos, size_type count) const noexcept {
   if (pos >= this->size())
   {
     return {};
@@ -1348,22 +1351,22 @@ TextView::substr(size_type pos, size_type count) const {
 }
 
 inline bool
-TextView::starts_with(std::string_view const &prefix) const {
+TextView::starts_with(std::string_view const &prefix) const noexcept {
   return this->size() >= prefix.size() && 0 == ::memcmp(this->data(), prefix.data(), prefix.size());
 }
 
 inline bool
-TextView::starts_with_nocase(std::string_view const &prefix) const {
+TextView::starts_with_nocase(std::string_view const &prefix) const noexcept {
   return this->size() >= prefix.size() && 0 == ::strncasecmp(this->data(), prefix.data(), prefix.size());
 }
 
 inline bool
-TextView::ends_with(std::string_view const &suffix) const {
+TextView::ends_with(std::string_view const &suffix) const noexcept {
   return this->size() >= suffix.size() && 0 == ::memcmp(this->data_end() - suffix.size(), suffix.data(), suffix.size());
 }
 
 inline bool
-TextView::ends_with_nocase(std::string_view const &suffix) const {
+TextView::ends_with_nocase(std::string_view const &suffix) const noexcept {
   return this->size() >= suffix.size() && 0 == ::strncasecmp(this->data_end() - suffix.size(), suffix.data(), suffix.size());
 }
 
