@@ -10,6 +10,13 @@
 #include "swoc/swoc_file.h"
 #include "swoc/bwf_base.h"
 
+// Some portability defines for Apple's stat structure. See stat(2) man page.
+#if __APPLE__
+#define st_atim st_atimespec
+#define st_ctim st_ctimespec
+#define st_mtim st_mtimespec
+#endif
+
 using namespace swoc::literals;
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
