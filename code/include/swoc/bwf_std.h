@@ -26,7 +26,7 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, atomic<T> const &v)
 swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec);
 
 template < size_t N >
-swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const& spec, bitset<N> const& bits) {
+swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const& /* spec */, bitset<N> const& bits) {
   for ( unsigned idx = 0 ; idx < N ; ++idx) {
     w.write(bits[idx] ? '1' : '0');
   }
