@@ -287,6 +287,30 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   s = "file.cc.org";
   s.remove_prefix_at('!');
   REQUIRE(s == "file.cc.org");
+
+  static constexpr TextView ctv {"http://delain.nl/albums/Lucidity.html"};
+  static constexpr TextView ctv_scheme{ctv.prefix(4)};
+  static constexpr TextView ctv_stem{ctv.suffix(4)};
+  static constexpr TextView ctv_host{ctv.substr(7, 9)};
+  REQUIRE(ctv.starts_with("http"_tv) == true);
+  REQUIRE(ctv.ends_with(".html") == true);
+  REQUIRE(ctv.starts_with("https"_tv) == false);
+  REQUIRE(ctv.ends_with(".jpg") == false);
+  REQUIRE(ctv.starts_with_nocase("HttP"_tv) == true);
+  REQUIRE(ctv.ends_with_nocase("htML"_tv) == true);
+
+  REQUIRE(ctv_scheme == "http"_tv);
+  REQUIRE(ctv_stem == "html"_tv);
+  REQUIRE(ctv_host == "delain.nl"_tv);
+
+  // Checking that constexpr works for this constructor as long as npos isn't used.
+  static constexpr TextView ctv2 {"http://delain.nl/albums/Interlude.html", 38};
+  TextView ctv4 {"http://delain.nl/albums/Interlude.html", 38};
+  // This doesn't compile because it causes strlen to be called which isn't constexpr compatible.
+  //static constexpr TextView ctv3 {"http://delain.nl/albums/Interlude.html", TextView::npos};
+  // This works because it's not constexpr.
+  TextView ctv3 {"http://delain.nl/albums/Interlude.html", TextView::npos};
+  REQUIRE(ctv2 == ctv3);
 };
 
 TEST_CASE("TextView Formatting", "[libswoc][TextView]")
