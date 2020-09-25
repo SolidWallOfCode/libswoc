@@ -955,3 +955,7 @@ get(swoc::Rv<R> const& rv) {
 }
 
 }} // namespace swoc
+
+namespace std {
+  using swoc::get; // Import specialized overloads to standard namespace.
+}

@@ -1267,7 +1267,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
                                       , F&& blender) -> self_type& {
   // Do a base check for the color to use on unmapped values. If self blending on @a color
   // is @c false, then do not color currently unmapped values.
-  PAYLOAD plain_color; // color to paint uncolored metrics.
+  [[maybe_unused]] PAYLOAD plain_color{}; // color to paint uncolored metrics.
   bool plain_color_p = blender(plain_color, color); // start with default and blend in @a color.
 
   auto node_cleaner = [&](Node *ptr) -> void { _fa.destroy(ptr); };
