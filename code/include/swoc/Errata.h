@@ -209,13 +209,17 @@ public:
   self_type &note(self_type &&that);
 
   /// Overload for @c DIAG severity notes.
-  template <typename... Args> self_type &diag(std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &diag(std::string_view fmt, Args &&... args) &;
+  template <typename... Args> self_type diag(std::string_view fmt, Args &&... args) &&;
   /// Overload for @c INFO severity notes.
-  template <typename... Args> self_type &info(std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &info(std::string_view fmt, Args &&... args)&;
+  template <typename... Args> self_type info(std::string_view fmt, Args &&... args) &&;
   /// Overload for @c WARN severity notes.
-  template <typename... Args> self_type &warn(std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &warn(std::string_view fmt, Args &&... args) &;
+  template <typename... Args> self_type warn(std::string_view fmt, Args &&... args) &&;
   /// Overload for @c ERROR severity notes.
-  template <typename... Args> self_type &error(std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &error(std::string_view fmt, Args &&... args) &;
+  template <typename... Args> self_type error(std::string_view fmt, Args &&... args) &&;
 
   /// Remove all messages.
   /// @note This is also used to prevent logging.
@@ -694,26 +698,50 @@ Errata::note(Severity severity, std::string_view fmt, Args &&... args) {
 
 template <typename... Args>
 Errata &
-Errata::diag(std::string_view fmt, Args &&... args) {
+Errata::diag(std::string_view fmt, Args &&... args) & {
   return this->note_v(Severity::DIAG, fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
+Errata
+Errata::diag(std::string_view fmt, Args &&... args) && {
+  return std::move(this->note_v(Severity::DIAG, fmt, std::forward_as_tuple(args...)));
+}
+
+template <typename... Args>
 Errata &
-Errata::info(std::string_view fmt, Args &&... args) {
+Errata::info(std::string_view fmt, Args &&... args) & {
   return this->note_v(Severity::INFO, fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
-Errata &
-Errata::warn(std::string_view fmt, Args &&... args) {
-  return this->note_v(Severity::WARN, fmt, std::forward_as_tuple(args...));
+Errata
+Errata::info(std::string_view fmt, Args &&... args) && {
+  return std::move(this->note_v(Severity::INFO, fmt, std::forward_as_tuple(args...)));
 }
 
 template <typename... Args>
 Errata &
-Errata::error(std::string_view fmt, Args &&... args) {
+Errata::warn(std::string_view fmt, Args &&... args) & {
+  return this->note_v(Severity::WARN, fmt, std::forward_as_tuple(args...));
+}
+
+template <typename... Args>
+Errata
+Errata::warn(std::string_view fmt, Args &&... args) && {
+  return std::move(this->note_v(Severity::WARN, fmt, std::forward_as_tuple(args...)));
+}
+
+template <typename... Args>
+Errata &
+Errata::error(std::string_view fmt, Args &&... args) & {
   return this->note_v(Severity::ERROR, fmt, std::forward_as_tuple(args...));
+}
+
+template <typename... Args>
+Errata
+Errata::error(std::string_view fmt, Args &&... args) && {
+  return std::move(this->note_v(Severity::ERROR, fmt, std::forward_as_tuple(args...)));
 }
 
 inline Errata &
