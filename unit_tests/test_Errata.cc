@@ -102,6 +102,7 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   REQUIRE(result == 17); // Local copy binding, no update.
 
   auto &[r_result, r_erratum] = zret;
+  REQUIRE(r_erratum.is_ok() == false);
 
   REQUIRE(r_result == 38);
   zret = 56;
@@ -109,10 +110,11 @@ TEST_CASE("Rv", "[libswoc][Errata]")
 
   auto const &[cr_result, cr_erratum] = zret;
   REQUIRE(cr_result == 56);
+  REQUIRE(cr_erratum.is_ok() == false);
 
   auto test = [](Rv<int> const &rvc) {
-    auto const &[cv_result, cv_erratum] = rvc;
-    REQUIRE(cv_result == 56);
+    auto n = std::get<0>(rvc);
+    REQUIRE(n == 56);
   };
 
   test(zret); // invoke it.
@@ -142,4 +144,5 @@ TEST_CASE("Rv", "[libswoc][Errata]")
 
   auto &&[tr2, te2]{maker()};
   REQUIRE(tr2->s == "made"sv);
+  REQUIRE(te2.is_ok() == true);
 };

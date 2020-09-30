@@ -88,6 +88,7 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]") {
     // doc.lookup.begin
     auto && [ range, flags ] = *space.find(addr);
     // doc.lookup.end
+    static_cast<void>(range);
     REQUIRE(flags == bits);
   }
   // doc.lookup.end

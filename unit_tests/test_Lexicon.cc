@@ -72,7 +72,9 @@ TEST_CASE("Lexicon", "[libts][Lexicon]")
            {Radio::DELTA, {"Delta"}}});
 
   // test structured binding for iteration.
-  for ([[maybe_unused]] auto const &[key, name] : lex) {
+  for (auto const &[key, name] : lex) {
+    static_cast<void>(key);
+    static_cast<void>(name);
   }
 };
 

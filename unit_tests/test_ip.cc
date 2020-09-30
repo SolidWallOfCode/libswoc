@@ -756,6 +756,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   // Verify that earlier ranges are still valid after the double blend.
   for (auto &&[text, value] : r2) {
     IPRange range{text};
+    static_cast<void>(value);
     REQUIRE(space.end() != space.find(range.min()));
     REQUIRE(space.end() != space.find(range.max()));
   }
@@ -765,6 +766,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   // Verify all the data is in the ranges.
   for (auto &&[text, value] : r2) {
     IPRange range{text};
+    static_cast<void>(value);
     REQUIRE(space.end() != space.find(range.min()));
     REQUIRE(space.end() != space.find(range.max()));
   }
@@ -777,6 +779,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   }
   {
     auto && [ r, p ] = *space.find(IPAddr{"2001:4997:58:400::1E"});
+    static_cast<void>(p);
     REQUIRE(true == r.empty());
   }
 }
@@ -808,8 +811,10 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
 
   // Check that if an IPv4 lookup misses, it doesn't pass on to the first IPv6
   auto && [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
+  static_cast<void>(p1);
   REQUIRE(true == r1.empty());
   auto && [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.100"}));
+  static_cast<void>(p2);
   REQUIRE(true == r2.empty());
 }
 
@@ -864,6 +869,7 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
 
   idx = 0;
   for (auto const&[range, bits] : space) {
+    static_cast<void>(range);
     REQUIRE(idx < results.size());
     CHECK(bits == make_bits(results[idx]));
     ++idx;
@@ -872,6 +878,7 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   idx = results.size();
   for (auto spot = space.end(); spot != space.begin();) {
     auto const&[range, bits]{*--spot};
+    static_cast<void>(range);
     REQUIRE(idx > 0);
     --idx;
     CHECK(bits == make_bits(results[idx]));
@@ -885,6 +892,7 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   for (auto spot = space.begin(); spot != space.end() ; ++spot) {
     iter = spot;
     std::tie(range, bits) = *iter;
+    static_cast<void>(range);
     REQUIRE(idx < results.size());
     CHECK(bits == make_bits(results[idx]));
     ++idx;
@@ -1500,10 +1508,14 @@ TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
       auto spot = space.begin();
       auto [ r1, p1 ] = *++spot;
       auto [ r2, p2 ] = *++spot;
+      static_cast<void>(p1);
+      static_cast<void>(p2);
       REQUIRE(r1.max() < r2.min()); // This is supposed to be an invariant! Make sure.
       auto back = space.end();
       auto [ br1, bp1 ] = *--back;
       auto [ br2, bp2 ] = *--back;
+      static_cast<void>(bp1);
+      static_cast<void>(bp2);
       REQUIRE(br2.max() < br1.min()); // This is supposed to be an invariant! Make sure.
     }
   }
