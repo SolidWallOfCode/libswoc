@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(Lib-SWOC CXX)
-set(LIBSWOC_VERSION "1.2.10")
+set(LIBSWOC_VERSION "1.2.11")
 set(CMAKE_CXX_STANDARD 17)
 include(GNUInstallDirs)
 
