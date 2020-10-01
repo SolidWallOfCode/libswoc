@@ -80,6 +80,26 @@ is_dir(const file_status& fs) {
   return file_type(fs) == S_IFDIR;
 }
 
+path absolute(path const& src, std::error_code & ec) {
+  char buff[4096];
+  ec.clear();
+  if (src.is_absolute()) { return src; }
+  auto s = realpath(src.c_str(), buff);
+  if (s == nullptr) {
+    if (errno == ENAMETOOLONG) {
+      s = realpath(src.c_str(), nullptr);
+      if (s != nullptr) {
+        path zret { s };
+        free(s);
+        return zret;
+      }
+    }
+    ec = std::error_code(errno, std::system_category());
+    return {};
+  }
+  return path{ s };
+}
+
 namespace {
 inline std::chrono::system_clock::time_point chrono_cast(timespec const& ts) {
   using namespace std::chrono;

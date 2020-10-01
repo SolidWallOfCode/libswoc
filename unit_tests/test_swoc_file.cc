@@ -67,9 +67,20 @@ TEST_CASE("swoc_file_io", "[libts][swoc_file_io]")
   REQUIRE(swoc::file::is_dir(fs) == false);
   REQUIRE(swoc::file::is_regular_file(fs) == true);
 
+  // See if converting to absolute works (at least somewhat).
+  REQUIRE(file.is_relative());
+  auto abs { swoc::file::absolute(file, ec) };
+  REQUIRE(ec.value() == 0);
+  REQUIRE(abs.is_absolute());
+  fs = swoc::file::status(abs, ec); // needs to be the same as for @a file
+  REQUIRE(ec.value() == 0);
+  REQUIRE(swoc::file::is_dir(fs) == false);
+  REQUIRE(swoc::file::is_regular_file(fs) == true);
+
   // Failure case.
   file    = "../unit-tests/no_such_file.txt";
   content = swoc::file::load(file, ec);
   REQUIRE(ec.value() == 2);
   REQUIRE(swoc::file::is_readable(file) == false);
+
 }

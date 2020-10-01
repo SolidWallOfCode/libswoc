@@ -142,6 +142,18 @@ off_t file_size(const file_status& fs);
 /// Check if file is readable.
 bool is_readable(const path& s);
 
+/** Convert to absolute path.
+ *
+ * @param src Original path
+ * @param ec Error code.
+ * @return Absolute path.
+ *
+ * If @a path is already absolute, a copy of it is returned. Otherwise an absolute path is
+ * constructed that refers to the same item in the file system as @a src. If an error occurs
+ * then @a ec is set to indicate the type of error.
+ */
+path absolute(path const& src, std::error_code & ec);
+
 std::chrono::system_clock::time_point modify_time(file_status const& fs);
 std::chrono::system_clock::time_point access_time(file_status const& fs);
 std::chrono::system_clock::time_point status_time(file_status const& fs);

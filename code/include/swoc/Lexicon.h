@@ -552,7 +552,7 @@ template<typename E>
 template<typename... Args>
 auto
 Lexicon<E>::define(E value, Args&& ... names) -> self_type& {
-  static_assert(sizeof...(Args) > 0, "A defined value must have at least a priamry name");
+  static_assert(sizeof...(Args) > 0, "A defined value must have at least a primary name");
   return this->define(value, {std::forward<Args>(names)...});
 }
 
