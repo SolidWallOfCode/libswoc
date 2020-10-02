@@ -152,6 +152,11 @@ template<typename T, typename... Types> struct is_any_of {
   static constexpr bool value = std::disjunction<std::is_same<T, Types>...>::value;
 };
 
+template < typename T, typename ... Types> struct is_homogenous {
+  static constexpr bool value = std::conjunction<std::is_same<T, Types>...>::value;
+  using type = T;
+};
+
 /// Helper variable template for is_any_of
 template <typename T, typename... Types>
 inline constexpr bool is_any_of_v = is_any_of<T, Types...>::value;
