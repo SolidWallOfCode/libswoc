@@ -44,12 +44,12 @@ namespace detail {
 template<intmax_t N, intmax_t S, typename C>
 C
 scale_conversion_round_up(C c) {
-  typedef std::ratio<N, S> R;
-  if (N == S) {
+  using R = std::ratio<N, S>;
+  if constexpr (N == S) {
     return c;
-  } else if (R::den == 1) {
+  } else if constexpr (R::den == 1) {
     return c / R::num + (0 != c % R::num); // N is a multiple of S.
-  } else if (R::num == 1) {
+  } else if constexpr (R::num == 1) {
     return c * R::den; // S is a multiple of N.
   } else { return (c / R::num) * R::den + ((c % R::num) * R::den) / R::num + (0 != (c % R::num)); }
 }
@@ -58,12 +58,12 @@ scale_conversion_round_up(C c) {
 template<intmax_t N, intmax_t S, typename C>
 C
 scale_conversion_round_down(C c) {
-  typedef std::ratio<N, S> R;
-  if (N == S) {
+  using R = std::ratio<N, S>;
+  if constexpr (N == S) {
     return c;
-  } else if (R::den == 1) {
+  } else if constexpr (R::den == 1) {
     return c / R::num; // N = k S
-  } else if (R::num == 1) {
+  } else if constexpr (R::num == 1) {
     return c * R::den; // S = k N
   } else { return (c / R::num) * R::den + ((c % R::num) * R::den) / R::num; }
 }
@@ -144,7 +144,7 @@ template<intmax_t N, typename C, typename T> struct scalar_round_down_t {
 
     Instances of this class have a @a count and a @a scale. The "value" of the instance is @a
     count * @a scale.  The scale is stored in the compiler in the class symbol table and so only
-    the count is a run time value. An instance with a large scale can be assign to an instance
+    the count is a run time value. An instance with a large scale can be assigned to an instance
     with a smaller scale and the conversion is done automatically. Conversions from a smaller to
     larger scale must be explicit using @c round_up and @c round_down. This prevents
     inadvertent changes in value. Because the scales are not the same these conversions can be
@@ -155,9 +155,9 @@ template<intmax_t N, typename C, typename T> struct scalar_round_down_t {
 
     @a T is a "tag" type which is used only to distinguish the base metric for the scale. Scalar
     types that have different tags are not interoperable although they can be converted manually by
-    converting to units and then explicitly constructing a new Scalar instance. This is by
-    design. This can be ignored - if not specified then it defaults to a "generic" tag. The type can
-    be (and usually is) defined in name only).
+    converting to units and then explicitly constructing a new Scalar instance. This is by design.
+    This can be ignored - if not specified then it defaults to a "generic" tag. The type can be (and
+    usually is) defined in name only).
 
     @note This is modeled somewhat on @c std::chrono and serves a similar function for different
     and simpler cases (where the ratio is always an integer, never a fraction).
@@ -166,13 +166,13 @@ template<intmax_t N, typename C, typename T> struct scalar_round_down_t {
     @see round_down
  */
 template<intmax_t N, typename C = int, typename T = tag::generic> class Scalar {
-  typedef Scalar self_type; ///< Self reference type.
+  using self_type = Scalar; ///< Self reference type.
 
 public:
   /// Scaling factor - make it external accessible.
   constexpr static intmax_t SCALE = N;
-  typedef C Counter; ///< Type used to hold the count.
-  typedef T Tag;     ///< Make tag accessible.
+  using Counter = C; ///< Type used to hold the count.
+  using Tag = T;     ///< Tag for the scalar.
 
   static_assert(N > 0, "The scaling factor (1st template argument) must be a positive integer");
   static_assert(std::is_integral<C>::value, "The counter type (2nd template argument) must be an integral type");
@@ -485,7 +485,7 @@ template<intmax_t N, typename C, typename T>
 template<intmax_t S, typename I>
 auto
 Scalar<N, C, T>::operator=(Scalar<S, I, T> const& that) -> self_type& {
-  typedef std::ratio<S, N> R;
+  using R = std::ratio<S, N>;
   static_assert(R::den ==
                 1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
   _n = that.count() * R::num;
@@ -496,7 +496,7 @@ template<intmax_t N, typename C, typename T>
 template<intmax_t S, typename I>
 auto
 Scalar<N, C, T>::assign(Scalar<S, I, T> const& that) -> self_type& {
-  typedef std::ratio<S, N> R;
+  using R = std::ratio<S, N>;
   static_assert(R::den ==
                 1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
   _n = that.count() * R::num;
@@ -569,21 +569,21 @@ round_down(Scalar<N, C, T> v) {
 template<intmax_t N, typename C1, intmax_t S, typename I, typename T>
 bool
 operator<(Scalar<N, C1, T> const& lhs, Scalar<S, I, T> const& rhs) {
-  typedef std::ratio<N, S> R;
+  using R = std::ratio<N, S>;
   return lhs.count() * R::num < rhs.count() * R::den;
 }
 
 template<intmax_t N, typename C1, intmax_t S, typename I, typename T>
 bool
 operator==(Scalar<N, C1, T> const& lhs, Scalar<S, I, T> const& rhs) {
-  typedef std::ratio<N, S> R;
+  using R = std::ratio<N, S>;
   return lhs.count() * R::num == rhs.count() * R::den;
 }
 
 template<intmax_t N, typename C1, intmax_t S, typename I, typename T>
 bool
 operator<=(Scalar<N, C1, T> const& lhs, Scalar<S, I, T> const& rhs) {
-  typedef std::ratio<N, S> R;
+  using R = std::ratio<N, S>;
   return lhs.count() * R::num <= rhs.count() * R::den;
 }
 
@@ -612,7 +612,7 @@ template<intmax_t N, typename C, typename T>
 template<intmax_t S, typename I>
 auto
 Scalar<N, C, T>::operator+=(Scalar<S, I, T> const& that) -> self_type& {
-  typedef std::ratio<S, N> R;
+  using R = std::ratio<S, N>;
   static_assert(R::den ==
                 1, "Addition not permitted - target scale is not an integral multiple of source scale.");
   _n += that.count() * R::num;
@@ -721,7 +721,7 @@ template<intmax_t N, typename C, typename T>
 template<intmax_t S, typename I>
 auto
 Scalar<N, C, T>::operator-=(Scalar<S, I, T> const& that) -> self_type& {
-  typedef std::ratio<S, N> R;
+  using R = std::ratio<S, N>;
   static_assert(R::den ==
                 1, "Subtraction not permitted - target scale is not an integral multiple of source scale.");
   _n -= that.count() * R::num;
