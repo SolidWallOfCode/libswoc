@@ -94,7 +94,7 @@ template<typename... Args> struct SubText {
   arg_pack _args;                       ///< Arguments to format string.
 
   /// Construct with a specific @a fmt and @a args.
-  SubText(TextView fmt, arg_pack const& args) : _fmt(fmt), _args(args) {};
+  SubText(TextView const& fmt, arg_pack const& args) : _fmt(fmt), _args(args) {};
 
   /// Check for output not enabled.
   bool operator!() const;
