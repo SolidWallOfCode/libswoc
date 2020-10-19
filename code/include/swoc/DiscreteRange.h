@@ -1376,7 +1376,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const& range, U 
         }
       } else if (pred_plain_colored_p) { // can pull @a pred right to cover.
         pred->assign_max(remaining.max());
-      } else if (!remaining.empty()) { // Must add new range.
+      } else if (!remaining.empty() && plain_color_p) { // Must add new range if plain color valid.
         this->insert_before(n, _fa.make(remaining.min(), remaining.max(), plain_color));
       }
       return *this;
