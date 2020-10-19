@@ -816,10 +816,20 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
 TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   using PAYLOAD = std::bitset<32>;
   using Space = swoc::IPSpace<PAYLOAD>;
+  // Add the bits in @rhs to the range.
   auto blender = [](PAYLOAD&lhs, PAYLOAD const&rhs) -> bool {
     lhs |= rhs;
     return true;
   };
+  // Add bit @a idx iff bits are already set.
+  auto additive = [](PAYLOAD & lhs, unsigned idx) -> bool {
+    if (! lhs.any()) {
+      return false;
+    }
+    lhs[idx] = true;
+    return true;
+  };
+
   auto make_bits = [](std::initializer_list<unsigned> idx) -> PAYLOAD {
     PAYLOAD bits;
     for (auto bit : idx) {
@@ -889,6 +899,20 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
     CHECK(bits == make_bits(results[idx]));
     ++idx;
   }
+
+  // This blend should change only existing ranges, not add range.
+  space.blend(IPRange{"99.128.0.0-100.0.1.255"}, 27, additive);
+  REQUIRE(space.count() == results.size()); // no more ranges.
+  // Verify first two ranges modified, but not the next.
+  REQUIRE(std::get<1>(*(space.find(IP4Addr{"100.0.0.37"}))) == make_bits({0,27,31}));
+  REQUIRE(std::get<1>(*(space.find(IP4Addr{"100.0.1.37"}))) == make_bits({1,27,30}));
+  REQUIRE(std::get<1>(*(space.find(IP4Addr{"100.0.2.37"}))) == make_bits({2}));
+
+  space.blend(IPRange{"100.10.1.1-100.10.2.2"}, make_bits({15}), blender);
+  REQUIRE(space.count() == results.size() + 1);
+  // Color in empty range - should not add range.
+  space.blend(IPRange{"100.8.10.25"}, 27, additive);
+  REQUIRE(space.count() == results.size() + 1);
 }
 
 TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
