@@ -771,6 +771,14 @@ bool IP4Range::load(string_view text) {
   return false;
 }
 
+IPMask IP4Range::network_mask() const {
+  NetSource nets { *this };
+  if (! nets.empty() && (*nets).as_range() == *this) {
+    return nets->mask();
+  }
+  return {}; // default constructed (invalid) mask.
+}
+
 IP4Range::NetSource::NetSource(IP4Range::NetSource::range_type const& range) : _range(range) {
   if (!_range.empty()) {
     this->search_wider();
@@ -924,6 +932,23 @@ bool IPRange::empty() const {
     default: break;
   }
   return true;
+}
+
+IPMask IPRange::network_mask() const {
+  switch (_family) {
+    case AF_INET: return _range._ip4.network_mask();
+    case AF_INET6: return _range._ip6.network_mask();
+    default: break;
+  }
+  return {};
+}
+
+IPMask IP6Range::network_mask() const {
+  NetSource nets { *this };
+  if (! nets.empty() && (*nets).as_range() == *this) {
+    return nets->mask();
+  }
+  return {}; // default constructed (invalid) mask.
 }
 
 IP6Range::NetSource::NetSource(IP6Range::NetSource::range_type const& range) : _range(range) {

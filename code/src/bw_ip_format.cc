@@ -262,6 +262,19 @@ bwformat(BufferWriter& w, Spec const& spec, IP4Range const& range) {
   if (range.empty()) {
     w.write("*-*"_tv);
   } else {
+    // Compact means output as singleton or CIDR if that's possible.
+    if (spec._ext.find('c') != spec._ext.npos) {
+      if (range.is_singleton()) {
+        return bwformat(w, spec, range.min());
+      }
+      auto mask { range.network_mask() };
+      if (mask.is_valid()) {
+        bwformat(w, spec, range.min());
+        w.write('/');
+        bwformat(w, bwf::Spec::DEFAULT, mask);
+        return w;
+      }
+    }
     bwformat(w, spec, range.min());
     w.write('-');
     bwformat(w, spec, range.max());
@@ -274,6 +287,19 @@ bwformat(BufferWriter& w, Spec const& spec, IP6Range const& range) {
   if (range.empty()) {
     w.write("*-*"_tv);
   } else {
+    // Compact means output as singleton or CIDR if that's possible.
+    if (spec._ext.find('c') != spec._ext.npos) {
+      if (range.is_singleton()) {
+        return bwformat(w, spec, range.min());
+      }
+      auto mask { range.network_mask() };
+      if (mask.is_valid()) {
+        bwformat(w, spec, range.min());
+        w.write('/');
+        bwformat(w, bwf::Spec::DEFAULT, mask);
+        return w;
+      }
+    }
     bwformat(w, spec, range.min());
     w.write('-');
     bwformat(w, spec, range.max());
