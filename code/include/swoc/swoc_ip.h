@@ -831,6 +831,14 @@ public:
    */
   bool load(string_view text);
 
+  /** Compute the mask for @a this as a network.
+   *
+   * @return If @a this is a network, the mask for that network. Otherwise an invalid mask.
+   *
+   * @see IPMask::is_valid
+   */
+  IPMask network_mask() const;
+
   class NetSource;
 
   /** Generate a list of networks covering @a this range.
@@ -873,6 +881,9 @@ public:
 
   iterator begin() const; ///< First network.
   iterator end() const; ///< Past last network.
+
+  /// Return @c true if there are valid networks, @c false if not.
+  bool empty() const;
 
   /// @return The current network.
   IP4Net operator*() const;
@@ -955,6 +966,14 @@ public:
    */
   bool load(string_view text);
 
+  /** Compute the mask for @a this as a network.
+   *
+   * @return If @a this is a network, the mask for that network. Otherwise an invalid mask.
+   *
+   * @see IPMask::is_valid
+   */
+  IPMask network_mask() const;
+
   class NetSource;
 
   /** Generate a list of networks covering @a this range.
@@ -997,6 +1016,9 @@ public:
 
   iterator begin() const; ///< First network.
   iterator end() const; ///< Past last network.
+
+  /// Return @c true if there are valid networks, @c false if not.
+  bool empty() const;
 
   /// @return The current network.
   IP6Net operator*() const;
@@ -1105,6 +1127,14 @@ public:
   IP4Range const& ip4() const { return _range._ip4; }
 
   IP6Range const& ip6() const { return _range._ip6; }
+
+  /** Compute the mask for @a this as a network.
+   *
+   * @return If @a this is a network, the mask for that network. Otherwise an invalid mask.
+   *
+   * @see IPMask::is_valid
+   */
+  IPMask network_mask() const;
 
   class NetSource;
 
@@ -2627,6 +2657,10 @@ inline IP4Range::NetSource::iterator IP4Range::NetSource::end() const {
   return self_type{range_type{}};
 }
 
+inline bool IP4Range::NetSource::empty() const {
+  return _range.empty();
+}
+
 inline IPMask IP4Range::NetSource::mask() const { return IPMask{_cidr}; }
 
 inline auto IP4Range::NetSource::operator->() -> self_type * { return this; }
@@ -2648,6 +2682,10 @@ inline auto IP6Range::NetSource::begin() const -> iterator {
 
 inline auto IP6Range::NetSource::end() const -> iterator {
   return self_type{range_type{}};
+}
+
+inline bool IP6Range::NetSource::empty() const {
+  return _range.empty();
 }
 
 inline IP6Net IP6Range::NetSource::operator*() const {

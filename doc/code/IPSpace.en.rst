@@ -83,6 +83,20 @@ properly formatted, otherwise the range will be default constructed to an invali
 also the :libswoc:`swoc::IPRange::load` method which returns a :code:`bool` to indicate if the
 parsing was successful.
 
+This class has formatting support in "bwf_ip.h". In addition to all of the formatting supported for
+:code:`sockaddr`, the additional extension code 'c' can be used to indicate compact range formatting.
+Compact means a singleton range will be written as just the single address, and if the range is
+also a network it will be printed in CIDR format.
+
+======================= =======================
+Range                   Compact
+======================= =======================
+10.1.0.0-10.1.0.127     10.1.0.0/25
+10.2.0.1-10.2.0.127     10.2.0.1-10.2.0.127
+10.3.0.0-10.3.0.126     10.3.0.0-10.3.0.126
+10.4.1.1-10.4.1.1       10.4.1.1
+======================= =======================
+
 .. _ip-space:
 
 IPSpace

@@ -321,6 +321,37 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(w.view() == "0000:0000:0000:0000:0000:0000:0000:0001");
   w.clear().print("{:: =a}", ep);
   REQUIRE(w.view() == "   0:   0:   0:   0:   0:   0:   0:   1");
+
+  std::string_view r_1{"10.1.0.0-10.1.0.127"};
+  std::string_view r_2{"10.2.0.1-10.2.0.127"}; // not a network - bad start
+  std::string_view r_3{"10.3.0.0-10.3.0.126"}; // not a network - bad end
+  std::string_view r_4{"10.4.1.1-10.4.1.1"}; // singleton
+
+  IPRange r;
+
+  r.load(r_1);
+  w.clear().print("{}", r);
+  REQUIRE(w.view() == r_1);
+  w.clear().print("{::c}", r);
+  REQUIRE(w.view() == "10.1.0.0/25");
+
+  r.load(r_2);
+  w.clear().print("{}", r);
+  REQUIRE(w.view() == r_2);
+  w.clear().print("{::c}", r);
+  REQUIRE(w.view() == r_2);
+
+  r.load(r_3);
+  w.clear().print("{}", r);
+  REQUIRE(w.view() == r_3);
+  w.clear().print("{::c}", r);
+  REQUIRE(w.view() == r_3);
+
+  r.load(r_4);
+  w.clear().print("{}", r);
+  REQUIRE(w.view() == r_4);
+  w.clear().print("{::c}", r);
+  REQUIRE(w.view() == "10.4.1.1");
 }
 
 TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
@@ -565,7 +596,7 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
     ++r5_net;
   }
 
-  // Try it again, using @c IPRange.
+  // Try it again, using @c IPNet.
   r5_net = r_5_nets.begin();
   for ( auto const&[addr, mask] : IPRange{r_5}.networks()) {
     REQUIRE(r5_net != r_5_nets.end());
