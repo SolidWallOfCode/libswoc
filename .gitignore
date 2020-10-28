@@ -1,17 +1,8 @@
-# Prerequisites
-*.d
-*.cbp
-
 # Compiled Object files
-*.slo
-*.lo
 *.o
 *.obj
 *.swp
-
-# Precompiled Headers
-*.gch
-*.pch
+*.cbp
 
 # Compiled Dynamic libraries
 *.so
@@ -19,8 +10,6 @@
 *.dll
 
 # Compiled Static libraries
-*.lai
-*.la
 *.a
 *.lib
 
@@ -28,16 +17,26 @@
 *.exe
 *.out
 *.app
+example/ex_flat_space
+example/ex_netcompact
+example/ex_netdb
+unit_tests/test_libswoc
 
+# CMake cruft
+*.cmake
+CMakeFiles/
+CMakeCache.txt
+cmake-build-debug/
+cmake-build-release/
+Makefile
 .idea/
-cmake-build-debug
+
+# Documentation.
 doc/_build
 doc/doxygen
 doc/reference
 doc/ext/local-config.py
 doc/ext/__*
-CMakeFiles/
-cmake-build-release/
 venv/
 .parts.cache
 .sconsign.dblite

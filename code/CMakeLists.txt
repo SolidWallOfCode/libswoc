@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.11)
 
 project(Lib-SWOC CXX)
 set(LIBSWOC_VERSION "1.2.13")
@@ -45,12 +45,13 @@ set(CC_FILES
     )
 
 add_library(libswoc STATIC ${CC_FILES})
+set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc-static)
 if (CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(libswoc PRIVATE -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
+    target_compile_options(libswoc PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
 endif()
 
 # Not quite sure how this works, but I think it generates one of two paths depending on the context.
-# That is, the generator functions return non-empty stri ngs only in the corresponding context.
+# That is, the generator functions return non-empty strings only in the corresponding context.
 target_include_directories(libswoc
     PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -58,9 +59,10 @@ target_include_directories(libswoc
     )
 
 # These install target variables are created by GNUInstallDirs.
+message("CMAKE_INSTALL_LIBDIR = ${CMAKE_INSTALL_LIBDIR}")
 install(TARGETS libswoc
     EXPORT libswoc-config
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # seems to have no effect.
     )
 install(DIRECTORY include/swoc DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
@@ -69,9 +71,10 @@ install(EXPORT libswoc-config
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libswoc
     )
 
-set(PKG_CONFIG_FILE ${CMAKE_BINARY_DIR}/libswoc.pc)
+
+set(PKG_CONFIG_FILE ${CMAKE_INSTALL_LIBDIR}/libswoc.pc)
 configure_file("libswoc.pc.cmake" ${PKG_CONFIG_FILE} @ONLY)
-install(FILES ${PKG_CONFIG_FILE} DESTINATION ${LIB_INSTALL_DIR}/pkgconfig)
+install(FILES ${PKG_CONFIG_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 # Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.
 # AFAICT the file isn't created at all even with this enabled.
