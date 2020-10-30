@@ -367,6 +367,8 @@ public:
    * @tparam F Predicate function type.
    * @param pred The predicate instance.
    * @return @a this.
+   *
+   * Characters are removed until @a pred returns @c true. The matching character is also removed.
    */
   template <typename F> self_type &remove_prefix_if(F const &pred);
 
@@ -482,6 +484,17 @@ public:
    * @see @c split_prefix_if
    */
   template <typename F> self_type take_prefix_if(F const &pred);
+
+  /** Remove and return a prefix of characters satisfying @a pred
+   *
+   * @tparam F Predicate functor type.
+   * @param pred A function taking @c char and returning @c bool.
+   * @return The prefix of characters that satisfy @a pred.
+   *
+   * The returned prefix is removed from @a this. That prefix may be empty if the first character
+   * does not satisfy @a pred.
+   */
+  template <typename F> self_type clip_prefix_of(F const &pred);
 
   /** Get a view of the last @a n bytes.
    *
@@ -646,13 +659,22 @@ public:
    * @param pred A function taking @c char and returning @c bool.
    * @return The suffix bounded by the first character satisfying @a pred if found, otherwise all of @a this.
    *
-   * The returned suffix is removed the character satisfying @a pred if found.
-   *
-   * @note The matching character is discarded if @a this is modified.
+   * @note The matching character is discarded if found.
    *
    * @see @c split_suffix_if
    */
   template <typename F> self_type take_suffix_if(F const &pred);
+
+  /** Remove and return a suffix of characters satisfying @a pred
+   *
+   * @tparam F Predicate functor type.
+   * @param pred A function taking @c char and returning @c bool.
+   * @return The suffix of characters that satisfy @a pred.
+   *
+   * The returned suffix is removed from @a this. That suffix may be empty if the last character
+   * does not satisfy @a pred.
+   */
+  template <typename F> self_type clip_suffix_of(F const &pred);
 
   /** Get a view of part of this view.
    *
@@ -1402,6 +1424,26 @@ TextView::stream_write(Stream &os, const TextView &b) const {
       stream_fill(os, pad_size);
   }
   return os;
+}
+
+template<typename F>
+TextView::self_type TextView::clip_prefix_of(F const& pred) {
+  size_t idx = 0;
+  for (auto spot = this->data(), limit = spot + this->size() ; spot < limit && pred(*spot); ++spot, ++idx )
+    ; // empty
+  TextView token = this->prefix(idx);
+  this->remove_prefix(idx);
+  return token;
+}
+
+template<typename F>
+TextView::self_type TextView::clip_suffix_of(F const& pred) {
+  size_t idx = this->size() - 1;
+  for (auto spot = this->data() + idx, limit = this->data() ; spot >= limit && pred(*spot); --spot, --idx )
+    ; // empty
+  TextView token = this->suffix(idx);
+  this->remove_suffix(idx);
+  return token;
 }
 
 // Provide an instantiation for @c std::ostream as it's likely this is the only one ever used.

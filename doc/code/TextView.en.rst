@@ -167,6 +167,10 @@ A secondary distinction is what is done to the view by the methods.
    is discarded and not left in either the returned view nor the source view. If the selected character
    is not in the view, the entire view is returned and the source view is cleared.
 
+*  The "clip..." methods remove the corresponding part of the view and return it. Only those characters
+   are removed - in contrast to "split..." and "take...". If no characters match, the view is not modified
+   and an empty view is returned.
+
 .. _`std::string_view::remove_prefix`: https://en.cppreference.com/w/cpp/string/basic_string_view/remove_prefix
 .. _`std::string_view::remove_suffix`: https://en.cppreference.com/w/cpp/string/basic_string_view/remove_suffix
 
@@ -209,6 +213,8 @@ if the size specified is larger than the contents of the view.
 |                 |        |         | :libswoc:`TextView::split_prefix_at`     |
 |                 |        +         +------------------------------------------+
 |                 |        |         | :libswoc:`TextView::split_prefix_if`     |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::clip_prefix_of`      |
 |                 |        +---------+------------------------------------------+
 |                 |        | No      | :libswoc:`TextView::take_prefix`         |
 |                 |        +         +------------------------------------------+
@@ -221,6 +227,8 @@ if the size specified is larger than the contents of the view.
 |                 |        |         | :libswoc:`TextView::split_suffix_at`     |
 |                 |        +         +------------------------------------------+
 |                 |        |         | :libswoc:`TextView::split_suffix_if`     |
+|                 |        +         +------------------------------------------+
+|                 |        |         | :libswoc:`TextView::clip_suffix_of`      |
 |                 |        +---------+------------------------------------------+
 |                 |        | No      | :libswoc:`TextView::take_suffix`         |
 |                 |        +         +------------------------------------------+

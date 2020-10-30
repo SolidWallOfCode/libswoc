@@ -24,6 +24,7 @@ template < typename ... Args > Errata Error(TextView const& fmt, Args && ... arg
   return Errata{}.note_v(swoc::Severity::ERROR, fmt, std::forward_as_tuple(args...));
 }
 
+# if 0
 /** Extract and remove the next token.
  *
  * @tparam PRED Predicate function type - @c bool(char)
@@ -41,6 +42,7 @@ template < typename PRED > inline TextView take_token_if(TextView &src, PRED con
   src.remove_prefix(idx);
   return token;
 }
+# endif
 
 } // namespace
 
@@ -106,7 +108,7 @@ auto UnitParser::operator()(swoc::TextView const& src) const noexcept -> Rv<valu
   while (text.ltrim_if(&isspace)) {
     // Get a count first.
     auto ptr = text.data(); // save for error reporting.
-    auto count = take_token_if(text, &isdigit);
+    auto count = text.clip_prefix_of(&isdigit);
     if (count.empty()) {
       return { 0 , Error("Required count not found at offset {}", ptr - src.data()) };
     }
@@ -116,7 +118,7 @@ auto UnitParser::operator()(swoc::TextView const& src) const noexcept -> Rv<valu
     // Next, the unit.
     ptr = text.ltrim_if(&isspace).data(); // save for error reporting.
     // Everything up to the next digit or whitespace.
-    auto unit = take_token_if(text, [](char c) { return !(isspace(c) || isdigit(c)); } );
+    auto unit = text.clip_prefix_of([](char c) { return !(isspace(c) || isdigit(c)); } );
     if (unit.empty()) {
       if (_unit_required_p) {
         return { 0, Error("Required unit not found at offset {}", ptr - src.data()) };
