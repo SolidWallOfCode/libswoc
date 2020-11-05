@@ -385,6 +385,7 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
   REQUIRE(2345679 == svtoi(n8));
   REQUIRE(2345679 == svtoi(n8, &x));
   REQUIRE(x == n8);
+  REQUIRE(0b10111 == svtoi("0b10111"_tv));
 
   x = n4;
   REQUIRE(13 == swoc::svto_radix<10>(x));

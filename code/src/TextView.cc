@@ -86,7 +86,7 @@ intmax_t
 svtoi(TextView src, TextView *out, int base) {
   intmax_t zret = 0;
 
-  if (src.ltrim_if(&isspace) && src) {
+  if (src.ltrim_if(&isspace)) {
     TextView parsed;
     const char *start = src.data();
     bool neg = false;
@@ -128,21 +128,29 @@ svtou(TextView src, TextView *out, int base) {
       if ('0' == *src) {
         ++src;
         base = 8;
-        if (src && ('x' == *src || 'X' == *src)) {
-          ++src;
-          base = 16;
+        if (src) {
+          switch (*src) {
+            case 'x':
+            case 'X':
+              ++src;
+              base = 16;
+              break;
+            case 'b':
+            case 'B':
+              ++src;
+              base = 2;
+              break;
+          }
         }
       }
     }
 
     // For performance in common cases, use the templated conversion.
     switch (base) {
-      case 8:zret = svto_radix<8>(src);
-        break;
-      case 10:zret = svto_radix<10>(src);
-        break;
-      case 16:zret = svto_radix<16>(src);
-        break;
+      case 2: zret = svto_radix<2>(src); break;
+      case 8: zret = svto_radix<8>(src); break;
+      case 10: zret = svto_radix<10>(src); break;
+      case 16: zret = svto_radix<16>(src); break;
       default:
         while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) &&
                v < base) {
