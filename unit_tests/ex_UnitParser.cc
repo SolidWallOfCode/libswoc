@@ -24,26 +24,6 @@ template < typename ... Args > Errata Error(TextView const& fmt, Args && ... arg
   return Errata{}.note_v(swoc::Severity::ERROR, fmt, std::forward_as_tuple(args...));
 }
 
-# if 0
-/** Extract and remove the next token.
- *
- * @tparam PRED Predicate function type - @c bool(char)
- * @param src Input text.
- * @param pred Predicate function.
- * @return The token.
- *
- * The token is the prefix of @a src for which @a pred is true.
- */
-template < typename PRED > inline TextView take_token_if(TextView &src, PRED const& pred) {
-  size_t idx = 0;
-  for (auto spot = src.data(), limit = spot + src.size() ; spot < limit && pred(*spot); ++spot, ++idx )
-    ; // empty
-  TextView token = src.prefix(idx);
-  src.remove_prefix(idx);
-  return token;
-}
-# endif
-
 } // namespace
 
 /** Parse a string that consists of counts and units.
