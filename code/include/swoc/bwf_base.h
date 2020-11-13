@@ -593,7 +593,7 @@ Arg_Formatter(BufferWriter& w, Spec const& spec, TUPLE const& args) {
 }
 
 /// This exists only to expand the index sequence into an array of formatters for the tuple type
-/// @a TUPLE.  Due to langauge limitations it cannot be done directly. The formatters can be
+/// @a TUPLE.  Due to language limitations it cannot be done directly. The formatters can be
 /// accessed via standard array access in contrast to templated tuple access. The actual array is
 /// static and therefore at run time the only operation is loading the address of the array.
 template<typename TUPLE, size_t... N>
