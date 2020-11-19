@@ -879,7 +879,7 @@ MemSpan<void>::prefix(size_t n) const {
 
 inline MemSpan<void> &
 MemSpan<void>::remove_prefix(size_t n) {
-  n = std::max(_size, n);
+  n = std::min(_size, n);
   _size -= n;
   _ptr = static_cast<char *>(_ptr) + n;
   return *this;
@@ -887,13 +887,13 @@ MemSpan<void>::remove_prefix(size_t n) {
 
 inline MemSpan<void>
 MemSpan<void>::suffix(size_t count) const {
-  count = std::max(count, _size);
+  count = std::min(count, _size);
   return {static_cast<char *>(this->data_end()) - count, count};
 }
 
 inline MemSpan<void> &
 MemSpan<void>::remove_suffix(size_t count) {
-  _size -= std::max(count, _size);
+  _size -= std::min(count, _size);
   return *this;
 }
 

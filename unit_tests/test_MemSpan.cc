@@ -39,6 +39,7 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
 
   left.assign(buff, sizeof(buff));
   span = left.suffix(768);
+  REQUIRE(span.size() == 768);
   left.remove_suffix(768);
   REQUIRE(left.end() == span.begin());
   REQUIRE(left.size() + span.size() == 1024);
@@ -89,4 +90,25 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   REQUIRE(fspan.data() == f2span.data());
   REQUIRE(fspan.count() == f2span.count());
   REQUIRE(fspan.is_same(f2span));
+};
+
+TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
+{
+  char buff[1024];
+
+  MemSpan<void> span(buff, sizeof(buff));
+  auto left = span.prefix(512);
+  REQUIRE(left.size() == 512);
+  REQUIRE(span.size() == 1024);
+  span.remove_prefix(512);
+  REQUIRE(span.size() == 512);
+  REQUIRE(left.data_end() == span.data());
+
+  left.assign(buff, sizeof(buff));
+  span = left.suffix(700);
+  REQUIRE(span.size() == 700);
+  left.remove_suffix(700);
+  REQUIRE(left.data_end() == span.data());
+  REQUIRE(left.size() + span.size() == 1024);
+
 };
