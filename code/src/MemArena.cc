@@ -10,6 +10,11 @@
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
+inline bool MemArena::Block::satisfies(size_t n, std::align_val_t align) const {
+  auto r = this->remaining();
+  return r >= (n + align_padding(this->data() + allocated, align));
+}
+
 // Need to break these out because the default implementation doesn't clear the
 // integral values in @a that.
 
@@ -72,11 +77,11 @@ MemArena::make_block(size_t n) {
 }
 
 MemSpan<void>
-MemArena::alloc(size_t n) {
+MemArena::alloc(size_t n, std::align_val_t align) {
   MemSpan<void> zret;
-  this->require(n);
+  this->require(n, align);
   auto block = _active.head();
-  zret = block->alloc(n);
+  zret = block->alloc(n, align);
   _active_allocated += n;
   // If this block is now full, move it to the back.
   if (block->is_full() && block != _active.tail()) {
@@ -117,7 +122,7 @@ MemArena::contains(const void *ptr) const {
 }
 
 MemArena&
-MemArena::require(size_t n) {
+MemArena::require(size_t n, std::align_val_t align) {
   auto spot = _active.begin();
   Block *block{nullptr};
 
@@ -126,14 +131,14 @@ MemArena::require(size_t n) {
     _active.prepend(block);
   } else {
     // Search back through the list until a full block is hit, which is a miss.
-    while (spot != _active.end() && n > spot->remaining()) {
+    while (spot != _active.end() && ! spot->satisfies(n, align)) {
       if (spot->is_full())
         spot = _active.end();
       else
         ++spot;
     }
     if (spot == _active.end()) { // no block has enough free space
-      block = this->make_block(n);
+      block = this->make_block(n); // assuming a new block is sufficiently aligned.
       _active.prepend(block);
     } else if (spot != _active.begin()) {
       // big enough space, if it's not at the head, move it there.

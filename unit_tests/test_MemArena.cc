@@ -69,6 +69,16 @@ TEST_CASE("MemArena generic", "[libswoc][MemArena]")
   auto extent{arena.reserved_size()};
   span1 = arena.alloc(128);
   REQUIRE(extent < arena.reserved_size());
+
+  arena.clear();
+  arena.alloc(17);
+  span1 = arena.alloc(16, std::align_val_t(8));
+  REQUIRE((uintptr_t(span1.data()) & 0x7) == 0);
+  REQUIRE(span1.size() == 16);
+  span2 = arena.alloc(16, std::align_val_t(16));
+  REQUIRE((uintptr_t(span2.data()) & 0xF) == 0);
+  REQUIRE(span2.size() == 16);
+  REQUIRE(span2.data() >= span1.data_end());
 }
 
 TEST_CASE("MemArena freeze and thaw", "[libswoc][MemArena]")

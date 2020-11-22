@@ -30,6 +30,8 @@ class MemArena {
   using self_type = MemArena; ///< Self reference type.
 
 public:
+  static constexpr std::align_val_t DEFAULT_ALIGNMENT{1};
+
   /// Simple internal arena block of memory. Maintains the underlying memory.
   struct Block {
     /// A block must have at least this much free space to not be "full".
@@ -44,15 +46,32 @@ public:
     /// Amount of unallocated storage.
     size_t remaining() const;
 
+    /** Compute the padding needed such adding it to @a ptr is a multiple of @a align.
+     *
+     * @param ptr Base pointer.
+     * @param align Alignment requirement (must be a power of 2).
+     * @return Value to add to @a ptr to achieve @a align.
+     */
+    static size_t align_padding(void const * ptr, std::align_val_t align);
+
+    /** Check if there is @a n bytes of space at @a align.
+     *
+     * @param n Size required.
+     * @param align Alignment required.
+     * @return @c true if there is space, @c false if not.
+     */
+    bool satisfies(size_t n, std::align_val_t align) const;
+
     /// Span of unallocated storage.
     MemSpan<void> remnant();
 
     /** Allocate @a n bytes from this block.
      *
      * @param n Number of bytes to allocate.
+     * @param align Alignment requirement (default, no alignment).
      * @return The span of memory allocated.
      */
-    MemSpan<void> alloc(size_t n);
+    MemSpan<void> alloc(size_t n, std::align_val_t = DEFAULT_ALIGNMENT);
 
     /** Discard allocations.
      *
@@ -184,9 +203,10 @@ public:
       @a n bytes.
 
       @param n number of bytes to allocate.
+      @param align Required alignment, defaults to 1 (no alignment). Must be a power of 2.
       @return a MemSpan of the allocated memory.
    */
-  MemSpan<void> alloc(size_t n);
+  MemSpan<void> alloc(size_t n, std::align_val_t align = DEFAULT_ALIGNMENT);
 
   /** ALlocate a span of memory sufficient for @a n instance of @a T.
    *
@@ -199,6 +219,8 @@ public:
    * @code
    *   auto vec = arena.alloc_span<int>(20); // allocate space for 20 ints
    * @endcode
+   *
+   * The memory is aligned according to @c alignof(T).
    */
   template <typename T> MemSpan<T> alloc_span(size_t n);
 
@@ -278,12 +300,13 @@ public:
   /** Require @a n bytes of contiguous memory.
    *
    * @param n Number of bytes.
+   * @param align Align requirement (default is 1, no alignment).
    * @return @a this
    *
    * This forces the @c remnant to be at least @a n bytes of contiguous memory. A subsequent
    * @c alloc will use this space if the allocation size is at most the remnant size.
    */
-  self_type& require(size_t n);
+  self_type& require(size_t n, std::align_val_t align = DEFAULT_ALIGNMENT);
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -431,18 +454,21 @@ inline bool MemArena::Block::is_full() const {
   return this->remaining() < MIN_FREE_SPACE;
 }
 
-inline MemSpan<void> MemArena::Block::alloc(size_t n) {
-  if (n > this->remaining()) {
+inline MemSpan<void> MemArena::Block::alloc(size_t n, std::align_val_t align) {
+  auto base = this->data() + allocated;
+  auto pad = align_padding(base, align);
+  if ((n + pad) > this->remaining()) {
     throw (std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
   }
-  MemSpan<void> zret = this->remnant().prefix(n);
-  allocated += n;
+  MemSpan<void> zret = this->remnant().prefix(n+pad);
+  zret.remove_prefix(pad);
+  allocated += n+pad;
   return zret;
 }
 
 template<typename T>
 MemSpan<T> MemArena::alloc_span(size_t n) {
-  return this->alloc(sizeof(T) * n).rebind<T>();
+  return this->alloc(sizeof(T) * n, std::align_val_t{alignof(T)}).rebind<T>();
 }
 
 template<typename T, typename... Args> T *MemArena::make(Args&& ... args) {
@@ -462,6 +488,11 @@ inline MemArena::Block& MemArena::Block::discard() {
 
 inline void MemArena::Block::operator delete(void *ptr) noexcept { ::free(ptr); }
 inline void MemArena::Block::operator delete([[maybe_unused]] void * ptr, void * place) noexcept { ::free(place); }
+
+inline size_t MemArena::Block::align_padding(void const *ptr, std::align_val_t align) {
+  auto delta = uintptr_t(ptr) & (size_t(align) - 1);
+  return delta ? size_t(align) - delta : delta;
+}
 
 inline size_t MemArena::size() const {
   return _active_allocated;
