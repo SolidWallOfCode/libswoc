@@ -44,7 +44,7 @@ clean:
 publish: clean doxygen html
 	( cd _build/html ; tar cfh /tmp/libswoc-doc.tar * )
 
-ext/local-config.py : Makefile
+ext/local-config.py : MakeDocFile
 	@echo "plantuml = '$(JAVA) -jar $(PLANTUML_JAR)'" > ext/local-config.py
 	@echo "plantuml_output_format = 'svg'" >> ext/local-config.py
 
