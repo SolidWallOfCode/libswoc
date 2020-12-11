@@ -297,7 +297,18 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   REQUIRE(ctv.starts_with("https"_tv) == false);
   REQUIRE(ctv.ends_with(".jpg") == false);
   REQUIRE(ctv.starts_with_nocase("HttP"_tv) == true);
+  REQUIRE(ctv.starts_with_nocase("HttP") == true);
+  REQUIRE(ctv.starts_with("HttP") == false);
+  REQUIRE(ctv.starts_with("http") == true);
+  REQUIRE(ctv.starts_with('h') == true);
+  REQUIRE(ctv.starts_with('H') == false);
+  REQUIRE(ctv.starts_with_nocase('H') == true);
+  REQUIRE(ctv.starts_with('q') == false);
+  REQUIRE(ctv.starts_with_nocase('Q') == false);
+  REQUIRE(ctv.ends_with("htML"_tv) == false);
   REQUIRE(ctv.ends_with_nocase("htML"_tv) == true);
+  REQUIRE(ctv.ends_with("htML") == false);
+  REQUIRE(ctv.ends_with_nocase("htML") == true);
 
   REQUIRE(ctv_scheme == "http"_tv);
   REQUIRE(ctv_stem == "html"_tv);

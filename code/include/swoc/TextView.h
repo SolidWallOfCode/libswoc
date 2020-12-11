@@ -698,6 +698,22 @@ public:
    */
   bool starts_with(std::string_view const &prefix) const noexcept;
 
+  /** Check if the view begins with a specific @a prefix.
+   *
+   * @param prefix String to check against @a this.
+   * @return @c true if <tt>this->prefix(prefix.size()) == prefix</tt>, @c false otherwise.
+   * @internal C++20 preview.
+   */
+  bool starts_with(char const * prefix) const;
+
+  /** Check if the view begins with the character @c c.
+   *
+   * @param c Character to check.
+   * @return @c true if the string is non-empty and the first character is @c c.
+   * @internal C++20 preview.
+   */
+  bool starts_with(char c) const noexcept;
+
   /** Check if the view begins with a specific @a prefix, ignoring case.
    *
    * @param prefix String to check against @a this.
@@ -705,6 +721,22 @@ public:
    * @internal C++20 preview.
    */
   bool starts_with_nocase(std::string_view const &prefix) const noexcept;
+
+  /** Check if the view begins with a specific @a prefix.
+   *
+   * @param prefix String to check against @a this.
+   * @return @c true if <tt>this->prefix(prefix.size()) == prefix</tt>, @c false otherwise.
+   * @internal C++20 preview.
+   */
+  bool starts_with_nocase(char const * prefix) const;
+
+  /** Check if the view begins with the character @c c, ignoring case.
+   *
+   * @param c Character to check.
+   * @return @c true if the string is non-empty and the first character is @c c.
+   * @internal C++20 preview.
+   */
+  bool starts_with_nocase(char c) const noexcept;
 
   /** Check if the view ends with a specific @a suffix.
    *
@@ -714,13 +746,45 @@ public:
    */
   bool ends_with(std::string_view const &suffix) const noexcept;
 
-  /** Check if the view starts with a specific @a prefix, ignoring case.
+  /** Check if the view ends with a specific @a suffix.
+   *
+   * @param suffix String to check against @a this.
+   * @return @c true if <tt>this->suffix(suffix.size()) == suffix</tt>, @c false otherwise.
+   * @internal C++20 preview.
+   */
+  bool ends_with(char const * suffix) const;
+
+  /** Check the view ends with the character @c c.
+   *
+   * @param c Character to check.
+   * @return @c true if the string is non-empty and the last character is @c c.
+   * @internal C++20 preview.
+   */
+  bool ends_with(char c) const noexcept;
+
+  /** Check if the view starts with a specific @a suffix, ignoring case.
    *
    * @param suffix String to check against @a this.
    * @return @c true if <tt>this->suffix(suffix.size()) == suffix</tt> without regard to case, @c false otherwise.
    * @internal C++20 preview.
    */
   bool ends_with_nocase(std::string_view const &suffix) const noexcept;
+
+  /** Check if the view starts with a specific @a suffix, ignoring case.
+   *
+   * @param suffix String to check against @a this.
+   * @return @c true if <tt>this->suffix(suffix.size()) == suffix</tt> without regard to case, @c false otherwise.
+   * @internal C++20 preview.
+   */
+  bool ends_with_nocase(char const *suffix) const;
+
+  /** Check the view ends with the character @c c, ignoring case.
+   *
+   * @param c Character to check.
+   * @return @c true if the string is non-empty and the last character is @c c.
+   * @internal C++20 preview.
+   */
+  bool ends_with_nocase(char c) const noexcept;
 
   // Functors for using this class in STL containers.
   /// Ordering functor, lexicographic comparison.
@@ -1370,6 +1434,18 @@ TextView::starts_with(std::string_view const &prefix) const noexcept {
 }
 
 inline bool
+TextView::starts_with(char const* prefix) const {
+  return this->starts_with(super_type(prefix));
+}
+inline bool
+TextView::starts_with_nocase(char const* prefix) const {
+  return this->starts_with_nocase(super_type{prefix});
+}
+
+inline bool TextView::starts_with(char c) const noexcept { return !this->empty() && c == this->front(); }
+inline bool TextView::starts_with_nocase(char c) const noexcept { return !this->empty() && tolower(c) == tolower(this->front()); }
+
+inline bool
 TextView::starts_with_nocase(std::string_view const &prefix) const noexcept {
   return this->size() >= prefix.size() && 0 == ::strncasecmp(this->data(), prefix.data(), prefix.size());
 }
@@ -1383,6 +1459,19 @@ inline bool
 TextView::ends_with_nocase(std::string_view const &suffix) const noexcept {
   return this->size() >= suffix.size() && 0 == ::strncasecmp(this->data_end() - suffix.size(), suffix.data(), suffix.size());
 }
+
+inline bool
+TextView::ends_with(char const * suffix) const {
+  return this->ends_with(super_type(suffix));
+}
+
+inline bool
+TextView::ends_with_nocase(char const * suffix) const {
+  return this->ends_with_nocase(super_type(suffix));
+}
+
+inline bool TextView::ends_with(char c) const noexcept { return !this->empty() && c == this->back(); }
+inline bool TextView::ends_with_nocase(char c) const noexcept { return !this->empty() && tolower(c) == tolower(this->back()); }
 
 template <typename Stream>
 Stream &
