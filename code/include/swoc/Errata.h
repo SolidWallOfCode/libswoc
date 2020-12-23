@@ -456,6 +456,18 @@ public:
    */
   template <typename... Args> self_type &note(Severity level, std::string_view fmt, Args &&... args);
 
+  /// Overload for @c DIAG severity notes.
+  template <typename... Args> self_type &diag(std::string_view fmt, Args &&... args) &;
+  template <typename... Args> self_type diag(std::string_view fmt, Args &&... args) &&;
+  /// Overload for @c INFO severity notes.
+  template <typename... Args> self_type &info(std::string_view fmt, Args &&... args) &;
+  template <typename... Args> self_type info(std::string_view fmt, Args &&... args) &&;
+  /// Overload for @c WARN severity notes.
+  template <typename... Args> self_type &warn(std::string_view fmt, Args &&... args) &;
+  template <typename... Args> self_type warn(std::string_view fmt, Args &&... args) &&;
+  /// Overload for @c ERROR severity notes.
+  template <typename... Args> self_type &error(std::string_view fmt, Args &&... args) &;
+  template <typename... Args> self_type error(std::string_view fmt, Args &&... args) &&;
   /** User conversion to the result type.
 
       This makes it easy to use the function normally or to pass the result only to other functions
@@ -788,6 +800,7 @@ template <typename R>
 inline auto
 Rv<R>::clear() -> self_type & {
   errata().clear();
+  return *this;
 }
 
 template <typename T> Rv<T>::Rv() {}
@@ -868,6 +881,70 @@ Rv<R> &
 Rv<R>::note(Severity level, std::string_view fmt, Args &&... args) {
   _errata.note_v(level, fmt, std::forward_as_tuple(args...));
   return *this;
+}
+
+template <typename R>
+template <typename... Args>
+Rv<R> &
+Rv<R>::diag(std::string_view fmt, Args &&... args) & {
+  _errata.note_v(Severity::DIAG, fmt, std::forward_as_tuple(args...));
+  return *this;
+}
+
+template <typename R>
+template <typename... Args>
+Rv<R>
+Rv<R>::diag(std::string_view fmt, Args &&... args) && {
+  _errata.note_v(Severity::DIAG, fmt, std::forward_as_tuple(args...));
+  return std::move(*this);
+}
+
+template <typename R>
+template <typename... Args>
+Rv<R> &
+Rv<R>::info(std::string_view fmt, Args &&... args) & {
+  _errata.note_v(Severity::INFO, fmt, std::forward_as_tuple(args...));
+  return *this;
+}
+
+template <typename R>
+template <typename... Args>
+Rv<R>
+Rv<R>::info(std::string_view fmt, Args &&... args) && {
+  _errata.note_v(Severity::INFO, fmt, std::forward_as_tuple(args...));
+  return std::move(*this);
+}
+
+template <typename R>
+template <typename... Args>
+Rv<R> &
+Rv<R>::warn(std::string_view fmt, Args &&... args) & {
+  _errata.note_v(Severity::WARN, fmt, std::forward_as_tuple(args...));
+  return *this;
+}
+
+template <typename R>
+template <typename... Args>
+Rv<R>
+Rv<R>::warn(std::string_view fmt, Args &&... args) && {
+  _errata.note_v(Severity::WARN, fmt, std::forward_as_tuple(args...));
+  return std::move(*this);
+}
+
+template <typename R>
+template <typename... Args>
+Rv<R> &
+Rv<R>::error(std::string_view fmt, Args &&... args) & {
+  _errata.note_v(Severity::ERROR, fmt, std::forward_as_tuple(args...));
+  return *this;
+}
+
+template <typename R>
+template <typename... Args>
+Rv<R>
+Rv<R>::error(std::string_view fmt, Args &&... args) && {
+  _errata.note_v(Severity::ERROR, fmt, std::forward_as_tuple(args...));
+  return std::move(*this);
 }
 
 template <typename R>
