@@ -110,12 +110,33 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   auto const &[cr_result, cr_erratum] = zret;
   REQUIRE(cr_result == 56);
 
-  auto test = [](Rv<int> const &rvc) {
+  auto test = [](Severity expected_severity, Rv<int> const &rvc) {
     auto const &[cv_result, cv_erratum] = rvc;
+    REQUIRE(cv_erratum.count() == 1);
+    REQUIRE(cv_erratum.severity() == expected_severity);
     REQUIRE(cv_result == 56);
   };
 
-  test(zret); // invoke it.
+  test(Severity::ERROR, zret); // invoke it.
+
+  zret.clear();
+  auto const &[cleared_result, cleared_erratum] = zret;
+  REQUIRE(cleared_result == 56);
+  REQUIRE(cleared_erratum.count() == 0);
+  zret.diag("Diagnostics");
+  REQUIRE(zret.errata().count() == 1);
+  zret.info("Information");
+  REQUIRE(zret.errata().count() == 2);
+  zret.warn("Warning");
+  REQUIRE(zret.errata().count() == 3);
+  zret.error("Error");
+  REQUIRE(zret.errata().count() == 4);
+  REQUIRE(zret.result() == 56);
+
+  test(Severity::DIAG, Rv<int>{56}.diag("Test rvalue diag"));
+  test(Severity::INFO, Rv<int>{56}.info("Test rvalue info"));
+  test(Severity::WARN, Rv<int>{56}.warn("Test rvalue warn"));
+  test(Severity::ERROR, Rv<int>{56}.error("Test rvalue error"));
 
   // Now try it on a non-copyable object.
   ThingHandle handle{new Thing};
