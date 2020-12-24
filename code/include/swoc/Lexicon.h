@@ -39,6 +39,11 @@ what(std::string_view const& fmt, Args&& ... args) {
 }
 } // namespace detail
 
+/// Policy template use to specify the hash function for the integral type of @c Lexicon.
+/// The default is to cast to the required hash value type, which is usually sufficient.
+/// In some cases the cast doesn't work and this must be specialized.
+template < typename E > uintmax_t Lexicon_Hash(E e) { return static_cast<uintmax_t>(e); }
+
 /** A bidirectional mapping between names and enumeration values.
 
     This is intended to be a support class to make interacting with enumerations easier for
@@ -453,7 +458,7 @@ template<typename E>
 uintmax_t
 Lexicon<E>::Item::ValueLinkage::hash_of(E value) {
   // In almost all cases, the values will be (roughly) sequential, so an identity hash works well.
-  return static_cast<uintmax_t>(value);
+  return Lexicon_Hash<E>(value);
 }
 
 template<typename E>
