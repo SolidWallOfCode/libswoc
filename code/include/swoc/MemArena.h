@@ -11,6 +11,7 @@
 #include <mutex>
 #include <memory>
 #include <utility>
+#include <memory_resource>
 #include <new>
 
 #include "swoc/MemSpan.h"
@@ -26,11 +27,11 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
     chunks are presumed to have similar lifetimes so all of the memory in the arena can be released
     when the arena is destroyed.
  */
-class MemArena {
+class MemArena : public std::pmr::memory_resource {
   using self_type = MemArena; ///< Self reference type.
 
 public:
-  static constexpr std::align_val_t DEFAULT_ALIGNMENT{1};
+  static constexpr size_t DEFAULT_ALIGNMENT{1};
 
   /// Simple internal arena block of memory. Maintains the underlying memory.
   struct Block {
@@ -52,7 +53,7 @@ public:
      * @param align Alignment requirement (must be a power of 2).
      * @return Value to add to @a ptr to achieve @a align.
      */
-    static size_t align_padding(void const * ptr, std::align_val_t align);
+    static size_t align_padding(void const * ptr, size_t align);
 
     /** Check if there is @a n bytes of space at @a align.
      *
@@ -60,7 +61,7 @@ public:
      * @param align Alignment required.
      * @return @c true if there is space, @c false if not.
      */
-    bool satisfies(size_t n, std::align_val_t align) const;
+    bool satisfies(size_t n, size_t align) const;
 
     /// Span of unallocated storage.
     MemSpan<void> remnant();
@@ -71,7 +72,7 @@ public:
      * @param align Alignment requirement (default, no alignment).
      * @return The span of memory allocated.
      */
-    MemSpan<void> alloc(size_t n, std::align_val_t = DEFAULT_ALIGNMENT);
+    MemSpan<void> alloc(size_t n, size_t = DEFAULT_ALIGNMENT);
 
     /** Discard allocations.
      *
@@ -206,7 +207,7 @@ public:
       @param align Required alignment, defaults to 1 (no alignment). Must be a power of 2.
       @return a MemSpan of the allocated memory.
    */
-  MemSpan<void> alloc(size_t n, std::align_val_t align = DEFAULT_ALIGNMENT);
+  MemSpan<void> alloc(size_t n, size_t align = DEFAULT_ALIGNMENT);
 
   /** ALlocate a span of memory sufficient for @a n instance of @a T.
    *
@@ -306,7 +307,7 @@ public:
    * This forces the @c remnant to be at least @a n bytes of contiguous memory. A subsequent
    * @c alloc will use this space if the allocation size is at most the remnant size.
    */
-  self_type& require(size_t n, std::align_val_t align = DEFAULT_ALIGNMENT);
+  self_type& require(size_t n, size_t align = DEFAULT_ALIGNMENT);
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -375,6 +376,20 @@ protected:
   // Note on _active block list - blocks that become full are moved to the end of the list.
   // This means that when searching for a block with space, the first full block encountered
   // marks the last block to check. This keeps the set of blocks to check short.
+
+private:
+  // PMR support methods.
+
+  /// PMR allocation.
+  void * do_allocate(std::size_t bytes, std::size_t align) override;
+
+  /// PMR de-allocation.
+  /// Does nothing.
+  void do_deallocate(void *, size_t, size_t) override;
+
+  /// PMR comparison of memory resources.
+  /// @return @c true only if @a that is the same instance as @a this.
+  bool do_is_equal(std::pmr::memory_resource const& that) const noexcept override;
 };
 
 /** Arena of a specific type on top of a @c MemArena.
@@ -454,7 +469,7 @@ inline bool MemArena::Block::is_full() const {
   return this->remaining() < MIN_FREE_SPACE;
 }
 
-inline MemSpan<void> MemArena::Block::alloc(size_t n, std::align_val_t align) {
+inline MemSpan<void> MemArena::Block::alloc(size_t n, size_t align) {
   auto base = this->data() + allocated;
   auto pad = align_padding(base, align);
   if ((n + pad) > this->remaining()) {
@@ -468,7 +483,7 @@ inline MemSpan<void> MemArena::Block::alloc(size_t n, std::align_val_t align) {
 
 template<typename T>
 MemSpan<T> MemArena::alloc_span(size_t n) {
-  return this->alloc(sizeof(T) * n, std::align_val_t{alignof(T)}).rebind<T>();
+  return this->alloc(sizeof(T) * n, size_t{alignof(T)}).rebind<T>();
 }
 
 template<typename T, typename... Args> T *MemArena::make(Args&& ... args) {
@@ -489,7 +504,7 @@ inline MemArena::Block& MemArena::Block::discard() {
 inline void MemArena::Block::operator delete(void *ptr) noexcept { ::free(ptr); }
 inline void MemArena::Block::operator delete([[maybe_unused]] void * ptr, void * place) noexcept { ::free(place); }
 
-inline size_t MemArena::Block::align_padding(void const *ptr, std::align_val_t align) {
+inline size_t MemArena::Block::align_padding(void const *ptr, size_t align) {
   auto delta = uintptr_t(ptr) & (size_t(align) - 1);
   return delta ? size_t(align) - delta : delta;
 }

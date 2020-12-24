@@ -10,7 +10,7 @@
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
-inline bool MemArena::Block::satisfies(size_t n, std::align_val_t align) const {
+inline bool MemArena::Block::satisfies(size_t n, size_t align) const {
   auto r = this->remaining();
   return r >= (n + align_padding(this->data() + allocated, align));
 }
@@ -77,7 +77,7 @@ MemArena::make_block(size_t n) {
 }
 
 MemSpan<void>
-MemArena::alloc(size_t n, std::align_val_t align) {
+MemArena::alloc(size_t n, size_t align) {
   MemSpan<void> zret;
   this->require(n, align);
   auto block = _active.head();
@@ -122,7 +122,7 @@ MemArena::contains(const void *ptr) const {
 }
 
 MemArena&
-MemArena::require(size_t n, std::align_val_t align) {
+MemArena::require(size_t n, size_t align) {
   auto spot = _active.begin();
   Block *block{nullptr};
 
@@ -197,6 +197,17 @@ MemArena::~MemArena() {
     ba = ba->_link._next;
     delete b;
   }
+}
+
+void *MemArena::do_allocate(std::size_t bytes, std::size_t align) {
+  return this->alloc(bytes, align).data();
+}
+
+void MemArena::do_deallocate(void *, size_t, size_t) {
+}
+
+bool MemArena::do_is_equal(std::pmr::memory_resource const& that) const noexcept {
+  return this == &that;
 }
 
 }} // namespace swoc

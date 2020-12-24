@@ -19,7 +19,11 @@
 */
 
 #include <string_view>
+#include <string>
+#include <map>
+#include <set>
 #include <random>
+
 #include "swoc/MemArena.h"
 #include "swoc/TextView.h"
 #include "catch.hpp"
@@ -72,10 +76,10 @@ TEST_CASE("MemArena generic", "[libswoc][MemArena]")
 
   arena.clear();
   arena.alloc(17);
-  span1 = arena.alloc(16, std::align_val_t(8));
+  span1 = arena.alloc(16, 8);
   REQUIRE((uintptr_t(span1.data()) & 0x7) == 0);
   REQUIRE(span1.size() == 16);
-  span2 = arena.alloc(16, std::align_val_t(16));
+  span2 = arena.alloc(16, 16);
   REQUIRE((uintptr_t(span2.data()) & 0xF) == 0);
   REQUIRE(span2.size() == 16);
   REQUIRE(span2.data() >= span1.data_end());
@@ -399,3 +403,45 @@ TEST_CASE("FixedArena", "[libswoc][FixedArena]") {
   three = fa.make();
   REQUIRE(two == three);
 };
+
+// External container using a MemArena.
+TEST_CASE("PMR 1", "[libswoc][arena][pmr]") {
+  using C = std::pmr::set<std::string>;
+  MemArena arena;
+  C c{&arena};
+
+  REQUIRE(arena.size() == 0);
+
+  c.insert("alpha");
+  c.insert("bravo");
+  c.insert("charlie");
+
+  REQUIRE(arena.size() > 0);
+
+  auto spot = c.find("bravo");
+  REQUIRE(spot != c.end());
+  REQUIRE(arena.contains(&*spot));
+  REQUIRE(arena.contains(spot->data()));
+}
+
+// Container inside MemArena, using the MemArena.
+TEST_CASE("PMR 2", "[libswoc][arena][pmr]") {
+  using C = std::pmr::set<std::string>;
+  MemArena arena;
+
+  REQUIRE(arena.size() == 0);
+  C * c = arena.make<C>(&arena);
+  auto base = arena.size();
+  REQUIRE(base > 0);
+
+  c->insert("alpha");
+  c->insert("bravo");
+  c->insert("charlie");
+
+  REQUIRE(arena.size() > base);
+
+  auto spot = c->find("bravo");
+  REQUIRE(spot != c->end());
+  REQUIRE(arena.contains(&*spot));
+  REQUIRE(arena.contains(spot->data()));
+}
