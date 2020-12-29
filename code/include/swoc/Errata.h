@@ -456,6 +456,20 @@ public:
    */
   template <typename... Args> self_type &note(Severity level, std::string_view fmt, Args &&... args);
 
+  /** Copy messages from @a that to @a this.
+   *
+   * @param that Source object from which to copy.
+   * @return @a *this
+   */
+  self_type &note(Errata const &that);
+
+  /** Copy messages from @a that to @a this, then clear @a that.
+   *
+   * @param that Source object from which to copy.
+   * @return @a *this
+   */
+  self_type &note(Errata &&that);
+
   /// Overload for @c DIAG severity notes.
   template <typename... Args> self_type &diag(std::string_view fmt, Args &&... args) &;
   template <typename... Args> self_type diag(std::string_view fmt, Args &&... args) &&;
@@ -880,6 +894,21 @@ template <typename... Args>
 Rv<R> &
 Rv<R>::note(Severity level, std::string_view fmt, Args &&... args) {
   _errata.note_v(level, fmt, std::forward_as_tuple(args...));
+  return *this;
+}
+
+template <typename R>
+inline Rv<R> &
+Rv<R>::note(Errata const &that) {
+  this->_errata.note(that);
+  return *this;
+}
+
+template <typename R>
+inline Rv<R> &
+Rv<R>::note(Errata &&that) {
+  this->_errata.note(std::move(that));
+  that.clear();
   return *this;
 }
 
