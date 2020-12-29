@@ -138,6 +138,19 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   test(Severity::WARN, Rv<int>{56}.warn("Test rvalue warn"));
   test(Severity::ERROR, Rv<int>{56}.error("Test rvalue error"));
 
+  // Test the note overload that takes an Errata.
+  zret.clear();
+  REQUIRE(zret.result() == 56);
+  REQUIRE(zret.errata().count() == 0);
+  Errata errata;
+  errata.info("Information");
+  zret.note(errata);
+  test(Severity::INFO, zret);
+  REQUIRE(errata.count() == 1);
+  zret.note(std::move(errata));
+  REQUIRE(zret.errata().count() == 2);
+  REQUIRE(errata.count() == 0);
+
   // Now try it on a non-copyable object.
   ThingHandle handle{new Thing};
   Rv<ThingHandle> thing_rv;
