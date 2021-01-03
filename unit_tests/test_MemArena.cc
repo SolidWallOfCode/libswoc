@@ -404,44 +404,106 @@ TEST_CASE("FixedArena", "[libswoc][FixedArena]") {
   REQUIRE(two == three);
 };
 
+#if __has_include(<memory_resource>)
+struct PMR {
+  bool* _flag;
+  PMR(bool& flag) : _flag(&flag) {}
+  PMR(PMR && that) : _flag(that._flag) {
+    that._flag = nullptr;
+  }
+  ~PMR() { if (_flag) *_flag = true; }
+};
+
 // External container using a MemArena.
 TEST_CASE("PMR 1", "[libswoc][arena][pmr]") {
-  using C = std::pmr::set<std::string>;
+  using C = std::pmr::map<std::string, PMR>;
+  bool flags[3] = { false, false, false };
   MemArena arena;
-  C c{&arena};
+  {
+    C c{&arena};
 
-  REQUIRE(arena.size() == 0);
+    REQUIRE(arena.size() == 0);
 
-  c.insert("alpha");
-  c.insert("bravo");
-  c.insert("charlie");
+    c.insert(C::value_type{"alpha", PMR(flags[0])});
+    c.insert(C::value_type{"bravo", PMR(flags[1])});
+    c.insert(C::value_type{"charlie", PMR(flags[2])});
 
-  REQUIRE(arena.size() > 0);
+    REQUIRE(arena.size() > 0);
 
-  auto spot = c.find("bravo");
-  REQUIRE(spot != c.end());
-  REQUIRE(arena.contains(&*spot));
-  REQUIRE(arena.contains(spot->data()));
+    auto spot = c.find("bravo");
+    REQUIRE(spot != c.end());
+    REQUIRE(arena.contains(&*spot));
+    REQUIRE(arena.contains(spot->first.data()));
+  }
+  // Check the map was destructed.
+  REQUIRE(flags[0] == true);
+  REQUIRE(flags[1] == true);
+  REQUIRE(flags[2] == true);
 }
 
 // Container inside MemArena, using the MemArena.
 TEST_CASE("PMR 2", "[libswoc][arena][pmr]") {
+  using C = std::pmr::map<std::string, PMR>;
+  bool flags[3] = { false, false, false };
+  {
+    MemArena arena;
+    REQUIRE(arena.size() == 0);
+    C *c = arena.make<C>(&arena);
+    auto base = arena.size();
+    REQUIRE(base > 0);
+
+    c->insert(C::value_type{"alpha", PMR(flags[0])});
+    c->insert(C::value_type{"bravo", PMR(flags[1])});
+    c->insert(C::value_type{"charlie", PMR(flags[2])});
+
+    REQUIRE(arena.size() > base);
+
+    auto spot = c->find("bravo");
+    REQUIRE(spot != c->end());
+    REQUIRE(arena.contains(&*spot));
+    REQUIRE(arena.contains(spot->first.data()));
+  }
+  // Check the map was not destructed.
+  REQUIRE(flags[0] == false);
+  REQUIRE(flags[1] == false);
+  REQUIRE(flags[2] == false);
+}
+
+// Container inside MemArena, using the MemArena.
+TEST_CASE("PMR 3", "[libswoc][arena][pmr]") {
   using C = std::pmr::set<std::string>;
   MemArena arena;
-
   REQUIRE(arena.size() == 0);
-  C * c = arena.make<C>(&arena);
+  C *c = arena.make<C>(&arena);
   auto base = arena.size();
   REQUIRE(base > 0);
 
   c->insert("alpha");
   c->insert("bravo");
   c->insert("charlie");
+  c->insert("delta");
+  c->insert("foxtrot");
+  c->insert("golf");
 
   REQUIRE(arena.size() > base);
 
-  auto spot = c->find("bravo");
-  REQUIRE(spot != c->end());
-  REQUIRE(arena.contains(&*spot));
-  REQUIRE(arena.contains(spot->data()));
+  c->erase("charlie");
+  c->erase("delta");
+  c->erase("alpha");
+
+  // This includes all of the strings.
+  auto pre = arena.allocated_size();
+  arena.freeze();
+  // Copy the set into the arena.
+  C *gc = arena.make<C>(&arena);
+  *gc = *c;
+  auto frozen = arena.allocated_size();
+  REQUIRE(frozen > pre);
+  // Sparse set should be in the frozen memory, and discarded.
+  arena.thaw();
+  auto post = arena.allocated_size();
+  REQUIRE(frozen > post);
+  REQUIRE(pre > post);
 }
+
+#endif // has memory_resource header.

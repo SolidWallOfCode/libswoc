@@ -11,8 +11,15 @@
 #include <mutex>
 #include <memory>
 #include <utility>
-#include <memory_resource>
 #include <new>
+#if __has_include(<memory_resource>)
+#include <memory_resource>
+#else
+// Declare it in name only so that the support methods don't need to be conditional.
+namespace std::pmr {
+class memory_resource;
+}
+#endif
 
 #include "swoc/MemSpan.h"
 #include "swoc/Scalar.h"
@@ -27,7 +34,11 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
     chunks are presumed to have similar lifetimes so all of the memory in the arena can be released
     when the arena is destroyed.
  */
-class MemArena : public std::pmr::memory_resource {
+class MemArena
+#if __has_include(<memory_resource>)
+    : public std::pmr::memory_resource
+#endif
+{
   using self_type = MemArena; ///< Self reference type.
 
 public:
@@ -390,6 +401,7 @@ private:
   /// PMR comparison of memory resources.
   /// @return @c true only if @a that is the same instance as @a this.
   bool do_is_equal(std::pmr::memory_resource const& that) const noexcept override;
+
 };
 
 /** Arena of a specific type on top of a @c MemArena.
