@@ -20,6 +20,7 @@
 
 #include <string_view>
 #include <string>
+#include <array>
 #include <map>
 #include <set>
 #include <random>

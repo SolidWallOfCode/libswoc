@@ -506,7 +506,7 @@ ContextNames<T>::operator()(BufferWriter& w, const Spec& spec, context_type& ctx
     if (auto spot = super_type::_map.find(spec._name); spot != super_type::_map.end()) {
       spot->second(w, spec, ctx);
     } else {
-      NameBinding::err_invalid_name(w, spec);
+      Binding::err_invalid_name(w, spec);
     }
   }
   return w;

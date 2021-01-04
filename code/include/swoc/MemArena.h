@@ -389,6 +389,7 @@ protected:
   // marks the last block to check. This keeps the set of blocks to check short.
 
 private:
+#if __has_include(<memory_resource>)
   // PMR support methods.
 
   /// PMR allocation.
@@ -401,6 +402,7 @@ private:
   /// PMR comparison of memory resources.
   /// @return @c true only if @a that is the same instance as @a this.
   bool do_is_equal(std::pmr::memory_resource const& that) const noexcept override;
+#endif
 
 };
 
