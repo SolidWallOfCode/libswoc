@@ -416,7 +416,8 @@ struct PMR {
 
 // External container using a MemArena.
 TEST_CASE("PMR 1", "[libswoc][arena][pmr]") {
-  using C = std::pmr::map<std::string, PMR>;
+  static const std::pmr::string BRAVO { "bravo bravo bravo bravo"}; // avoid small string opt.
+  using C = std::pmr::map<std::pmr::string, PMR>;
   bool flags[3] = { false, false, false };
   MemArena arena;
   {
@@ -425,12 +426,12 @@ TEST_CASE("PMR 1", "[libswoc][arena][pmr]") {
     REQUIRE(arena.size() == 0);
 
     c.insert(C::value_type{"alpha", PMR(flags[0])});
-    c.insert(C::value_type{"bravo", PMR(flags[1])});
+    c.insert(C::value_type{BRAVO, PMR(flags[1])});
     c.insert(C::value_type{"charlie", PMR(flags[2])});
 
     REQUIRE(arena.size() > 0);
 
-    auto spot = c.find("bravo");
+    auto spot = c.find(BRAVO);
     REQUIRE(spot != c.end());
     REQUIRE(arena.contains(&*spot));
     REQUIRE(arena.contains(spot->first.data()));
@@ -443,9 +444,10 @@ TEST_CASE("PMR 1", "[libswoc][arena][pmr]") {
 
 // Container inside MemArena, using the MemArena.
 TEST_CASE("PMR 2", "[libswoc][arena][pmr]") {
-  using C = std::pmr::map<std::string, PMR>;
+  using C = std::pmr::map<std::pmr::string, PMR>;
   bool flags[3] = { false, false, false };
   {
+    static const std::pmr::string BRAVO { "bravo bravo bravo bravo"}; // avoid small string opt.
     MemArena arena;
     REQUIRE(arena.size() == 0);
     C *c = arena.make<C>(&arena);
@@ -453,12 +455,12 @@ TEST_CASE("PMR 2", "[libswoc][arena][pmr]") {
     REQUIRE(base > 0);
 
     c->insert(C::value_type{"alpha", PMR(flags[0])});
-    c->insert(C::value_type{"bravo", PMR(flags[1])});
+    c->insert(C::value_type{BRAVO, PMR(flags[1])});
     c->insert(C::value_type{"charlie", PMR(flags[2])});
 
     REQUIRE(arena.size() > base);
 
-    auto spot = c->find("bravo");
+    auto spot = c->find(BRAVO);
     REQUIRE(spot != c->end());
     REQUIRE(arena.contains(&*spot));
     REQUIRE(arena.contains(spot->first.data()));
@@ -471,7 +473,7 @@ TEST_CASE("PMR 2", "[libswoc][arena][pmr]") {
 
 // Container inside MemArena, using the MemArena.
 TEST_CASE("PMR 3", "[libswoc][arena][pmr]") {
-  using C = std::pmr::set<std::string>;
+  using C = std::pmr::set<std::pmr::string>;
   MemArena arena;
   REQUIRE(arena.size() == 0);
   C *c = arena.make<C>(&arena);
