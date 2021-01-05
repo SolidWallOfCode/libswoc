@@ -440,7 +440,9 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
 TEST_CASE("TransformView", "[libswoc][TransformView]")
 {
   std::string_view source{"Evil Dave Rulz"};
-  swoc::TransformView<int (*)(int), std::string_view> xv1(&tolower, source);
+  // Because, sadly, the type of @c tolower varies between compilers since @c noexcept
+  // is part of the signature in C++17.
+  swoc::TransformView<decltype(&tolower), std::string_view> xv1(&tolower, source);
   auto xv2 = swoc::transform_view_of(&tolower, source);
   TextView tv{source};
 
