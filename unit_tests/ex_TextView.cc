@@ -74,7 +74,7 @@ TEST_CASE("TextView Example CSV", "[libswoc][example][textview][csv]")
 TEST_CASE("TextView Example KW", "[libswoc][example][textview][kw]")
 {
   TextView src{"alpha=1, bravo= 2,charlie = 3,  delta =4  ,echo ,, ,foxtrot=6"};
-  int idx = 0;
+  size_t idx = 0;
   parse_kw(src, [&](TextView key, TextView value) -> void {
     REQUIRE(key == alphabet[idx++]);
     if (idx == 5) {
