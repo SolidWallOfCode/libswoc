@@ -404,7 +404,10 @@ TEST_CASE("FixedArena", "[libswoc][FixedArena]") {
   REQUIRE(two == three);
 };
 
-#if __has_include(<memory_resource>)
+// RHEL 7 compatibility - std::pmr::string isn't available even though the header exists unless
+// _GLIBCXX_USE_CXX11_ABI is defined and non-zero. It appears to always be defined for the RHEL
+// toolsets, so if undefined that's OK.
+#if __has_include(<memory_resource>) && ( !defined(_GLIBCXX_USE_CXX11_ABI) || _GLIBCXX_USE_CXX11_ABI)
 struct PMR {
   bool* _flag;
   PMR(bool& flag) : _flag(&flag) {}
