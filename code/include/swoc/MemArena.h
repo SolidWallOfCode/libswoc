@@ -14,11 +14,6 @@
 #include <new>
 #if __has_include(<memory_resource>)
 #include <memory_resource>
-#else
-// Declare it in name only so that the support methods don't need to be conditional.
-namespace std::pmr {
-class memory_resource;
-}
 #endif
 
 #include "swoc/MemSpan.h"
@@ -389,6 +384,7 @@ protected:
   // marks the last block to check. This keeps the set of blocks to check short.
 
 private:
+#if __has_include(<memory_resource>)
   // PMR support methods.
 
   /// PMR allocation.
@@ -401,7 +397,7 @@ private:
   /// PMR comparison of memory resources.
   /// @return @c true only if @a that is the same instance as @a this.
   bool do_is_equal(std::pmr::memory_resource const& that) const noexcept override;
-
+#endif
 };
 
 /** Arena of a specific type on top of a @c MemArena.

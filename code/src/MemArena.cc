@@ -199,6 +199,7 @@ MemArena::~MemArena() {
   }
 }
 
+#if __has_include(<memory_resource>)
 void *MemArena::do_allocate(std::size_t bytes, std::size_t align) {
   return this->alloc(bytes, align).data();
 }
@@ -209,5 +210,6 @@ void MemArena::do_deallocate(void *, size_t, size_t) {
 bool MemArena::do_is_equal(std::pmr::memory_resource const& that) const noexcept {
   return this == &that;
 }
+#endif
 
 }} // namespace swoc
