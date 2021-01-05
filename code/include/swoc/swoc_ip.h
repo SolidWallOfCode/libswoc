@@ -1547,8 +1547,20 @@ public:
   /** Constant iterator.
    * THe value type is a tuple of the IP address range and the @a PAYLOAD. Both are constant.
    *
-   * @internal THe non-const iterator is a subclass of this, in order to share implementation. This
+   * @internal The non-const iterator is a subclass of this, in order to share implementation. This
    * also makes it easy to convert from iterator to const iterator, which is desirable.
+   *
+   * @internal The return type is quite tricky because the value type of the nested containers is
+   * not the same as the value type for this container. It's not even a composite - @c IPRange is
+   * not an alias for either of the family specific range types. Therefore the iterator itself must
+   * contain a synthesized instance of the value type, which creates scoping and update problems.
+   * The approach here is to update the synthetic value when the iterator is modified and returning
+   * it by value for the dereference operator because a return by reference means  code like
+   * @code
+   *   auto && [ r , p ] = *(space.find(addr));
+   * @endcode
+   * can fail due to the iterator going out of scope after the statement is finished making @a r
+   * and @a p dangling references. If the return is by value the compiler takes care of it.
    */
   class const_iterator {
     using self_type = const_iterator; ///< Self reference type.
@@ -1593,7 +1605,7 @@ public:
 
     /// Dereference.
     /// @return A reference to the referent.
-    value_type const& operator*() const;
+    value_type operator*() const;
 
     /// Dereference.
     /// @return A pointer to the referent.
@@ -1689,7 +1701,7 @@ public:
 
     /// Dereference.
     /// @return A reference to the referent.
-    value_type const& operator*() const;
+    value_type operator*() const;
 
     /// Dereference.
     /// @return A pointer to the referent.
@@ -1850,7 +1862,7 @@ auto IPSpace<PAYLOAD>::const_iterator::operator--(int) -> self_type {
 }
 
 template<typename PAYLOAD>
-auto IPSpace<PAYLOAD>::const_iterator::operator*() const -> value_type const& { return _value; }
+auto IPSpace<PAYLOAD>::const_iterator::operator*() const -> value_type { return _value; }
 
 template<typename PAYLOAD>
 auto IPSpace<PAYLOAD>::const_iterator::operator->() const -> value_type const * { return &_value; }
@@ -1892,7 +1904,7 @@ auto IPSpace<PAYLOAD>::iterator::operator->() const -> value_type const * {
 }
 
 template<typename PAYLOAD>
-auto IPSpace<PAYLOAD>::iterator::operator*() const -> value_type const& {
+auto IPSpace<PAYLOAD>::iterator::operator*() const -> value_type {
   return reinterpret_cast<value_type const&>(super_type::_value);
 }
 
