@@ -83,7 +83,7 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     X &restore(size_t) override { return *this; }
     bool commit(size_t) override { return true; }
     X &discard(size_t) override { return *this; }
-    X &copy(size_t, size_t, size_t) { return *this; }
+    X &copy(size_t, size_t, size_t) override { return *this; }
     std::ostream &
     operator>>(std::ostream &stream) const override
     {
