@@ -213,7 +213,7 @@ public:
 TEST_CASE("IntrusiveDList Inheritance", "[libswoc][IntrusiveDList][example]")
 {
   IntrusiveDList<PrivateThing::Linkage> priv_list;
-  for (int i = 1; i <= 23; ++i) {
+  for (size_t i = 1; i <= 23; ++i) {
     swoc::LocalBufferWriter<16> w;
     w.print("Item {}", i);
     priv_list.append(new PrivateThing(w.view()));
@@ -223,7 +223,7 @@ TEST_CASE("IntrusiveDList Inheritance", "[libswoc][IntrusiveDList][example]")
   REQUIRE(priv_list.tail()->payload() == "Item 23");
 
   IntrusiveDList<PrivateThing2::Linkage> priv2_list;
-  for (int i = 1; i <= 23; ++i) {
+  for (size_t i = 1; i <= 23; ++i) {
     swoc::LocalBufferWriter<16> w;
     w.print("Item {}", i);
     priv2_list.append(new PrivateThing2(w.view()));
