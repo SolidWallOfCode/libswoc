@@ -440,7 +440,7 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
 TEST_CASE("TransformView", "[libswoc][TransformView]")
 {
   std::string_view source{"Evil Dave Rulz"};
-  swoc::TransformView<int (*)(int) noexcept, std::string_view> xv1(&tolower, source);
+  swoc::TransformView<int (*)(int), std::string_view> xv1(&tolower, source);
   auto xv2 = swoc::transform_view_of(&tolower, source);
   TextView tv{source};
 

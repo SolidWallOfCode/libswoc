@@ -19,6 +19,7 @@
 */
 
 #include <iostream>
+#include <unordered_map>
 
 #include "swoc/swoc_file.h"
 #include "catch.hpp"
