@@ -32,7 +32,17 @@ using swoc::IPRange;
 
 using swoc::IPMask;
 
+using swoc::IPSpace;
+
 using W = swoc::LocalBufferWriter<256>;
+
+namespace {
+template<typename P> void dump(IPSpace < P > const& space) {
+  for ( auto && [ r, p ] : space ) {
+    std::cout << W().print("{} : {}\n", r, p).view();
+  }
+}
+} // namespace
 
 TEST_CASE("Basic IP", "[libswoc][ip]") {
   // Use TextView because string_view(nullptr) fails. Gah.
@@ -1620,3 +1630,84 @@ TEST_CASE("IPSpace skew overlap blend", "[libswoc][ipspace][blend][skew]") {
     ++idx;
   }
 }
+
+TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
+  using PAYLOAD = unsigned;
+  using Space = swoc::IPSpace<PAYLOAD>;
+
+  std::array<std::tuple<TextView, unsigned>, 6> ranges {
+      {
+          {"172.28.56.12-172.28.56.99"_tv, 1}
+          , {"10.10.35.0/24"_tv, 2}
+          , {"192.168.56.0/25"_tv, 3}
+          , {"1337::ded:beef-1337::ded:ceef"_tv, 4}
+          , {"ffee:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv, 5}
+          , {"10.12.148.0/23"_tv, 6}
+      }};
+
+  Space space;
+
+  for (auto &&[text, v] : ranges) {
+    space.fill(IPRange{text}, v);
+  }
+  REQUIRE(space.count() == ranges.size());
+
+  auto && [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
+  REQUIRE(true == r1.empty());
+  auto && [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.87"}));
+  REQUIRE(false == r2.empty());
+
+  space.fill(IPRange{"10.0.0.0/8"} , 7);
+  REQUIRE(space.count() == ranges.size() + 3);
+  space.fill(IPRange{"9.0.0.0-11.255.255.255"}, 7);
+  REQUIRE(space.count() == ranges.size() + 3);
+
+  {
+    auto &&[r, p] = *(space.find(IPAddr{"10.99.88.77"}));
+    REQUIRE(false == r.empty());
+    REQUIRE(p == 7);
+  }
+
+  {
+    auto &&[r, p] = *(space.find(IPAddr{"10.10.35.35"}));
+    REQUIRE(false == r.empty());
+    REQUIRE(p == 2);
+  }
+
+  {
+    auto &&[r, p] = *(space.find(IPAddr{"192.168.56.56"}));
+    REQUIRE(false == r.empty());
+    REQUIRE(p == 3);
+  }
+
+  {
+    auto &&[r, p] = *(space.find(IPAddr{"11.11.11.11"}));
+    REQUIRE(false == r.empty());
+    REQUIRE(p == 7);
+  }
+
+  space.fill(IPRange{"192.168.56.0-192.168.56.199"}, 8);
+  REQUIRE(space.count() == ranges.size() + 4);
+  {
+    auto &&[r, p] = *(space.find(IPAddr{"192.168.55.255"}));
+    REQUIRE(true == r.empty());
+  }
+  {
+    auto &&[r, p] = *(space.find(IPAddr{"192.168.56.0"}));
+    REQUIRE(false == r.empty());
+    REQUIRE(p == 3);
+  }
+  {
+    auto &&[r, p] = *(space.find(IPAddr{"192.168.56.128"}));
+    REQUIRE(false == r.empty());
+    REQUIRE(p == 8);
+  }
+
+  space.fill(IPRange{"0.0.0.0/0"}, 0);
+  {
+    auto &&[r, p] = *(space.find(IPAddr{"192.168.55.255"}));
+    REQUIRE(false == r.empty());
+    REQUIRE(p == 0);
+  }
+}
+

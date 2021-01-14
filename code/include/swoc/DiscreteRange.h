@@ -649,19 +649,6 @@ protected:
       return *this;
     }
 
-    /** Decrement the maximum value in the range.
-     *
-     * The range for the node is reduced by one.
-     *
-     * @return @a this
-     */
-    self_type&
-    dec_max() {
-      _range.dec_max();
-      this->ripple_structure_fixup();
-      return *this;
-    }
-
     METRIC const&
     min() const {
       return _range.min();
@@ -1058,7 +1045,7 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const& range
         return *this;
       }
     } else if (n->payload() == payload && n->max() >= min_minus_1) {
-      // min_minus_1 is safe here because n->_min < min so min is not zero.
+      // min_minus_1 is safe here because n->min() < min so min is not zero.
       x = n;
       // If the existing span covers the requested span, we're done.
       if (x->max() >= range.max()) {
@@ -1081,7 +1068,7 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const& range
     } else {
       // Existing span covers new span but with a different payload.
       // We split it, put the new span in between and we're done.
-      // max_plus_1 is valid because n->_max > max.
+      // max_plus_1 is valid because n->max() > max.
       Node *r;
       x = _fa.make(range, payload);
       r = _fa.make(range_type{max_plus_1, n->max()}, n->payload());
@@ -1144,7 +1131,7 @@ template<typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD>&
 DiscreteSpace<METRIC, PAYLOAD>::fill(DiscreteSpace::range_type const& range
                                      , PAYLOAD const& payload) {
-  // Rightmost node of interest with n->_min <= min.
+  // Rightmost node of interest with n->min() <= min.
   Node *n = this->lower_bound(range.min());
   Node *x = nullptr; // New node (if any).
   // Need copies because we will modify these.
@@ -1154,14 +1141,14 @@ DiscreteSpace<METRIC, PAYLOAD>::fill(DiscreteSpace::range_type const& range
   // Handle cases involving a node of interest to the left of the
   // range.
   if (n) {
-    if (n->_min < min) {
+    if (n->min() < min) {
       auto min_1 = min;
       --min_1;               // dec is OK because min isn't zero.
       if (n->max() < min_1) { // no overlap, not adjacent.
         n = next(n);
       } else if (n->max() >= max) { // incoming range is covered, just discard.
         return *this;
-      } else if (n->payload != payload) { // different payload, clip range on left.
+      } else if (n->payload() != payload) { // different payload, clip range on left.
         min = n->max();
         ++min;
         n = next(n);
@@ -1188,14 +1175,14 @@ DiscreteSpace<METRIC, PAYLOAD>::fill(DiscreteSpace::range_type const& range
      - we must have either x != 0 or adjust min but not both for each loop iteration.
   */
   while (n) {
-    if (n->data() == payload) {
+    if (n->payload() == payload) {
       if (x) {
-        if (n->_max <= max) { // next range is covered, so we can remove and continue.
+        if (n->max() <= max) { // next range is covered, so we can remove and continue.
           this->remove(n);
           n = next(x);
-        } else if (n->_min <= max_plus1) {
+        } else if (n->min() <= max_plus1) {
           // Overlap or adjacent with larger max - absorb and finish.
-          x->assign_max(n->_max);
+          x->assign_max(n->max());
           this->remove(n);
           return *this;
         } else {
@@ -1204,11 +1191,11 @@ DiscreteSpace<METRIC, PAYLOAD>::fill(DiscreteSpace::range_type const& range
           return *this;
         }
       } else {                // not carrying a span.
-        if (n->_max <= max) { // next range is covered - use it.
+        if (n->max() <= max) { // next range is covered - use it.
           x = n;
           x->assign_min(min);
           n = next(n);
-        } else if (n->_min <= max_plus1) {
+        } else if (n->min() <= max_plus1) {
           n->assign_min(min);
           return *this;
         } else { // no overlap, space to complete range.
@@ -1218,33 +1205,32 @@ DiscreteSpace<METRIC, PAYLOAD>::fill(DiscreteSpace::range_type const& range
       }
     } else { // different payload
       if (x) {
-        if (max < n->_min) { // range ends before n starts, done.
+        if (max < n->min()) { // range ends before n starts, done.
           x->assign_max(max);
           return *this;
-        } else if (max <= n->_max) { // range ends before n, done.
-          x->assign_max(n->_min).dec_max();
+        } else if (max <= n->max()) { // range ends before n, done.
+          x->assign_max(--metric_type(n->min()));
           return *this;
         } else { // n is contained in range, skip over it.
-          x->assign_max(n->_min).dec_max();
+          x->assign_max(--metric_type(n->min()));
           x = nullptr;
-          min = n->_max;
-          ++min; // OK because n->_max maximal => next is null.
+          min = n->max();
+          ++min; // OK because n->max() maximal => next is null.
           n = next(n);
         }
       } else {               // no carry node.
-        if (max < n->_min) { // entirely before next span.
+        if (max < n->min()) { // entirely before next span.
           this->insert_before(n, _fa.make(min, max, payload));
           return *this;
         } else {
-          if (min < n->_min) { // leading section, need node.
-            auto y = _fa.make(min, n->_min, payload);
-            y->dec_max();
+          if (min < n->min()) { // leading section, need node.
+            auto y = _fa.make(min, --metric_type(n->min()), payload);
             this->insert_before(n, y);
           }
-          if (max <= n->_max) { // nothing past node
+          if (max <= n->max()) { // nothing past node
             return *this;
           }
-          min = n->_max;
+          min = n->max();
           ++min;
           n = next(n);
         }
