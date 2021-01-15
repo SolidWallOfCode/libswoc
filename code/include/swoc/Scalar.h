@@ -51,7 +51,8 @@ scale_conversion_round_up(C c) {
     return c / R::num + (0 != c % R::num); // N is a multiple of S.
   } else if constexpr (R::num == 1) {
     return c * R::den; // S is a multiple of N.
-  } else { return (c / R::num) * R::den + ((c % R::num) * R::den) / R::num + (0 != (c % R::num)); }
+  }
+  return (c / R::num) * R::den + ((c % R::num) * R::den) / R::num + (0 != (c % R::num));
 }
 
 // Convert a count @a c that is scale @a S to scale @c N
@@ -65,7 +66,8 @@ scale_conversion_round_down(C c) {
     return c / R::num; // N = k S
   } else if constexpr (R::num == 1) {
     return c * R::den; // S = k N
-  } else { return (c / R::num) * R::den + ((c % R::num) * R::den) / R::num; }
+  }
+  return (c / R::num) * R::den + ((c % R::num) * R::den) / R::num;
 }
 
 /* Helper classes for @c Scalar
