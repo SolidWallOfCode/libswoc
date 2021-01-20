@@ -14,7 +14,8 @@
 
     - @c BufferWriter, a safe mechanism for writing to fixed sized buffers. As
       an optional extension this supports python like output formatting along
-      with the ability to extend the formatting to arbitrary types, bind names
+      with the ability to extend the formatt
+      ing to arbitrary types, bind names
       in to the formatting context, and substitute alternate parsers for
       custom format styles.
  */
@@ -22,11 +23,11 @@
 #pragma once
 
 #if !defined(SWOC_VERSION_NS)
-#  define SWOC_VERSION_NS _1_2_18
+#  define SWOC_VERSION_NS _1_2_19
 #endif
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 static constexpr unsigned MAJOR_VERSION = 1;
 static constexpr unsigned MINOR_VERSION = 2;
-static constexpr unsigned POINT_VERSION = 18;
+static constexpr unsigned POINT_VERSION = 19;
 }} // namespace SWOC_VERSION_NS
