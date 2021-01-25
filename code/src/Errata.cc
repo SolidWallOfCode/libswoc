@@ -167,7 +167,7 @@ Errata::write(std::ostream& out) const {
 
 BufferWriter&
 bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata::Severity level) {
-  static constexpr std::string_view name[] = {"DIAG", "DEBUG", "INFO", "NOTE", "WARNING", "ERROR"
+  static constexpr std::string_view name[9] = {"DIAG", "DEBUG", "INFO", "NOTE", "WARNING", "ERROR"
                                               , "FATAL", "ALERT", "EMERGENCY"};
   return bwformat(bw, spec, name[static_cast<int>(level)]);
 }
