@@ -42,6 +42,8 @@ protected:
 
 public:
   using value_type = T;
+  using iterator = T *;
+  using const_iterator = T const *;
 
   /// Default constructor (empty buffer).
   constexpr MemSpan() = default;
