@@ -150,6 +150,22 @@ public:
    */
   template <size_t N> constexpr TextView(const char (&s)[N]) noexcept;
 
+  /** Construct from a C-string.
+   *
+   * @param src A pointer to a C-string.
+   *
+   * @internal This is a reference because it is other ambiguous with the array constructor.
+   */
+  TextView(char *& src) : super_type(src) {}
+
+  /** Construct from a const C-string.
+   *
+   * @param src Pointer to a const C-string.
+   *
+   * @internal This is a reference because it is other ambiguous with the array constructor.
+   */
+  TextView(char const*& src) : super_type(src) {}
+
   /** Construct from nullptr.
       This implicitly makes the length 0.
   */

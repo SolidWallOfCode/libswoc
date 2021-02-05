@@ -58,9 +58,9 @@ at most as expensive as a copy of the same type, and in cases of constant refere
 general if the string is treated as a block of data, :code:`std::string_view` is a better choice. If
 the contents of the string are to be examined / parsed then |TV| is better. For example, if the
 string is used simply as a key or a hash source, use :code:`std::string_view`. Contrariwise if the
-string may contain substrings of interest such as key / value pairs, then use a |TV|. I do sometimes
-use |TV| because of the lack of support for instance reuse in |SV| - e.g. no :code:`assign` or
-:code:`clear` methods.
+string may contain substrings of interest such as key / value pairs, then use a |TV|. Although I do
+sometimes use |TV| because of the lack of support for instance reuse in |SV| - e.g. no
+:code:`assign` or :code:`clear` methods.
 
 When passing |TV| as an argument, it is very debatable whether passing by value or passing by
 reference is more efficient, therefore it's not likely to matter in production code. My personal
@@ -97,9 +97,9 @@ Because |TV| inherits from :code:`std::string_view` it can also be used as a con
       return hash;
    }
 
-The standard functions :code:`strcmp`, :code:`memcmp`, and :code:`strcasecmp` are overloaded for
-|TV| so that a |TV| can be used as if it were a C-style string. The size is is taken from the |TV|
-and doesn't need to be passed in explicitly.
+The standard functions :code:`strcmp`, :code:`memcmp`, code:`memcpy`, and :code:`strcasecmp` are
+overloaded for |TV| so that a |TV| can be used as if it were a C-style string. The size is is taken
+from the |TV| and doesn't need to be passed in explicitly.
 
 Basic Operations
 ================
@@ -115,11 +115,8 @@ views from other views see `Extraction`_). This can be a :code:`char const*` poi
 pointers, a literal string, a :code:`std::string` or a :code:`std::string_view` although in the last
 case there is presumably yet another object that actually owns the memory. All of these constructors
 require only the equivalent of two assignment statements. The one thing to be careful of is if a
-literal string is used, the |TV| will drop the terminating nul character from the view. This is almost
-always the correct behavior, but if it isn't an explicit size can be used. There is no constructor
-from just a C-style string because this has overloading conflicts with the literal string constructor.
-In practice this has rarely been an issue, particularly with fully C++ code which should not be passing
-around raw pointers to C-style strings.
+literal string or C-string is used, the resulting |TV| will drop the terminating nul character from
+the view. This is almost always the correct behavior, but if it isn't an explicit size can be used.
 
 A |TV| can be constructed from a null :code:`char const*` pointer or a straight :code:`nullptr`. This
 will construct an empty |TV| identical to one default constructed.
@@ -168,8 +165,10 @@ A secondary distinction is what is done to the view by the methods.
    is not in the view, the entire view is returned and the source view is cleared.
 
 *  The "clip..." methods remove the corresponding part of the view and return it. Only those characters
-   are removed - in contrast to "split..." and "take...". If no characters match, the view is not modified
-   and an empty view is returned.
+   are removed - in contrast to "split..." and "take..." which drop a (presumed) separator. If the
+   first character doesn't match, the view is not modified and an empty view is returned. These are
+   very similar to the "trim..." methods described below, the difference what part of the original
+   view is returned.
 
 .. _`std::string_view::remove_prefix`: https://en.cppreference.com/w/cpp/string/basic_string_view/remove_prefix
 .. _`std::string_view::remove_suffix`: https://en.cppreference.com/w/cpp/string/basic_string_view/remove_suffix
@@ -247,6 +246,9 @@ content of the view to determine the relationship.
 similar suffixes with the same meaning as the affix methods. This can be done for a single
 character, one of a set of characters, or a predicate. The most common use is with the predicate
 :code:`isspace` which removes leading and/or trailing whitespace as needed.
+
+While the plethora of view methods can seem a bit much, all of these are useful in different
+situations and exist because of such use cases.
 
 Numeric conversions are provided, in signed (:libswoc:`svtoi`), unsigned (:libswoc:`svtou`), and
 floating point (:libswoc:`svtod`) flavors. The integer functions are designed to be "complete" in

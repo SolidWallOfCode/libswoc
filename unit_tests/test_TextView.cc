@@ -42,6 +42,18 @@ TEST_CASE("TextView Constructor", "[libswoc][TextView]")
   TextView e{base.data(), 15};
   TextView f(base.data(), 15);
   TextView u{base.data(), ux};
+
+  // Check the various forms of char pointers work unamibiguously.
+  TextView bob{"Bob"};
+  char q[12] = "Bob";
+  TextView t_q{q};
+  REQUIRE(t_q.data() == q);
+  char *qp = q;
+  TextView t_qp{qp};
+  REQUIRE(t_qp.data() == qp);
+  char const *qcp = "Bob";
+  TextView t_qcp{qcp};
+  REQUIRE(t_qcp.data() == qcp);
 };
 
 TEST_CASE("TextView Operations", "[libswoc][TextView]")

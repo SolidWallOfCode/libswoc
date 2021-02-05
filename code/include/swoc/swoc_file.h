@@ -192,7 +192,7 @@ path::string() const {
 
 inline swoc::TextView
 path::view() const {
-  return _path;
+  return { _path };
 }
 
 inline bool
