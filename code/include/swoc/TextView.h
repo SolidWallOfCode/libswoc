@@ -148,23 +148,23 @@ public:
       @endcode
       The last character in @a a will be 'g'.
    */
-  template <size_t N> constexpr TextView(const char (&s)[N]) noexcept;
+  template <size_t N> constexpr TextView(char const (&s)[N]) noexcept;
 
   /** Construct from a C-string.
    *
    * @param src A pointer to a C-string.
    *
-   * @internal This is a reference because it is other ambiguous with the array constructor.
+   * @internal This is a reference because it is otherwise ambiguous with the array constructor.
    */
-  TextView(char *& src) : super_type(src) {}
+  TextView(char * & src) : super_type(src) {}
 
   /** Construct from a const C-string.
    *
    * @param src Pointer to a const C-string.
    *
-   * @internal This is a reference because it is other ambiguous with the array constructor.
+   * @internal This is a reference because it is otherwise ambiguous with the array constructor.
    */
-  TextView(char const*& src) : super_type(src) {}
+  TextView(char const * & src) : super_type(src) {}
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -971,7 +971,7 @@ inline constexpr TextView::TextView(char const *first, char const *last) noexcep
 inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) noexcept : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) noexcept : super_type(that) {}
-template <size_t N> constexpr TextView::TextView(const char (&s)[N]) noexcept : super_type(s, s[N - 1] ? N : N - 1) {}
+template <size_t N> constexpr TextView::TextView(char const (&s)[N]) noexcept : super_type(s, s[N - 1] ? N : N - 1) {}
 
 inline void
 TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set) {
