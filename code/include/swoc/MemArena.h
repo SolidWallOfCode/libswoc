@@ -167,6 +167,16 @@ public:
    */
   explicit MemArena(size_t n = DEFAULT_BLOCK_SIZE);
 
+  /** Construct using static block.
+   *
+   * @param static_block A block of memory that is non-deletable.
+   *
+   * @a static_block is used as the first block for allocation and is never deleted. This makes
+   * it possible to have an instance that allocates from stack memory and only allocates from the
+   * heap if the static block becomes full.
+   */
+  explicit MemArena(MemSpan<void> static_block);
+
   /// no copying
   MemArena(self_type const& that) = delete;
 
@@ -378,6 +388,9 @@ protected:
 
   BlockList _frozen; ///< Previous generation, frozen memory.
   BlockList _active; ///< Current generation. Allocate here.
+
+  /// Static block, if any.
+  Block* _static_block = nullptr;
 
   // Note on _active block list - blocks that become full are moved to the end of the list.
   // This means that when searching for a block with space, the first full block encountered

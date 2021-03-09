@@ -15,6 +15,19 @@ inline bool MemArena::Block::satisfies(size_t n, size_t align) const {
   return r >= (n + align_padding(this->data() + allocated, align));
 }
 
+MemArena::MemArena(MemSpan<void> static_block) {
+  static constexpr Scalar<16, size_t> MIN_BLOCK_SIZE = round_up(sizeof(Block) + Block::MIN_FREE_SPACE);
+  if (static_block.size() < MIN_BLOCK_SIZE) {
+    throw std::domain_error("MemArena static block is too small.");
+  }
+  // Construct the block data in the block and put it on the list. Make a note this is the
+  // static block that shouldn't be deleted.
+  auto space = static_block.size() - sizeof(Block);
+  _static_block = new (static_block.data()) Block(space);
+  _active_reserved = space;
+  _active.prepend(_static_block);
+}
+
 // Need to break these out because the default implementation doesn't clear the
 // integral values in @a that.
 
@@ -22,10 +35,13 @@ MemArena::MemArena(swoc::MemArena::self_type&& that)
     : _active_allocated(that._active_allocated), _active_reserved(that._active_reserved)
       , _frozen_allocated(that._frozen_allocated), _frozen_reserved(that._frozen_reserved)
       , _reserve_hint(that._reserve_hint), _frozen(std::move(that._frozen))
-      , _active(std::move(that._active)) {
+      , _active(std::move(that._active))
+      , _static_block(that._static_block) {
+  // Clear data in @a that to indicate all of the memory has been moved.
   that._active_allocated = that._active_reserved = 0;
   that._frozen_allocated = that._frozen_reserved = 0;
   that._reserve_hint = 0;
+  that._static_block = nullptr;
 }
 
 MemArena *
@@ -110,6 +126,11 @@ MemArena&
 MemArena::thaw() {
   this->destroy_frozen();
   _frozen_reserved = _frozen_allocated = 0;
+  if (_static_block) {
+    _static_block->discard();
+    _active.prepend(_static_block);
+    _active_reserved += _static_block->remaining();
+  }
   return *this;
 }
 
@@ -152,12 +173,12 @@ MemArena::require(size_t n, size_t align) {
 
 void
 MemArena::destroy_active() {
-  _active.apply([](Block *b) { delete b; }).clear();
+  _active.apply([=](Block *b) { if (b != _static_block) delete b; }).clear();
 }
 
 void
 MemArena::destroy_frozen() {
-  _frozen.apply([](Block *b) { delete b; }).clear();
+  _frozen.apply([=](Block *b) { if (b != _static_block) delete b; }).clear();
 }
 
 MemArena&
@@ -183,19 +204,22 @@ MemArena::discard(size_t hint) {
 
 MemArena::~MemArena() {
   // Destruct in a way that makes it safe for the instance to be in one of its own memory blocks.
+  // This means copying members that will be used during the delete.
   Block *ba = _active.head();
   Block *bf = _frozen.head();
+  Block *sb = _static_block;
+
   _active.clear();
   _frozen.clear();
   while (bf) {
     Block *b = bf;
     bf = bf->_link._next;
-    delete b;
+    if (b != sb) delete b;
   }
   while (ba) {
     Block *b = ba;
     ba = ba->_link._next;
-    delete b;
+    if (b != sb) delete b;
   }
 }
 

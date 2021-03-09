@@ -293,10 +293,10 @@ public:
   constexpr Counter count() const;
 
   /// The scaled value.
-  constexpr intmax_t value() const;
+  constexpr Counter value() const;
 
   /// User conversion to scaled value.
-  constexpr operator intmax_t() const;
+  constexpr operator Counter() const;
 
   /// Addition operator.
   /// The value is scaled from @a that to @a this.
@@ -416,12 +416,12 @@ Scalar<N, C, T>::count() const -> Counter {
 }
 
 template<intmax_t N, typename C, typename T>
-constexpr intmax_t
+constexpr C
 Scalar<N, C, T>::value() const {
   return _n * SCALE;
 }
 
-template<intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::operator intmax_t() const {
+template<intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::operator C() const {
   return _n * SCALE;
 }
 

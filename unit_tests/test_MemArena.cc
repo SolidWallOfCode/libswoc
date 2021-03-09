@@ -512,4 +512,35 @@ TEST_CASE("PMR 3", "[libswoc][arena][pmr]") {
   REQUIRE(pre > post);
 }
 
+TEST_CASE("MemArena static", "[libswoc][MemArena][static]")
+{
+  static constexpr size_t SIZE = 2048;
+  std::byte buffer[SIZE];
+  MemArena arena{{buffer, SIZE}};
+
+  REQUIRE(arena.remaining() > 0);
+  REQUIRE(arena.remaining() < SIZE);
+  REQUIRE(arena.size() == 0);
+
+  // Allocate something and make sure it's in the static area.
+  auto span = arena.alloc(1024);
+  REQUIRE(true == (buffer <= span.data() && span.data() < buffer + SIZE));
+  span = arena.remnant(); // require the remnant to still be in the buffer.
+  REQUIRE(true == (buffer <= span.data() && span.data() < buffer + SIZE));
+
+  // This can't fit, must be somewhere other than the buffer.
+  span = arena.alloc(SIZE);
+  REQUIRE(false == (buffer <= span.data() && span.data() < buffer + SIZE));
+
+  MemArena arena2{std::move(arena)};
+  REQUIRE(arena2.size() > 0);
+
+  arena2.freeze();
+  arena2.thaw();
+
+  REQUIRE(arena.size() == 0);
+  REQUIRE(arena2.size() == 0);
+  // Now let @a arena2 destruct.
+}
+
 #endif // has memory_resource header.
