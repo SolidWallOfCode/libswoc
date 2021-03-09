@@ -41,11 +41,12 @@ This is useful when the goal is any (or all) of
 *  de-allocating memory in bulk.
 
 Note that intrusive containers such as :ref:`IntrusiveDList <swoc-intrusive-list>` and
-:ref:`IntrusiveHashMap <swoc-intrusive-hashmap>` work well with a |MemArena|. If the container and its elements are placed
-in the |MemArena| then no specific cleanup is needed beyond destroying the |MemArena|.
+:ref:`IntrusiveHashMap <swoc-intrusive-hashmap>` work well with a |MemArena|. If the container and
+its elements are placed in the |MemArena| then no specific cleanup is needed beyond destroying the
+|MemArena|.
 
 A |MemArena| can also be `inverted <arena-inversion>`_. This means placing the |MemArena| instance
-in its own memory pool so that the |MemArena| and associated objects can be created with a single
+in its own memory pool so the |MemArena| and associated objects can be created with a single
 base library memory allocation and cleaned up with a single :code:`delete`.
 
 Usage
@@ -137,6 +138,37 @@ memory space is reused. It is also guaranteed that if the next call to :libswoc:
 :libswoc:`MemArena::make` does not need more than the remnant, it will be allocated from the
 remnant. This makes it possible to do speculative work in the arena and "commit" it (via allocation)
 after the work is successful, or abandon it if not.
+
+Static Memory
+=============
+
+|MemArena| has :libswoc:`a constructor <MemArena::MemArena(MemSpan\<void\>)>` that enables using a
+pre-defined block of memory. This memory is never released or destructed by the |MemArena|. This is
+useful in local contexts where an abitrary amount of memory *may* be needed but commonly less than a
+known amount of memory will actually be needed. In such a case the |MemArena| can be seeded with a
+block of memory (static or on the stack) of that size so that no allocation is done in the common
+case, only in the few cases where it is needed without special handling. Such a increase in
+performance is essentially the only reason to use this feature.
+
+The static block must be large enough to hold the internal block headers and still have at least
+the minimum free space available. As of this writing this requires a buffer of at least 64 bytes.
+
+If (roughly) two kilobytes would normally be enough, that could be done with ::
+
+  static constexpr size_t SIZE = 2048;
+  std::byte buffer[SIZE];
+  MemArena arena{{buffer, SIZE}};
+
+All methods are available and functional in this case, including freezing and thawing. Any
+allocations while frozen will never be in the static block, as it won't be recycled until the thaw.
+Generally this is not a good technique as a situation where freeze / thaw is useful is almost
+certainly not a situation where a static block is useful and vice versa.
+
+Although such an arena could be inverted (and thereby placed in the static block) this is also very
+unlikely to be useful, as the stack space for the arena would still be required during construction.
+
+The expectation is such an instance would be scoped locally to a function or method and destroyed
+upon return, being used only for temporary storage.
 
 Examples
 ========
