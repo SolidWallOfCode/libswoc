@@ -79,9 +79,12 @@ MemArena::make_block(size_t n) {
   _reserve_hint = 0; // did this, clear for next time.
   // Add in overhead and round up to paragraph units.
   n = Paragraph{round_up(n + ALLOC_HEADER_SIZE + sizeof(Block))};
-  // If a page or more, round up to page unit size and clip back to account for alloc header.
-  if (n >= Page::SCALE) {
+  // If more than a page or withing a quarter page of a full page,
+  // round up to page unit size and clip back to account for alloc header.
+  if (n >= (Page::SCALE - QuarterPage::SCALE)) {
     n = Page{round_up(n)} - ALLOC_HEADER_SIZE;
+  } else if (n >= QuarterPage::SCALE) { // if at least a quarter page, round up to quarter pages.
+    n = QuarterPage{round_up(n)};
   }
 
   // Allocate space for the Block instance and the request memory and construct a Block at the front.

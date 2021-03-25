@@ -290,6 +290,25 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
 {
   MemArena a1;
   MemSpan<char> span;
+
+  {
+    MemArena alpha{1020};
+    alpha.alloc(1);
+    REQUIRE(alpha.remaining() >= 1019);
+  }
+
+  {
+    MemArena alpha{4092};
+    alpha.alloc(1);
+    REQUIRE(alpha.remaining() >= 4091);
+  }
+
+  {
+    MemArena alpha{4096};
+    alpha.alloc(1);
+    REQUIRE(alpha.remaining() >= 4095);
+  }
+
   {
     MemArena a2{512};
     span = a2.alloc(128).rebind<char>();

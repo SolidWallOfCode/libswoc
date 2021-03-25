@@ -368,6 +368,7 @@ protected:
   void destroy_active();
 
   using Page      = Scalar<4096>; ///< Size for rounding block sizes.
+  using QuarterPage = Scalar<Page::SCALE / 4>; ///< Quarter page - unit for sub page sizes.
   using Paragraph = Scalar<16>;   ///< Minimum unit of memory allocation.
 
   static constexpr size_t ALLOC_HEADER_SIZE = 16; ///< Guess of overhead of @c malloc
