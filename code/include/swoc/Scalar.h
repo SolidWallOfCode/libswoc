@@ -18,13 +18,13 @@
 #include "swoc/swoc_version.h"
 #include "swoc/swoc_meta.h"
 
+namespace swoc { inline namespace SWOC_VERSION_NS {
+
 namespace tag
 {
 /// A generic tag for @c Scalar types, used as the default.
 struct generic;
 } // namespace tag
-
-namespace swoc { inline namespace SWOC_VERSION_NS {
 
 template<intmax_t N, typename C, typename T> class Scalar;
 
