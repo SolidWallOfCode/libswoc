@@ -16,6 +16,7 @@ PLANTUML = $(JAVA) -jar $(PLANTUML_JAR) $(PLANTUML_ARGS)
 IMAGEDIR = $(srcdir)/pix
 BUILD_IMAGEDIR = $(BUILDDIR)/html/_images
 UMLDIR = $(srcdir)/uml
+SWOC_VERSION   ?= $(shell grep 'release =' conf.py | sed -e 's/release = //' | sed -e 's/"//g')
 
 $(IMAGEDIR)/%.svg : $(UMLDIR)/%.uml
 	$(PLANTUML) $< -tsvg -o $(shell $(REALPATH) $(IMAGEDIR))
@@ -42,7 +43,9 @@ clean:
 	-rm -rf doxygen
 
 publish: clean doxygen html
+	if [ -z $(SWOC_VERSION) ] ; then echo "Could not find version to publish" ; exit 1 ; fi
 	( cd _build/html ; tar cfh /tmp/libswoc-doc.tar * )
+	scp /tmp/libswoc-doc.tar aws-swoc-1:/tmp
 
 ext/local-config.py : MakeDocFile
 	@echo "plantuml = '$(JAVA) -jar $(PLANTUML_JAR)'" > ext/local-config.py
