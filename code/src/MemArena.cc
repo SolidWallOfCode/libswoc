@@ -46,7 +46,7 @@ MemArena::MemArena(swoc::MemArena::self_type&& that)
 
 MemArena *
 MemArena::construct_self_contained(size_t n) {
-  MemArena tmp{n};
+  MemArena tmp{n + sizeof(MemArena)};
   return tmp.make<MemArena>(std::move(tmp));
 }
 
@@ -69,12 +69,10 @@ MemArena::make_block(size_t n) {
   if (_reserve_hint == 0) {
     if (_active_reserved) {
       _reserve_hint = _active_reserved;
-    } else if (_frozen_allocated) {
+    } else if (_frozen_allocated) { // immediately after freezing - use that extent.
       _reserve_hint = _frozen_allocated;
     }
   }
-
-  // If post-freeze or reserved, allocate at least that much.
   n = std::max<size_t>(n, _reserve_hint);
   _reserve_hint = 0; // did this, clear for next time.
   // Add in overhead and round up to paragraph units.
@@ -150,27 +148,23 @@ MemArena::require(size_t n, size_t align) {
   auto spot = _active.begin();
   Block *block{nullptr};
 
-  if (spot == _active.end()) {
-    block = this->make_block(n);
-    _active.prepend(block);
-  } else {
-    // Search back through the list until a full block is hit, which is a miss.
-    while (spot != _active.end() && ! spot->satisfies(n, align)) {
-      if (spot->is_full())
-        spot = _active.end();
-      else
-        ++spot;
-    }
-    if (spot == _active.end()) { // no block has enough free space
-      block = this->make_block(n); // assuming a new block is sufficiently aligned.
-      _active.prepend(block);
-    } else if (spot != _active.begin()) {
-      // big enough space, if it's not at the head, move it there.
-      block = spot;
-      _active.erase(block);
-      _active.prepend(block);
-    }
+  // Search back through the list until a full block is hit, which is a miss.
+  while (spot != _active.end() && ! spot->satisfies(n, align)) {
+    if (spot->is_full())
+      spot = _active.end();
+    else
+      ++spot;
   }
+  if (spot == _active.end()) { // no block has enough free space
+    block = this->make_block(n); // assuming a new block is sufficiently aligned.
+    _active.prepend(block);
+  } else if (spot != _active.begin()) {
+    // big enough space, move to the head of the list.
+    block = spot;
+    _active.erase(block);
+    _active.prepend(block);
+  }
+  // Invariant - the head active block has at least @a n bytes of free storage.
   return *this;
 }
 

@@ -314,7 +314,7 @@ public:
   /// @return Contiguous free space in the current internal block.
   MemSpan<void> remnant();
 
-  /** Require @a n bytes of contiguous memory.
+  /** Require @a n bytes of contiguous memory to be available for allocation.
    *
    * @param n Number of bytes.
    * @param align Align requirement (default is 1, no alignment).
