@@ -511,7 +511,7 @@ public:
   */
   result_type &operator=(result_type const &r);
 
-  /** Move assign a result @r to @a this.
+  /** Move assign a result @a r to @a this.
    *
    * @param r Result.
    * @return @a r

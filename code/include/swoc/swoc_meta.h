@@ -59,7 +59,7 @@ namespace meta {
  * constructor @c int(). For @c void and non-simple types (such as @c int* ) this is a bit more
  * challenging. A general utility is provided for this - @c TypeFunc. For the @c void case this
  * would be <tt>decltype(TypeFunc<void>())</tt>. For @c int* it would be
- * <tt>decltype(TypeFunc<int *>()).
+ * <tt>decltype(TypeFunc<int *>())</tt>.
  */
 
 /// Case hierarchy.

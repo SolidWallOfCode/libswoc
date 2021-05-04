@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <new>
 #include <mutex>
 #include <memory>
 #include <utility>

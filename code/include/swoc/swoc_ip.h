@@ -892,7 +892,7 @@ public:
   self_type *operator->();
 
   /// Iterator support.
-  /// @areturn The current network address.
+  /// @return The current network address.
   IP4Addr const& addr() const;
 
   /// Iterator support.
@@ -1027,7 +1027,7 @@ public:
   self_type *operator->();
 
   /// Iterator support.
-  /// @areturn The current network address.
+  /// @return The current network address.
   IP6Addr const& addr() const { return _range.min(); }
 
   /// Iterator support.
@@ -1204,7 +1204,7 @@ public:
   self_type *operator->();
 
   /// Iterator support.
-  /// @areturn The current network address.
+  /// @return The current network address.
   IPAddr addr() const;
 
   /// Iterator support.
@@ -1474,7 +1474,7 @@ public:
 
   /** Mark the range @a r with @a payload.
    *
-   * @param r Range to mark.
+   * @param range Range to mark.
    * @param payload Payload to assign.
    * @return @a this
    *
@@ -2889,6 +2889,7 @@ size_t IPSpace<PAYLOAD>::count(sa_family_t f) const {
 
 }} // namespace swoc
 
+/// @cond NOT_DOCUMENTED
 namespace std {
 
 // -- Tuple support for IP4Net --
@@ -2946,6 +2947,7 @@ public:
 };
 
 } // namespace std
+/// @endcond
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 

@@ -371,10 +371,13 @@ public:
   self_type& detach();
 
   /// @return The used part of the buffer as a @c std::string_view.
-  std::string_view view() const;
+  swoc::TextView view() const;
 
   /// Provide a @c string_view of all successfully written characters as a user conversion.
   operator std::string_view() const;
+
+  /// Provide a @c string_view of all successfully written characters as a user conversion.
+  operator swoc::TextView() const;
 
   /// Output the buffer contents to the @a stream.
   std::ostream& operator>>(std::ostream& stream) const override;
@@ -613,13 +616,16 @@ FixedBufferWriter::copy(size_t dst, size_t src, size_t n) -> self_type& {
   return *this;
 }
 
-inline std::string_view
+inline swoc::TextView
 FixedBufferWriter::view() const {
   return {_buffer, size()};
 }
 
-/// Provide a @c string_view of all successfully written characters as a user conversion.
 inline FixedBufferWriter::operator std::string_view() const {
+  return this->view();
+}
+
+inline FixedBufferWriter::operator swoc::TextView() const {
   return this->view();
 }
 
@@ -628,6 +634,7 @@ template<size_t N> LocalBufferWriter<N>::LocalBufferWriter() : super_type(_arr, 
 
 }} // namespace swoc
 
+/// @cond NOT_DOCUMENTED
 namespace std
 {
 inline ostream &
@@ -635,3 +642,4 @@ operator<<(ostream &s, swoc::BufferWriter const &w) {
   return w >> s;
 }
 } // end namespace std
+/// @endcond

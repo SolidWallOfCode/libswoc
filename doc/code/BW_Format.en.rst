@@ -593,7 +593,24 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
 
    Formatting for :code:`errno`. Generically the formatted output is the short name, the
    description, and the numeric value. A format type of ``d`` will generate just the numeric value,
-   while a format type of ``s`` will generate just the short name and description.
+   while a format type of ``s`` will generate the short name and description without a number.
+
+   For more detailed output, the extension can be used to pick just the short or long name. For
+   non-numeric format codes, if the extension has the character 's' then the short name is output,
+   and if it contains the character 'l' the long name is output.
+
+   Examples:
+
+   ========== ==============================================
+   Format     Result
+   ========== ==============================================
+   ``:n``     [13]
+   ``:s``     EACCES: Permission denied
+   ``:s:sl``  EACCES: Permission denied
+   ``:s:s``   EACCES
+   ``:s:l``   Permission denied
+   ``::s``    EACCES [13]
+   ========== ==============================================
 
    :libswoc:`Reference <Errno>`.
 

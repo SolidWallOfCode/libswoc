@@ -50,16 +50,15 @@ a *count* and represent a *value* which is the *count* multiplied by :arg:`SCALE
 quantizes the values that can be represented by an instance.
 
 .. class:: template < intmax_t SCALE, typename C, typename TAG > Scalar
+   :tparam SCALE: Scaling factor.
+   :tparam C: Base storage type.
+   :tparam TAG: Distinguishing type tag.
 
    :libswoc:`Reference documentation <Scalar>`.
 
    A quantized integral with a distinct type.
 
-   :tparam SCALE: Scaling factor.
-   :tparam C: Base storage type.
-   :tparam TAG: Distinguishing type tag.
-
-   .. type:: COUNTER
+   .. type:: COUNTER = C
 
       Imported template parameter :arg:`C`.
 
@@ -81,13 +80,13 @@ quantizes the values that can be represented by an instance.
    The type used for :arg:`TAG` can be defined in name only.::
 
       struct YoureIt; // no other information about YoureIt is required.
-      typedef Scalar<100, int, YoureIt> HectoTouch; // how many hundreds of touches.
+      using HectoTouch = Scalar<100, int, YoureIt>; // how many hundreds of touches.
 
    .. function:: COUNTER count() const
 
       Return the internal count.
 
-   .. function: intmax_t value() const
+   .. function:: intmax_t value() const
 
       Return the value.
 
@@ -139,7 +138,8 @@ An assignment of a :code:`hecto` to a :code:`deka` is implicit as the scaling is
    deka b;
    b = a; // compiles.
 
-The opposite is not implicit because the value of a :code:`deka` can be one not representable by a :code:`hecto`. In such a case it would have to be rounded, either up or down.
+The opposite is not implicit because the value of a :code:`deka` can be one not representable by a
+:code:`hecto`. In such a case it would have to be rounded, either up or down.
 
 .. code-block:: cpp
 
@@ -165,8 +165,8 @@ as possible.
 Arithmetic
 ==========
 
-Arithmetic with scalars is based on the idea that a scalar represents its value. This value retains the
-scalar type for conversion checking but otherwise acts as the value. This makes using scalar
+Arithmetic with scalars is based on the idea that a scalar represents its value. An instance retains
+the scalar type for conversion checking but otherwise acts as the value. This makes using scalar
 instances as integral arguments to other functions simple. For instance consider following the
 definition.
 
@@ -188,7 +188,12 @@ Or more directly
 
    void* buffer = malloc(Sector(round_up(sizeof(serialized_data))));
 
-Scalar is designed to be easy to use but when using multiple scales simultaneously, especially in the same expression, the computed type can be surprising. The best approach is to be explicit - a Scalar instance is very inexpensive to create (at most 1 integer copy) therefore subexpressions can easily be forced to a specific scale by constructing the appropriate scalar with :code:`round_up` or :code:`round_down` of the subexpression. Or, define a unit scale type and convert to that as the common type before converting the result to the desired scale.
+Scalar is designed to be easy to use but when using multiple scales simultaneously, especially in
+the same expression, the computed type can be surprising. The best approach is to be explicit - a
+Scalar instance is very inexpensive to create (at most 1 integer copy) therefore subexpressions can
+easily be forced to a specific scale by constructing the appropriate scalar with :code:`round_up` or
+:code:`round_down` of the subexpression. Or, define a unit scale type and convert to that as the
+common type before converting the result to the desired scale.
 
 Advanced Features
 =================
@@ -215,21 +220,21 @@ sizezs which have this property.
 Bytes
 -----
 
-The initial use of :class:`Scalar` will be in the cache component. This has already been tested in some experimental
-work which will in time be blended back in to the main codebase. The use will be to represent different amounts of data,
-in memory and on disk.
+The initial use of :class:`Scalar` will be in the cache component. This has already been tested in
+some experimental work which will in time be blended back in to the main codebase. The use will be
+to represent different amounts of data, in memory and on disk.
 
 .. code-block:: cpp
 
    namespace tag { struct bytes { static const char * label = " bytes"; }; }
-   typedef Scalar<1, off_t, tag::bytes> Bytes;
-   typedef Scalar<512, off_t, tag::bytes> CacheDiskBlocks;
-   typedef Scalar<1024, off_t, tag::byteds> KB;
-   typedef Scalar<8 * KB::SCALE, off_t, tag::bytes> CacheStoreBlocks;
-   typedef Scalar<1024 * KB::SCALE, off_t, tag::bytes> MB;
-   typedef Scalar<128 * MB::SCALE, off_t, tag::bytes> CacheStripeBlocks;
-   typedef Scalar<1024 * MB::SCALE, off_t, tag::bytes> GB;
-   typedef Scalar<1024 * GB::SCALE, off_t, tag::bytes> TB
+   using Bytes = Scalar<1, off_t, tag::bytes>;
+   using CacheDiskBlocks = Scalar<512, off_t, tag::bytes>;
+   using KB = Scalar<1024, off_t, tag::byteds>;
+   using CacheStoreBlocks = Scalar<8 * KB::SCALE, off_t, tag::bytes>;
+   using MB = Scalar<1024 * KB::SCALE, off_t, tag::bytes>;
+   using CacheStripeBlocks = Scalar<128 * MB::SCALE, off_t, tag::bytes>;
+   using GB = Scalar<1024 * MB::SCALE, off_t, tag::bytes>;
+   using TB = Scalar<1024 * GB::SCALE, off_t, tag::bytes>;
 
 This collection of types represents the data size units of interest to the cache and therefore enables to code to be much clearer about the units and to avoid errors in converting from one to another.
 

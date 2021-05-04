@@ -495,7 +495,7 @@ DiscreteRange<T>::intersection(DiscreteRange::self_type const& that) const {
 
 /** Equality.
     Two intervals are equal if their min and max values are equal.
-    @relates interval
+    @relates DiscreteRange
  */
 template<typename T>
 bool
@@ -505,7 +505,7 @@ operator==(DiscreteRange<T> const& lhs, DiscreteRange<T> const& rhs) {
 
 /** Inequality.
     Two intervals are equal if their min and max values are equal.
-    @relates interval
+    @relates DiscreteRange
  */
 template<typename T>
 bool
@@ -521,7 +521,7 @@ operator!=(DiscreteRange<T> const& lhs, DiscreteRange<T> const& rhs) {
     - There don't seem to be better choices (&&,|| not good)
     - The assymmetry between intersection and union makes for only three natural operators
     - ^ at least looks like "intersects"
-    @relates interval
+    @relates DiscreteRange
  */
 template<typename T>
 bool
@@ -532,7 +532,7 @@ operator^(DiscreteRange<T> const& lhs, DiscreteRange<T> const& rhs) {
 /** Containment ordering.
     @return @c true if @c this is a strict subset of @a rhs.
     @note Equivalent to @c is_strict_subset.
-    @relates interval
+    @relates DiscreteRange
  */
 template<typename T>
 inline bool
@@ -543,7 +543,7 @@ operator<(DiscreteRange<T> const& lhs, DiscreteRange<T> const& rhs) {
 /** Containment ordering.
     @return @c true if @c this is a subset of @a rhs.
     @note Equivalent to @c is_subset.
-    @relates interval
+    @relates DiscreteRange
  */
 template<typename T>
 inline bool
@@ -554,7 +554,7 @@ operator<=(DiscreteRange<T> const& lhs, DiscreteRange<T> const& rhs) {
 /** Containment ordering.
     @return @c true if @c this is a strict superset of @a rhs.
     @note Equivalent to @c is_strict_superset.
-    @relates interval
+    @relates DiscreteRange
  */
 template<typename T>
 inline bool
@@ -565,7 +565,7 @@ operator>(DiscreteRange<T> const& lhs, DiscreteRange<T> const& rhs) {
 /** Containment ordering.
     @return @c true if @c this is a superset of @a rhs.
     @note Equivalent to @c is_superset.
-    @relates interval
+    @relates DiscreteRange
     */
 template<typename T>
 inline bool
@@ -728,11 +728,12 @@ public:
    * @tparam U type to blend in to payloads.
    * @param range Range for blending.
    * @param color Payload to blend.
+   * @param blender Functor to compute blended color.
    * @return @a this
    *
    * @a color is blended to values in @a range. If an address in @a range does not have a payload,
    * its payload is set a default constructed @c PAYLOAD blended with @a color. If such an address
-   * does have a payload, @a color is blended in to that payload using @blender. The existing color
+   * does have a payload, @a color is blended in to that payload using @a blender. The existing color
    * is passed as the first argument and @a color as the second argument. The functor is expected to
    * update the first argument to be the blended color. The function must return a @c bool to
    * indicate whether the blend resulted in a valid color. If @c false is returned, the blended

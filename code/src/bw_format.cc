@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 // Copyright Apache Software Foundation 2019
 /** @file
 
@@ -329,6 +330,16 @@ To_Radix(uintmax_t n, char *buff, size_t width, char *digits) {
   return (buff + width) - out;
 }
 
+/** Output a string with a specified alignment.
+ *
+ * @tparam F Output functor.
+ * @param w Output buffer.
+ * @param f Functor that generates output.
+ * @param align Alignment.
+ * @param width Field width.
+ * @param fill Fill character.
+ * @param neg Character to use for negative (null char means do not output).
+ */
 template<typename F>
 void
 Write_Aligned(BufferWriter& w, F const& f, Spec::Align align, int width, char fill, char neg) {
@@ -556,12 +567,6 @@ Format_Float(BufferWriter& w, Spec const& spec, double f, bool negative_p) {
   return w;
 }
 
-/** Format output as a hexadecimal dump.
- *
- * @param w Output buffer.
- * @param view Input data.
- * @param digits Digit array for hexadecimal digits.
- */
 void
 Format_As_Hex(BufferWriter& w, std::string_view view, const char *digits) {
   const char *ptr = view.data();
@@ -679,18 +684,28 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Errno const& e) {
   // enough. The long string will be locally accurate. Clang requires the double
   // braces. Why, Turing only knows.
   static const std::array<std::string_view, 134> SHORT_NAME = {{
-                                                                   "SUCCESS: ", "EPERM: ", "ENOENT: ", "ESRCH: ", "EINTR: ", "EIO: ", "ENXIO: ", "E2BIG ", "ENOEXEC: ", "EBADF: ", "ECHILD: ", "EAGAIN: ", "ENOMEM: ", "EACCES: ", "EFAULT: ", "ENOTBLK: ", "EBUSY: ", "EEXIST: ", "EXDEV: ", "ENODEV: ", "ENOTDIR: ", "EISDIR: ", "EINVAL: ", "ENFILE: ", "EMFILE: ", "ENOTTY: ", "ETXTBSY: ", "EFBIG: ", "ENOSPC: ", "ESPIPE: ", "EROFS: ", "EMLINK: ", "EPIPE: ", "EDOM: ", "ERANGE: ", "EDEADLK: ", "ENAMETOOLONG: ", "ENOLCK: ", "ENOSYS: ", "ENOTEMPTY: ", "ELOOP: ", "EWOULDBLOCK: ", "ENOMSG: ", "EIDRM: ", "ECHRNG: ", "EL2NSYNC: ", "EL3HLT: ", "EL3RST: ", "ELNRNG: ", "EUNATCH: ", "ENOCSI: ", "EL2HTL: ", "EBADE: ", "EBADR: ", "EXFULL: ", "ENOANO: ", "EBADRQC: ", "EBADSLT: ", "EDEADLOCK: ", "EBFONT: ", "ENOSTR: ", "ENODATA: ", "ETIME: ", "ENOSR: ", "ENONET: ", "ENOPKG: ", "EREMOTE: ", "ENOLINK: ", "EADV: ", "ESRMNT: ", "ECOMM: ", "EPROTO: ", "EMULTIHOP: ", "EDOTDOT: ", "EBADMSG: ", "EOVERFLOW: ", "ENOTUNIQ: ", "EBADFD: ", "EREMCHG: ", "ELIBACC: ", "ELIBBAD: ", "ELIBSCN: ", "ELIBMAX: ", "ELIBEXEC: ", "EILSEQ: ", "ERESTART: ", "ESTRPIPE: ", "EUSERS: ", "ENOTSOCK: ", "EDESTADDRREQ: ", "EMSGSIZE: ", "EPROTOTYPE: ", "ENOPROTOOPT: ", "EPROTONOSUPPORT: ", "ESOCKTNOSUPPORT: ", "EOPNOTSUPP: ", "EPFNOSUPPORT: ", "EAFNOSUPPORT: ", "EADDRINUSE: ", "EADDRNOTAVAIL: ", "ENETDOWN: ", "ENETUNREACH: ", "ENETRESET: ", "ECONNABORTED: ", "ECONNRESET: ", "ENOBUFS: ", "EISCONN: ", "ENOTCONN: ", "ESHUTDOWN: ", "ETOOMANYREFS: ", "ETIMEDOUT: ", "ECONNREFUSED: ", "EHOSTDOWN: ", "EHOSTUNREACH: ", "EALREADY: ", "EINPROGRESS: ", "ESTALE: ", "EUCLEAN: ", "ENOTNAM: ", "ENAVAIL: ", "EISNAM: ", "EREMOTEIO: ", "EDQUOT: ", "ENOMEDIUM: ", "EMEDIUMTYPE: ", "ECANCELED: ", "ENOKEY: ", "EKEYEXPIRED: ", "EKEYREVOKED: ", "EKEYREJECTED: ", "EOWNERDEAD: ", "ENOTRECOVERABLE: ", "ERFKILL: ", "EHWPOISON: ",}};
+                                                                   "SUCCESS", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO", "ENXIO", "E2BIG ", "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM", "EACCES", "EFAULT", "ENOTBLK", "EBUSY", "EEXIST", "EXDEV", "ENODEV", "ENOTDIR", "EISDIR", "EINVAL", "ENFILE", "EMFILE", "ENOTTY", "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK", "EPIPE", "EDOM", "ERANGE", "EDEADLK", "ENAMETOOLONG", "ENOLCK", "ENOSYS", "ENOTEMPTY", "ELOOP", "EWOULDBLOCK", "ENOMSG", "EIDRM", "ECHRNG", "EL2NSYNC", "EL3HLT", "EL3RST", "ELNRNG", "EUNATCH", "ENOCSI", "EL2HTL", "EBADE", "EBADR", "EXFULL", "ENOANO", "EBADRQC", "EBADSLT", "EDEADLOCK", "EBFONT", "ENOSTR", "ENODATA", "ETIME", "ENOSR", "ENONET", "ENOPKG", "EREMOTE", "ENOLINK", "EADV", "ESRMNT", "ECOMM", "EPROTO", "EMULTIHOP", "EDOTDOT", "EBADMSG", "EOVERFLOW", "ENOTUNIQ", "EBADFD", "EREMCHG", "ELIBACC", "ELIBBAD", "ELIBSCN", "ELIBMAX", "ELIBEXEC", "EILSEQ", "ERESTART", "ESTRPIPE", "EUSERS", "ENOTSOCK", "EDESTADDRREQ", "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT", "EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "EOPNOTSUPP", "EPFNOSUPPORT", "EAFNOSUPPORT", "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN", "ENETUNREACH", "ENETRESET", "ECONNABORTED", "ECONNRESET", "ENOBUFS", "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETOOMANYREFS", "ETIMEDOUT", "ECONNREFUSED", "EHOSTDOWN", "EHOSTUNREACH", "EALREADY", "EINPROGRESS", "ESTALE", "EUCLEAN", "ENOTNAM", "ENAVAIL", "EISNAM", "EREMOTEIO", "EDQUOT", "ENOMEDIUM", "EMEDIUMTYPE", "ECANCELED", "ENOKEY", "EKEYEXPIRED", "EKEYREVOKED", "EKEYREJECTED", "EOWNERDEAD", "ENOTRECOVERABLE", "ERFKILL", "EHWPOISON",}};
   // This provides convenient safe access to the errno short name array.
   auto short_name = [](int n) {
-    return 0 < n && n < int(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv;
+    return 0 < n && n < int(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown"sv;
   };
   static const bwf::Format number_fmt{"[{}]"sv}; // numeric value format.
-  if (spec.has_numeric_type()) {                 // if numeric type, print just the numeric
-    // part.
+
+  if (spec.has_numeric_type()) {                 // if numeric type, print just the numeric part
     w.print(number_fmt, e._e);
   } else {
-    w.write(short_name(e._e));
-    w.write(strerror(e._e));
+    TextView ext { spec._ext };
+    bool short_p = false;
+    if (ext.empty() || ext.npos != ext.find('s')) {
+      w.write(short_name(e._e));
+      short_p = true;
+    }
+    if (ext.empty() || ext.npos != ext.find('l')) {
+      if (short_p) {
+        w.write(": ");
+      }
+      w.write(strerror(e._e));
+    }
     if (spec._type != 's' && spec._type != 'S') {
       w.write(' ');
       w.print(number_fmt, e._e);

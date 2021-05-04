@@ -35,9 +35,9 @@ unrelated projects. Hence this library. I hope you find it as useful as I have.
    code/MemArena.en
    code/IntrusiveDList.en
    code/IntrusiveHashMap.en
-   code/Scalar.en
    code/Lexicon.en
    code/Errata.en
+   code/Scalar.en
    code/IPSpace.en
 
 Indices and tables

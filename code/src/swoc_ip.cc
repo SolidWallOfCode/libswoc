@@ -590,7 +590,7 @@ IPAddr::is_multicast() const {
          (AF_INET6 == _family && _addr._ip6.is_multicast());
 }
 
-IPEndpoint::IPEndpoint(std::string_view const& text) {
+IPEndpoint::IPEndpoint(string_view const& text) {
   this->invalidate();
   this->parse(text);
 }

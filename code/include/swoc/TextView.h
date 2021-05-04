@@ -827,16 +827,16 @@ public:
   // Functors for using this class in STL containers.
   /// Ordering functor, lexicographic comparison.
   struct LessThan {
-    bool
-    operator()(self_type const &lhs, self_type const &rhs) const noexcept {
+    /// @return Case sensitive ordering.
+    bool operator()(self_type const &lhs, self_type const &rhs) const noexcept {
       return -1 == strcmp(lhs, rhs);
     }
   };
 
   /// Ordering functor, case ignoring lexicographic comparison.
   struct LessThanNoCase {
-    bool
-    operator()(self_type const &lhs, self_type const &rhs) const noexcept {
+    /// @return Case insensitive ordering.
+    bool operator()(self_type const &lhs, self_type const &rhs) const noexcept {
       return -1 == strcasecmp(lhs, rhs);
     }
   };
@@ -937,7 +937,7 @@ svto_radix(swoc::TextView &src) {
 }
 
 /// Convenience overload.
-/// @see @svto_radix(swoc::TextView &src)
+/// @see svto_radix(swoc::TextView &src)
 template <int N>
 uintmax_t
 svto_radix(swoc::TextView &&src) {
@@ -1645,9 +1645,9 @@ public:
   explicit operator bool() const;
 
 protected:
-  transform_type _xf;
-  iter _spot;
-  iter _limit;
+  transform_type _xf; ///< Per character transform functor.
+  iter _spot; ///< Current location in the source view.
+  iter _limit; ///< End of source view.
 };
 
 template <typename X, typename V>

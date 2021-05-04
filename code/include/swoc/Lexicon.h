@@ -205,7 +205,7 @@ public:
 
   /** Set default handler.
    *
-   * @param def The handler.
+   * @param handler The handler.
    * @return @a this.
    *
    * The @a handler can be of various types.

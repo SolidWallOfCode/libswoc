@@ -487,6 +487,26 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
   REQUIRE(w.view() == "EACCES: Permission denied [13]"sv);
   w.clear().print("{}", swoc::bwf::Errno(134));
   REQUIRE(w.view().substr(0, 22) == "Unknown: Unknown error"sv);
+  w.clear().print("{:s}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "EACCES: Permission denied"sv);
+  w.clear().print("{:S}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "EACCES: Permission denied"sv);
+  w.clear().print("{:s:s}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "EACCES"sv);
+  w.clear().print("{:s:l}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "Permission denied"sv);
+  w.clear().print("{:s:sl}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "EACCES: Permission denied"sv);
+  w.clear().print("{:d}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "[13]"sv);
+  w.clear().print("{:g}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "EACCES: Permission denied [13]"sv);
+  w.clear().print("{:g:s}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "EACCES [13]"sv);
+  w.clear().print("{::s}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "EACCES [13]"sv);
+  w.clear().print("{::l}", swoc::bwf::Errno(13));
+  REQUIRE(w.view() == "Permission denied [13]"sv);
 
   time_t t = 1528484137;
   // default is GMT
@@ -584,6 +604,7 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
   s2 = std::string_view{};
   w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
   REQUIRE(w.view() == "Clone?.");
+
 };
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

@@ -700,7 +700,6 @@ arg_capture(F&& f, BufferWriter& w, Spec const& spec, std::any&& value, swoc::me
  * @tparam EXTRACTOR Format extractor functor type.
  * @tparam VIEW String view argument type.
  * @tparam SPEC Specifier argument type.
- * @param m The extractor method.
  * @return A value of type @a SPEC
  *
  * This is never called - it exists to extract @a SPEC from a format extractor functor to be used
