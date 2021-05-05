@@ -18,6 +18,7 @@ add_executable(test_libswoc
     test_TextView.cc
     test_Scalar.cc
     test_swoc_file.cc
+    test_Vectray.cc
 
     ex_bw_format.cc
     ex_IntrusiveDList.cc
