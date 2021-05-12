@@ -46,7 +46,7 @@ set(CC_FILES
     )
 
 add_library(libswoc STATIC ${CC_FILES})
-set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc-static)
+set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc.static.${LIBSWOC_VERSION})
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(libswoc PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
 endif()
