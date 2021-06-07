@@ -837,10 +837,8 @@ operator<<(ostream &s, swoc::FixedBufferWriter &w)
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec)
 {
-  // This provides convenient safe access to the errno short name array.
   static const swoc::bwf::Format number_fmt{"[{}]"_sv}; // numeric value format.
-  if (spec.has_numeric_type()) {                        // if numeric type, print just the numeric
-    // part.
+  if (spec.has_numeric_type()) { // only the number
     w.print(number_fmt, ec.value());
   } else {
     w.write(ec.message());

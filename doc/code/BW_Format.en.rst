@@ -533,6 +533,13 @@ Specific types
         bw.print("{:>20: =a}",addr); // -> "     172. 19.  3.105"
       }
 
+:code:`std::error_code`
+   :code:`#include "swoc/bwf_std.h"
+
+   Formatting for :code:`std::error_code`. Generically the formatted output is the description and
+   the numeric value. A format type of ``d`` will generate the numeric value, while a format type of
+   ``s`` will generate the description.
+
 Format Classes
 --------------
 
