@@ -93,8 +93,10 @@ TEST_CASE("Meta", "[meta]")
 TEST_CASE("Meta vary", "[meta][vary]")
 {
   std::variant<int, bool, TextView> v;
-  auto visitor = swoc::meta::vary{[](int &i) -> int { return i; }, [](bool &b) -> int { return b ? -1 : -2; },
-                                  [](TextView &tv) -> int { return swoc::svtou(tv); }};
+  auto visitor = swoc::meta::vary {[](int &i) -> int { return i; }
+                                 , [](bool &b) -> int { return b ? -1 : -2; }
+                                 , [](TextView &tv) -> int { return swoc::svtou(tv); }
+  };
 
   v = 37;
   REQUIRE(std::visit(visitor, v) == 37);
