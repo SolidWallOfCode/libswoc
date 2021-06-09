@@ -2,8 +2,12 @@
 
 #include <array>
 #include <vector>
-#include <iterator>
+#include <variant>
+#include <new>
 #include <cstddef>
+
+#include <swoc/MemSpan.h>
+#include <swoc/swoc_meta.h>
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
@@ -25,200 +29,108 @@ template < typename T, size_t N, class A = std::allocator<T> >
 class Vectray {
   using self_type = Vectray; ///< Self reference type.
   using vector_type = std::vector<T, A>;
-protected:
-  /// Raw storage for an instance.
-  union TBlock {
-    struct {} _nil; ///< Target for default constructor.
-    T _t; ///< aliased instance.
 
-    /// Default constructor, required to make this default constructable for @c std::array.
-    /// @internal By design, this does nothing. It a goal to not construct a @a T instance.
-    TBlock() {}
-  };
-
-  using StaticStore = std::array<TBlock, N>; ///< Static (instance local) storage.
-  using DynamicStore = std::vector<T>; ///< Dynamic (heap) storage.
-
-public:
-  /// STL compliance types.
+public: // STL compliance types.
   using value_type = T;
   using allocator_type = A;
   using size_type = typename vector_type::size_type;
   using difference_type = typename vector_type::difference_type;
+  using iterator = typename swoc::MemSpan<T>::iterator;
+  using const_iterator = typename swoc::MemSpan<const T>::iterator;
 
+protected:
+  /// Internal (fixed) storage.
+  struct FixedStore {
+    size_t _count = 0; ///< Number of valid elements.
+    allocator_type _a; ///< Allocator instance - used for construction.
+    std::array<std::byte, sizeof(T) * N> _raw; ///< Raw memory for element storage.
+
+    FixedStore() = default;
+    explicit FixedStore(allocator_type const& a) : _a(a) {}
+  };
+  using DynamicStore = vector_type; ///< Dynamic (heap) storage.
+
+  /// Generic form for referencing stored objects.
+  using span = swoc::MemSpan<T>;
+  using const_span = swoc::MemSpan<T const>;
+
+public:
   /// Default constructor, construct an empty container.
   Vectray();
+
+  /// Construct empty instance with allocator.
+  explicit Vectray(allocator_type const& a) : _store(std::in_place_type_t<FixedStore>{}, a) {}
+
+  explicit Vectray(size_type n, allocator_type const& alloc = allocator_type());
+
+  /// @return The number of elements in the container.
+  size_type size() const;
 
   /** Index operator.
    *
    * @param idx Index of element.
    * @return A reference to the element.
    */
-  T & operator [] (size_type idx);
+  T& operator[](size_type idx);
 
   /** Index operator (const).
    *
    * @param idx Index of element.
    * @return A @c const reference to the element.
    */
-  T const& operator [] (size_type idx) const;
+  T const& operator[](size_type idx) const;
 
-  /** Add an element to the end of the current elements.
+  /** Append an element by copy.
    *
    * @param src Element to add.
    * @return @a this.
    */
-  self_type & push_back(T const& src);
+  self_type& push_back(T const& t);
+
+  /** Append an element by direct construction.
+   *
+   * @tparam Args Constructor parameter types.
+   * @param args Constructor arguments.
+   * @return @a this
+   */
+  template < typename ... Args> self_type& emplace_back(Args... args);
 
   /** Remove an element from the end of the current elements.
    *
    * @return @a this.
    */
-  self_type & pop_back();
+  self_type& pop_back();
 
-   /// @return The number of elements in the container.
-  size_type size() const;
-
-  // iteration
-
-  /// Constant iteration.
-  class const_iterator {
-    using self_type = const_iterator; ///< Self reference type.
-    friend class Vectray; ///< Allow container access to internals.
-
-  public:
-    // STL compliance.
-    using value_type = const typename Vectray::value_type; /// Import for API compliance.
-    using iterator_category = std::bidirectional_iterator_tag;
-    using pointer           = value_type *;
-    using reference         = value_type &;
-    using difference_type   = typename Vectray::difference_type;
-
-    /// Default constructor.
-    const_iterator();
-
-    /// Pre-increment.
-    /// Move to the next element in the list.
-    /// @return The iterator.
-    self_type &operator++();
-
-    /// Pre-decrement.
-    /// Move to the previous element in the list.
-    /// @return The iterator.
-    self_type &operator--();
-
-    /// Post-increment.
-    /// Move to the next element in the list.
-    /// @return The iterator value before the increment.
-    self_type operator++(int);
-
-    /// Post-decrement.
-    /// Move to the previous element in the list.
-    /// @return The iterator value before the decrement.
-    self_type operator--(int);
-
-    /// Dereference.
-    /// @return A reference to the referent.
-    value_type &operator*() const;
-
-    /// Dereference.
-    /// @return A pointer to the referent.
-    value_type *operator->() const;
-
-    /// Equality
-    bool operator==(self_type const &that) const;
-
-    /// Inequality
-    bool operator!=(self_type const &that) const;
-
-  protected:
-    // Stored non-const to make implementing @c iterator easier. This class provides the required @c
-    // const protection.
-
-    bool _static_p = true; ///< Is the iterator a static storage iterator?
-
-    // Use anonymous union to promote these into the enclosing class scope.
-    union {
-      typename StaticStore::iterator _static; ///< Iteration over static elements.
-      typename DynamicStore::iterator _dynamic; ///< Iteration over dynamic elements.
-    };
-
-    /// Internal constructor for containers.
-    const_iterator(typename StaticStore::iterator const& spot) : _static_p(true), _static(spot) {}
-    /// Internal constructor for containers.
-    const_iterator(typename DynamicStore::iterator const& spot) : _static_p(false), _dynamic(spot) {}
-  };
-
-  /// Iterator for the list.
-  class iterator : public const_iterator {
-    using self_type  = iterator;       ///< Self reference type.
-    using super_type = const_iterator; ///< Super class type.
-
-    friend class Vectray;
-
-  public:
-    using list_type  = Vectray;                 /// Must hoist this for direct use.
-    using value_type = typename list_type::value_type; /// Import for API compliance.
-    // STL algorithm compliance.
-    using iterator_category = std::bidirectional_iterator_tag;
-    using pointer           = value_type *;
-    using reference         = value_type &;
-
-    /// Default constructor.
-    iterator() = default;
-
-    /// Pre-increment.
-    /// Move to the next element in the list.
-    /// @return The iterator.
-    self_type &operator++();
-
-    /// Pre-decrement.
-    /// Move to the previous element in the list.
-    /// @return The iterator.
-    self_type &operator--();
-
-    /// Post-increment.
-    /// Move to the next element in the list.
-    /// @return The iterator value before the increment.
-    self_type operator++(int);
-
-    /// Post-decrement.
-    /// Move to the previous element in the list.
-    /// @return The iterator value before the decrement.
-    self_type operator--(int);
-
-    /// Dereference.
-    /// @return A reference to the referent.
-    value_type &operator*() const;
-
-    /// Dereference.
-    /// @return A pointer to the referent.
-    value_type *operator->() const;
-
-    /// Convenience conversion to pointer type
-    /// Because of how this list is normally used, being able to pass an iterator as a pointer is quite convenient.
-    /// If the iterator isn't valid, it converts to @c nullptr.
-    operator value_type *() const;
-
-  protected:
-    /// Internal constructor for containers.
-    iterator(typename StaticStore::iterator const& spot) : super_type(spot) {}
-    /// Internal constructor for containers.
-    iterator(typename DynamicStore::iterator const& spot) : super_type(spot) {}
-  };
-
+  /// Iterator for first element.
   const_iterator begin() const;
+
+  /// Iterator past last element.
   const_iterator end() const;
+
+  /// Iterator for last element.
   iterator begin();
+
+  /// Iterator past last element.
   iterator end();
 
-protected:
-  /// Number of valid static elements.
-  /// This is set to a negative value if storage is switched over to dynamic storage.
-  ssize_t _count = 0;
+  void reserve(size_type n);
 
-  StaticStore _static; ///< Static storage.
-  DynamicStore _vector; ///< Dynamic storage.
+protected:
+  /// Content storage.
+  /// @note This is constructed as fixed but can change to dynamic. It can never change back.
+  std::variant<FixedStore, DynamicStore> _store;
+
+  static constexpr auto FIXED = 0; ///< Variant index for fixed storage.
+  static constexpr auto DYNAMIC = 1; ///< Variant index for dynamic storage.
+
+  /// Get the span of the valid items.
+  span items();
+  /// Get the span of the valid items.
+  const_span items() const;
+
+  /// Transfer from fixed storage to dynamic storage.
+  /// Must not be called more than once per instance.
+  void transfer();
 };
 
 // --- Implementation ---
@@ -227,170 +139,96 @@ template<typename T, size_t N, typename A>
 Vectray<T,N,A>::Vectray() {}
 
 template<typename T, size_t N, typename A>
-T&Vectray<T,N,A>::operator[](size_type idx) {
-  return _count < 0 ? _vector[idx] : _static[idx]._t;
+T& Vectray<T,N,A>::operator[](size_type idx) {
+  return this->items()[idx];
 }
 
 template<typename T, size_t N, typename A>
-T const&Vectray<T,N,A>::operator[](size_type idx) const {
-  return _count < 0 ? _vector[idx] : _static[idx];
+T const& Vectray<T,N,A>::operator[](size_type idx) const {
+  return this->items[idx];
 }
 
 template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::push_back(const T&src) -> self_type& {
-  if (_count < 0) { // once you go vector, you never go back.
-    _vector.push_back(src);
-  } else if (_count >= N) {
-    _vector.reserve(N + 1); // need at least this many.
-    // Copy over, destructing as we go.
-    for ( size_type idx = 0 ; idx < _count ; ++idx ) {
-      T& t = (_static[idx]._t);
-      _vector.push_back(t);
-      t.~T(); // destroy original.
-    }
-    _vector.push_back(src); // plus the actually requested element.
-    _count = -1; /// Mark switch to dynamic storage.
-  } else { // still in the static area.
-    new (&_static[_count++]) T(src);
-  }
+auto Vectray<T,N,A>::push_back(const T& t) -> self_type& {
+  std::visit(swoc::meta::vary{
+      [&](FixedStore& fs) -> void {
+        if (fs._count < N) {
+          new(reinterpret_cast<T*>(fs._raw.data()) + fs._count++) T(t); // A::traits ?
+        } else {
+          this->transfer();
+          std::get<DYNAMIC>(_store).push_back(t);
+        }
+      }
+      , [&](DynamicStore& ds) -> void {
+        ds.push_back(t);
+      }
+  }, _store);
   return *this;
 }
 
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::pop_back() -> self_type& {
-  if (_count < 0) {
-    _vector.pop_back();
-  } else {
-    --_count;
-    _static[_count]._t.~T();
+template<typename T, size_t N, class A>
+template<typename... Args>
+auto Vectray<T, N, A>::emplace_back(Args... args) -> self_type& {
+  if (_store.index() == FIXED) {
+    auto fs{std::get<FIXED>(_store)};
+    if (fs._count < N) {
+      new(reinterpret_cast<T*>(fs._raw.data()) + fs._count++) T(std::forward<Args...>(args...)); // A::traits ?
+      return *this;
+    }
+    this->transfer();
   }
+  std::get<DYNAMIC>(_store).emplace_back(std::forward<Args...>(args...));
   return *this;
 }
 
 template<typename T, size_t N, typename A>
 auto Vectray<T,N,A>::size() const -> size_type {
-  return _count < 0 ? _vector.size() : _count;
+  return std::visit(swoc::meta::vary{
+      [](FixedStore const& fs) { return fs._count; }
+      , [](DynamicStore const& ds) { return ds.size(); }
+  }, _store);
 }
 
+// --- iterators
 template<typename T, size_t N, typename A>
-auto  Vectray<T,N,A>::begin() const -> const_iterator {
-  auto nc_this = const_cast<self_type*>(this);
-  return _count < 0 ? const_iterator{ nc_this->_vector.begin() } : const_iterator{ nc_this->_static.begin()}; }
+auto  Vectray<T,N,A>::begin() const -> const_iterator { return this->items().begin(); }
 
 template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::end() const -> const_iterator {
-  auto nc_this = const_cast<self_type*>(this);
-  return _count < 0 ? const_iterator{ nc_this->_vector.end() } : const_iterator{ nc_this->_static.end() };
-}
+auto Vectray<T,N,A>::end() const -> const_iterator { return this->items().end(); }
 
 template<typename T, size_t N, typename A>
-auto  Vectray<T,N,A>::begin() -> iterator {
-  return _count < 0 ? iterator{ this->_vector.begin() } : iterator{ this->_static.begin()}; }
+auto  Vectray<T,N,A>::begin() -> iterator { return this->items().begin(); }
 
 template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::end() -> iterator {
-  return _count < 0 ? iterator{ this->_vector.end() } : iterator{ this->_static.end() };
-}
+auto Vectray<T,N,A>::end() -> iterator { return this->items().end(); }
 // --- iterators
 
-template<typename T, size_t N, typename A>
-Vectray<T,N,A>::const_iterator::const_iterator() : _static() {
-}
+template<typename T, size_t N, class A>
+void Vectray<T, N, A>::transfer() {
+  DynamicStore tmp{std::get<FIXED>(_store)._a};
+  tmp.reserve((14 * N) / 10); // bump by approximately sqrt(2).
 
-template < typename T, size_t N, typename A>
-bool Vectray<T,N,A>::const_iterator::operator==(self_type const &that) const {
-  return _static_p
-         ? (true == that._static_p && _static == that._static)
-         : (false == that._static_p && _dynamic == that._dynamic)
-      ;
-}
-
-template<typename T, size_t N, typename A>
-bool Vectray<T,N,A>::const_iterator::operator!=(
-    Vectray::const_iterator::self_type const&that) const {
-  return ! (*this == that);
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::const_iterator::operator++() -> self_type & {
-  if (_static_p) {
-    ++_static;
-  } else {
-    ++_dynamic;
+  for (auto&& item : this->items()) {
+    tmp.emplace_back(item); // move if supported, copy if not.
+    item.~T(); // destroy original.
   }
-  return *this;
+  _store = std::move(tmp);
 }
 
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::const_iterator::operator--() -> self_type & {
-  if (_static_p) {
-    ++_static;
-  } else {
-    ++_dynamic;
-  }
-  return *this;
+template<typename T, size_t N, class A>
+auto Vectray<T, N, A>::items() const -> const_span {
+  return std::visit(swoc::meta::vary{
+      [](FixedStore const& fs) { return const_span(reinterpret_cast<T const *>(fs._raw.data()), fs._count); }
+      , [](DynamicStore const& ds) { return const_span(ds.data(), ds.size()); }
+  }, _store);
 }
 
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::const_iterator::operator++(int) -> self_type {
-  self_type zret { *this };
-  ++*this;
-  return zret;
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::const_iterator::operator--(int) -> self_type {
-  self_type zret { *this };
-  --*this;
-  return zret;
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::const_iterator::operator*() const -> value_type & {
-  if (_static_p) { return _static->_t; }
-  return *_dynamic;
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::const_iterator::operator->() const -> value_type * {
-  return _static_p ? &(_static->_t) : _dynamic.operator ->();
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::iterator::operator++() -> self_type & {
-  this->super_type::operator++();
-  return *this;
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::iterator::operator++(int) -> self_type {
-  self_type zret { *this };
-  ++*this;
-  return zret;
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::iterator::operator--() -> self_type & {
-  this->super_type::operator--();
-  return *this;
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::iterator::operator--(int) -> self_type {
-  self_type zret { *this };
-  --*this;
-  return zret;
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::iterator::operator*() const -> value_type & {
-  if (this->_static_p) { return this->_static->_t; }
-  return *(this->_dynamic);
-}
-
-template<typename T, size_t N, typename A>
-auto Vectray<T,N,A>::iterator::operator->() const -> value_type * {
-  return this->_static_p ? &(this->_static->_t) : this->_dynamic.operator ->();
+template<typename T, size_t N, class A>
+auto Vectray<T, N, A>::items() -> span {
+  return std::visit(swoc::meta::vary{
+      [](FixedStore & fs) { return span(reinterpret_cast<T *>(fs._raw.data()), fs._count); }
+      , [](DynamicStore & ds) { return span(ds.data(), ds.size()); }
+  }, _store);
 }
 
 }} // namespace swoc
