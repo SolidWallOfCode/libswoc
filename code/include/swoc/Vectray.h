@@ -59,9 +59,25 @@ public:
   Vectray();
 
   /// Construct empty instance with allocator.
-  explicit Vectray(allocator_type const& a) : _store(std::in_place_type_t<FixedStore>{}, a) {}
+  constexpr explicit Vectray(allocator_type const& a) : _store(std::in_place_type_t<FixedStore>{}, a) {}
 
-  explicit Vectray(size_type n, allocator_type const& alloc = allocator_type());
+  /** Construct with @a n default constructed elements.
+   *
+   * @param n Number of elements.
+   * @param alloc Allocator (optional - default constructed if not a parameter).
+   */
+  explicit Vectray(size_type n, allocator_type const& alloc = allocator_type{});
+
+  Vectray(self_type && that) {
+    // If @a that is already a vector, always move that here.
+    if (DYNAMIC == that._store.index()) {
+      _store = std::move(std::get<DYNAMIC>(that._store));
+    } else {
+      auto & fixed = std::get<FIXED>(_store);
+    }
+  }
+
+  Vectray(self_type && that, allocator_type const& a);
 
   /// @return The number of elements in the container.
   size_type size() const;
@@ -128,15 +144,31 @@ protected:
   /// Get the span of the valid items.
   const_span items() const;
 
-  /// Transfer from fixed storage to dynamic storage.
-  /// Must not be called more than once per instance.
-  void transfer();
+  /// Default size to reserve in the vector when switching to dynamic.
+  static constexpr size_type BASE_DYNAMIC_SIZE = (7 * N) / 5;
+
+
+  /** Transfer from fixed storage to dynamic storage.
+   *
+   * @param rN Numer of elements of storage to reserve in the vector.
+   *
+   * @note Must be called at most once for any instance.
+   */
+  void transfer(size_type rN = BASE_DYNAMIC_SIZE);
 };
 
 // --- Implementation ---
 
 template<typename T, size_t N, typename A>
 Vectray<T,N,A>::Vectray() {}
+
+template<typename T, size_t N, class A>
+Vectray<T, N, A>::Vectray(Vectray::size_type n, allocator_type const& alloc) : Vectray() {
+  this->reserve(n);
+  while (n-- > 0) {
+    this->emplace_back();
+  }
+}
 
 template<typename T, size_t N, typename A>
 T& Vectray<T,N,A>::operator[](size_type idx) {
@@ -204,9 +236,9 @@ auto Vectray<T,N,A>::end() -> iterator { return this->items().end(); }
 // --- iterators
 
 template<typename T, size_t N, class A>
-void Vectray<T, N, A>::transfer() {
+void Vectray<T, N, A>::transfer(size_type rN) {
   DynamicStore tmp{std::get<FIXED>(_store)._a};
-  tmp.reserve((14 * N) / 10); // bump by approximately sqrt(2).
+  tmp.reserve(rN);
 
   for (auto&& item : this->items()) {
     tmp.emplace_back(item); // move if supported, copy if not.
@@ -229,6 +261,15 @@ auto Vectray<T, N, A>::items() -> span {
       [](FixedStore & fs) { return span(reinterpret_cast<T *>(fs._raw.data()), fs._count); }
       , [](DynamicStore & ds) { return span(ds.data(), ds.size()); }
   }, _store);
+}
+
+template<typename T, size_t N, class A>
+void Vectray<T, N, A>::reserve(Vectray::size_type n) {
+  if (DYNAMIC == _store.index()) {
+    std::get<DYNAMIC>(_store).reserve(n);
+  } else if (n > N) {
+    this->transfer(n);
+  }
 }
 
 }} // namespace swoc
