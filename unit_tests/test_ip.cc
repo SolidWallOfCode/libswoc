@@ -81,6 +81,7 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   CHECK(alpha == IP4Addr{"172.96.12.134"});
   CHECK(alpha == IP4Addr{IPAddr{"172.96.12.134"}});
   CHECK(alpha == IPAddr{IPEndpoint{"172.96.12.134:80"}});
+  CHECK(alpha == IPAddr{IPEndpoint{"172.96.12.134"}});
 
   IP4Addr lo{"127.0.0.1"};
   REQUIRE(lo.is_loopback() == true);
@@ -225,6 +226,9 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   std::string_view addr_5{"[1337:0:0:ded:BEEF:0:0:956]:53874"};
   std::string_view addr_6{"[1337:0:0:ded:BEEF:0:0:0]:53874"};
   std::string_view addr_7{"172.19.3.105:4951"};
+  std::string_view addr_8{"[1337:0:0:ded:BEEF:0:0:0]"};
+  std::string_view addr_9{"1337:0:0:ded:BEEF:0:0:0"};
+  std::string_view addr_A{"172.19.3.105"};
   std::string_view addr_null{"[::]:53874"};
   std::string_view localhost{"[::1]:8080"};
   swoc::LocalBufferWriter<1024> w;
@@ -252,6 +256,14 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(w.view() == "ffee:0000:0000:0000:24c3:3349:3cee:0143");
   w.clear().print("{:: =a}", ep);
   REQUIRE(w.view() == "ffee:   0:   0:   0:24c3:3349:3cee: 143");
+
+  // Verify @c IPEndpoint will parse without the port.
+  REQUIRE(ep.parse(addr_8) == true);
+  REQUIRE(ep.port() == 0);
+  REQUIRE(ep.parse(addr_9) == true);
+  REQUIRE(ep.port() == 0);
+  REQUIRE(ep.parse(addr_A) == true);
+  REQUIRE(ep.port() == 0);
 
   REQUIRE(ep.parse(addr_2) == true);
   w.clear().print("{::a}", ep);

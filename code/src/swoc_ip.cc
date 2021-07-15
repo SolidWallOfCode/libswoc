@@ -155,13 +155,17 @@ IPEndpoint::parse(std::string_view const& str) {
 
   if (this->tokenize(src, &addr_str, &port_str, &rest)) {
     if (rest.empty()) {
-      IPAddr addr;
-      if (addr.load(addr_str)) {
-        auto n{swoc::svto_radix<10>(port_str)};
-        if (port_str.empty() && 0 < n && n <= std::numeric_limits<in_port_t>::max()) {
-          this->assign(addr, htons(n));
-          return true;
+      if (IPAddr addr ; addr.load(addr_str)) {
+        in_port_t port = 0;
+        if (!port_str.empty()) {
+          uintmax_t n{swoc::svto_radix<10>(port_str)};
+          if (!port_str.empty() || n > std::numeric_limits<in_port_t>::max()) {
+            return false;
+          }
+          port = n;
         }
+        this->assign(addr, htons(port));
+        return true;
       }
     }
   }
