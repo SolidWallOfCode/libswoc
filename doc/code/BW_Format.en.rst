@@ -92,26 +92,28 @@ cases where greater control of the output is required.
 Format Specifier Grammar
 ========================
 
-This is the grammar for the fields inside a format specifier. The three fields are :token:`name`,
-:token:`style`, and :token:`extension`.
+This is the grammar for the fields inside a format specifier.
 
-.. productionList:: Format Specifier
+.. productionList:: spec
    specifier: "{" [name] [":" [style] [":" extension]] "}"
    name: index | ICHAR+
    index: non-negative integer
    extension: ICHAR*
    ICHAR: a printable ASCII character except for '{', '}', ':'
+   style: formatting instructions.
 
-:token:`name`
-   The :token:`name` of the argument to use. This can be a non-negative integer in which case it is
-   the zero based index of the argument to the method call. E.g. ``{0}`` means the first argument
-   and ``{2}`` is the third argument after the format.
+The three fields are :token:`~spec:name`, :token:`~spec:style`, and :token:`~spec:extension`.
+
+:token:`~spec:name`
+   The :token:`~spec:name` of the argument to use. This can be a non-negative integer in which case
+   it is the zero based index of the argument to the method call. E.g. ``{0}`` means the first
+   argument and ``{2}`` is the third argument after the format.
 
       ``bw.print("{0} {1}", 'a', 'b')`` => ``a b``
 
       ``bw.print("{1} {0}", 'a', 'b')`` => ``b a``
 
-   The :token:`name` can be omitted in which case it is treated as an index in parallel to the
+   The :token:`~spec:name` can be omitted in which case it is treated as an index in parallel to the
    position in the format string relative to other argument based specifiers. Only the position in
    the format string matters, not what arguments other format specifiers may have used.
 
@@ -130,10 +132,10 @@ This is the grammar for the fields inside a format specifier. The three fields a
    are designed to be natural, but any ambiguity can be eliminated by explicit indexing in the
    specifiers.
 
-:token:`style`
+:token:`~spec:style`
    Basic formatting control.
 
-   .. productionList:: Style
+   .. productionList:: fmt
       style: [[fill]align][sign]["#"]["0"][[min][.precision][,max][type]]
       fill: fill-char | URI-char
       URI-char: "%" hex-digit hex-digit
@@ -146,13 +148,13 @@ This is the grammar for the fields inside a format specifier. The three fields a
       type: "g" | "s" | "S" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
       hex-digit: "0" .. "9" | "a" .. "f" | "A" .. "F"
 
-   The output is placed in a field that is at least :token:`min` wide and no more than :token:`max`
-   wide. If the output is less than :token:`min` then
+   The output is placed in a field that is at least :token:`~fmt:min` wide and no more than :token:`~fmt:max`
+   wide. If the output is less than :token:`~fmt:min` then
 
-      *  The :token:`fill` character is used for the extra space required. This can be an explicit
+      *  The :token:`~fmt:fill` character is used for the extra space required. This can be an explicit
          character or a URI encoded one (to allow otherwise reserved characters).
 
-      *  The output is shifted according to the :token:`align`.
+      *  The output is shifted according to the :token:`!fmt:align`.
 
          <
             Align to the left, fill to the right.
@@ -167,10 +169,10 @@ This is the grammar for the fields inside a format specifier. The three fields a
             Numerically align, putting the fill between the sign character (left aligned) and the
             value (right aligned).
 
-   The output is clipped by :token:`max` width characters and by the end of the buffer.
-   :token:`precision` is used by floating point values to specify the number of places of precision.
+   The output is clipped by :token:`~fmt:max` width characters and by the end of the buffer.
+   :token:`~fmt:precision` is used by floating point values to specify the number of places of precision.
 
-   :token:`type` is used to indicate type specific formatting. For integers it indicates the output
+   :token:`~fmt:type` is used to indicate type specific formatting. For integers it indicates the output
    radix and if ``#`` is present the radix is prefix is generated (one of ``0xb``, ``0``, ``0x``).
    Format types of the same letter are equivalent, varying only in the character case used for
    output. Most commonly 'x' prints values in lower cased hexadecimal (:code:`0x1337beef`) while 'X'
@@ -197,14 +199,14 @@ This is the grammar for the fields inside a format specifier. The three fields a
    :code:`std::string_view` covering the data and then printing it with :code:`{:x}`.
 
    The string type ('s' or 'S') is generally used to cause alphanumeric output for a value that
-   would normally use numeric output. For instance, a :code:`bool` is normally ``0`` or ``1``. Using
+   would normally use numeric output. For instance, a :expr:`bool` is normally ``0`` or ``1``. Using
    the type 's' yields ``true`` or ``false``. The upper case form, 'S', applies only in these cases
    where the formatter generates the text, it does not apply to normally text based values unless
    specifically noted. Therefore a :code:`bool` printed with the type 'S' yields ``TRUE`` or
    ``FALSE``. This is frequently done with formatting for enumerations, printing the numeric value
    by default and printing a text equivalent for format 's' or 'S'.
 
-:token:`extension`
+:token:`~spec:extension`
    Text (excluding braces) passed to the type specific formatter function. This can be used to
    provide extensions for specific argument types (e.g., IP addresses). It is never examined by
    |BWF|, it is only effective in type specific formatting overloads.
@@ -325,7 +327,7 @@ The format style is stored in an instance of :libswoc:`bwf::Spec <Spec>`.
 
 .. namespace-pop::
 
-Additional type specific formatting can be provided via the :token:`extension` field. This provides
+Additional type specific formatting can be provided via the :token:`~spec:extension` field. This provides
 another option for tweaking formatted output vs. using wrapper classes.
 
 To provide a formatter for a type :code:`V` the function :code:`bwformat` is overloaded. The

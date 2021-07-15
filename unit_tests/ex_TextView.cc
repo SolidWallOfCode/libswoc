@@ -217,7 +217,7 @@ TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
   }
   // To verify this
   // cat doc/conf.py | grep -v '^ *#' | grep -v '^$' | wc
-  REQUIRE(n_lines == 85);
+  REQUIRE(n_lines == 86);
 };
 
 #include <set>

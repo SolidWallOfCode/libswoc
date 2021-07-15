@@ -51,7 +51,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinxcontrib.plantuml',
-#    'sphinxcontrib.doxylink',
+    'sphinxcontrib.doxylink',
     'local'
 ]
 

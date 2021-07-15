@@ -22,9 +22,37 @@
 Scalar
 ******
 
-.. class:: template < intmax_t N, typename COUNTER, typename T > Scalar
+.. code-block:: cpp
+
+   #include <swoc/Scalar.h>
+
+.. class:: template < intmax_t SCALE, typename COUNTER = int, typename TAG = tag::generic > Scalar
+
+   :tparam SCALE: Scaling factor.
+   :tparam COUNTER: Storage for counter.
+   :tparam TAG: Type distinguishing tag.
 
    :libswoc:`Reference documentation <swoc::Scalar>`.
+
+   A quantized integral with a distinct type.
+
+   The scaling factor :arg:`SCALE` must be an positive integer. The value of an instance will always
+   be an integral multiple of :arg:`SCALE`.
+
+   :arg:`COUNTER` must be an integral type. An instance of this type is used to hold the internal
+   count. It can be omitted and will default to :expr:`int`. The size of an instance is the same size
+   as :arg:`COUNTER` and an instance of that type can be replaced with a :class:`Scalar` of that size
+   without changing the memory layout.
+
+   :arg:`TAG` must be a type. It is used as a mechanism for preventing accidental cross assignments.
+   Assignment of any sort from a :class:`Scalar` instance to another instance with a different
+   :arg:`TAG` is a compile time error. If this isn't useful :arg:`TAG` can be omitted and will
+   default to :expr:`tag::generic` which will enable all instances to interoperate.
+
+   The type used for :arg:`TAG` can be defined in name only.::
+
+      struct YoureIt; // no other information about YoureIt is required.
+      using HectoTouch = Scalar<100, int, YoureIt>; // how many hundreds of touches.
 
 Scalar is a header only library that provides scaled and typed numerical values. This can be used to
 create data types that are restricted to being multiples of integral value, or for creating types
@@ -37,62 +65,20 @@ scales. To enforce this Scalar does not allow assignment between instances with 
 this is not important the tag can be omitted and a default generic one will be used, thereby
 allowing arbitrary assignments.
 
+.. namespace:: tag
+
+.. struct:: generic
+
+   A struct defined in name only that is used as the default tag for a :code:`Scalar`.
+
+.. namespace:: NULL
+
 Scalar is designed to be fast and efficient. When converting bewteen similar types with different
-scales it will do the minimum amout of work while minimizing the risk of integer overflow. Instances
-have the same memory footprint as the underlying integer storage type. It is intended to replace
-lengthy and error prone hand optimizations used to handle related values of different scales.
-
-Definition
-**********
-
-Scalar consists primarily of the template class :code:`Scalar`. Instances of :class:`Scalar` hold
-a *count* and represent a *value* which is the *count* multiplied by :arg:`SCALE`. Note this
-quantizes the values that can be represented by an instance.
-
-.. class:: template < intmax_t SCALE, typename C, typename TAG > Scalar
-   :tparam SCALE: Scaling factor.
-   :tparam C: Base storage type.
-   :tparam TAG: Distinguishing type tag.
-
-   :libswoc:`Reference documentation <Scalar>`.
-
-   A quantized integral with a distinct type.
-
-   .. type:: COUNTER = C
-
-      Imported template parameter :arg:`C`.
-
-   The scaling factor :arg:`SCALE` must be an positive integer. Values for an instance will always
-   be an integral multiple of :arg:`SCALE`. The alue of an instance will always be a
-   multiple of :arg:`SCALE`.
-
-   :arg:`C` must be an integral type. An instance of this type is used to hold the internal
-   count.It can be omitted and will default to :code:`int`. The size of an instance is the same size
-   as :arg:`C` and an instance of that type can be replaced with a :class:`Scalar` of that size
-   without changing the memory layout.
-
-   :arg:`TAG` must be a type. It can be omitted and will default to :code:`tag::generic`. :arg:`TAG`
-   is a mechanism for preventing accidental cross assignments. Assignment of any sort from a
-   :class:`Scalar` instance to another instance with a different :arg:`TAG` is a compile time error.
-   If this isn't useful :arg:`TAG` can be omitted and will default to :code:`tag::generic` which
-   will enable all instances to interoperate.
-
-   The type used for :arg:`TAG` can be defined in name only.::
-
-      struct YoureIt; // no other information about YoureIt is required.
-      using HectoTouch = Scalar<100, int, YoureIt>; // how many hundreds of touches.
-
-   .. function:: COUNTER count() const
-
-      Return the internal count.
-
-   .. function:: intmax_t value() const
-
-      Return the value.
-
-   .. function:: Scalar& assign(COUNTER c)
-
-      Set the count to :arg:`c`.
+scales it will do the minimum amount of work while minimizing the risk of integer overflow. Common
+factor elimination is done at compile time so that scalars which are multiples of each other do a
+single multiple or divide to scale. Instances have the same memory footprint as the underlying
+integer storage type. It is intended to replace lengthy and error prone hand optimizations used to
+handle related values of different scales.
 
 Usage
 ******
@@ -104,31 +90,33 @@ needed.
 Assignment
 ==========
 
-Assigning values to, from, and between :class:`Scalar` instances is usually straightforward with a
-few simple rules.
+Assigning values to, from, and between :libswoc:`Scalar` instances is usually
+straightforward with a few simple rules. This is modeled on pointer arithmetic and as much as
+possible follows the same rules.
 
-*  The :libswoc:`Scalar::assign` is used to directly assign a count.
+*  :libswoc:`Scalar::assign` is used to directly assign a count.
 *  The increment and decrement operators, and the :code:`inc` and :code:`dec` methods, operate on the count.
 *  All other contexts use the value.
-*  The assignment operator will scale if this can be done without loss, otherwise it is a compile error.
+*  The assignment operator will preserve the value by scaling based on the scale of the source and destination.
+   If this can not be done without loss, otherwise it is a compile error.
 *  Untyped integer values are treated as having a :arg:`SCALE` of 1.
 
-If the assignment of one scalar to another is not lossless (e.g. the left hand side of the assignment has a large scale than the right hand side) one of the two following free functions must be used to indicate how to handle the loss.
+If the assignment of one scalar to another is not lossless (e.g. the left hand side of the
+assignment has a large scale than the right hand side), direct assignment will not compile. Instead
+one of the two following free functions must be used to indicate how to handle the loss.
 
 .. function:: unspecified_type round_up(Scalar v)
 
    Return a wrapper that indicates :arg:`v` should be rounded up as needed.
 
-.. function:: unspecified_type round_down(Scalar vs)
+.. function:: unspecified_type round_down(Scalar v)
 
    Return a wrapper that indicates :arg:`v` should be rounded down as needed.
 
 To illustrate, suppose there were the definitions
 
-.. code-block:: cpp
-
-   typedef Scalar<10> deka;
-   typedef Scalar<100> hecto;
+   using deka = Scalar<10>;
+   using = Scalar<100>;
 
 An assignment of a :code:`hecto` to a :code:`deka` is implicit as the scaling is lossless.
 
@@ -145,22 +133,23 @@ The opposite is not implicit because the value of a :code:`deka` can be one not 
 
    b.assign(143); // b gets the value 1430
    a = b; // compile error
-   a = round_up(b); // a has count 15 and value 1500
+   a = round_up(b); // a will be updated to have a count of 15 and value of 1500
 
-:code:`round_up` and :code:`round_down` can also be used with basic integers.
+:expr:`round_up` and :expr:`round_down` can also be used with basic integers.
 
 .. function:: unspecified_type round_down(intmax_t)
 
 .. function:: unspecified_type round_up(intmax_t)
 
 Note this is very different from using :libswoc:`Scalar::assign`. The latter sets the *count* of
-the scalar instance. :code:`round_up` and :code:`round_down` set the *value* of the scalar, dividing
+the scalar instance. :expr:`round_up` and :expr:`round_down` set the *value* of the scalar, dividing
 the provided value by the scale to set the count to make the value match the assignment as closesly
 as possible.
 
 .. code-block:: cpp
 
    a = round_down(2480); // a has count 24, value 2400.
+   a.assign(2480); // a has a count of 2480, value 248,000.
 
 Arithmetic
 ==========
@@ -175,7 +164,8 @@ definition.
    struct SerializedData { ...};
    using Sector = Scalar<512>;
 
-To allocate a buffer large enough for a :code:`SerializedData` that is also a multiple of a sector would be
+To allocate a buffer large enough for a :code:`SerializedData` that is also a multiple of a sector
+would be
 
 .. code-block:: cpp
 
@@ -191,8 +181,8 @@ Or more directly
 Scalar is designed to be easy to use but when using multiple scales simultaneously, especially in
 the same expression, the computed type can be surprising. The best approach is to be explicit - a
 Scalar instance is very inexpensive to create (at most 1 integer copy) therefore subexpressions can
-easily be forced to a specific scale by constructing the appropriate scalar with :code:`round_up` or
-:code:`round_down` of the subexpression. Or, define a unit scale type and convert to that as the
+easily be forced to a specific scale by constructing the appropriate scalar with :expr:`round_up` or
+:expr:`round_down` of the subexpression. Or, define a unit scale type and convert to that as the
 common type before converting the result to the desired scale.
 
 Advanced Features
@@ -220,7 +210,7 @@ sizezs which have this property.
 Bytes
 -----
 
-The initial use of :class:`Scalar` will be in the cache component. This has already been tested in
+The initial use of :libswoc:`Scalar` will be in the cache component. This has already been tested in
 some experimental work which will in time be blended back in to the main codebase. The use will be
 to represent different amounts of data, in memory and on disk.
 
@@ -236,9 +226,13 @@ to represent different amounts of data, in memory and on disk.
    using GB = Scalar<1024 * MB::SCALE, off_t, tag::bytes>;
    using TB = Scalar<1024 * GB::SCALE, off_t, tag::bytes>;
 
-This collection of types represents the data size units of interest to the cache and therefore enables to code to be much clearer about the units and to avoid errors in converting from one to another.
+This collection of types represents the data size units of interest to the cache and therefore
+enables to code to be much clearer about the units and to avoid errors in converting from one to
+another.
 
-A common task is to add sizes together and round up to a multiple of some fixed size. One example is the stripe header data, which is stored as a multiple of 8192 bytes, that is a number of :code:`CacheStripeBlocks`. That can be done with
+A common task is to add sizes together and round up to a multiple of some fixed size. One example is
+the stripe header data, which is stored as a multiple of 8192 bytes, that is a number of
+:code:`CacheStripeBlocks`. That can be done with
 
 .. code-block:: cpp
 
@@ -288,7 +282,7 @@ fact that, in general, these operators are useless in the value context. E.g. if
 scale greater than 1 (the common case) then increment and decrement of the value is always a null
 operation. Once those operators are used on the count is is least surprising that the compound
 operators act in the same way. The next step, to arithmetic operators, is not so clear and so those
-require explicit scale indicators, such as :code:`round_down` or explicit constructors. It was a
+require explicit scale indicators, such as :expr:`round_down` or explicit constructors. It was a
 design goal to avoid, as much as possible, the requirement that the library user keep track of the
 scale of specific variables. This has proved very useful in practice, but at the same time when
 doing arithmentic is is almost always the case that either the values are both scalars (making the
