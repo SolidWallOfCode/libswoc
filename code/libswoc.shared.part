@@ -1,31 +1,37 @@
 Import("*")
 PartName("shared")
 
-DependsOn([ Component("libswoc") ])
+# we need to pass the headers
+build.DependsOn([Component("libswoc", requires=REQ.HEADERS(internal=False))])
 
-src_files = env.get("src_files")
 
-env.AppendUnique(
-    CCFLAGS=['-std=c++17' ],
-    CPPPATH=['include'],
-)
+@build
+def config(env):
+    env.AppendUnique(
+        CCFLAGS=['-std=c++17'],
+        CPPPATH=['include'],
+    )
 
-if env['CC'] == 'icc':
+
+@build.ApplyIf(env['CC'] == 'icc')
+def config(env):
     env.AppendUnique(
         CCFLAGS=[
             '-diag-warning=308',
         ]
     )
 
-# build the library
-out = env.SharedLibrary("${PART_ROOT_NAME}.${PART_VERSION}.so", src_files, SHLIBPREFIX="")
-env.InstallLib(out)
 
-# Export the package config.
-pc_file = env.Substfile("libswoc.pc", "libswoc.pc.in"
-    , SUBST_DICT = {
-        "pkg_prefix": env.Dir("$INSTALL_ROOT").abspath
-      , "pkg_version": "$PART_VERSION"
+@build
+def source(env):
+    src_files = env.get("src_files")
+    # build the library
+    out = env.SharedLibrary("${PART_ROOT_NAME}-${PART_VERSION}", src_files,)
+    env.InstallLib(out)
+
+    # Export the package config.
+    pc_file = env.Substfile("libswoc.pc", "libswoc.pc.in", SUBST_DICT={
+        "pkg_prefix": env.Dir("$INSTALL_ROOT").abspath, "pkg_version": "$PART_VERSION"
     })
 
-env.InstallPkgConfig(pc_file)
+    env.InstallPkgConfig(pc_file)
