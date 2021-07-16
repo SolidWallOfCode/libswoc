@@ -23,7 +23,7 @@
 #pragma once
 
 #if !defined(SWOC_VERSION_NS)
-#  define SWOC_VERSION_NS _1_2_21
+#  define SWOC_VERSION_NS _1_2_23
 #endif
 
 namespace swoc { inline namespace SWOC_VERSION_NS {

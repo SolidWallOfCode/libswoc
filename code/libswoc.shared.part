@@ -26,7 +26,7 @@ def config(env):
 def source(env):
     src_files = env.get("src_files")
     # build the library
-    out = env.SharedLibrary("${PART_ROOT_NAME}-${PART_VERSION}", src_files,)
+    out = env.SharedLibrary("${PART_ROOT_NAME}-${PART_VERSION}", src_files,SHLIBPREFIX="")
     env.InstallLib(out)
 
     # Export the package config.
