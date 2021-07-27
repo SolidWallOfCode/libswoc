@@ -47,6 +47,7 @@ protected:
 
     FixedStore() = default;
     explicit FixedStore(allocator_type const& a) : _a(a) {}
+    MemSpan<T> span();
   };
   using DynamicStore = vector_type; ///< Dynamic (heap) storage.
 
@@ -68,12 +69,20 @@ public:
    */
   explicit Vectray(size_type n, allocator_type const& alloc = allocator_type{});
 
-  Vectray(self_type && that) {
+  template < size_t M >
+  Vectray(Vectray<T, M, A> && that) {
     // If @a that is already a vector, always move that here.
     if (DYNAMIC == that._store.index()) {
       _store = std::move(std::get<DYNAMIC>(that._store));
     } else {
-      auto & fixed = std::get<FIXED>(_store);
+      auto span = std::get<FIXED>(that._store).span();
+      if (span.size() > N) {
+
+      } else {
+        for ( auto && item : span ) {
+          this->template emplace_back(std::move(item));
+        }
+      }
     }
   }
 
@@ -170,6 +179,11 @@ Vectray<T, N, A>::Vectray(Vectray::size_type n, allocator_type const& alloc) : V
   }
 }
 
+template<typename T, size_t N, class A>
+MemSpan<T> Vectray<T, N, A>::FixedStore::span() {
+  return MemSpan(_raw).template rebind<T>();
+}
+
 template<typename T, size_t N, typename A>
 T& Vectray<T,N,A>::operator[](size_type idx) {
   return this->items()[idx];
@@ -250,7 +264,7 @@ void Vectray<T, N, A>::transfer(size_type rN) {
 template<typename T, size_t N, class A>
 auto Vectray<T, N, A>::items() const -> const_span {
   return std::visit(swoc::meta::vary{
-      [](FixedStore const& fs) { return const_span(reinterpret_cast<T const *>(fs._raw.data()), fs._count); }
+      [](FixedStore const& fs) { fs.span(); }
       , [](DynamicStore const& ds) { return const_span(ds.data(), ds.size()); }
   }, _store);
 }
@@ -258,7 +272,7 @@ auto Vectray<T, N, A>::items() const -> const_span {
 template<typename T, size_t N, class A>
 auto Vectray<T, N, A>::items() -> span {
   return std::visit(swoc::meta::vary{
-      [](FixedStore & fs) { return span(reinterpret_cast<T *>(fs._raw.data()), fs._count); }
+      [](FixedStore & fs) { return fs.span(); }
       , [](DynamicStore & ds) { return span(ds.data(), ds.size()); }
   }, _store);
 }

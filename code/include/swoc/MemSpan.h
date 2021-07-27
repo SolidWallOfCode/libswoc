@@ -17,8 +17,9 @@
 #include <type_traits>
 #include <ratio>
 #include <tuple>
+#include <array>
 #include <exception>
-
+#include <vector>
 #include "swoc/swoc_version.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
@@ -51,6 +52,18 @@ public:
   /// Copy constructor.
   constexpr MemSpan(self_type const &that) = default;
 
+  /// Construct constant span from non-constant span of the same basic type.
+  /// @internal Must be inline here because it doesn't always exist.
+  template < typename U
+    , typename META = std::enable_if_t<
+        std::conjunction_v<
+            std::is_const<T>
+          , std::is_same<U, std::remove_const_t<T>>
+        >
+      >
+    >
+  constexpr MemSpan(MemSpan<U> const& that) : _ptr(that.data()), _count(that.count()) {}
+
   /** Construct from a first element @a start and a @a count of elements.
    *
    * @param start First element.
@@ -71,6 +84,20 @@ public:
    * @param a The array.
    */
   template <size_t N> MemSpan(T (&a)[N]);
+
+  /** Construct from a @c std::array.
+   *
+   * @tparam N Array size.
+   * @param a Array instance.
+   */
+  template <auto N> constexpr MemSpan(std::array<T, N> const& a);
+
+  /** Construct from a @c std::array.
+   *
+   * @tparam N Array size.
+   * @param a Array instance.
+   */
+  template <auto N> constexpr MemSpan(std::array<T, N> & a);
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -598,6 +625,9 @@ template <typename T> constexpr MemSpan<T>::MemSpan(T *ptr, size_t count) : _ptr
 template <typename T> constexpr MemSpan<T>::MemSpan(T *first, T *last) : _ptr{first}, _count{detail::ptr_distance(first, last)} {}
 
 template <typename T> template <size_t N> MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {}
+
+template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(std::array<T,N> const& a) : _ptr{a.data()} , _count{a.size()} {}
+template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(std::array<T,N> & a) : _ptr{a.data()} , _count{a.size()} {}
 
 template <typename T> constexpr MemSpan<T>::MemSpan(std::nullptr_t) {}
 

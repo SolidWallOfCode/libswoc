@@ -112,3 +112,19 @@ TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
   REQUIRE(left.size() + span.size() == 1024);
 
 };
+
+TEST_CASE("MemSpan Construction", "[libswoc][MemSpan]")
+{
+  std::array<int, 3> a{ 1, 2, 3 };
+  // Automatic construction from an array.
+  MemSpan aspan{a};
+
+  REQUIRE(a[1] == 2);
+  aspan[1] = 56;
+  REQUIRE(a[1] == 56);
+
+  // automatic conversion from @c T* to @c T @c const*
+  MemSpan<const int> nc{aspan};
+  REQUIRE(nc[0] == 1);
+  REQUIRE(nc[1] == 56);
+}
