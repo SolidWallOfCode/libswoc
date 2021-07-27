@@ -25,6 +25,7 @@ set(HEADER_FILES
     include/swoc/TextView.h
     include/swoc/swoc_file.h
     include/swoc/swoc_meta.h
+    include/swoc/string_view.h
     )
 
 # These are external but required.
@@ -42,6 +43,7 @@ set(CC_FILES
     src/RBTree.cc
     src/swoc_file.cc
     src/TextView.cc
+    src/string_view_util.cc
     )
 
 add_library(libswoc STATIC ${CC_FILES})

@@ -12,6 +12,7 @@ src_files = [
     "src/swoc_file.cc",
     "src/swoc_ip.cc",
     "src/TextView.cc",
+    "src/string_view_util.cc"
 ]
 
 env.Part("libswoc.static.part", package_group="libswoc", src_files=src_files)
