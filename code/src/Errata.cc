@@ -11,6 +11,7 @@
 #include <memory.h>
 #include "swoc/Errata.h"
 #include "swoc/bwf_ex.h"
+#include "swoc/bwf_std.h"
 
 using swoc::MemArena;
 using std::string_view;
@@ -24,7 +25,7 @@ namespace {
 std::vector<Errata::Sink::Handle> Sink_List;
 }
 
-std::string_view const Errata::DEFAULT_GLUE{"\n", 1};
+std::string_view Errata::DEFAULT_GLUE{"\n", 1};
 
 /** This is the implementation class for Errata.
 
@@ -40,8 +41,16 @@ Errata::Data::localize(string_view src) {
 /* ----------------------------------------------------------------------- */
 // methods for Errata
 
+Errata::Severity Errata::DEFAULT_SEVERITY(1);
+Errata::Severity Errata::FAILURE_SEVERITY(1);
+
 Errata::~Errata() {
   this->release();
+}
+
+Errata&
+Errata::note(code_type const& code, Severity severity){
+  return this->note(code, severity, "{}", code);
 }
 
 void
@@ -102,24 +111,15 @@ Errata::end() const {
   return _data ? _data->_notes.end() : const_iterator();
 }
 
-Severity
-Errata::severity() const {
+auto
+Errata::severity() const -> Severity {
   return _data ? _data->_severity : DEFAULT_SEVERITY;
 }
 
 Errata&
-Errata::note(Severity severity, std::string_view text) {
+Errata::note_localized(code_type const& code, Severity severity, std::string_view const& text) {
   auto d = this->writeable_data();
-  Annotation *n = d->_arena.make<Annotation>(severity, d->localize(text));
-  d->_notes.prepend(n);
-  _data->_severity = std::max(_data->_severity, severity);
-  return *this;
-}
-
-Errata&
-Errata::note_localized(Severity severity, std::string_view const& text) {
-  auto d = this->writeable_data();
-  Annotation *n = d->_arena.make<Annotation>(severity, text);
+  Annotation *n = d->_arena.make<Annotation>(code, severity, text);
   n->_level = d->_level;
   d->_notes.prepend(n);
   _data->_severity = std::max(_data->_severity, severity);

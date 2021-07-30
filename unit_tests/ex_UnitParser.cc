@@ -10,6 +10,7 @@
 
 #include "swoc/Lexicon.h"
 #include "swoc/Errata.h"
+#include "ex_Errata_Severity.h"
 #include "catch.hpp"
 
 using swoc::TextView;
@@ -21,7 +22,7 @@ namespace {
 
 // Shortcut for creating an @c Errata with a single error message.
 template < typename ... Args > Errata Error(TextView const& fmt, Args && ... args) {
-  return Errata{}.note_v(swoc::Severity::ERROR, fmt, std::forward_as_tuple(args...));
+  return Errata{}.note_v(ERRATA_ERROR, fmt, std::forward_as_tuple(args...));
 }
 
 } // namespace

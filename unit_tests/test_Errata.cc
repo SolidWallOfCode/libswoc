@@ -20,56 +20,57 @@
 
 #include <memory>
 #include "swoc/Errata.h"
+#include "ex_Errata_Severity.h"
 #include "catch.hpp"
 
 using swoc::Errata;
 using swoc::Rv;
-using swoc::Severity;
+using Severity = swoc::Errata::Severity;
 using namespace std::literals;
 
 Errata
 Noteworthy(std::string_view text)
 {
   Errata notes;
-  notes.info(text);
+  Info(notes, text);
   return notes;
 }
 
 Errata
 cycle(Errata &erratum)
 {
-  erratum.info("Note well, young one!");
+  Info(erratum, "Note well, young one!");
   return erratum;
 }
 
 TEST_CASE("Errata copy", "[libswoc][Errata]")
 {
   auto notes = Noteworthy("Evil Dave Rulz.");
-  REQUIRE(notes.count() == 1);
+  REQUIRE(notes.length() == 1);
   REQUIRE(notes.begin()->text() == "Evil Dave Rulz.");
 
   notes = cycle(notes);
-  REQUIRE(notes.count() == 2);
+  REQUIRE(notes.length() == 2);
 
   Errata erratum;
   erratum.clear();
-  REQUIRE(erratum.count() == 0);
-  erratum.diag("Diagnostics");
-  REQUIRE(erratum.count() == 1);
-  erratum.info("Information");
-  REQUIRE(erratum.count() == 2);
-  erratum.warn("Warning");
-  REQUIRE(erratum.count() == 3);
-  erratum.error("Error");
-  REQUIRE(erratum.count() == 4);
+  REQUIRE(erratum.length() == 0);
+  Diag(erratum, "Diagnostics");
+  REQUIRE(erratum.length() == 1);
+  Info(erratum, "Information");
+  REQUIRE(erratum.length() == 2);
+  Warn(erratum, "Warning");
+  REQUIRE(erratum.length() == 3);
+  Error(erratum, "Error");
+  REQUIRE(erratum.length() == 4);
 
   // Test internal allocation boundaries.
   notes.clear();
   std::string_view text{"0123456789012345678901234567890123456789"};
   for (int i = 0; i < 50; ++i) {
-    notes.info(text);
+    Info(notes, text);
   }
-  REQUIRE(notes.count() == 50);
+  REQUIRE(notes.length() == 50);
   REQUIRE(notes.begin()->text() == text);
   bool match_p = true;
   for (auto &&note : notes) {
@@ -90,12 +91,12 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   using ThingHandle = std::unique_ptr<Thing>;
 
   zret = 17;
-  zret.note(Severity::ERROR, "This is an error");
+  zret.note(ERRATA_ERROR, "This is an error");
 
   auto [result, erratum] = zret;
 
-  REQUIRE(erratum.count() == 1);
-  REQUIRE(erratum.severity() == Severity::ERROR);
+  REQUIRE(erratum.length() == 1);
+  REQUIRE(erratum.severity() == ERRATA_ERROR);
 
   REQUIRE(result == 17);
   zret = 38;
@@ -112,44 +113,44 @@ TEST_CASE("Rv", "[libswoc][Errata]")
 
   auto test = [](Severity expected_severity, Rv<int> const &rvc) {
     auto const &[cv_result, cv_erratum] = rvc;
-    REQUIRE(cv_erratum.count() == 1);
+    REQUIRE(cv_erratum.length() == 1);
     REQUIRE(cv_erratum.severity() == expected_severity);
     REQUIRE(cv_result == 56);
   };
 
-  test(Severity::ERROR, zret); // invoke it.
+  test(ERRATA_ERROR, zret); // invoke it.
 
   zret.clear();
   auto const &[cleared_result, cleared_erratum] = zret;
   REQUIRE(cleared_result == 56);
-  REQUIRE(cleared_erratum.count() == 0);
-  zret.diag("Diagnostics");
-  REQUIRE(zret.errata().count() == 1);
-  zret.info("Information");
-  REQUIRE(zret.errata().count() == 2);
-  zret.warn("Warning");
-  REQUIRE(zret.errata().count() == 3);
-  zret.error("Error");
-  REQUIRE(zret.errata().count() == 4);
+  REQUIRE(cleared_erratum.length() == 0);
+  Diag(zret, "Diagnostics");
+  REQUIRE(zret.errata().length() == 1);
+  Info(zret, "Information");
+  REQUIRE(zret.errata().length() == 2);
+  Warn(zret, "Warning");
+  REQUIRE(zret.errata().length() == 3);
+  Error(zret, "Error");
+  REQUIRE(zret.errata().length() == 4);
   REQUIRE(zret.result() == 56);
 
-  test(Severity::DIAG, Rv<int>{56}.diag("Test rvalue diag"));
-  test(Severity::INFO, Rv<int>{56}.info("Test rvalue info"));
-  test(Severity::WARN, Rv<int>{56}.warn("Test rvalue warn"));
-  test(Severity::ERROR, Rv<int>{56}.error("Test rvalue error"));
+  test(ERRATA_DIAG, Rv<int>{56}.note(ERRATA_DIAG, "Test rvalue diag"));
+  test(ERRATA_INFO, Rv<int>{56}.note(ERRATA_INFO, "Test rvalue info"));
+  test(ERRATA_WARN, Rv<int>{56}.note(ERRATA_WARN, "Test rvalue warn"));
+  test(ERRATA_ERROR, Rv<int>{56}.note(ERRATA_ERROR, "Test rvalue error"));
 
   // Test the note overload that takes an Errata.
   zret.clear();
   REQUIRE(zret.result() == 56);
-  REQUIRE(zret.errata().count() == 0);
+  REQUIRE(zret.errata().length() == 0);
   Errata errata;
-  errata.info("Information");
+  Info(errata, "Information");
   zret.note(errata);
-  test(Severity::INFO, zret);
-  REQUIRE(errata.count() == 1);
+  test(ERRATA_INFO, zret);
+  REQUIRE(errata.length() == 1);
   zret.note(std::move(errata));
-  REQUIRE(zret.errata().count() == 2);
-  REQUIRE(errata.count() == 0);
+  REQUIRE(zret.errata().length() == 2);
+  REQUIRE(errata.length() == 0);
 
   // Now try it on a non-copyable object.
   ThingHandle handle{new Thing};
@@ -157,11 +158,11 @@ TEST_CASE("Rv", "[libswoc][Errata]")
 
   handle->s = "other"; // mark it.
   thing_rv  = std::move(handle);
-  thing_rv.note(Severity::WARN, "This is a warning");
+  thing_rv.note(ERRATA_WARN, "This is a warning");
 
   auto &&[tr1, te1]{thing_rv};
-  REQUIRE(te1.count() == 1);
-  REQUIRE(te1.severity() == Severity::WARN);
+  REQUIRE(te1.length() == 1);
+  REQUIRE(te1.severity() == ERRATA_WARN);
 
   ThingHandle other{std::move(tr1)};
   REQUIRE(tr1.get() == nullptr);
