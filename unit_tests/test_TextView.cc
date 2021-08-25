@@ -273,6 +273,24 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   REQUIRE(token.empty());
   REQUIRE(s.size() == 1);
 
+  // Check for subtle differences with trailing separator
+  token="one.ex";
+  auto name = token.take_prefix_at('.');
+  REQUIRE(name.size() > 0);
+  REQUIRE(token.size() > 0);
+
+  token="one";
+  name = token.take_prefix_at('.');
+  REQUIRE(name.size() > 0);
+  REQUIRE(token.size() == 0);
+  REQUIRE(token.data() == name.end());
+
+  token="one.";
+  name = token.take_prefix_at('.');
+  REQUIRE(name.size() > 0);
+  REQUIRE(token.size() == 0);
+  REQUIRE(token.data() == name.end() + 1);
+
   auto is_not_alnum = [](char c) { return !isalnum(c); };
 
   s = "file.cc";
