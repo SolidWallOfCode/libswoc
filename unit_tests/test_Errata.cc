@@ -1,25 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
 /** @file
 
     Errata unit tests.
-
-    @section license License
-
-    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
-    agreements.  See the NOTICE file distributed with this work for additional information regarding
-    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with the License.  You may
-    obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software distributed under the
-    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-    express or implied. See the License for the specific language governing permissions and
-    limitations under the License.
 */
 
 #include <memory>
+#include <errno.h>
 #include "swoc/Errata.h"
+#include "swoc/swoc_file.h"
 #include "ex_Errata_Severity.h"
 #include "catch.hpp"
 
@@ -27,20 +15,20 @@ using swoc::Errata;
 using swoc::Rv;
 using Severity = swoc::Errata::Severity;
 using namespace std::literals;
+using namespace swoc::literals;
+
+// Note - Some of these tests depend on initialization done in "unit_test_main.cc".
 
 Errata
 Noteworthy(std::string_view text)
 {
-  Errata notes;
-  Info(notes, text);
-  return notes;
+  return Errata{ERRATA_INFO, text};
 }
 
 Errata
 cycle(Errata &erratum)
 {
-  Info(erratum, "Note well, young one!");
-  return erratum;
+  return std::move(erratum.note("Note well, young one!"));
 }
 
 TEST_CASE("Errata copy", "[libswoc][Errata]")
@@ -53,22 +41,17 @@ TEST_CASE("Errata copy", "[libswoc][Errata]")
   REQUIRE(notes.length() == 2);
 
   Errata erratum;
-  erratum.clear();
   REQUIRE(erratum.length() == 0);
-  Diag(erratum, "Diagnostics");
+  erratum.note("Diagnostics");
   REQUIRE(erratum.length() == 1);
-  Info(erratum, "Information");
+  erratum.note("Information");
   REQUIRE(erratum.length() == 2);
-  Warn(erratum, "Warning");
-  REQUIRE(erratum.length() == 3);
-  Error(erratum, "Error");
-  REQUIRE(erratum.length() == 4);
 
   // Test internal allocation boundaries.
   notes.clear();
   std::string_view text{"0123456789012345678901234567890123456789"};
   for (int i = 0; i < 50; ++i) {
-    Info(notes, text);
+    notes.note(text);
   }
   REQUIRE(notes.length() == 50);
   REQUIRE(notes.begin()->text() == text);
@@ -91,25 +74,29 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   using ThingHandle = std::unique_ptr<Thing>;
 
   zret = 17;
-  zret.note(ERRATA_ERROR, "This is an error");
+  zret = Errata(std::error_code(EINVAL, std::generic_category()), ERRATA_ERROR, "This is an error");
 
-  auto [result, erratum] = zret;
+  {
+    auto & [result, erratum] = zret;
 
-  REQUIRE(erratum.length() == 1);
-  REQUIRE(erratum.severity() == ERRATA_ERROR);
+    REQUIRE(erratum.length() == 1);
+    REQUIRE(erratum.severity() == ERRATA_ERROR);
 
-  REQUIRE(result == 17);
-  zret = 38;
-  REQUIRE(result == 17); // Local copy binding, no update.
+    REQUIRE(result == 17);
+    zret = 38;
+    REQUIRE(result == 38); // reference binding, update.
+  }
 
-  auto &[r_result, r_erratum] = zret;
+  {
+    auto && [result, erratum] = zret;
 
-  REQUIRE(r_result == 38);
-  zret = 56;
-  REQUIRE(r_result == 56); // reference binding, update.
+    REQUIRE(erratum.length() == 1);
+    REQUIRE(erratum.severity() == ERRATA_ERROR);
 
-  auto const &[cr_result, cr_erratum] = zret;
-  REQUIRE(cr_result == 56);
+    REQUIRE(result == 38);
+    zret = 56;
+    REQUIRE(result == 56); // reference binding, update.
+  }
 
   auto test = [](Severity expected_severity, Rv<int> const &rvc) {
     auto const &[cv_result, cv_erratum] = rvc;
@@ -118,39 +105,55 @@ TEST_CASE("Rv", "[libswoc][Errata]")
     REQUIRE(cv_result == 56);
   };
 
-  test(ERRATA_ERROR, zret); // invoke it.
+  {
+    auto const &[result, erratum] = zret;
+    REQUIRE(result == 56);
+
+    test(ERRATA_ERROR, zret); // invoke it.
+  }
+
 
   zret.clear();
-  auto const &[cleared_result, cleared_erratum] = zret;
-  REQUIRE(cleared_result == 56);
-  REQUIRE(cleared_erratum.length() == 0);
-  Diag(zret, "Diagnostics");
+  REQUIRE(zret.result() == 56);
+
+  {
+    auto const &[result, erratum] = zret;
+    REQUIRE(result == 56);
+    REQUIRE(erratum.length() == 0);
+  }
+
+  zret.note("Diagnostics");
   REQUIRE(zret.errata().length() == 1);
-  Info(zret, "Information");
+  zret.note("Information");
   REQUIRE(zret.errata().length() == 2);
-  Warn(zret, "Warning");
+  zret.note("Warning");
   REQUIRE(zret.errata().length() == 3);
-  Error(zret, "Error");
+  zret.note("Error");
   REQUIRE(zret.errata().length() == 4);
   REQUIRE(zret.result() == 56);
 
-  test(ERRATA_DIAG, Rv<int>{56}.note(ERRATA_DIAG, "Test rvalue diag"));
-  test(ERRATA_INFO, Rv<int>{56}.note(ERRATA_INFO, "Test rvalue info"));
-  test(ERRATA_WARN, Rv<int>{56}.note(ERRATA_WARN, "Test rvalue warn"));
-  test(ERRATA_ERROR, Rv<int>{56}.note(ERRATA_ERROR, "Test rvalue error"));
+  test(ERRATA_DIAG, Rv<int>{56, Errata(ERRATA_DIAG, "Test rvalue diag")});
+  test(ERRATA_INFO, Rv<int>{56, Errata(ERRATA_INFO, "Test rvalue info")});
+  test(ERRATA_WARN, Rv<int>{56, Errata(ERRATA_WARN, "Test rvalue warn")});
+  test(ERRATA_ERROR, Rv<int>{56, Errata(ERRATA_ERROR, "Test rvalue error")});
 
   // Test the note overload that takes an Errata.
   zret.clear();
   REQUIRE(zret.result() == 56);
   REQUIRE(zret.errata().length() == 0);
-  Errata errata;
-  Info(errata, "Information");
-  zret.note(errata);
-  test(ERRATA_INFO, zret);
-  REQUIRE(errata.length() == 1);
-  zret.note(std::move(errata));
+  zret = Errata{ERRATA_INFO, "Information"};
+  REQUIRE(ERRATA_INFO == zret.errata().severity());
+  REQUIRE(zret.errata().length() == 1);
+
+  Errata e1{ERRATA_DBG, "Debug"};
+  zret.note(e1);
   REQUIRE(zret.errata().length() == 2);
-  REQUIRE(errata.length() == 0);
+  REQUIRE(ERRATA_INFO == zret.errata().severity());
+
+  Errata e2{ERRATA_DBG, "Debug"};
+  zret.note(std::move(e2));
+  REQUIRE(zret.errata().length() == 3);
+  REQUIRE(e2.length() == 0);
 
   // Now try it on a non-copyable object.
   ThingHandle handle{new Thing};
@@ -158,7 +161,7 @@ TEST_CASE("Rv", "[libswoc][Errata]")
 
   handle->s = "other"; // mark it.
   thing_rv  = std::move(handle);
-  thing_rv.note(ERRATA_WARN, "This is a warning");
+  thing_rv = Errata(ERRATA_WARN, "This is a warning");
 
   auto &&[tr1, te1]{thing_rv};
   REQUIRE(te1.length() == 1);
@@ -178,3 +181,16 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   auto &&[tr2, te2]{maker()};
   REQUIRE(tr2->s == "made"sv);
 };
+
+TEST_CASE("Errata example", "[libswoc][Errata]") {
+  swoc::LocalBufferWriter<2048> w;
+  std::error_code ec;
+  swoc::file::path path("does-not-exist.txt");
+  auto content = swoc::file::load(path, ec);
+  REQUIRE(false == !ec); // it is expected the load will fail.
+  Errata errata{ec, ERRATA_ERROR, R"(Failed to open file "{}")", path};
+  w.print("{}", errata);
+  REQUIRE(w.size() > 0);
+  REQUIRE(w.view().starts_with("Error") == true);
+  REQUIRE(w.view().find("enoent") != swoc::TextView::npos);
+}

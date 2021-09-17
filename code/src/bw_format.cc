@@ -18,6 +18,7 @@
 #include "swoc/bwf_base.h"
 #include "swoc/bwf_ex.h"
 #include "swoc/swoc_meta.h"
+#include "swoc/DiscreteRange.h"
 
 using namespace std::literals;
 using namespace swoc::literals;
@@ -678,17 +679,154 @@ FixedBufferWriter::operator>>(std::ostream& s) const {
   return s << this->view();
 }
 
+namespace
+{
+// Hand rolled, might not be totally compliant everywhere, but probably close
+// enough. The long string will be locally accurate. Clang requires the double
+// braces. Why, Turing only knows.
+  static const std::array<std::string_view, 134> ERRNO_SHORT_NAME = {{
+    "SUCCESS",
+    "EPERM",
+    "ENOENT",
+    "ESRCH",
+    "EINTR",
+    "EIO",
+    "ENXIO",
+    "E2BIG ",
+    "ENOEXEC",
+    "EBADF",
+    "ECHILD",
+    "EAGAIN",
+    "ENOMEM",
+    "EACCES",
+    "EFAULT",
+    "ENOTBLK",
+    "EBUSY",
+    "EEXIST",
+    "EXDEV",
+    "ENODEV",
+    "ENOTDIR",
+    "EISDIR",
+    "EINVAL",
+    "ENFILE",
+    "EMFILE",
+    "ENOTTY",
+    "ETXTBSY",
+    "EFBIG",
+    "ENOSPC",
+    "ESPIPE",
+    "EROFS",
+    "EMLINK",
+    "EPIPE",
+    "EDOM",
+    "ERANGE",
+    "EDEADLK",
+    "ENAMETOOLONG",
+    "ENOLCK",
+    "ENOSYS",
+    "ENOTEMPTY",
+    "ELOOP",
+    "EWOULDBLOCK",
+    "ENOMSG",
+    "EIDRM",
+    "ECHRNG",
+    "EL2NSYNC",
+    "EL3HLT",
+    "EL3RST",
+    "ELNRNG",
+    "EUNATCH",
+    "ENOCSI",
+    "EL2HTL",
+    "EBADE",
+    "EBADR",
+    "EXFULL",
+    "ENOANO",
+    "EBADRQC",
+    "EBADSLT",
+    "EDEADLOCK",
+    "EBFONT",
+    "ENOSTR",
+    "ENODATA",
+    "ETIME",
+    "ENOSR",
+    "ENONET",
+    "ENOPKG",
+    "EREMOTE",
+    "ENOLINK",
+    "EADV",
+    "ESRMNT",
+    "ECOMM",
+    "EPROTO",
+    "EMULTIHOP",
+    "EDOTDOT",
+    "EBADMSG",
+    "EOVERFLOW",
+    "ENOTUNIQ",
+    "EBADFD",
+    "EREMCHG",
+    "ELIBACC",
+    "ELIBBAD",
+    "ELIBSCN",
+    "ELIBMAX",
+    "ELIBEXEC",
+    "EILSEQ",
+    "ERESTART",
+    "ESTRPIPE",
+    "EUSERS",
+    "ENOTSOCK",
+    "EDESTADDRREQ",
+    "EMSGSIZE",
+    "EPROTOTYPE",
+    "ENOPROTOOPT",
+    "EPROTONOSUPPORT",
+    "ESOCKTNOSUPPORT",
+    "EOPNOTSUPP",
+    "EPFNOSUPPORT",
+    "EAFNOSUPPORT",
+    "EADDRINUSE",
+    "EADDRNOTAVAIL",
+    "ENETDOWN",
+    "ENETUNREACH",
+    "ENETRESET",
+    "ECONNABORTED",
+    "ECONNRESET",
+    "ENOBUFS",
+    "EISCONN",
+    "ENOTCONN",
+    "ESHUTDOWN",
+    "ETOOMANYREFS",
+    "ETIMEDOUT",
+    "ECONNREFUSED",
+    "EHOSTDOWN",
+    "EHOSTUNREACH",
+    "EALREADY",
+    "EINPROGRESS",
+    "ESTALE",
+    "EUCLEAN",
+    "ENOTNAM",
+    "ENAVAIL",
+    "EISNAM",
+    "EREMOTEIO",
+    "EDQUOT",
+    "ENOMEDIUM",
+    "EMEDIUMTYPE",
+    "ECANCELED",
+    "ENOKEY",
+    "EKEYEXPIRED",
+    "EKEYREVOKED",
+    "EKEYREJECTED",
+    "EOWNERDEAD",
+    "ENOTRECOVERABLE",
+    "ERFKILL",
+    "EHWPOISON",
+  }};
+  static constexpr DiscreteRange<unsigned> ERRNO_RANGE{0, ERRNO_SHORT_NAME.size()-1 };
+  // This provides convenient safe access to the errno short name array.
+  auto errno_short_name = [](unsigned n) { return ERRNO_RANGE.contains(n) ? ERRNO_SHORT_NAME[n] : "Unknown"sv; };
+}
+
 BufferWriter&
 bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Errno const& e) {
-  // Hand rolled, might not be totally compliant everywhere, but probably close
-  // enough. The long string will be locally accurate. Clang requires the double
-  // braces. Why, Turing only knows.
-  static const std::array<std::string_view, 134> SHORT_NAME = {{
-                                                                   "SUCCESS", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO", "ENXIO", "E2BIG ", "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM", "EACCES", "EFAULT", "ENOTBLK", "EBUSY", "EEXIST", "EXDEV", "ENODEV", "ENOTDIR", "EISDIR", "EINVAL", "ENFILE", "EMFILE", "ENOTTY", "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK", "EPIPE", "EDOM", "ERANGE", "EDEADLK", "ENAMETOOLONG", "ENOLCK", "ENOSYS", "ENOTEMPTY", "ELOOP", "EWOULDBLOCK", "ENOMSG", "EIDRM", "ECHRNG", "EL2NSYNC", "EL3HLT", "EL3RST", "ELNRNG", "EUNATCH", "ENOCSI", "EL2HTL", "EBADE", "EBADR", "EXFULL", "ENOANO", "EBADRQC", "EBADSLT", "EDEADLOCK", "EBFONT", "ENOSTR", "ENODATA", "ETIME", "ENOSR", "ENONET", "ENOPKG", "EREMOTE", "ENOLINK", "EADV", "ESRMNT", "ECOMM", "EPROTO", "EMULTIHOP", "EDOTDOT", "EBADMSG", "EOVERFLOW", "ENOTUNIQ", "EBADFD", "EREMCHG", "ELIBACC", "ELIBBAD", "ELIBSCN", "ELIBMAX", "ELIBEXEC", "EILSEQ", "ERESTART", "ESTRPIPE", "EUSERS", "ENOTSOCK", "EDESTADDRREQ", "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT", "EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "EOPNOTSUPP", "EPFNOSUPPORT", "EAFNOSUPPORT", "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN", "ENETUNREACH", "ENETRESET", "ECONNABORTED", "ECONNRESET", "ENOBUFS", "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETOOMANYREFS", "ETIMEDOUT", "ECONNREFUSED", "EHOSTDOWN", "EHOSTUNREACH", "EALREADY", "EINPROGRESS", "ESTALE", "EUCLEAN", "ENOTNAM", "ENAVAIL", "EISNAM", "EREMOTEIO", "EDQUOT", "ENOMEDIUM", "EMEDIUMTYPE", "ECANCELED", "ENOKEY", "EKEYEXPIRED", "EKEYREVOKED", "EKEYREJECTED", "EOWNERDEAD", "ENOTRECOVERABLE", "ERFKILL", "EHWPOISON",}};
-  // This provides convenient safe access to the errno short name array.
-  auto short_name = [](int n) {
-    return 0 < n && n < int(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown"sv;
-  };
   static const bwf::Format number_fmt{"[{}]"sv}; // numeric value format.
 
   if (spec.has_numeric_type()) {                 // if numeric type, print just the numeric part
@@ -697,7 +835,7 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Errno const& e) {
     TextView ext { spec._ext };
     bool short_p = false;
     if (ext.empty() || ext.npos != ext.find('s')) {
-      w.write(short_name(e._e));
+      w.write(errno_short_name(e._e));
       short_p = true;
     }
     if (ext.empty() || ext.npos != ext.find('l')) {
@@ -838,13 +976,21 @@ operator<<(ostream &s, swoc::FixedBufferWriter &w)
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec)
 {
+  static const auto GENERIC_CATEGORY = &std::generic_category();
+  static const auto SYSTEM_CATEGORY = &std::system_category();
+
   // This provides convenient safe access to the errno short name array.
   static const swoc::bwf::Format number_fmt{"[{}]"_sv}; // numeric value format.
-  if (spec.has_numeric_type()) {                        // if numeric type, print just the numeric
-    // part.
-    w.print(number_fmt, ec.value());
+  if (spec.has_numeric_type()) {
+    // if numeric type, print just the numeric part.
+    bwformat(w, spec, ec.value());
   } else {
-    w.write(ec.message());
+    if ((&ec.category() == GENERIC_CATEGORY || &ec.category() == SYSTEM_CATEGORY) &&
+        swoc::ERRNO_RANGE.contains(ec.value())) {
+      bwformat(w, spec, swoc::ERRNO_SHORT_NAME[ec.value()]);
+    } else {
+      w.write(ec.message());
+    }
     if (spec._type != 's' && spec._type != 'S') {
       w.write(' ');
       w.print(number_fmt, ec.value());

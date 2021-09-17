@@ -26,23 +26,3 @@ static constexpr swoc::Errata::Severity ERRATA_DIAG{1};
 static constexpr swoc::Errata::Severity ERRATA_INFO{2};
 static constexpr swoc::Errata::Severity ERRATA_WARN{3};
 static constexpr swoc::Errata::Severity ERRATA_ERROR{4};
-
-inline swoc::Errata & Dbg(swoc::Errata & erratum, std::string_view text) {
-  return erratum.note(ERRATA_DBG, text);
-}
-
-inline swoc::Errata & Diag(swoc::Errata & erratum, std::string_view text) {
-  return erratum.note(ERRATA_DIAG, text);
-}
-
-inline swoc::Errata & Info(swoc::Errata & erratum, std::string_view text) {
-  return erratum.note(ERRATA_INFO, text);
-}
-
-inline swoc::Errata & Warn(swoc::Errata & erratum, std::string_view text) {
-  return erratum.note(ERRATA_WARN, text);
-}
-
-inline swoc::Errata & Error(swoc::Errata & erratum, std::string_view text) {
-  return erratum.note(ERRATA_ERROR, text);
-}

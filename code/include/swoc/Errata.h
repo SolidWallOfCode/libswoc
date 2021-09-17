@@ -74,6 +74,10 @@ public:
   static Severity DEFAULT_SEVERITY;
   /// Severity level at which the instance is a failure of some sort.
   static Severity FAILURE_SEVERITY;
+  /// Mapping of severity to string.
+  /// Values larger than the span size will be rendered as numbers.
+  /// Defaults to an empty span, meaning all severities will be printed as integers.
+  static MemSpan<TextView> SEVERITY_NAME;
 
   /** An annotation to the Errata consisting of a severity and informative text.
    *
@@ -85,23 +89,17 @@ public:
     /// The message has default severity and empty text.
     Annotation();
 
-    /** Construct with severity @a level and @a text.
+    /** Construct with @a text.
      *
-     * @param severity Severity level.
      * @param text Annotation content (literal).
      *
      * @a text is presumed to be stable for the @c Annotation lifetime, it is not maintained
      * locally.
      */
-    Annotation(code_type const& code, Severity severity, std::string_view text);
+    explicit Annotation(std::string_view text);
 
     /// Reset to the message to default state.
     self_type &clear();
-
-    code_type code() const;
-
-    /// Get the severity.
-    Severity severity() const;
 
     /// Get the text of the message.
     std::string_view text() const;
@@ -112,14 +110,9 @@ public:
     /// Set the text of the message.
     self_type &assign(std::string_view text);
 
-    /// Set the severity @a level
-    self_type &assign(Severity level);
-
   protected:
     std::string_view _text;                       ///< Annotation text.
-    code_type _code;                              ///< Message code / ID
     unsigned short _level{0};                     ///< Nesting level.
-    Severity _severity{Errata::DEFAULT_SEVERITY}; ///< Severity.
 
     /// @{{
     /// Policy and links for intrusive list.
@@ -145,7 +138,9 @@ protected:
   struct Data {
     using self_type = Data; ///< Self reference type.
 
-    /// Construct into @c MemArena.
+    /// Construct and take ownership of @a arena.
+    /// @internal This assumes the instance is being constructed in @a arena and therefore transfers the
+    /// @a arena into internal storage so that everything is in the @a arena.
     Data(swoc::MemArena &&arena);
 
     /// Check if there are any notes.
@@ -158,33 +153,38 @@ protected:
      */
     std::string_view localize(std::string_view src);
 
-    /// Get the remnant of the curret block in the arena.
+    /// Get the remnant of the current block in the arena.
     swoc::MemSpan<char> remnant();
 
     /// Allocate from the arena.
     swoc::MemSpan<char> alloc(size_t n);
 
-    /// Reference count.
-    std::atomic<int> _ref_count{0};
-
-    /// The message stack.
-    Container _notes;
-    /// Annotation text storage.
-    swoc::MemArena _arena;
-    /// Nesting level.
-    unsigned _level{0};
-    /// The effective severity of the message stack.
-    Severity _severity{0};
+    Severity _severity{Errata::DEFAULT_SEVERITY}; ///< Severity.
+    code_type _code{Errata::DEFAULT_CODE};        ///< Message code / ID
+    unsigned _level{0};                           ///< Nesting level.
+    std::atomic<int> _ref_count{0};               ///< Reference count.
+    Container _notes;                             ///< The message stack.
+    swoc::MemArena _arena;                        ///< Annotation text storage.
   };
 
 public:
   /// Default constructor - empty errata, very fast.
   Errata() = default;
-  Errata(self_type const &that);                                   ///< Reference counting copy constructor.
+  Errata(self_type const& that) = delete; ///< No constant copy construction.
   Errata(self_type &&that) noexcept;                               ///< Move constructor.
   self_type &operator=(self_type const &that) = delete;            // no copy assignemnt.
   self_type &operator                         =(self_type &&that); ///< Move assignment.
   ~Errata();                                                       ///< Destructor.
+
+  // Note based constructors.
+  Errata(code_type const& type, Severity severity, std::string_view const& text);
+  Errata(Severity severity, std::string_view const& text);
+  Errata(code_type const& type, std::string_view const& text);
+  explicit Errata(std::string_view const& text);
+  template <typename... Args> Errata(code_type const& type, Severity severity, std::string_view fmt, Args &&... args);
+  template <typename... Args> Errata(code_type const& type, std::string_view fmt, Args &&... args);
+  template <typename... Args> Errata(Severity severity, std::string_view fmt, Args &&... args);
+  template <typename... Args> explicit Errata(std::string_view fmt, Args &&... args);
 
   /** Add a new message to the top of stack with severity @a level and @a text.
    * @param text Text of the message.
@@ -195,44 +195,12 @@ public:
   self_type &note(std::string_view text);
 
   /** Add a new message to the top of stack with severity @a level and @a text.
-   * @param text Text of the message.
-   * @param severity Severity of the message.
-   * @return *this
-   */
-  self_type &note(Severity severity, std::string_view text);
-
-  /** Add a new message to the top of stack with severity @a level and @a text.
    * @param code Error code.
    * @return *this
    *
-   * The text message is constructed as the short, long, and numeric value of @a code.
+   * The annotation text is constructed as the short, long, and numeric value of @a code, which is then discarded.
    */
   self_type &note(code_type const& code);
-
-  /** Add a new message to the top of stack with severity @a level and @a text.
-   * @param code Error code.
-   * @param severity Severity of the message.
-   * @param text Text of the message.
-   * @return *this
-   *
-   * The text message is constructed as the short, long, and numeric value of @a code.
-   */
-  self_type &note(code_type const& code, Severity severity);
-
-  /** Add a new message to the top of stack with severity @a level and @a text.
-   * @param code Error code.
-   * @param text Text of the message.
-   * @return *this
-   */
-  self_type &note(code_type const& code, std::string_view text);
-
-  /** Add a new message to the top of stack with severity @a level and @a text.
-   * @param code Error code.
-   * @param severity Severity of the message.
-   * @param text Text of the message.
-   * @return *this
-   */
-  self_type &note(code_type const& code, Severity severity, std::string_view text);
 
   /** Push a constructed @c Annotation.
       The @c Annotation is set to have the @a id and @a code. The other arguments are converted
@@ -246,61 +214,23 @@ public:
       to strings and concatenated to form the messsage text.
       @return A reference to this object.
   */
-  template <typename... Args> self_type &note(code_type const& code, std::string_view fmt, Args &&... args);
-
-  /** Push a constructed @c Annotation.
-      The @c Annotation is set to have the @a id and @a code. The other arguments are converted
-      to strings and concatenated to form the messsage text.
-      @return A reference to this object.
-  */
-  template <typename... Args> self_type &note(Severity severity, std::string_view fmt, Args &&... args);
-
-  /** Push a constructed @c Annotation.
-      The @c Annotation is set to have the @a id and @a code. The other arguments are converted
-      to strings and concatenated to form the messsage text.
-      @return A reference to this object.
-  */
-  template <typename... Args> self_type &note(code_type const& code, Severity severity, std::string_view fmt, Args &&... args);
-
-  /** Push a constructed @c Annotation.
-      The @c Annotation is set to have the @a id and @a code. The other arguments are converted
-      to strings and concatenated to form the messsage text.
-      @return A reference to this object.
-  */
   template <typename... Args> self_type &note_v(std::string_view fmt, std::tuple<Args...> const &args);
-
-  /** Push a constructed @c Annotation.
-      The @c Annotation is set to have the @a id and @a code. The other arguments are converted
-      to strings and concatenated to form the messsage text.
-      @return A reference to this object.
-  */
-  template <typename... Args> self_type &note_v(Severity severity, std::string_view fmt, std::tuple<Args...> const &args);
-
-  /** Push a constructed @c Annotation.
-      The @c Annotation is set to have the @a id and @a code. The other arguments are converted
-      to strings and concatenated to form the messsage text.
-      @return A reference to this object.
-  */
-  template <typename... Args> self_type &note_v(code_type const& code, std::string_view fmt, std::tuple<Args...> const &args);
-
-  /** Push a constructed @c Annotation.
-      The @c Annotation is set to have the @a id and @a code. The other arguments are converted
-      to strings and concatenated to form the messsage text.
-      @return A reference to this object.
-  */
-  template <typename... Args> self_type &note_v(code_type const& code, Severity severity, std::string_view fmt, std::tuple<Args...> const &args);
 
   /** Copy messages from @a that to @a this.
    *
    * @param that Source object from which to copy.
    * @return @a *this
+   *
+   * The code and severity of @a that are discarded.
    */
   self_type &note(self_type const &that);
 
-  /** Copye messages from @a that to @a this, then clear @a that.
+  /** Copy messages from @a that to @a this, then clear @a that.
    *
    * @param that Source object from which to copy.
    * @return @a *this
+   *
+   * The code and severity of @a that are discarded.
    */
   self_type &note(self_type &&that);
 
@@ -421,23 +351,21 @@ public:
   std::ostream &write(std::ostream &out) const;
 
 protected:
-  /// Release internal memory.
-  void release();
+  /// Construct with code and severity, but no annotations.
+  Errata(code_type const& code, Severity severity);
 
   /// Implementation instance.
-  // Although it may seem like move semantics make reference counting unnecessary, that's not the
-  // case. The problem is code that wants to work with an instance, which is common. In such cases
-  // the instance is constructed just as it is returned (e.g. std::string). Code would therefore
-  // have to call std::move for every return, which is not going to be done reliably.
-  Data *_data{nullptr};
+  /// @internal Because this is used with a self-containing @c MemArena standard smart pointers do not
+  /// work correctly. Instead the @c reset method must be used to release the memory.
+  /// @see reset
+  Data * _data = nullptr;
 
   /// Force data existence.
   /// @return A pointer to the data.
-  const Data *data();
+  Data *data();
 
-  /// Get a writeable data pointer.
-  /// @internal It is a fatal error to ask for writeable data if there are shared references.
-  Data *writeable_data();
+  /// Destroy the data.
+  void reset();
 
   /** Allocate a span of memory.
    *
@@ -446,8 +374,8 @@ protected:
    */
   MemSpan<char> alloc(size_t n);
 
-  /// Add a note which is already localized.
-  self_type &note_localized(code_type const& code, Severity, std::string_view const &text);
+  /// Add a note, localizing the @a text.
+  self_type &note_localized(std::string_view const &text);
 
   /// Used for returns when no data is present.
   static Annotation const NIL_NOTE;
@@ -538,50 +466,28 @@ public:
 
   /** Push a message in to the result.
    *
-   * @param level Severity of the message.
-   * @param text Text of the message.
+   * @param Code the error code.
    * @return @a *this
+   *
+   * The annotation text is constructed as the short, long, and numeric value of @a code, which is then discarded.
    */
   self_type &note(code_type const& code);
 
   /** Push a message in to the result.
    *
-   * @param level Severity of the message.
-   * @param text Text of the message.
-   * @return @a *this
-   */
-  self_type &note(Severity level, std::string_view text);
-
-  /** Push a message in to the result.
-   *
-   * @param level Severity of the message.
-   * @param text Text of the message.
-   * @return @a *this
-   */
-  self_type &note(code_type const& code, std::string_view text);
-
-  /** Push a message in to the result.
-   *
-   * @param level Severity of the message.
-   * @param text Text of the message.
-   * @return @a *this
-   */
-  self_type &note(code_type const& code, Severity level, std::string_view text);
-
-  /** Push a message in to the result.
-   *
    * @tparam Args Format string argument types.
-   * @param level Severity of the message.
    * @param fmt Format string.
    * @param args Arguments for @a fmt.
    * @return @a *this
    */
-  template <typename... Args> self_type &note(Severity level, std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &note(std::string_view fmt, Args &&... args);
 
   /** Copy messages from @a that to @a this.
    *
    * @param that Source object from which to copy.
    * @return @a *this
+   *
+   * The code and severity of @a that are discarded.
    */
   self_type &note(Errata const &that);
 
@@ -589,6 +495,8 @@ public:
    *
    * @param that Source object from which to copy.
    * @return @a *this
+   *
+   * The code and severity of @a that are discarded.
    */
   self_type &note(Errata &&that);
 
@@ -686,6 +594,8 @@ public:
    *
    * @param status Errata to move in to this instance.
    * @return *this
+   *
+   * The current @c Errata for @a this is discarded and replaced with @a status.
    */
   self_type &operator=(Errata &&status);
 
@@ -713,13 +623,12 @@ MakeRv(R &&r,           ///< The function result
 /* ----------------------------------------------------------------------- */
 // Inline methods for Annotation
 
-inline Errata::Annotation::Annotation() {}
+inline Errata::Annotation::Annotation() = default;
 
-inline Errata::Annotation::Annotation(code_type const& code, Severity severity, std::string_view text) : _text(text), _code(code), _severity(severity) {}
+inline Errata::Annotation::Annotation(std::string_view text) : _text(text) {}
 
 inline Errata::Annotation &
 Errata::Annotation::clear() {
-  _severity = Errata::DEFAULT_SEVERITY;
   _text     = std::string_view{};
   return *this;
 }
@@ -734,22 +643,12 @@ Errata::Annotation::level() const {
   return _level;
 }
 
-inline Errata::Severity
-Errata::Annotation::severity() const {
-  return _severity;
-}
-
 inline Errata::Annotation &
 Errata::Annotation::assign(std::string_view text) {
   _text = text;
   return *this;
 }
 
-inline Errata::Annotation &
-Errata::Annotation::assign(Severity level) {
-  _severity = level;
-  return *this;
-}
 /* ----------------------------------------------------------------------- */
 // Inline methods for Errata::Data
 
@@ -779,16 +678,39 @@ inline Errata::Errata(self_type &&that) noexcept {
   std::swap(_data, that._data);
 }
 
-inline Errata::Errata(self_type const &that) {
-  if (nullptr != (_data = that._data)) {
-    ++(_data->_ref_count);
-  }
+inline Errata::Errata(const code_type &code, Severity severity) {
+  auto d = this->data();
+  d->_severity = severity;
+  d->_code = code;
+}
+
+inline Errata::Errata(const code_type &type, Severity severity, const std::string_view &text) : Errata(type, severity) {
+  this->note(text);
+}
+
+inline Errata::Errata(const std::string_view &text) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, text) {}
+inline Errata::Errata(code_type const& code, const std::string_view &text) : Errata(code, DEFAULT_SEVERITY, text) {}
+inline Errata::Errata(Severity severity, const std::string_view &text) : Errata(DEFAULT_CODE, severity, text) {}
+
+template <typename... Args> Errata::Errata(code_type const& code, Severity severity, std::string_view fmt, Args &&... args) : Errata(code, severity) {
+  this->note_v(fmt, std::forward_as_tuple(args...));
+}
+
+template <typename... Args> Errata::Errata(code_type const& type, std::string_view fmt, Args &&... args) : Errata(code, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) { }
+template <typename... Args> Errata::Errata(Severity severity, std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, severity, fmt, std::forward<Args>(args)...) { }
+template <typename... Args> Errata::Errata(std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) { }
+
+inline void Errata::reset() {
+  _data->~Data(); // destructs the @c MemArena in @a _data which releases memory.
+  _data = nullptr;
 }
 
 inline auto
 Errata::operator=(self_type &&that) -> self_type & {
   if (this != &that) {
-    this->release();
+    if (_data) {
+      this->reset();
+    }
     std::swap(_data, that._data);
   }
   return *this;
@@ -808,7 +730,7 @@ Errata::empty() const {
 }
 
 inline auto Errata::code() const -> code_type const& {
-  return this->empty() ? DEFAULT_CODE : _data->_notes.head()->_code;
+  return this->empty() ? DEFAULT_CODE : _data->_code;
 }
 
 inline size_t
@@ -840,37 +762,14 @@ Errata::note(self_type &&that) {
 
 inline Errata &
 Errata::note(std::string_view text) {
-  this->note_localized(DEFAULT_CODE, DEFAULT_SEVERITY, text);
+  this->note_localized(text);
   return *this;
-}
-
-inline Errata &
-Errata::note(Severity severity, std::string_view text) {
-  this->note_localized(DEFAULT_CODE, severity, text);
-  return *this;
-}
-
-inline Errata &
-Errata::note(code_type const& code, std::string_view text) {
-  this->note_localized(code, DEFAULT_SEVERITY, text);
-  return *this;
-}
-
-inline Errata &
-Errata::note(code_type const& code, Severity severity, std::string_view text) {
-  this->note_localized(code, severity, text);
-  return *this;
-}
-
-inline Errata &
-Errata::note(code_type const& code) {
-  return this->note(code, DEFAULT_SEVERITY);
 }
 
 template <typename... Args>
 Errata &
-Errata::note_v(code_type const& code, Severity severity, std::string_view fmt, std::tuple<Args...> const &args) {
-  Data *data = this->writeable_data();
+Errata::note_v(std::string_view fmt, std::tuple<Args...> const &args) {
+  Data *data = this->data();
   auto span  = data->remnant();
   FixedBufferWriter bw{span};
   if (!bw.print_v(fmt, args).error()) {
@@ -881,50 +780,39 @@ Errata::note_v(code_type const& code, Severity severity, std::string_view fmt, s
     span = this->alloc(bw.extent());
     FixedBufferWriter{span}.print_v(fmt, args);
   }
-  this->note_localized(code, severity, span.view());
+  this->note_localized(span.view());
   return *this;
 }
 
 template <typename... Args>
 Errata &
 Errata::note(std::string_view fmt, Args &&... args) {
-  return this->note_v(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, std::forward_as_tuple(args...));
+  return this->note_v(fmt, std::forward_as_tuple<Args...>(args...));
 }
 
-template <typename... Args>
-Errata &
-Errata::note(Severity severity, std::string_view fmt, Args &&... args) {
-  return this->note_v(DEFAULT_CODE, severity, fmt, std::forward_as_tuple(args...));
+inline auto
+Errata::severity() const -> Severity {
+  return _data ? _data->_severity : DEFAULT_SEVERITY;
 }
 
-template <typename... Args>
-Errata &
-Errata::note(code_type const& code, std::string_view fmt, Args &&... args) {
-  return this->note_v(code, DEFAULT_SEVERITY, fmt, std::forward_as_tuple(args...));
+inline Errata::iterator
+Errata::begin() {
+  return _data ? _data->_notes.begin() : iterator();
 }
 
-template <typename... Args>
-Errata &
-Errata::note(code_type const& code, Severity severity, std::string_view fmt, Args &&... args) {
-  return this->note_v(code, severity, fmt, std::forward_as_tuple(args...));
+inline Errata::const_iterator
+Errata::begin() const {
+  return _data ? _data->_notes.begin() : const_iterator();
 }
 
-template <typename... Args>
-Errata &
-Errata::note_v(std::string_view fmt, std::tuple<Args...> const &args) {
-  return note_v(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, args);
+inline Errata::iterator
+Errata::end() {
+  return _data ? _data->_notes.end() : iterator();
 }
 
-template <typename... Args>
-Errata &
-Errata::note_v(code_type const& code, std::string_view fmt, std::tuple<Args...> const &args) {
-  return note_v(code, DEFAULT_SEVERITY, fmt, args);
-}
-
-template <typename... Args>
-Errata &
-Errata::note_v(Severity severity, std::string_view fmt, std::tuple<Args...> const &args) {
-  return note_v(DEFAULT_CODE, severity, fmt, args);
+inline Errata::const_iterator
+Errata::end() const {
+  return _data ? _data->_notes.end() : const_iterator();
 }
 
 inline void
@@ -934,14 +822,31 @@ Errata::SinkWrapper::operator()(Errata const &e) const {
 /* ----------------------------------------------------------------------- */
 // Inline methods for Rv
 
+template < typename R > inline auto Rv<R>::note(std::string_view text) -> self_type & {
+  _errata.note(text);
+  return *this;
+}
+
+template < typename R > auto Rv<R>::note(const code_type &code) -> self_type & {
+  _errata.note(code);
+  return *this;
+}
+
 template <typename R>
-inline bool
+template<typename... Args> auto Rv<R>::note(std::string_view fmt, Args &&... args) -> self_type & {
+  _errata.note(fmt, std::forward<Args>(args)...);
+  return *this;
+}
+
+
+template <typename R>
+bool
 Rv<R>::is_ok() const {
   return _errata.is_ok();
 }
 
 template <typename R>
-inline auto
+auto
 Rv<R>::clear() -> self_type & {
   errata().clear();
   return *this;
@@ -1009,21 +914,6 @@ template <typename R>
 auto
 Rv<R>::operator=(Errata &&errata) -> self_type & {
   _errata = std::move(errata);
-  return *this;
-}
-
-template <typename R>
-auto
-Rv<R>::note(Severity severity, std::string_view text) -> self_type & {
-  _errata.note(severity, text);
-  return *this;
-}
-
-template <typename R>
-template <typename... Args>
-Rv<R> &
-Rv<R>::note(Severity level, std::string_view fmt, Args &&... args) {
-  _errata.note_v(level, fmt, std::forward_as_tuple(args...));
   return *this;
 }
 
