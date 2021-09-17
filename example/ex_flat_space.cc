@@ -134,16 +134,17 @@ template < typename METRIC, typename PAYLOAD > IPArray<METRIC, PAYLOAD>::IPArray
 
 }
 
-template < typename METRIC, typename PAYLOAD > Errata IPArray<METRIC, PAYLOAD>::store(swoc::file::path const& path) {
+template <typename METRIC, typename PAYLOAD> Errata IPArray<METRIC, PAYLOAD>::store(swoc::file::path const &path) {
   auto fd = ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
   if (fd >= 0) {
     auto written = ::write(fd, _nodes.data(), _nodes.size());
     if (written != _nodes.size()) {
-      return Errata().error("Failed to write IP4 output - {} of {} bytes written to '{}' [{}]\n", written, _nodes.size(), path, swoc::bwf::Errno{});
+      return Errata().note("Failed to write IP4 output - {} of {} bytes written to '{}' [{}]\n", written, _nodes.size(), path,
+                           swoc::bwf::Errno{});
     }
     close(fd);
   } else {
-    return Errata().error("Failed to open IP4 output '{}' [{}]\n", path, swoc::bwf::Errno{});
+    return Errata().note("Failed to open IP4 output '{}' [{}]\n", path, swoc::bwf::Errno{});
   }
   return {};
 }
