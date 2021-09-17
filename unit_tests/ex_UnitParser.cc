@@ -10,22 +10,12 @@
 
 #include "swoc/Lexicon.h"
 #include "swoc/Errata.h"
-#include "ex_Errata_Severity.h"
 #include "catch.hpp"
 
 using swoc::TextView;
 using swoc::Lexicon;
 using swoc::Errata;
 using swoc::Rv;
-
-namespace {
-
-// Shortcut for creating an @c Errata with a single error message.
-template < typename ... Args > Errata Error(TextView const& fmt, Args && ... args) {
-  return Errata{}.note_v(ERRATA_ERROR, fmt, std::forward_as_tuple(args...));
-}
-
-} // namespace
 
 /** Parse a string that consists of counts and units.
  *
@@ -91,7 +81,7 @@ auto UnitParser::operator()(swoc::TextView const& src) const noexcept -> Rv<valu
     auto ptr = text.data(); // save for error reporting.
     auto count = text.clip_prefix_of(&isdigit);
     if (count.empty()) {
-      return { 0 , Error("Required count not found at offset {}", ptr - src.data()) };
+      return Errata("Required count not found at offset {}", ptr - src.data());
     }
     // Should always parse correctly as @a count is a non-empty sequence of digits.
     auto n = svtou(count);
@@ -102,13 +92,13 @@ auto UnitParser::operator()(swoc::TextView const& src) const noexcept -> Rv<valu
     auto unit = text.clip_prefix_of([](char c) { return !(isspace(c) || isdigit(c)); } );
     if (unit.empty()) {
       if (_unit_required_p) {
-        return { 0, Error("Required unit not found at offset {}", ptr - src.data()) };
+        return Errata("Required unit not found at offset {}", ptr - src.data());
       }
       zret += n; // no metric -> unit metric.
     } else {
       auto mult = _units[unit]; // What's the multiplier?
       if (mult == 0) {
-        return {0, Error("Unknown unit \"{}\" at offset {}", unit, ptr - src.data())};
+        return Errata("Unknown unit \"{}\" at offset {}", unit, ptr - src.data());
       }
       zret += mult * n;
     }

@@ -178,7 +178,7 @@ public:
    * @param m Metric value to check.
    * @return @c true if @a m is in the range, @c false if not.
    */
-  bool contains(metric_type const& m) {
+  bool contains(metric_type const& m) const {
     return _min <= m && m <= _max;
   }
 

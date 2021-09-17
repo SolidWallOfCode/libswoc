@@ -41,100 +41,58 @@ Errata::Data::localize(string_view src) {
 /* ----------------------------------------------------------------------- */
 // methods for Errata
 
-Errata::Severity Errata::DEFAULT_SEVERITY(1);
-Errata::Severity Errata::FAILURE_SEVERITY(1);
+Errata::Severity Errata::DEFAULT_SEVERITY(2);
+Errata::Severity Errata::FAILURE_SEVERITY(2);
+// Provide a somewhat reasonable set of default severities and names
+std::array<swoc::TextView, 4> Severity_Names { {
+  "Info", "Warning", "Error"
+}};
+
+swoc::MemSpan<TextView> Errata::SEVERITY_NAMES { Severity_Names.data(), Severity_Names.size() };
 
 Errata::~Errata() {
-  this->release();
-}
-
-Errata&
-Errata::note(code_type const& code, Severity severity){
-  return this->note(code, severity, "{}", code);
-}
-
-void
-Errata::release() {
   if (_data) {
-    if (--(_data->_ref_count) == 0) {
-      if (!_data->empty()) {
-        for (auto& f : Sink_List) {
-          (*f)(*this);
-        }
+    if (!_data->empty()) {
+      for (auto &f : Sink_List) {
+        (*f)(*this);
       }
-      _data->~Data();
     }
-    _data = nullptr;
+    this->reset();
   }
 }
 
-const Errata::Data *
+Errata&
+Errata::note(code_type const& code){
+  return this->note("{}"_sv, code);
+}
+
+Errata::Data *
 Errata::data() {
   if (!_data) {
     MemArena arena{512};
     _data = arena.make<Data>(std::move(arena));
-    ++(_data->_ref_count);
   }
   return _data;
 }
 
-Errata::Data *
-Errata::writeable_data() {
-  if (!_data) {
-    this->data(); // force data existence, must be unique.
-  } else if (_data->_ref_count > 1) {
-    // Pondering this, there's really no good use case for shared write access to an Errata.
-    // The shared_ptr is used only to make function returns efficient. Explicit copying is
-    // easy using @c note.
-    throw std::runtime_error("Shared write to Errata");
-  };
-  return _data;
-}
-
-Errata::iterator
-Errata::begin() {
-  return _data ? _data->_notes.begin() : iterator();
-}
-
-Errata::const_iterator
-Errata::begin() const {
-  return _data ? _data->_notes.begin() : const_iterator();
-}
-
-Errata::iterator
-Errata::end() {
-  return _data ? _data->_notes.end() : iterator();
-}
-
-Errata::const_iterator
-Errata::end() const {
-  return _data ? _data->_notes.end() : const_iterator();
-}
-
-auto
-Errata::severity() const -> Severity {
-  return _data ? _data->_severity : DEFAULT_SEVERITY;
-}
-
 Errata&
-Errata::note_localized(code_type const& code, Severity severity, std::string_view const& text) {
-  auto d = this->writeable_data();
-  Annotation *n = d->_arena.make<Annotation>(code, severity, text);
+Errata::note_localized(std::string_view const& text) {
+  auto d = this->data();
+  Annotation *n = d->_arena.make<Annotation>(text);
   n->_level = d->_level;
   d->_notes.prepend(n);
-  _data->_severity = std::max(_data->_severity, severity);
   return *this;
 }
 
 MemSpan<char>
 Errata::alloc(size_t n) {
-  return this->writeable_data()->_arena.alloc(n).rebind<char>();
+  return this->data()->_arena.alloc(n).rebind<char>();
 }
 
 Errata&
 Errata::note(const self_type& that) {
   for (auto const& m : that) {
-    this->note(m._severity, m._text);
+    this->note(m._text);
   }
   return *this;
 }
@@ -142,8 +100,7 @@ Errata::note(const self_type& that) {
 Errata&
 Errata::clear() {
   if (_data) {
-    _data->_notes.clear(); // Prevent sink processing.
-    this->release();
+    _data->_notes.clear();
   }
   return *this;
 }
@@ -156,8 +113,22 @@ Errata::register_sink(Sink::Handle const& s) {
 std::ostream&
 Errata::write(std::ostream& out) const {
   string_view lead;
+
+  auto level = this->severity();
+  if (level < Errata::SEVERITY_NAMES.size()) {
+    out << Errata::SEVERITY_NAMES[level];
+  } else {
+    out << unsigned(level._raw);
+  }
+
+  out << ": ";
+
+  if (this->code()) {
+    out << this->code().message() << " [" << this->code().value() << "] - ";
+  }
+
   for (auto& m : *this) {
-    out << lead << " [" << static_cast<int>(m._severity) << "]: " << m._text << std::endl;
+    out << lead << m._text << std::endl;
     if (0 == lead.size()) {
       lead = "  "_sv;
     }
@@ -167,15 +138,25 @@ Errata::write(std::ostream& out) const {
 
 BufferWriter&
 bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata::Severity level) {
-  static constexpr std::string_view name[9] = {"DIAG", "DEBUG", "INFO", "NOTE", "WARNING", "ERROR"
-                                              , "FATAL", "ALERT", "EMERGENCY"};
-  return bwformat(bw, spec, name[static_cast<int>(level)]);
+  if (level < Errata::SEVERITY_NAMES.size()) {
+    bwformat(bw, spec, Errata::SEVERITY_NAMES[level]);
+  } else {
+    bwformat(bw, spec, level._raw);
+  }
+  return bw;
 }
 
 BufferWriter&
 bwformat(BufferWriter& bw, bwf::Spec const&, Errata const& errata) {
+
+  bw.print("{} ", errata.severity());
+
+  if (errata.code()) {
+    bw.print("[{0:s} {0:d}] ", errata.code());
+  }
+
   for (auto& m : errata) {
-    bw.print("{}[{}] {}\n", swoc::bwf::Pattern{int(m.level()), "  "}, m.severity(), m.text());
+    bw.print("{}{}\n", swoc::bwf::Pattern{int(m.level()), "  "}, m.text());
   }
   return bw;
 }

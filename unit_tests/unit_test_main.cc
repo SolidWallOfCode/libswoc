@@ -23,17 +23,16 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
-#include "ex_Errata_Severity.h"
+#include <array>
 
-void EX_BWF_Format_Init();
+extern void EX_BWF_Format_Init();
+extern void test_Errata_init();
 
 int
 main(int argc, char *argv[])
 {
   EX_BWF_Format_Init();
-
-  swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
-  swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
+  test_Errata_init();
 
   int result = Catch::Session().run(argc, argv);
 
