@@ -10,7 +10,6 @@
 
 #include "swoc/Lexicon.h"
 #include "swoc/Errata.h"
-#include "ex_Errata_Severity.h"
 #include "catch.hpp"
 
 using swoc::TextView;

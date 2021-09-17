@@ -8,7 +8,6 @@
 #include <errno.h>
 #include "swoc/Errata.h"
 #include "swoc/swoc_file.h"
-#include "ex_Errata_Severity.h"
 #include "catch.hpp"
 
 using swoc::Errata;
@@ -17,7 +16,22 @@ using Severity = swoc::Errata::Severity;
 using namespace std::literals;
 using namespace swoc::literals;
 
-// Note - Some of these tests depend on initialization done in "unit_test_main.cc".
+static constexpr swoc::Errata::Severity ERRATA_DBG{0};
+static constexpr swoc::Errata::Severity ERRATA_DIAG{1};
+static constexpr swoc::Errata::Severity ERRATA_INFO{2};
+static constexpr swoc::Errata::Severity ERRATA_WARN{3};
+static constexpr swoc::Errata::Severity ERRATA_ERROR{4};
+
+std::array<swoc::TextView, 5> Severity_Names { {
+  "Debug", "Diag", "Info", "Warn", "Error"
+}};
+
+// Call from unit test main before starting tests.
+void test_Errata_init() {
+  swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
+  swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
+  swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView>(Severity_Names.data(), Severity_Names.size());
+}
 
 Errata
 Noteworthy(std::string_view text)

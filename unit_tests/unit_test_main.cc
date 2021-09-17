@@ -25,22 +25,14 @@
 
 #include <array>
 
-#include "ex_Errata_Severity.h"
-
-std::array<swoc::TextView, 5> Severity_Names { {
-  "Debug", "Diag", "Info", "Warn", "Error"
-}};
-
-void EX_BWF_Format_Init();
+extern void EX_BWF_Format_Init();
+extern void test_Errata_init();
 
 int
 main(int argc, char *argv[])
 {
   EX_BWF_Format_Init();
-
-  swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
-  swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
-  swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView>(Severity_Names.data(), Severity_Names.size());
+  test_Errata_init();
 
   int result = Catch::Session().run(argc, argv);
 
