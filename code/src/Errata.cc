@@ -41,9 +41,14 @@ Errata::Data::localize(string_view src) {
 /* ----------------------------------------------------------------------- */
 // methods for Errata
 
-Errata::Severity Errata::DEFAULT_SEVERITY(1);
-Errata::Severity Errata::FAILURE_SEVERITY(1);
-swoc::MemSpan<TextView> Errata::SEVERITY_NAME;
+Errata::Severity Errata::DEFAULT_SEVERITY(2);
+Errata::Severity Errata::FAILURE_SEVERITY(2);
+// Provide a somewhat reasonable set of default severities and names
+std::array<swoc::TextView, 4> Severity_Names { {
+  "Info", "Warn", "Error"
+}};
+
+swoc::MemSpan<TextView> Errata::SEVERITY_NAMES { Severity_Names.data(), Severity_Names.size() };
 
 Errata::~Errata() {
   if (_data) {
@@ -108,6 +113,20 @@ Errata::register_sink(Sink::Handle const& s) {
 std::ostream&
 Errata::write(std::ostream& out) const {
   string_view lead;
+
+  auto level = this->severity();
+  if (level < Errata::SEVERITY_NAMES.size()) {
+    out << Errata::SEVERITY_NAMES[level];
+  } else {
+    out << unsigned(level._raw);
+  }
+
+  out << ": ";
+
+  if (this->code()) {
+    out << this->code().message() << " [" << this->code().value() << "] - ";
+  }
+
   for (auto& m : *this) {
     out << lead << m._text << std::endl;
     if (0 == lead.size()) {
@@ -119,8 +138,8 @@ Errata::write(std::ostream& out) const {
 
 BufferWriter&
 bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata::Severity level) {
-  if (level < Errata::SEVERITY_NAME.size()) {
-    bwformat(bw, spec, Errata::SEVERITY_NAME[level]);
+  if (level < Errata::SEVERITY_NAMES.size()) {
+    bwformat(bw, spec, Errata::SEVERITY_NAMES[level]);
   } else {
     bwformat(bw, spec, level._raw);
   }
@@ -135,7 +154,6 @@ bwformat(BufferWriter& bw, bwf::Spec const&, Errata const& errata) {
   if (errata.code()) {
     bw.print("[{0:s} {0:d}] ", errata.code());
   }
-
 
   for (auto& m : errata) {
     bw.print("{}{}\n", swoc::bwf::Pattern{int(m.level()), "  "}, m.text());

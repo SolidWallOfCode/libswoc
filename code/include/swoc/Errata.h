@@ -77,7 +77,7 @@ public:
   /// Mapping of severity to string.
   /// Values larger than the span size will be rendered as numbers.
   /// Defaults to an empty span, meaning all severities will be printed as integers.
-  static MemSpan<TextView> SEVERITY_NAME;
+  static MemSpan<TextView> SEVERITY_NAMES;
 
   /** An annotation to the Errata consisting of a severity and informative text.
    *
@@ -696,7 +696,7 @@ template <typename... Args> Errata::Errata(code_type const& code, Severity sever
   this->note_v(fmt, std::forward_as_tuple(args...));
 }
 
-template <typename... Args> Errata::Errata(code_type const& type, std::string_view fmt, Args &&... args) : Errata(code, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) { }
+template <typename... Args> Errata::Errata(code_type const& code, std::string_view fmt, Args &&... args) : Errata(code, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) { }
 template <typename... Args> Errata::Errata(Severity severity, std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, severity, fmt, std::forward<Args>(args)...) { }
 template <typename... Args> Errata::Errata(std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) { }
 

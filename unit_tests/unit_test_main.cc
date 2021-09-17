@@ -40,7 +40,7 @@ main(int argc, char *argv[])
 
   swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
   swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
-  swoc::Errata::SEVERITY_NAME = swoc::MemSpan<swoc::TextView>(Severity_Names.data(), Severity_Names.size());
+  swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView>(Severity_Names.data(), Severity_Names.size());
 
   int result = Catch::Session().run(argc, argv);
 

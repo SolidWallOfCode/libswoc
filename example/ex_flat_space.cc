@@ -47,6 +47,8 @@ using swoc::IPSpace;
 // Temp for error messages.
 std::string err_text;
 
+std::error_code errno_code() { return std::error_code(errno, std::system_category()); }
+
 /** Allocate a span of type @a T.
  *
  * @tparam T Element type.
@@ -138,13 +140,12 @@ template <typename METRIC, typename PAYLOAD> Errata IPArray<METRIC, PAYLOAD>::st
   auto fd = ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
   if (fd >= 0) {
     auto written = ::write(fd, _nodes.data(), _nodes.size());
-    if (written != _nodes.size()) {
-      return Errata().note("Failed to write IP4 output - {} of {} bytes written to '{}' [{}]\n", written, _nodes.size(), path,
-                           swoc::bwf::Errno{});
+    if (written != ssize_t(_nodes.size())) {
+      return Errata(errno_code(), "Failed to write IP4 output - {} of {} bytes written to '{}'\n", written, _nodes.size(), path);
     }
     close(fd);
   } else {
-    return Errata().note("Failed to open IP4 output '{}' [{}]\n", path, swoc::bwf::Errno{});
+    return Errata(errno_code(), "Failed to open IP4 output '{}'\n", path);
   }
   return {};
 }
@@ -169,7 +170,7 @@ void build(IPSpace<unsigned> & space, swoc::file::path src) {
 }
 
 int main(int argc, char const *argv[]) {
-  swoc::file::path path_4{"/tmp/ip4.mem"};
+  swoc::file::path path_4{"/opt/ip4.mem"};
   swoc::file::path path_6{"/tmp/ip6.mem"};
   swoc::file::path src;
 
