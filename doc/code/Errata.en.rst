@@ -95,13 +95,29 @@ severity levels. This is modeled as usual on the ``syslog`` severity levels.
 It is expected the application would already have the equivalent definitions and would not need any
 special ones for |Errata|. The severity values are initialized during start up.
 
+These levels can also be named. It is presumed the severity values are zero based and compact and
+therefore the names can be provided in an instance of code:`MemSpan<TextView>`. Severity values outside
+the span are printed as numbers. For the unit tests the names are declared as a global value.
+
 .. code-block::
 
-   int main(int argc, char *argv[]) {
-     // other initialization
+   std::array<swoc::TextView, 5> Severity_Names { {
+     "Debug", "Diag", "Info", "Warn", "Error"
+   }};
+
+The initialization is done in :code:`test_Errata_init` which is called from :code:`main`.
+
+.. code-block::
+
+   void test_Errata_init() {
      swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
      swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
-     // ... more code
+     swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView>(Severity_Names.data(), Severity_Names.size());
+   }
+
+If there is no external initialization, then there are three levels of severity 0..2 with
+the names "Info", "Warning", and "Error". The default severity is "Error" (2) with a failure threshold
+of 2.
 
 Examples
 ========
@@ -134,6 +150,8 @@ The call site might look like
       }
       // ... more code.
 
+While some functions will return |Errata| the more common case is to use |Rv| to carry back either a
+value (successful) or an error report (failure).
 
 Design Notes
 ************
