@@ -49,21 +49,21 @@ public:
   constexpr MemSpan() = default;
 
   /// Copy constructor.
-  constexpr MemSpan(self_type const &that) = default;
+  constexpr MemSpan(self_type const &) = default;
 
-  /** Construct from a first element @a start and a @a count of elements.
+  /** Construct from a first element @a ptr and a @a count of elements.
    *
-   * @param start First element.
+   * @param ptr First element.
    * @param count Total number of elements.
    */
-  constexpr MemSpan(value_type *start, size_t count);
+  constexpr MemSpan(value_type *ptr, size_t count);
 
   /** Construct from a half open range [start, last).
    *
    * @param start Start of range.
    * @param last Past end of range.
    */
-  constexpr MemSpan(value_type *start, value_type *last);
+  constexpr MemSpan(value_type *first, value_type *last);
 
   /** Construct to cover an array.
    *
@@ -100,7 +100,7 @@ public:
   bool operator!=(self_type const &that) const;
 
   /// Assignment - the span is copied, not the content.
-  self_type &operator=(self_type const &that) = default;
+  self_type &operator=(self_type const &) = default;
 
   /// Access element at index @a idx.
   T &operator[](size_t idx) const;
@@ -292,7 +292,7 @@ public:
    * @param start Start of the span.
    * @param n # of bytes in the span.
    */
-  constexpr MemSpan(value_type *start, size_t n);
+  constexpr MemSpan(value_type *ptr, size_t n);
 
   /** Construct from a half open range of [start, last).
    *

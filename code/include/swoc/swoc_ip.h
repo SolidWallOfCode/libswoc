@@ -459,6 +459,10 @@ public:
   /// Return the address in network order.
   in6_addr network_order() const;
 
+  /// Return the address as words.
+  word_type * words()  { return _addr._store.data(); }
+  word_type const * words() const  { return _addr._store.data(); }
+
   /** Parse a string for an IP address.
 
       The address resuling from the parse is copied to this object if the conversion is successful,
@@ -546,7 +550,7 @@ class IPAddr {
   using self_type = IPAddr; ///< Self reference type.
 public:
   IPAddr() = default; ///< Default constructor - invalid result.
-  IPAddr(self_type const& that) = default; ///< Copy constructor.
+  IPAddr(self_type const&) = default; ///< Copy constructor.
 
   /// Construct using IPv4 @a addr.
   explicit IPAddr(in_addr_t addr);
@@ -2944,6 +2948,31 @@ public:
 template<> class tuple_element<1, swoc::IPNet> {
 public:
   using type = swoc::IPMask;
+};
+
+template <> struct hash<swoc::IP4Addr> {
+  uint32_t operator() (swoc::IP4Addr const& addr) const { return addr.network_order(); }
+};
+
+template <> struct hash<swoc::IP6Addr> {
+  uint32_t operator() (swoc::IP6Addr const& addr) const {
+    static_assert(sizeof(swoc::IP6Addr::word_type) == 2 * sizeof(uint32_t));
+    // XOR the 64 chunks then XOR that down to 32 bits.
+    auto words = addr.words();
+    union {
+      swoc::IP6Addr::word_type w;
+      uint32_t n[2];
+    } x{words[0] ^ words[1]};
+    return x.n[0] ^ x.n[1];
+  }
+};
+
+template <> struct hash<swoc::IPAddr> {
+  uint32_t operator() (swoc::IPAddr const& addr) const {
+    return addr.is_ip4() ? hash<swoc::IP4Addr>()(addr.ip4())
+      : addr.is_ip6() ? hash<swoc::IP6Addr>()(addr.ip6())
+        : 0;
+  }
 };
 
 } // namespace std

@@ -152,13 +152,13 @@ TEST_CASE("MemArena helper", "[libswoc][MemArena]")
 {
   struct Thing {
     int ten{10};
-    std::string name{"name"};
+    std::string_view name{"name"};
 
     Thing() {}
     Thing(int x) : ten(x) {}
-    Thing(std::string const &s) : name(s) {}
+    Thing(std::string_view s) : name(s) {}
     Thing(int x, std::string_view s) : ten(x), name(s) {}
-    Thing(std::string const &s, int x) : ten(x), name(s) {}
+    Thing(std::string_view s, int x) : ten(x), name(s) {}
   };
 
   swoc::MemArena arena{256};
