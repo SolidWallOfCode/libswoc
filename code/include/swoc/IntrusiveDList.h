@@ -649,7 +649,9 @@ IntrusiveDList<L>::take_head() -> value_type * {
   if (_head) {
     if (nullptr == (_head = L::next_ptr(_head))) {
       _tail = nullptr; // transition non-empty -> empty
-    } else { L::prev_ptr(_head) = nullptr; }
+    } else {
+      L::prev_ptr(_head) = nullptr;
+    }
     L::next_ptr(zret) = L::prev_ptr(zret) = nullptr;
     --_count;
   }

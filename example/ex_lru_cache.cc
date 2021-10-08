@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <chrono>
 #include <utility>
+#include <thread>
 
 #include "swoc/TextView.h"
 #include "swoc/swoc_ip.h"
@@ -37,8 +38,10 @@ public:
   LRU() = default;
 
   self_type & insert(K const& key, V && value);
+
   self_type & erase(K const& key);
   V retrieve(K const& key) const;
+  size_t count() const { return _table.count(); }
 
 protected:
   struct Item {
@@ -53,17 +56,22 @@ protected:
 
     Links _list;
     Links _map;
+
+    Item(self_type && that) : _key(that._key), _value(std::move(that._value)) {}
+    Item(K const& key, V && value) : _key(key), _value(std::move(value)) {}
+
+    self_type & operator = (self_type && that) { _key = that._key; _value = std::move(that._value); return *this; }
   };
 
   struct Linkage {
-    static Item * next_ptr(Item * item) { return item->_list._next; }
-    static Item * prev_ptr(Item * item) { return item->_list._prev; }
+    static Item * & next_ptr(Item * item) { return item->_list._next; }
+    static Item * & prev_ptr(Item * item) { return item->_list._prev; }
   };
   using List = swoc::IntrusiveDList<Linkage>;
 
   struct Hashing {
-    static Item * next_ptr(Item * item) { return item->_map._next; }
-    static Item * prev_ptr(Item * item) { return item->_map._prev; }
+    static Item * & next_ptr(Item * item) { return item->_map._next; }
+    static Item * & prev_ptr(Item * item) { return item->_map._prev; }
     static inline const std::hash<K> Hasher;
     static K const& key_of(Item * item) { return item->_key; }
     static decltype(Hasher(std::declval<K>())) hash_of(K const& key) { return Hasher(key); }
@@ -87,11 +95,17 @@ template <typename K, typename V> auto LRU<K, V>::insert(K const &key, V &&value
     if (spot != _table.end()) {
       spot->_value = std::move(value);
     } else {
-      auto *item = _arena.make<Item>(key, std::move(value));
+      Item * item = _free.take_head();
+      if (item != nullptr) {
+        new (item) Item(key, std::move(value));
+      } else {
+        item = _arena.make<Item>(key, std::move(value));
+      }
       _table.insert(item);
       _list.append(item);
-      if (_list.size() > _max) {
+      if (_list.count() > _max) {
         target = _list.take_head();
+        _table.erase(target);
       }
     }
   }
@@ -126,12 +140,62 @@ template <typename K, typename V> auto LRU<K, V>::retrieve(K const &key) const -
 // --------------------------------------------------
 
 int main(int, char *[]) {
+  static constexpr size_t N_THREAD = 12; ///< Number of threads.
+  static constexpr size_t N_ITER = 100000;
+
+  std::array<std::thread, N_THREAD> threads;
+  std::mutex gate_m;
+  std::condition_variable gate_cv;
+  std::atomic<int> count = -1;
+
   struct Data {
     time_point _expire;
     int _code = 0;
   };
 
   LRU<IPAddr, Data> lru;
+
+  auto worker = [&] () -> void {
+    unsigned dummy;
+    {
+      std::unique_lock _(gate_m);
+      gate_cv.wait(_, [&] () {return count >= 0; });
+    }
+    swoc::IP4Addr addr((reinterpret_cast<uintptr_t>(&dummy) >> 16) & 0xFFFFFFFF);
+    for ( unsigned i = 0 ; i < N_ITER ; ++i ) {
+      lru.insert(addr, Data{time_point(), 1});
+      addr = htonl(addr.host_order() + 1);
+    }
+    {
+      std::unique_lock _(gate_m);
+      ++count;
+    }
+    gate_cv.notify_all();
+  };
+
+  for ( unsigned i = 0 ; i < N_THREAD; ++i ) {
+    threads[i] = std::thread(worker);
+  }
+
+  auto t0 = std::chrono::system_clock::now();
+  {
+    std::unique_lock _(gate_m);
+    count = 0;
+    gate_cv.notify_all();
+  }
+
+  {
+    std::unique_lock _(gate_m);
+    gate_cv.wait(_, [&] () { return count == N_THREAD; });
+  }
+  auto tf = std::chrono::system_clock::now();
+  auto delta = tf - t0;
+
+  std::cout << "Done in " << delta.count() << " with " << lru.count() << std::endl;
+  std::cout << "ns per operation " << (delta.count() / (N_THREAD * N_ITER)) << std::endl;
+  for ( unsigned i = 0 ; i < N_THREAD ; ++i ) {
+    threads[i].join();
+  }
 
   return 0;
 }
