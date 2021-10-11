@@ -20,6 +20,7 @@
 example/ex_flat_space
 example/ex_netcompact
 example/ex_netdb
+example/ex_lru_cache
 unit_tests/test_libswoc
 
 # CMake cruft
@@ -28,8 +29,21 @@ CMakeFiles/
 CMakeCache.txt
 cmake-build-debug/
 cmake-build-release/
+cmake-build-clang-debug/
 Makefile
 .idea/
+
+# Autotools cruft
+Makefile.in
+.deps
+config.log
+config.status
+configure
+install-sh
+depcomp
+aclocal.m4
+autom4te.cache
+ar-lib
 
 # Documentation.
 doc/_build
