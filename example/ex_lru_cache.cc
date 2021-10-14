@@ -140,8 +140,8 @@ template <typename K, typename V> auto LRU<K, V>::retrieve(K const &key) const -
 // --------------------------------------------------
 
 int main(int, char *[]) {
-  static constexpr size_t N_THREAD = 12; ///< Number of threads.
-  static constexpr size_t N_ITER = 100000;
+  static constexpr size_t N_THREAD = 16; ///< Number of threads.
+  static constexpr size_t N_ITER = 20000;
 
   std::array<std::thread, N_THREAD> threads;
   std::mutex gate_m;
@@ -154,6 +154,7 @@ int main(int, char *[]) {
   };
 
   LRU<IPAddr, Data> lru;
+  lru.insert(swoc::IP4Addr{"172.17.56.93"}, Data{time_point(), 2});
 
   auto worker = [&] () -> void {
     unsigned dummy;
@@ -162,8 +163,9 @@ int main(int, char *[]) {
       gate_cv.wait(_, [&] () {return count >= 0; });
     }
     swoc::IP4Addr addr((reinterpret_cast<uintptr_t>(&dummy) >> 16) & 0xFFFFFFFF);
+    auto tp = time_point();
     for ( unsigned i = 0 ; i < N_ITER ; ++i ) {
-      lru.insert(addr, Data{time_point(), 1});
+      lru.insert(addr, Data{tp, 1});
       addr = htonl(addr.host_order() + 1);
     }
     {
