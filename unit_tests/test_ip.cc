@@ -259,11 +259,11 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
 
   // Verify @c IPEndpoint will parse without the port.
   REQUIRE(ep.parse(addr_8) == true);
-  REQUIRE(ep.port() == 0);
+  REQUIRE(ep.network_order_port() == 0);
   REQUIRE(ep.parse(addr_9) == true);
-  REQUIRE(ep.port() == 0);
+  REQUIRE(ep.network_order_port() == 0);
   REQUIRE(ep.parse(addr_A) == true);
-  REQUIRE(ep.port() == 0);
+  REQUIRE(ep.network_order_port() == 0);
 
   REQUIRE(ep.parse(addr_2) == true);
   w.clear().print("{::a}", ep);

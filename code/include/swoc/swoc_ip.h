@@ -160,10 +160,10 @@ union IPEndpoint {
   bool is_loopback() const;
 
   /// Port in network order.
-  in_port_t& port();
+  in_port_t& network_order_port();
 
   /// Port in network order.
-  in_port_t port() const;
+  in_port_t network_order_port() const;
 
   /// Port in host horder.
   in_port_t host_order_port() const;
@@ -2153,18 +2153,18 @@ IPEndpoint::family() const {
 }
 
 inline in_port_t&
-IPEndpoint::port() {
+IPEndpoint::network_order_port() {
   return self_type::port(&sa);
 }
 
 inline in_port_t
-IPEndpoint::port() const {
+IPEndpoint::network_order_port() const {
   return self_type::port(&sa);
 }
 
 inline in_port_t
 IPEndpoint::host_order_port() const {
-  return ntohs(this->port());
+  return ntohs(this->network_order_port());
 }
 
 inline in_port_t&
