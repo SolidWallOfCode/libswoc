@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Verizon Media
+// Copyright 2021 LinkedIn
 
 /** @file
 
