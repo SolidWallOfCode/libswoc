@@ -77,7 +77,7 @@ public:
   /// Mapping of severity to string.
   /// Values larger than the span size will be rendered as numbers.
   /// Defaults to an empty span, meaning all severities will be printed as integers.
-  static MemSpan<TextView> SEVERITY_NAMES;
+  static MemSpan<TextView const> SEVERITY_NAMES;
 
   /** An annotation to the Errata consisting of a severity and informative text.
    *

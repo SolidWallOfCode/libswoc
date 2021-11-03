@@ -48,7 +48,7 @@ std::array<swoc::TextView, 4> Severity_Names { {
   "Info", "Warning", "Error"
 }};
 
-swoc::MemSpan<TextView> Errata::SEVERITY_NAMES { Severity_Names.data(), Severity_Names.size() };
+swoc::MemSpan<TextView const> Errata::SEVERITY_NAMES { Severity_Names.data(), Severity_Names.size() };
 
 Errata::~Errata() {
   if (_data) {

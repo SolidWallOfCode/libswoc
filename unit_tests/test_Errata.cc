@@ -30,7 +30,7 @@ std::array<swoc::TextView, 5> Severity_Names { {
 void test_Errata_init() {
   swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
   swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
-  swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView>(Severity_Names.data(), Severity_Names.size());
+  swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView const>(Severity_Names.data(), Severity_Names.size());
 }
 
 Errata
