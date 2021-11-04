@@ -762,7 +762,9 @@ Errata::note(self_type &&that) {
 
 inline Errata &
 Errata::note(std::string_view text) {
-  this->note_localized(text);
+  auto span = this->alloc(text.size());
+  memcpy(span, text);
+  this->note_localized(span.view());
   return *this;
 }
 
