@@ -21,7 +21,7 @@
 #include <limits>
 
 #include "swoc/swoc_version.h"
-#include "swoc/swoc_meta.h"
+//#include "swoc/swoc_meta.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
