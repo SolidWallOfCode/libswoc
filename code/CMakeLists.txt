@@ -56,8 +56,8 @@ endif()
 # That is, the generator functions return non-empty strings only in the corresponding context.
 target_include_directories(libswoc
     PUBLIC
-        $<INSTALL_INTERFACE:include/swoc>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
     )
 
 # These install target variables are created by GNUInstallDirs.
