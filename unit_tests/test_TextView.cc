@@ -32,7 +32,7 @@ using namespace swoc::literals;
 
 TEST_CASE("TextView Constructor", "[libswoc][TextView]")
 {
-  static std::string base = "Evil Dave Rulez!";
+  static const std::string base = "Evil Dave Rulez!";
   unsigned ux             = base.size();
   TextView tv(base);
   TextView a{"Evil Dave Rulez"};
@@ -42,18 +42,32 @@ TEST_CASE("TextView Constructor", "[libswoc][TextView]")
   TextView e{base.data(), 15};
   TextView f(base.data(), 15);
   TextView u{base.data(), ux};
+  TextView g{base.data(), base.data() + base.size()}; // begin/end pointers.
 
-  // Check the various forms of char pointers work unamibiguously.
+  // Check the various forms of char pointers work unambiguously.
   TextView bob{"Bob"};
+  std::string dave("dave");
+  REQUIRE(bob == "Bob"_tv); // Attempt to verify @a bob isn't pointing at a temporary.
   char q[12] = "Bob";
   TextView t_q{q};
-  REQUIRE(t_q.data() == q);
+  REQUIRE(t_q.data() == q); // must point at @a q.
   char *qp = q;
   TextView t_qp{qp};
-  REQUIRE(t_qp.data() == qp);
+  REQUIRE(t_qp.data() == qp); // verify pointer is not pointing at a temporary.
   char const *qcp = "Bob";
   TextView t_qcp{qcp};
   REQUIRE(t_qcp.data() == qcp);
+
+  tv = "Delain"; // assign literal.
+  REQUIRE(tv.size() == 6);
+  tv = q; // Assign array.
+  REQUIRE(tv.size() == sizeof(q)-1); // trailing nul char dropped.
+  tv = qp; // Assign pointer.
+  REQUIRE(tv.data() == qp);
+  tv = qcp; // Assign pointer to const.
+  REQUIRE(tv.data() == qcp);
+  tv = std::string_view(base);
+  REQUIRE(tv.size() == base.size());
 };
 
 TEST_CASE("TextView Operations", "[libswoc][TextView]")

@@ -35,7 +35,7 @@ using swoc::FixedBufferWriter;
 using namespace std::literals;
 
 TextView
-localize(MemArena &arena, TextView const &view)
+localize(MemArena &arena, TextView view)
 {
   auto span = arena.alloc(view.size()).rebind<char>();
   memcpy(span, view);

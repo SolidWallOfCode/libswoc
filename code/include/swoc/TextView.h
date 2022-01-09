@@ -38,6 +38,15 @@ class TextView;
     @note To simplify the interface there is no constructor taking only a character pointer.
     Constructors require either a literal string or an explicit length. This avoid ambiguities which
     are much more annoying that explicitly calling @c strlen on a character pointer.
+
+    @internal For construction, assignment operator, and @c assign method, there are a lot of overloads
+    because users would like to be able to use the same sort of arguments for all of these. This includes
+    - self / parent type
+    - @c std::string
+    - literal string
+    - C-string
+    - pointer and count
+    - begin/end style pointers.
  */
 class TextView : public std::string_view {
   using self_type  = TextView;         ///< Self reference type.
@@ -46,6 +55,11 @@ class TextView : public std::string_view {
 public:
   /// Default constructor (empty buffer).
   constexpr TextView() noexcept = default;
+
+  /// Construct from a @c std::string_view or @c TextView
+  /// @note This provides an user defined conversion from @c std::string_view to @c TextView. The
+  /// reverse conversion is implicit in @c TextView being a subclass of @c std::string_view.
+  constexpr TextView(super_type const &that) noexcept;
 
   /** Construct from pointer and size.
    *
@@ -66,11 +80,10 @@ public:
    */
   constexpr TextView(char const *first, char const *last) noexcept;
 
-  /** Construct from literal string.
+  /** Construct from literal string or array.
 
-      Construct directly from a literal string. All elements of the array are included in the view
-      unless the last element is nul, in which case it is elided. If this is inappropriate then a
-      constructor with an explicit size should be used.
+      All elements of the array are included in the view unless the last element is nul, in which case it is elided.
+      If this is inappropriate then a constructor with an explicit size should be used.
 
       @code
         TextView a("A literal string");
@@ -83,7 +96,7 @@ public:
    *
    * @param src A pointer to a C-string.
    *
-   * @internal This is a reference because it is other ambiguous with the array constructor.
+   * @internal This is a reference because it is otherwise ambiguous with the array constructor.
    */
   TextView(char *& src) : super_type(src) {}
 
@@ -91,7 +104,7 @@ public:
    *
    * @param src Pointer to a const C-string.
    *
-   * @internal This is a reference because it is other ambiguous with the array constructor.
+   * @internal This is a reference because it is otherwise ambiguous with the array constructor.
    */
   TextView(char const*& src) : super_type(src) {}
 
@@ -99,11 +112,6 @@ public:
       This implicitly makes the length 0.
   */
   constexpr TextView(std::nullptr_t) noexcept;
-
-  /// Construct from a @c std::string_view.
-  /// @note This provides an user defined conversion from @c std::string_view to @c TextView. The
-  /// reverse conversion is implicit in @c TextView being a subclass of @c std::string_view.
-  constexpr TextView(super_type const &that) noexcept;
 
   /// Construct from @c std::string, referencing the entire string contents.
   /// @internal This can't be @c constexpr because this uses methods in @c std::string that may
@@ -117,6 +125,11 @@ public:
   /// @note If the last character of @a s is a nul byte, it is not included in the view.
   template <size_t N> self_type &operator=(const char (&s)[N]);
 
+  /// Assign from C-string @a s.
+  self_type &operator=(char *& s);
+  /// Assign from C-string @a s.
+  self_type &operator=(char const* &s);
+
   /// Assign from a @c std::string.
   self_type &operator=(const std::string &s);
 
@@ -127,7 +140,16 @@ public:
    *
    * @note @c c_str must be a null terminated string. The null byte is not included in the view.
    */
-  self_type& assign(char const* c_str);
+  self_type& assign(char *& c_str);
+
+  /** Assign a view of the @a c_str
+   *
+   * @param c_str Pointer to C string.
+   * @return @a this
+   *
+   * @note @c c_str must be a null terminated string. The null byte is not included in the view.
+   */
+  self_type& assign(char const*& c_str);
 
   /// Explicitly set the start @a ptr and size @a n of the view.
   self_type &assign(char const *ptr, size_t n);
@@ -959,13 +981,30 @@ TextView::operator=(super_type const &that) {
 }
 
 inline TextView &
+TextView::operator=(char *& s) {
+  this->super_type::operator=(s);
+  return *this;
+}
+
+inline TextView &
+TextView::operator=(char const *& s) {
+  this->super_type::operator=(s);
+  return *this;
+}
+
+inline TextView &
 TextView::operator=(const std::string &s) {
   this->super_type::operator=(s);
   return *this;
 }
 
 inline TextView&
-TextView::assign(char const *c_str) {
+TextView::assign(char *& c_str) {
+  return this->assign(c_str, strlen(c_str));
+}
+
+inline TextView&
+TextView::assign(char const *& c_str) {
   return this->assign(c_str, strlen(c_str));
 }
 
