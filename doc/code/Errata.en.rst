@@ -29,7 +29,7 @@ Errata
 *  Easy to accumulate error messages in a failure case.
 
 An assumption is that error handling is always intrinsically expensive, in particular if errors are
-reported or logged therefore in the error case it is better to be comprehensive and easy to use.
+reported or logged. Therefore in the error case it is better to be comprehensive and easy to use.
 Conversely, the success case should be optimized for performance because it is all overhead.
 
 If errors are to be reported, they should be as detailed as possible. |Errata| supports by allowing
@@ -55,19 +55,21 @@ Definition
 Usage
 *****
 
-The default |Errata| constructor creates an empty, successful state. An error state is created
-constructing an instance with an annotation and optional error code and severity.
+The default |Errata| constructor creates an empty, successful state. This is extremely fast. An
+error state is created by constructing an instance with an annotation and optional error code and severity.
 
-The basic interface is provided by the :func:`Errata::note` method. This adds a message along with a
-severity. Using |Errata| requires defining the default severity and "failure" severity. The default
-severity is simply what is used if no severity is provided. The failure severity is the severity for
-which an |Errata| is considered to be an error.
+The basic interface is provided by the :func:`Errata::note` method and variants thereof. This adds a
+message along with a optional severity. Using |Errata| requires defining the default severity and
+"failure" severity. The failure severity is the severity for which an |Errata| is considered to be
+an error. There is also a "filter" severity - annotations that have a severity that is less than
+this value are not added but are ignored. This can be overridden so that an application can
+dynamically set the value to capture only annotations that are of sufficient interest.
 
-An |Errata| instance also carries a message identifier which is intended to distinguish among
-errors of the same sererity in an easy to examine way. For this reason :code:`std::error_code`
-is used as the identifier. This allows constructing an instance from the error return of system
-functions and for callers to check if the error is really an error. Note, however, that severity
-and the message identifier are independent.
+An |Errata| instance also carries a error code which is intended to distinguish among errors of the
+same severity in an easy to examine way. For interoperability with standard error handling
+:code:`std::error_code` is used as the identifier. This allows constructing an instance from the
+error return of system functions and for callers to check if the error is really an error. Note,
+however, that severity and error code are independent.
 
 |Errata| provides the :libswoc:`Rv` template which is intended for passing back return values or
 error reports. The template parameter is the return type, to which is added an |Errata| instance.
@@ -119,6 +121,14 @@ If there is no external initialization, then there are three levels of severity 
 the names "Info", "Warning", and "Error". The default severity is "Error" (2) with a failure threshold
 of 2.
 
+By default annotations do not have a severity, that is a property of the :code:`Errata`. However a
+severity can be added to an annotation. This has no effect on the severity of the :code:`Errata` and
+is intended purely for display and filtering. The latter can be done by adjusting the value of
+:code:`swoc::Errata::FILTER_SEVERITY`. If a severity is provided with an annotation (via some variant
+of the :code:`note` method) then this is checked against :code:`FILTER_SEVERITY` and if it is less
+than that the annotation is not added. This enables an application to dynamically control the
+verbosity of errors without changing how they are generated.
+
 Examples
 ========
 
@@ -150,8 +160,28 @@ The call site might look like
       }
       // ... more code.
 
+Printing the result would look like::
+
+   Error Failed to open file thing.txt EPERM [1].
+      While opening configuration file.
+
 While some functions will return |Errata| the more common case is to use |Rv| to carry back either a
 value (successful) or an error report (failure).
+
+Extending
+=========
+
+There are some variants of :code:`note` which are intended for use by "helper" methods. The most
+common example would be the desire to have a function that creates an "Error" level :code:`Errata`.
+This could be done with
+
+.. literalinclude:: ../../unit_tests/test_Errata.cc
+   :start-after: DOC -> NoteInfo
+   :end-before: DOC -< NoteInfo
+
+This can then be used on an instance like::
+
+   NoteInfo(errata, "Looking at {} values.", count);
 
 Design Notes
 ************
@@ -162,7 +192,7 @@ philosophy. The original impetus was as noted in the introduction, to be able to
 very detailed and thorough error report on a failure, which as much context as possible. In some
 sense, to have a stack trace without actually crashing.
 
-Recently (Sep 2021) I've restructured |Errata| based on additional usage experience.
+Recently (Jan 2022) I've restructured |Errata| based on additional usage experience.
 
 *  The error code was removed for a while but has been added back. Although not that common, it is
    not rare that having a code is useful for determining behavior for an error. The most common
@@ -172,17 +202,20 @@ Recently (Sep 2021) I've restructured |Errata| based on additional usage experie
 
 *  The error code and severity was moved from messages to the |Errata| instance. The internals were
    already promoting the highest severity of the messages to be the overall severity, and error codes
-   for messages other than the front message seemed useless. In practice the only use of having this
-   in the message was to have something to set on a default constructed |Errata|. Overall it seems
-   cleaner to have more |Errata| constructors to construct that initial message with the error code
-   and severity and not have it when adding new messages (because, what severity should be used in
-   such cases? - it's really not clear).
+   for messages other than the front message seemed useless. However, this was changed again due to
+   user request so that annotation serverity is available but optional. This can be used for
+   additional display (where annotations are printed with the severity, if present) and for filtering
+   (only sufficiently severe annotations are added).
 
 *  The reference counting was removed. With the advent of move semantics there is much less need
-   to make cheap copies with copy on write support. The change from general memory allocation to
+   to make cheap copies with copy on write support. Because of the change from general memory allocation to
    use of an internal `MemArena` it is no longer possible to share messages between instances which
    makes the copy on write use of the reference count useless. For these two reasons reference was
    removed along with any copying. Use must either explicitly copy via the :code:`note` method or
    "move" the value, which intermediate functions must now use. I think this is worth that cost
    because there are edge cases that are hard to handle with reference counting which don't arise
    with pure move semantics.
+
+*  Annotations are now appended instead of prepended. A big change but in many cases the order was
+   already messed up because I think this was assumed but sometimes accomodated. It's debatable which
+   is the better style but overall append makes some small bits cleaner.

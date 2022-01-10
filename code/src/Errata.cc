@@ -43,6 +43,8 @@ Errata::Data::localize(string_view src) {
 
 Errata::Severity Errata::DEFAULT_SEVERITY(2);
 Errata::Severity Errata::FAILURE_SEVERITY(2);
+Errata::Severity Errata::FILTER_SEVERITY(0);
+
 // Provide a somewhat reasonable set of default severities and names
 std::array<swoc::TextView, 4> Severity_Names { {
   "Info", "Warning", "Error"
@@ -66,21 +68,35 @@ Errata::note(code_type const& code){
   return this->note("{}"_sv, code);
 }
 
+Errata&
+Errata::note(code_type const &code, Severity severity) {
+  return this->note(severity, "{}"_sv, code);
+}
+
 Errata::Data *
 Errata::data() {
   if (!_data) {
-    MemArena arena{512};
+    MemArena arena{512}; // POOMA value, seems reasonable.
     _data = arena.make<Data>(std::move(arena));
   }
   return _data;
 }
 
+Errata &
+Errata::note_s(std::optional<Severity> severity, std::string_view text) {
+  if (!severity.has_value() || *severity >= FILTER_SEVERITY) {
+    auto span = this->alloc(text.size());
+    memcpy(span, text);
+    this->note_localized(span.view(), severity);
+  }
+  return *this;
+}
+
 Errata&
-Errata::note_localized(std::string_view const& text) {
+Errata::note_localized(std::string_view const& text, std::optional<Severity> severity) {
   auto d = this->data();
-  Annotation *n = d->_arena.make<Annotation>(text);
-  n->_level = d->_level;
-  d->_notes.prepend(n);
+  Annotation *n = d->_arena.make<Annotation>(text, severity, d->_level);
+  d->_notes.append(n);
   return *this;
 }
 
@@ -155,8 +171,13 @@ bwformat(BufferWriter& bw, bwf::Spec const&, Errata const& errata) {
     bw.print("[{0:s} {0:d}] ", errata.code());
   }
 
-  for (auto& m : errata) {
-    bw.print("{}{}\n", swoc::bwf::Pattern{int(m.level()), "  "}, m.text());
+  for (auto& note : errata) {
+    if (note.text()) {
+      bw.print("{}{}{}\n"
+               , swoc::bwf::Pattern{int(note.level()), "  "}
+               , swoc::bwf::If(note.has_severity(), "{} ", note.severity())
+               , note.text());
+    }
   }
   return bw;
 }
