@@ -7,6 +7,7 @@
 #include <memory>
 #include <errno.h>
 #include "swoc/Errata.h"
+#include "swoc/bwf_std.h"
 #include "swoc/swoc_file.h"
 #include "catch.hpp"
 
@@ -196,6 +197,14 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   REQUIRE(tr2->s == "made"sv);
 };
 
+// DOC -> NoteInfo
+template < typename ...Args >
+Errata&
+NoteInfo(Errata & errata, std::string_view fmt, Args ... args) {
+  return errata.note_v(ERRATA_INFO, fmt, std::forward_as_tuple(args...));
+}
+// DOC -< NoteInfo
+
 TEST_CASE("Errata example", "[libswoc][Errata]") {
   swoc::LocalBufferWriter<2048> w;
   std::error_code ec;
@@ -205,6 +214,18 @@ TEST_CASE("Errata example", "[libswoc][Errata]") {
   Errata errata{ec, ERRATA_ERROR, R"(Failed to open file "{}")", path};
   w.print("{}", errata);
   REQUIRE(w.size() > 0);
-  REQUIRE(w.view().starts_with("Error") == true);
+  REQUIRE(w.view().starts_with("Error [enoent") == true);
   REQUIRE(w.view().find("enoent") != swoc::TextView::npos);
+}
+
+TEST_CASE("Errata local severity", "[libswoc][Errata]") {
+  std::string s;
+  Errata errata{ERRATA_ERROR, "Nominal failure"};
+  NoteInfo(errata, "Some");
+  errata.note(ERRATA_DIAG, "error code {}", std::error_code(EPERM, std::system_category()));
+  swoc::bwprint(s, "{}", errata);
+  REQUIRE(s.size() > 0);
+  REQUIRE(std::string::npos != s.find("Error Nominal"));
+  REQUIRE(std::string::npos != s.find("Info Some"));
+  REQUIRE(std::string::npos != s.find("Diag error"));
 }
