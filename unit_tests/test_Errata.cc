@@ -214,18 +214,31 @@ TEST_CASE("Errata example", "[libswoc][Errata]") {
   Errata errata{ec, ERRATA_ERROR, R"(Failed to open file "{}")", path};
   w.print("{}", errata);
   REQUIRE(w.size() > 0);
-  REQUIRE(w.view().starts_with("Error [enoent") == true);
+  REQUIRE(w.view().starts_with("Error: [enoent") == true);
   REQUIRE(w.view().find("enoent") != swoc::TextView::npos);
 }
 
 TEST_CASE("Errata local severity", "[libswoc][Errata]") {
   std::string s;
-  Errata errata{ERRATA_ERROR, "Nominal failure"};
-  NoteInfo(errata, "Some");
-  errata.note(ERRATA_DIAG, "error code {}", std::error_code(EPERM, std::system_category()));
-  swoc::bwprint(s, "{}", errata);
-  REQUIRE(s.size() > 0);
-  REQUIRE(std::string::npos != s.find("Error Nominal"));
-  REQUIRE(std::string::npos != s.find("Info Some"));
-  REQUIRE(std::string::npos != s.find("Diag error"));
+  {
+    Errata errata{ERRATA_ERROR, "Nominal failure"};
+    NoteInfo(errata, "Some");
+    errata.note(ERRATA_DIAG, "error code {}", std::error_code(EPERM, std::system_category()));
+    swoc::bwprint(s, "{}", errata);
+    REQUIRE(s.size() > 0);
+    REQUIRE(std::string::npos != s.find("Error: Nominal"));
+    REQUIRE(std::string::npos != s.find("Info: Some"));
+    REQUIRE(std::string::npos != s.find("Diag: error"));
+  }
+  Errata::FILTER_SEVERITY = ERRATA_INFO; // diag is lesser serverity, shouldn't show up.
+  {
+    Errata errata{ERRATA_ERROR, "Nominal failure"};
+    NoteInfo(errata, "Some");
+    errata.note(ERRATA_DIAG, "error code {}", std::error_code(EPERM, std::system_category()));
+    swoc::bwprint(s, "{}", errata);
+    REQUIRE(s.size() > 0);
+    REQUIRE(std::string::npos != s.find("Error: Nominal"));
+    REQUIRE(std::string::npos != s.find("Info: Some"));
+    REQUIRE(std::string::npos == s.find("Diag: error"));
+  }
 }

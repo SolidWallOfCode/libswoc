@@ -185,8 +185,6 @@ protected:
 
     Severity _severity{Errata::DEFAULT_SEVERITY}; ///< Severity.
     code_type _code{Errata::DEFAULT_CODE};        ///< Message code / ID
-    unsigned _level{0};                           ///< Nesting level.
-    std::atomic<int> _ref_count{0};               ///< Reference count.
     Container _notes;                             ///< The message stack.
     swoc::MemArena _arena;                        ///< Annotation text storage.
   };

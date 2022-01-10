@@ -95,7 +95,7 @@ Errata::note_s(std::optional<Severity> severity, std::string_view text) {
 Errata&
 Errata::note_localized(std::string_view const& text, std::optional<Severity> severity) {
   auto d = this->data();
-  Annotation *n = d->_arena.make<Annotation>(text, severity, d->_level);
+  Annotation *n = d->_arena.make<Annotation>(text, severity);
   d->_notes.append(n);
   return *this;
 }
@@ -107,8 +107,9 @@ Errata::alloc(size_t n) {
 
 Errata&
 Errata::note(const self_type& that) {
-  for (auto const& m : that) {
-    this->note(m._text);
+  auto d = this->data();
+  for (auto const& annotation : that) {
+    d->_notes.append(d->_arena.make<Annotation>(d->localize(annotation._text), annotation._severity, annotation._level + 1));
   }
   return *this;
 }
@@ -126,32 +127,6 @@ Errata::register_sink(Sink::Handle const& s) {
   Sink_List.push_back(s);
 }
 
-std::ostream&
-Errata::write(std::ostream& out) const {
-  string_view lead;
-
-  auto level = this->severity();
-  if (level < Errata::SEVERITY_NAMES.size()) {
-    out << Errata::SEVERITY_NAMES[level];
-  } else {
-    out << unsigned(level._raw);
-  }
-
-  out << ": ";
-
-  if (this->code()) {
-    out << this->code().message() << " [" << this->code().value() << "] - ";
-  }
-
-  for (auto& m : *this) {
-    out << lead << m._text << std::endl;
-    if (0 == lead.size()) {
-      lead = "  "_sv;
-    }
-  }
-  return out;
-}
-
 BufferWriter&
 bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata::Severity level) {
   if (level < Errata::SEVERITY_NAMES.size()) {
@@ -165,7 +140,7 @@ bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata::Severity level) {
 BufferWriter&
 bwformat(BufferWriter& bw, bwf::Spec const&, Errata const& errata) {
 
-  bw.print("{} ", errata.severity());
+  bw.print("{}: ", errata.severity());
 
   if (errata.code()) {
     bw.print("[{0:s} {0:d}] ", errata.code());
@@ -175,11 +150,19 @@ bwformat(BufferWriter& bw, bwf::Spec const&, Errata const& errata) {
     if (note.text()) {
       bw.print("{}{}{}\n"
                , swoc::bwf::Pattern{int(note.level()), "  "}
-               , swoc::bwf::If(note.has_severity(), "{} ", note.severity())
+               , swoc::bwf::If(note.has_severity(), "{}: ", note.severity())
                , note.text());
     }
   }
   return bw;
+}
+
+std::ostream&
+Errata::write(std::ostream& out) const {
+  std::string tmp;
+  tmp.reserve(1024);
+  bwprint(tmp, "{}", *this);
+  return out << tmp;
 }
 
 std::ostream&
