@@ -95,7 +95,7 @@ Errata::note_s(std::optional<Severity> severity, std::string_view text) {
 Errata&
 Errata::note_localized(std::string_view const& text, std::optional<Severity> severity) {
   auto d = this->data();
-  Annotation *n = d->_arena.make<Annotation>(text, severity, d->_level);
+  Annotation *n = d->_arena.make<Annotation>(text, severity);
   d->_notes.append(n);
   return *this;
 }
@@ -107,8 +107,9 @@ Errata::alloc(size_t n) {
 
 Errata&
 Errata::note(const self_type& that) {
-  for (auto const& m : that) {
-    this->note(m._text);
+  auto d = this->data();
+  for (auto const& annotation : that) {
+    d->_notes.append(d->_arena.make<Annotation>(d->localize(annotation._text), annotation._severity, annotation._level + 1));
   }
   return *this;
 }
