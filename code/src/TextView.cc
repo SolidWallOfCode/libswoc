@@ -19,25 +19,25 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
 
 /// @cond INTERNAL_DETAIL
 const int8_t svtoi_convert[256] = {
-    /* [can't do this nicely because clang format won't allow exdented comments]
-     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
-    */
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 10
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 20
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1, // 30
-    -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 40
-    25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 50
-    -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 60
-    25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 70
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 80
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 90
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // A0
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // B0
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // C0
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // D0
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // E0
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // F0
+  /* [can't do this nicely because clang format won't allow exdented comments]
+   0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+  */
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 10
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 20
+  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  -1, -1, -1, -1, -1, -1, // 30
+  -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 40
+  25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 50
+  -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 60
+  25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 70
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 80
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 90
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // A0
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // B0
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // C0
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // D0
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // E0
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // F0
 };
 /// @endcond
 
@@ -48,7 +48,7 @@ svtoi(TextView src, TextView *out, int base) {
   if (src.ltrim_if(&isspace)) {
     TextView parsed;
     const char *start = src.data();
-    bool neg = false;
+    bool neg          = false;
     if ('-' == *src) {
       ++src;
       neg = true;
@@ -89,16 +89,16 @@ svtou(TextView src, TextView *out, int base) {
         base = 8;
         if (src) {
           switch (*src) {
-            case 'x':
-            case 'X':
-              ++src;
-              base = 16;
-              break;
-            case 'b':
-            case 'B':
-              ++src;
-              base = 2;
-              break;
+          case 'x':
+          case 'X':
+            ++src;
+            base = 16;
+            break;
+          case 'b':
+          case 'B':
+            ++src;
+            base = 2;
+            break;
           }
         }
       }
@@ -106,22 +106,29 @@ svtou(TextView src, TextView *out, int base) {
 
     // For performance in common cases, use the templated conversion.
     switch (base) {
-      case 2: zret = svto_radix<2>(src); break;
-      case 8: zret = svto_radix<8>(src); break;
-      case 10: zret = svto_radix<10>(src); break;
-      case 16: zret = svto_radix<16>(src); break;
-      default:
-        while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) &&
-               v < base) {
-          auto n = zret * base + v;
-          if (n < zret) {
-            zret = std::numeric_limits<uintmax_t>::max();
-            break; // overflow, stop parsing.
-          }
-          zret = n;
-          ++src;
+    case 2:
+      zret = svto_radix<2>(src);
+      break;
+    case 8:
+      zret = svto_radix<8>(src);
+      break;
+    case 10:
+      zret = svto_radix<10>(src);
+      break;
+    case 16:
+      zret = svto_radix<16>(src);
+      break;
+    default:
+      while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) && v < base) {
+        auto n = zret * base + v;
+        if (n < zret) {
+          zret = std::numeric_limits<uintmax_t>::max();
+          break; // overflow, stop parsing.
         }
-        break;
+        zret = n;
+        ++src;
+      }
+      break;
     }
 
     if (out) {
@@ -131,13 +138,14 @@ svtou(TextView src, TextView *out, int base) {
   return zret;
 }
 
-double svtod(swoc::TextView text, swoc::TextView *parsed) {
+double
+svtod(swoc::TextView text, swoc::TextView *parsed) {
   // @return 10^e
-  auto pow10 = [](int e) -> double  {
-    double zret = 1.0;
+  auto pow10 = [](int e) -> double {
+    double zret  = 1.0;
     double scale = 10.0;
     if (e < 0) { // flip the scale and make @a e positive.
-      e = -e;
+      e     = -e;
       scale = 0.1;
     }
 
@@ -159,7 +167,7 @@ double svtod(swoc::TextView text, swoc::TextView *parsed) {
   auto org_text = text; // save this to update @a parsed.
   // Check just once and dump to a local copy if needed.
   TextView local_parsed;
-  if (! parsed) {
+  if (!parsed) {
     parsed = &local_parsed;
   }
 
@@ -202,7 +210,7 @@ double svtod(swoc::TextView text, swoc::TextView *parsed) {
       }
     }
     auto exp_part = svto_radix<10>(text);
-    exp = pow10(exp_part * exp_sign);
+    exp           = pow10(exp_part * exp_sign);
   }
 
   parsed->assign(org_text.data(), text.data());
@@ -210,15 +218,13 @@ double svtod(swoc::TextView text, swoc::TextView *parsed) {
 }
 
 // Do the template instantiations.
-template std::ostream& TextView::stream_write(std::ostream&, const TextView&) const;
+template std::ostream &TextView::stream_write(std::ostream &, const TextView &) const;
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS
 
-namespace std
-{
+namespace std {
 ostream &
-operator<<(ostream &os, const swoc::TextView &b)
-{
+operator<<(ostream &os, const swoc::TextView &b) {
   if (os.good()) {
     b.stream_write<ostream>(os, b);
     os.width(0);

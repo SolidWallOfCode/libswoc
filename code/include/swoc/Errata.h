@@ -57,18 +57,18 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
  */
 class Errata {
 public:
-  using code_type = std::error_code; ///< Type for message code.
-  using severity_type = uint8_t; ///< Underlying type for @c Severity.
+  using code_type     = std::error_code; ///< Type for message code.
+  using severity_type = uint8_t;         ///< Underlying type for @c Severity.
 
   struct Severity {
     severity_type _raw; ///< Severity numeric value
 
     explicit constexpr Severity(severity_type n) : _raw(n) {} ///< No implicit conversion from numeric.
 
-    Severity(Severity const& that) = default;
-    Severity & operator = (Severity const& that) = default;
+    Severity(Severity const &that) = default;
+    Severity &operator=(Severity const &that) = default;
 
-    operator severity_type () const { return _raw; } ///< Implicit conversion to numeric.
+    operator severity_type() const { return _raw; } ///< Implicit conversion to numeric.
   };
 
   /// Code used if not specified.
@@ -146,7 +146,8 @@ public:
      * @a text is presumed to be stable for the @c Annotation lifetime - this constructor simply copies
      * the view.
      */
-    explicit Annotation(std::string_view text, std::optional<Severity> severity = std::optional<Severity>{}, unsigned short level = 0);
+    explicit Annotation(std::string_view text, std::optional<Severity> severity = std::optional<Severity>{},
+                        unsigned short level = 0);
 
     friend class Errata;
     friend class swoc::MemArena; // needed for @c MemArena::make
@@ -191,20 +192,20 @@ protected:
 
 public:
   /// Default constructor - empty errata, very fast.
-  Errata() = default;
-  Errata(self_type const& that) = delete; ///< No constant copy construction.
+  Errata()                      = default;
+  Errata(self_type const &that) = delete;                          ///< No constant copy construction.
   Errata(self_type &&that) noexcept;                               ///< Move constructor.
   self_type &operator=(self_type const &that) = delete;            // no copy assignemnt.
   self_type &operator                         =(self_type &&that); ///< Move assignment.
   ~Errata();                                                       ///< Destructor.
 
   // Note based constructors.
-  Errata(code_type const& type, Severity severity, std::string_view const& text);
-  Errata(Severity severity, std::string_view const& text);
-  Errata(code_type const& type, std::string_view const& text);
-  explicit Errata(std::string_view const& text);
-  template <typename... Args> Errata(code_type const& type, Severity severity, std::string_view fmt, Args &&... args);
-  template <typename... Args> Errata(code_type const& type, std::string_view fmt, Args &&... args);
+  Errata(code_type const &type, Severity severity, std::string_view const &text);
+  Errata(Severity severity, std::string_view const &text);
+  Errata(code_type const &type, std::string_view const &text);
+  explicit Errata(std::string_view const &text);
+  template <typename... Args> Errata(code_type const &type, Severity severity, std::string_view fmt, Args &&... args);
+  template <typename... Args> Errata(code_type const &type, std::string_view fmt, Args &&... args);
   template <typename... Args> Errata(Severity severity, std::string_view fmt, Args &&... args);
   template <typename... Args> explicit Errata(std::string_view fmt, Args &&... args);
 
@@ -233,7 +234,7 @@ public:
    *
    * The annotation text is constructed as the short, long, and numeric value of @a code.
    */
-  self_type &note(code_type const& code);
+  self_type &note(code_type const &code);
 
   /** Append an @c Annotation to the top based on error code @a code with @a severity.
    * @param severity Local severity.
@@ -254,14 +255,14 @@ public:
    *
    * @see FILTER_SEVERITY
    */
-  self_type & note_s(std::optional<Severity> severity, std::string_view text);
+  self_type &note_s(std::optional<Severity> severity, std::string_view text);
 
   /** Append an @c Annotation.
    * @param fmt Format string (@c BufferWriter style).
    * @param args Arguments for values in @a fmt.
    *
    *  @return A reference to this object.
-  */
+   */
   template <typename... Args> self_type &note(std::string_view fmt, Args &&... args);
 
   /** Append an @c Annotation.
@@ -271,7 +272,7 @@ public:
    *
    * This is intended for use by external "helper" methods that pass their own arguments to this
    * using @c forward_as_tuple.
-  */
+   */
   template <typename... Args> self_type &note_v(std::string_view fmt, std::tuple<Args...> const &args);
 
   /** Append an @c Annotation.
@@ -300,7 +301,8 @@ public:
    *
    * This the effective implementation method for all variadic styles of the @a note method.
    */
-  template <typename... Args> self_type &note_sv(std::optional<Severity> severity, std::string_view fmt, std::tuple<Args...> const &args);
+  template <typename... Args>
+  self_type &note_sv(std::optional<Severity> severity, std::string_view fmt, std::tuple<Args...> const &args);
 
   /** Copy messages from @a that to @a this.
    *
@@ -365,7 +367,7 @@ public:
   Severity severity() const;
 
   /// The code for the top message.
-  code_type const& code() const;
+  code_type const &code() const;
 
   /// Number of messages in the errata.
   size_t length() const;
@@ -386,9 +388,9 @@ public:
   //! Reference one past bottom item on the stack.
   const_iterator end() const;
 
-  const Annotation & front() const;
+  const Annotation &front() const;
 
-  const Annotation & back() const;
+  const Annotation &back() const;
 
   // Logging support.
 
@@ -438,13 +440,13 @@ public:
 
 protected:
   /// Construct with code and severity, but no annotations.
-  Errata(code_type const& code, Severity severity);
+  Errata(code_type const &code, Severity severity);
 
   /// Implementation instance.
   /// @internal Because this is used with a self-containing @c MemArena standard smart pointers do not
   /// work correctly. Instead the @c reset method must be used to release the memory.
   /// @see reset
-  Data * _data = nullptr;
+  Data *_data = nullptr;
 
   /// Force data existence.
   /// @return A pointer to the data.
@@ -481,8 +483,8 @@ extern std::ostream &operator<<(std::ostream &os, Errata const &stat);
 template <typename R> class Rv {
 public:
   using result_type = R; ///< Type of result value.
-  using code_type = Errata::code_type;
-  using Severity = Errata::Severity;
+  using code_type   = Errata::code_type;
+  using Severity    = Errata::Severity;
 
 protected:
   using self_type = Rv; ///< Standard self reference type.
@@ -565,7 +567,7 @@ public:
    *
    * The annotation text is constructed as the short, long, and numeric value of @a code, which is then discarded.
    */
-  self_type &note(code_type const& code);
+  self_type &note(code_type const &code);
 
   /** Append a message in to the result.
    *
@@ -575,7 +577,7 @@ public:
    *
    * The annotation text is constructed as the short, long, and numeric value of @a code, which is then discarded.
    */
-  self_type &note(code_type const& code, Severity severity);
+  self_type &note(code_type const &code, Severity severity);
 
   /** Append a message in to the result.
    *
@@ -594,7 +596,7 @@ public:
    * @param args Arguments for @a fmt.
    * @return @a *this
    */
-  template <typename... Args> self_type &note(Severity  severity, std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &note(Severity severity, std::string_view fmt, Args &&... args);
 
   /** Copy messages from @a that to @a this.
    *
@@ -739,11 +741,12 @@ MakeRv(R &&r,           ///< The function result
 
 inline Errata::Annotation::Annotation() = default;
 
-inline Errata::Annotation::Annotation(std::string_view text, std::optional<Severity> severity, unsigned short level) : _text(text), _level(level), _severity(severity) {}
+inline Errata::Annotation::Annotation(std::string_view text, std::optional<Severity> severity, unsigned short level)
+  : _text(text), _level(level), _severity(severity) {}
 
 inline Errata::Annotation &
 Errata::Annotation::clear() {
-  _text     = std::string_view{};
+  _text = std::string_view{};
   return *this;
 }
 
@@ -757,10 +760,23 @@ Errata::Annotation::level() const {
   return _level;
 }
 
-inline bool Errata::Annotation::has_severity() const { return _severity.has_value(); }
-inline auto Errata::Annotation::severity() const -> Severity { return *_severity; }
-inline auto Errata::Annotation::severity(Errata::Severity default_severity) const -> Severity { return _severity.value_or(default_severity); }
-inline auto Errata::Annotation::assign(Errata::Severity severity) -> self_type& { _severity = severity; return *this; }
+inline bool
+Errata::Annotation::has_severity() const {
+  return _severity.has_value();
+}
+inline auto
+Errata::Annotation::severity() const -> Severity {
+  return *_severity;
+}
+inline auto
+Errata::Annotation::severity(Errata::Severity default_severity) const -> Severity {
+  return _severity.value_or(default_severity);
+}
+inline auto
+Errata::Annotation::assign(Errata::Severity severity) -> self_type & {
+  _severity = severity;
+  return *this;
+}
 
 /* ----------------------------------------------------------------------- */
 // Inline methods for Errata::Data
@@ -792,9 +808,9 @@ inline Errata::Errata(self_type &&that) noexcept {
 }
 
 inline Errata::Errata(const code_type &code, Severity severity) {
-  auto d = this->data();
+  auto d       = this->data();
   d->_severity = severity;
-  d->_code = code;
+  d->_code     = code;
 }
 
 inline Errata::Errata(const code_type &type, Severity severity, const std::string_view &text) : Errata(type, severity) {
@@ -802,18 +818,25 @@ inline Errata::Errata(const code_type &type, Severity severity, const std::strin
 }
 
 inline Errata::Errata(const std::string_view &text) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, text) {}
-inline Errata::Errata(code_type const& code, const std::string_view &text) : Errata(code, DEFAULT_SEVERITY, text) {}
+inline Errata::Errata(code_type const &code, const std::string_view &text) : Errata(code, DEFAULT_SEVERITY, text) {}
 inline Errata::Errata(Severity severity, const std::string_view &text) : Errata(DEFAULT_CODE, severity, text) {}
 
-template <typename... Args> Errata::Errata(code_type const& code, Severity severity, std::string_view fmt, Args &&... args) : Errata(code, severity) {
+template <typename... Args>
+Errata::Errata(code_type const &code, Severity severity, std::string_view fmt, Args &&... args) : Errata(code, severity) {
   this->note_v(fmt, std::forward_as_tuple(args...));
 }
 
-template <typename... Args> Errata::Errata(code_type const& code, std::string_view fmt, Args &&... args) : Errata(code, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) { }
-template <typename... Args> Errata::Errata(Severity severity, std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, severity, fmt, std::forward<Args>(args)...) { }
-template <typename... Args> Errata::Errata(std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) { }
+template <typename... Args>
+Errata::Errata(code_type const &code, std::string_view fmt, Args &&... args)
+  : Errata(code, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) {}
+template <typename... Args>
+Errata::Errata(Severity severity, std::string_view fmt, Args &&... args)
+  : Errata(DEFAULT_CODE, severity, fmt, std::forward<Args>(args)...) {}
+template <typename... Args>
+Errata::Errata(std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) {}
 
-inline void Errata::reset() {
+inline void
+Errata::reset() {
   _data->~Data(); // destructs the @c MemArena in @a _data which releases memory.
   _data = nullptr;
 }
@@ -833,7 +856,8 @@ inline Errata::operator bool() const {
   return this->is_ok();
 }
 
-inline bool Errata::operator!() const {
+inline bool
+Errata::operator!() const {
   return !this->is_ok();
 }
 
@@ -842,7 +866,8 @@ Errata::empty() const {
   return _data == nullptr || _data->_notes.count() == 0;
 }
 
-inline auto Errata::code() const -> code_type const& {
+inline auto
+Errata::code() const -> code_type const & {
   return this->empty() ? DEFAULT_CODE : _data->_code;
 }
 
@@ -886,7 +911,7 @@ Errata::note(Severity severity, std::string_view text) {
 template <typename... Args>
 Errata &
 Errata::note_sv(std::optional<Severity> severity, std::string_view fmt, std::tuple<Args...> const &args) {
-  if (! severity.has_value() || *severity >= FILTER_SEVERITY) {
+  if (!severity.has_value() || *severity >= FILTER_SEVERITY) {
     Data *data = this->data();
     auto span  = data->remnant();
     FixedBufferWriter bw{span};
@@ -959,34 +984,46 @@ Errata::SinkWrapper::operator()(Errata const &e) const {
 /* ----------------------------------------------------------------------- */
 // Inline methods for Rv
 
-template < typename R > inline auto Rv<R>::note(std::string_view text) -> self_type & {
+template <typename R>
+inline auto
+Rv<R>::note(std::string_view text) -> self_type & {
   _errata.note(text);
   return *this;
 }
 
-template < typename R > inline auto Rv<R>::note(Severity severity, std::string_view text) -> self_type & {
+template <typename R>
+inline auto
+Rv<R>::note(Severity severity, std::string_view text) -> self_type & {
   _errata.note(severity, text);
   return *this;
 }
 
-template < typename R > auto Rv<R>::note(const code_type &code) -> self_type & {
+template <typename R>
+auto
+Rv<R>::note(const code_type &code) -> self_type & {
   _errata.note(code);
   return *this;
 }
 
-template < typename R > auto Rv<R>::note(const code_type &code, Severity severity) -> self_type & {
+template <typename R>
+auto
+Rv<R>::note(const code_type &code, Severity severity) -> self_type & {
   _errata.note(code, severity);
   return *this;
 }
 
 template <typename R>
-template<typename... Args> auto Rv<R>::note(std::string_view fmt, Args &&... args) -> self_type & {
+template <typename... Args>
+auto
+Rv<R>::note(std::string_view fmt, Args &&... args) -> self_type & {
   _errata.note(fmt, std::forward<Args>(args)...);
   return *this;
 }
 
 template <typename R>
-template<typename... Args> auto Rv<R>::note(Severity severity, std::string_view fmt, Args &&... args) -> self_type & {
+template <typename... Args>
+auto
+Rv<R>::note(Severity severity, std::string_view fmt, Args &&... args) -> self_type & {
   _errata.note(severity, fmt, std::forward<Args>(args)...);
   return *this;
 }
@@ -1104,11 +1141,10 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata::Annotatio
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata const &);
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS
 
 // Tuple / structured binding support.
-namespace std
-{
+namespace std {
 template <size_t IDX, typename R> class tuple_element<IDX, swoc::Rv<R>> { static_assert("swoc:Rv tuple index out of range"); };
 
 template <typename R> class tuple_element<0, swoc::Rv<R>> {
@@ -1132,9 +1168,9 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
 // necessary to use @c constexpr @c if to handle the case. This should roll up nicely when
 // compiled.
 
-template<size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type&
-get(swoc::Rv<R>&& rv) {
+template <size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type &
+get(swoc::Rv<R> &&rv) {
   if constexpr (IDX == 0) {
     return rv.result();
   } else if constexpr (IDX == 1) {
@@ -1142,9 +1178,9 @@ get(swoc::Rv<R>&& rv) {
   }
 }
 
-template<size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type&
-get(swoc::Rv<R>& rv) {
+template <size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type &
+get(swoc::Rv<R> &rv) {
   static_assert(0 <= IDX && IDX <= 1, "Errata tuple index out of range (0..1)");
   if constexpr (IDX == 0) {
     return rv.result();
@@ -1155,9 +1191,9 @@ get(swoc::Rv<R>& rv) {
   throw std::domain_error("Errata index value out of bounds");
 }
 
-template<size_t IDX, typename R>
-typename std::tuple_element<IDX, swoc::Rv<R>>::type const&
-get(swoc::Rv<R> const& rv) {
+template <size_t IDX, typename R>
+typename std::tuple_element<IDX, swoc::Rv<R>>::type const &
+get(swoc::Rv<R> const &rv) {
   static_assert(0 <= IDX && IDX <= 1, "Errata tuple index out of range (0..1)");
   if constexpr (IDX == 0) {
     return rv.result();
@@ -1168,4 +1204,4 @@ get(swoc::Rv<R> const& rv) {
   throw std::domain_error("Errata index value out of bounds");
 }
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS

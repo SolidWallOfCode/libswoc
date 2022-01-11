@@ -9,8 +9,7 @@
 #include "swoc/swoc_version.h"
 #include "swoc/IntrusiveDList.h"
 
-namespace swoc { inline namespace SWOC_VERSION_NS {
-namespace detail {
+namespace swoc { inline namespace SWOC_VERSION_NS { namespace detail {
 /** A node in a red/black tree.
 
     This class provides only the basic tree operations. The container must provide the search and
@@ -26,11 +25,16 @@ struct RBNode {
 
   /// Node colors
   enum class Color {
-    RED, BLACK, };
+    RED,
+    BLACK,
+  };
 
   /// Directional constants
   enum class Direction {
-    NONE, LEFT, RIGHT, };
+    NONE,
+    LEFT,
+    RIGHT,
+  };
 
   /// Default constructor.
   RBNode() = default;
@@ -50,7 +54,7 @@ struct RBNode {
    * @param n Child node.
    * @return Direction of the child if @a n is a child, @c Direction::NONE if not.
    */
-  Direction direction_of(self_type *const& n) const;
+  Direction direction_of(self_type *const &n) const;
 
   /// @return The color of the node.
   Color color() const;
@@ -120,7 +124,8 @@ struct RBNode {
 
       @internal This is the primary reason for this class.
   */
-  virtual void structure_fixup() {}
+  virtual void
+  structure_fixup() {}
 
   /** Called from @c validate to perform any additional validation checks.
       Clients should chain this if they wish to perform additional checks.
@@ -177,22 +182,22 @@ struct RBNode {
 
   /// Support for @c IntrusiveDList
   struct Linkage {
-    static self_type *& next_ptr(self_type *t) {
+    static self_type *&
+    next_ptr(self_type *t) {
       return swoc::ptr_ref_cast<self_type>(t->_next);
     }
 
-    static self_type *& prev_ptr(self_type *t) {
+    static self_type *&
+    prev_ptr(self_type *t) {
       return swoc::ptr_ref_cast<self_type>(t->_prev);
     }
   };
-
-
 };
 
 // --- Implementation ---
 
 inline auto
-RBNode::direction_of(self_type *const& n) const -> Direction {
+RBNode::direction_of(self_type *const &n) const -> Direction {
   return (n == _left) ? Direction::LEFT : (n == _right) ? Direction::RIGHT : Direction::NONE;
 }
 
@@ -203,8 +208,7 @@ RBNode::color() const {
 
 inline RBNode::Direction
 RBNode::flip(RBNode::Direction d) {
-  return Direction::LEFT == d ? Direction::RIGHT : Direction::RIGHT == d ? Direction::LEFT
-                                                                         : Direction::NONE;
+  return Direction::LEFT == d ? Direction::RIGHT : Direction::RIGHT == d ? Direction::LEFT : Direction::NONE;
 }
 
 inline void
@@ -220,5 +224,4 @@ RBNode::structure_validate() {
   return true;
 }
 
-} // namespace detail
-}} // namespace swoc
+}}} // namespace swoc::SWOC_VERSION_NS::detail

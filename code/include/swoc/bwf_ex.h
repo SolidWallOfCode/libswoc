@@ -64,20 +64,20 @@ FirstOfConverter(char const *s) {
 }
 
 // Otherwise do any compliant conversion.
-template<typename T>
+template <typename T>
 std::string_view
-FirstOfConverter(T&& t) {
+FirstOfConverter(T &&t) {
   return t;
 }
 } // namespace detail
 
 /// Print the first of a list of strings that is not an empty string.
 /// All arguments must be convertible to @c std::string_view.
-template<typename... Args>
+template <typename... Args>
 std::string_view
-FirstOf(Args&& ... args) {
+FirstOf(Args &&... args) {
   std::array<std::string_view, sizeof...(args)> strings{{detail::FirstOfConverter(args)...}};
-  for (auto& s : strings) {
+  for (auto &s : strings) {
     if (!s.empty())
       return s;
   }
@@ -88,13 +88,13 @@ FirstOf(Args&& ... args) {
  *
  * @tparam Args Argument types.
  */
-template<typename... Args> struct SubText {
+template <typename... Args> struct SubText {
   using arg_pack = std::tuple<Args...>; ///< The pack of arguments for format string.
   TextView _fmt;                        ///< Format string. If empty, do not generate output.
   arg_pack _args;                       ///< Arguments to format string.
 
   /// Construct with a specific @a fmt and @a args.
-  SubText(TextView const& fmt, arg_pack const& args) : _fmt(fmt), _args(args) {};
+  SubText(TextView const &fmt, arg_pack const &args) : _fmt(fmt), _args(args){};
 
   /// Check for output not enabled.
   bool operator!() const;
@@ -103,9 +103,15 @@ template<typename... Args> struct SubText {
   explicit operator bool() const;
 };
 
-template<typename... Args> SubText<Args...>::operator bool() const { return !_fmt.empty(); }
+template <typename... Args> SubText<Args...>::operator bool() const {
+  return !_fmt.empty();
+}
 
-template<typename... Args> bool SubText<Args...>::operator!() const { return _fmt.empty(); }
+template <typename... Args>
+bool
+SubText<Args...>::operator!() const {
+  return _fmt.empty();
+}
 
 /** Optional printing wrapper.
  *
@@ -127,32 +133,31 @@ template<typename... Args> bool SubText<Args...>::operator!() const { return _fm
  * @internal To disambiguate overloads, this is enabled only if there is at least one argument
  * to be passed to the format string.
  */
-template<typename... Args>
+template <typename... Args>
 SubText<Args...>
-If(bool flag, TextView const& fmt, Args&& ... args) {
+If(bool flag, TextView const &fmt, Args &&... args) {
   return SubText<Args...>(flag ? fmt : TextView{}, std::forward_as_tuple(args...));
 }
 
 namespace detail {
 // @a T has the @c empty() method.
-template<typename T>
+template <typename T>
 auto
-Optional(meta::CaseTag<2>, TextView fmt
-         , T&& t) -> decltype(void(t.empty()), meta::TypeFunc<SubText<T>>()) {
+Optional(meta::CaseTag<2>, TextView fmt, T &&t) -> decltype(void(t.empty()), meta::TypeFunc<SubText<T>>()) {
   return SubText<T>(t.empty() ? TextView{} : fmt, std::forward_as_tuple(t));
 }
 
 // @a T is convertible to @c bool.
-template<typename T>
+template <typename T>
 auto
-Optional(meta::CaseTag<1>, TextView fmt, T&& t) -> decltype(bool(t), meta::TypeFunc<SubText<T>>()) {
+Optional(meta::CaseTag<1>, TextView fmt, T &&t) -> decltype(bool(t), meta::TypeFunc<SubText<T>>()) {
   return SubText<T>(bool(t) ? fmt : TextView{}, std::forward_as_tuple(t));
 }
 
 // @a T is not optional, always print.
-template<typename T>
+template <typename T>
 auto
-Optional(meta::CaseTag<0>, TextView fmt, T&& t) -> SubText<T> {
+Optional(meta::CaseTag<0>, TextView fmt, T &&t) -> SubText<T> {
   return SubText<T>(fmt, std::forward_as_tuple(t));
 }
 } // namespace detail
@@ -188,26 +193,26 @@ Optional(meta::CaseTag<0>, TextView fmt, T&& t) -> SubText<T> {
  * string types (such as @c std::string_view ).
  *
  */
-template<typename ARG>
+template <typename ARG>
 SubText<ARG>
-Optional(TextView fmt, ARG&& arg) {
+Optional(TextView fmt, ARG &&arg) {
   return detail::Optional(meta::CaseArg, fmt, std::forward<ARG>(arg));
 }
 } // namespace bwf
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Pattern const& pattern);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern);
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Errno const& e);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e);
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Date const& date);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date);
 
-template<typename... Args>
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const&, bwf::SubText<Args...> const& subtext) {
+template <typename... Args>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &, bwf::SubText<Args...> const &subtext) {
   if (!subtext._fmt.empty()) {
     w.print_v(subtext._fmt, subtext._args);
   }
   return w;
 }
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS

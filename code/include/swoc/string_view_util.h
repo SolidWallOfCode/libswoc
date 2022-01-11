@@ -84,6 +84,7 @@ strcmp(const std::string_view &lhs, const std::string_view &rhs) {
  * @endcode
  *
  */
-inline void* memcpy(void * dst, const std::string_view &src) {
+inline void *
+memcpy(void *dst, const std::string_view &src) {
   return memcpy(dst, src.data(), src.size());
 }

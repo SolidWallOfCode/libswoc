@@ -9,8 +9,7 @@
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
 ArenaWriter &
-ArenaWriter::write(char c)
-{
+ArenaWriter::write(char c) {
   if (_attempted >= _capacity) {
     this->realloc(_attempted + 1);
   }
@@ -19,8 +18,7 @@ ArenaWriter::write(char c)
 }
 
 ArenaWriter &
-ArenaWriter::write(void const *data, size_t n)
-{
+ArenaWriter::write(void const *data, size_t n) {
   if (n + _attempted > _capacity) {
     this->realloc(n + _attempted);
   }
@@ -29,8 +27,7 @@ ArenaWriter::write(void const *data, size_t n)
 }
 
 bool
-ArenaWriter::commit(size_t n)
-{
+ArenaWriter::commit(size_t n) {
   if (_attempted + n > _capacity) {
     this->realloc(_attempted + n);
     return false;
@@ -39,8 +36,7 @@ ArenaWriter::commit(size_t n)
 }
 
 void
-ArenaWriter::realloc(size_t n)
-{
+ArenaWriter::realloc(size_t n) {
   auto text                    = this->view(); // Current data.
   auto span                    = _arena.require(n).remnant().rebind<char>();
   const_cast<char *&>(_buffer) = span.data();
@@ -48,4 +44,4 @@ ArenaWriter::realloc(size_t n)
   memcpy(_buffer, text.data(), text.size());
 }
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS

@@ -11,8 +11,7 @@
 
 #include "swoc/swoc_version.h"
 
-namespace swoc { inline namespace SWOC_VERSION_NS {
-namespace meta {
+namespace swoc { inline namespace SWOC_VERSION_NS { namespace meta {
 /** This creates an ordered series of meta template cases that can be used to select one of a set
  * of functions in a priority ordering. A set of templated overloads take an (extra) argument of
  * the case structures, each a different one. Calling the function invokes the highest case that
@@ -63,15 +62,14 @@ namespace meta {
  */
 
 /// Case hierarchy.
-template<unsigned N>
-struct CaseTag : /** @cond DOXYGEN_FAIL */ public CaseTag<N - 1> /** @endcond */ {
+template <unsigned N> struct CaseTag : /** @cond DOXYGEN_FAIL */ public CaseTag<N - 1> /** @endcond */ {
   constexpr CaseTag() {}
 
   static constexpr unsigned value = N;
 };
 
 /// Anchor the hierarchy.
-template<> struct CaseTag<0> {
+template <> struct CaseTag<0> {
   constexpr CaseTag() {}
 
   static constexpr unsigned value = 0;
@@ -112,7 +110,7 @@ static constexpr CaseTag<9> CaseArg{};
  *
  * does not compile.
  */
-template<typename T> T TypeFunc();
+template <typename T> T TypeFunc();
 
 /** Support for variable parameter lambdas.
  *
@@ -130,11 +128,9 @@ template<typename T> T TypeFunc();
  *   }, v);
  * @endcode
  */
-template<typename... Args> struct vary : public Args ... {
-  using Args::operator()...;
-};
+template <typename... Args> struct vary : public Args... { using Args::operator()...; };
 /// Template argument deduction guide (C++17 required).
-template<typename... Args> vary(Args...)->vary<Args...>;
+template <typename... Args> vary(Args...) -> vary<Args...>;
 
 /** Check if a type is any of a set of types.
  *
@@ -148,18 +144,17 @@ template<typename... Args> vary(Args...)->vary<Args...>;
  *     -> std::enable_if_t<swoc::meta::is_any_of<T, int, float, bool>::value, void>
  *   { ... }
  */
-template<typename T, typename... Types> struct is_any_of {
+template <typename T, typename... Types> struct is_any_of {
   static constexpr bool value = std::disjunction<std::is_same<T, Types>...>::value;
 };
 
-template < typename T, typename ... Types> struct is_homogenous {
+template <typename T, typename... Types> struct is_homogenous {
   static constexpr bool value = std::conjunction<std::is_same<T, Types>...>::value;
-  using type = T;
+  using type                  = T;
 };
 
 /// Helper variable template for is_any_of
-template <typename T, typename... Types>
-inline constexpr bool is_any_of_v = is_any_of<T, Types...>::value;
+template <typename T, typename... Types> inline constexpr bool is_any_of_v = is_any_of<T, Types...>::value;
 
 /** Type list support class.
  *
@@ -170,7 +165,7 @@ inline constexpr bool is_any_of_v = is_any_of<T, Types...>::value;
  * using TL = swoc::meta::type_list<int, bool, float, double>;
  * @endcode
  */
-template<typename... Types> struct type_list {
+template <typename... Types> struct type_list {
   /// Length of the type list.
   static constexpr size_t size = sizeof...(Types);
 
@@ -185,7 +180,7 @@ template<typename... Types> struct type_list {
    *
    * @see contains
    */
-  template<template<typename... Pack> typename T> using apply = T<Types...>;
+  template <template <typename... Pack> typename T> using apply = T<Types...>;
 
   /** Determine if a type @a T is a member of the type list.
    *
@@ -200,8 +195,7 @@ template<typename... Types> struct type_list {
    * { ... }
    * @endcode
    */
-  template<typename T> static constexpr bool contains = is_any_of<T, Types...>::value;
+  template <typename T> static constexpr bool contains = is_any_of<T, Types...>::value;
 };
 
-} // namespace meta
-}} // namespace swoc
+}}} // namespace swoc::SWOC_VERSION_NS::meta

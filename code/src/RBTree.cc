@@ -7,8 +7,7 @@
 
 #include "swoc/RBTree.h"
 
-namespace swoc { inline namespace SWOC_VERSION_NS {
-namespace detail {
+namespace swoc { inline namespace SWOC_VERSION_NS { namespace detail {
 // These equality operators are only used in this file.
 
 /// Equality.
@@ -34,10 +33,10 @@ RBNode::child_at(Direction d) const {
 
 RBNode *
 RBNode::rotate(Direction dir) {
-  self_type *parent = _parent; // Cache because it can change before we use it.
+  self_type *parent   = _parent; // Cache because it can change before we use it.
   Direction child_dir = _parent ? _parent->direction_of(this) : Direction::NONE;
   Direction other_dir = this->flip(dir);
-  self_type *child = this;
+  self_type *child    = this;
 
   if (dir != Direction::NONE && this->child_at(other_dir)) {
     child = this->child_at(other_dir);
@@ -73,11 +72,11 @@ RBNode::set_child(self_type *child, Direction dir) {
 RBNode *
 RBNode::ripple_structure_fixup() {
   self_type *root = this; // last node seen, root node at the end
-  self_type *p = this;
+  self_type *p    = this;
   while (p) {
     p->structure_fixup();
     root = p;
-    p = root->_parent;
+    p    = root->_parent;
   }
   return root;
 }
@@ -122,16 +121,16 @@ RBNode::rebalance_after_insert() {
     self_type *y = x->_parent->_parent->child_at(other_dir);
     if (y == Color::RED) {
       x->_parent->_color = Color::BLACK;
-      y->_color = Color::BLACK;
-      x = x->_parent->_parent;
-      x->_color = Color::RED;
+      y->_color          = Color::BLACK;
+      x                  = x->_parent->_parent;
+      x->_color          = Color::RED;
     } else {
       if (x->_parent->child_at(other_dir) == x) {
         x = x->_parent;
         x->rotate(child_dir);
       }
       // Note setting the parent color to BLACK causes the loop to exit.
-      x->_parent->_color = Color::BLACK;
+      x->_parent->_color          = Color::BLACK;
       x->_parent->_parent->_color = Color::RED;
       x->_parent->_parent->rotate(other_dir);
     }
@@ -141,7 +140,7 @@ RBNode::rebalance_after_insert() {
   // so notify it. serendipitously, this makes it easy to return
   // the new root node.
   self_type *root = this->ripple_structure_fixup();
-  root->_color = Color::BLACK;
+  root->_color    = Color::BLACK;
 
   return root;
 }
@@ -158,12 +157,12 @@ RBNode::remove() {
   if (!_parent && !(_left && _right)) {
     if (_left) {
       _left->_parent = nullptr;
-      root = _left;
-      root->_color = Color::BLACK;
+      root           = _left;
+      root->_color   = Color::BLACK;
     } else if (_right) {
       _right->_parent = nullptr;
-      root = _right;
-      root->_color = Color::BLACK;
+      root            = _right;
+      root->_color    = Color::BLACK;
     } // else that was the only node, so leave @a root @c NULL.
     return root;
   }
@@ -216,7 +215,7 @@ RBNode::remove() {
     this->replace_with(remove_node);
   }
 
-  root = splice_node->rebalance_after_remove(remove_color, d);
+  root         = splice_node->rebalance_after_remove(remove_color, d);
   root->_color = Color::BLACK;
   return root;
 }
@@ -228,19 +227,19 @@ RBNode::remove() {
  */
 RBNode *
 RBNode::rebalance_after_remove(Color c,    //!< The color of the removed node
-    Direction d //!< Direction of removed node from its parent
+                               Direction d //!< Direction of removed node from its parent
 ) {
   self_type *root;
 
   if (Color::BLACK == c) { // only rebalance if too much black
-    self_type *n = this;
+    self_type *n      = this;
     self_type *parent = n->_parent;
 
     // If @a direction is set, then we need to start at a leaf pseudo-node.
     // This is why we need @a parent, otherwise we could just use @a n.
     if (Direction::NONE != d) {
       parent = n;
-      n = nullptr;
+      n      = nullptr;
     }
 
     while (parent) { // @a n is not the root
@@ -253,16 +252,15 @@ RBNode::rebalance_after_remove(Color c,    //!< The color of the removed node
         // write for the left child case and flip directions for the
         // right child case
         Direction near(Direction::LEFT), far(Direction::RIGHT);
-        if ((Direction::NONE == d && parent->direction_of(n) == Direction::RIGHT) ||
-            Direction::RIGHT == d) {
+        if ((Direction::NONE == d && parent->direction_of(n) == Direction::RIGHT) || Direction::RIGHT == d) {
           near = Direction::RIGHT;
-          far = Direction::LEFT;
+          far  = Direction::LEFT;
         }
 
         self_type *w = parent->child_at(far); // sibling(n)
 
         if (w->_color == Color::RED) {
-          w->_color = Color::BLACK;
+          w->_color      = Color::BLACK;
           parent->_color = Color::RED;
           parent->rotate(near);
           w = parent->child_at(far);
@@ -271,20 +269,20 @@ RBNode::rebalance_after_remove(Color c,    //!< The color of the removed node
         self_type *wfc = w->child_at(far);
         if (w->child_at(near) == Color::BLACK && wfc == Color::BLACK) {
           w->_color = Color::RED;
-          n = parent;
-          parent = n->_parent;
-          d = Direction::NONE; // Cancel any leaf node logic
+          n         = parent;
+          parent    = n->_parent;
+          d         = Direction::NONE; // Cancel any leaf node logic
         } else {
           if (wfc == Color::BLACK) {
             w->child_at(near)->_color = Color::BLACK;
-            w->_color = Color::RED;
+            w->_color                 = Color::RED;
             w->rotate(far);
-            w = parent->child_at(far);
+            w   = parent->child_at(far);
             wfc = w->child_at(far); // w changed, update far child cache.
           }
-          w->_color = parent->_color;
+          w->_color      = parent->_color;
           parent->_color = Color::BLACK;
-          wfc->_color = Color::BLACK;
+          wfc->_color    = Color::BLACK;
           parent->rotate(near);
           break;
         }
@@ -349,5 +347,4 @@ RBNode::left_most_descendant() const -> self_type * {
   return const_cast<self_type *>(n);
 }
 
-} // namespace detail
-}} // namespace swoc
+}}} // namespace swoc::SWOC_VERSION_NS::detail

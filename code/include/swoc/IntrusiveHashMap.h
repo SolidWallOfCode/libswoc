@@ -71,7 +71,7 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
     @endcode
 
  */
-template<typename H> class IntrusiveHashMap {
+template <typename H> class IntrusiveHashMap {
   using self_type = IntrusiveHashMap;
 
 public:
@@ -100,8 +100,8 @@ protected:
   struct Bucket {
     /// Support for IntrusiveDList<Bucket::Linkage>, definitions and link storage.
     struct Linkage {
-      static Bucket *& next_ptr(Bucket *b); ///< Access next pointer.
-      static Bucket *& prev_ptr(Bucket *b); ///< Access prev pointer.
+      static Bucket *&next_ptr(Bucket *b); ///< Access next pointer.
+      static Bucket *&prev_ptr(Bucket *b); ///< Access prev pointer.
       Bucket *_prev{nullptr};              ///< Prev pointer.
       Bucket *_next{nullptr};              ///< Next pointer.
     } _link;
@@ -147,10 +147,10 @@ public:
     // These methods enable treating the range as a view in to the hash map.
 
     /// Return @a first
-    iterator const& begin() const;
+    iterator const &begin() const;
 
     /// Return @a last
-    iterator const& end() const;
+    iterator const &end() const;
   };
 
   /// A range of constant elements in the map.
@@ -158,17 +158,17 @@ public:
     using super_type = std::pair<const_iterator, const_iterator>; ///< Super type.
 
     /// Allow implicit conversion of range to const_range.
-    const_range(range const& r);
+    const_range(range const &r);
 
     using super_type::super_type; ///< Use super type constructors.
 
     // These methods enable treating the range as a view in to the hash map.
 
     /// Return @a first
-    const_iterator const& begin() const;
+    const_iterator const &begin() const;
 
     /// Return @a last
-    const_iterator const& end() const;
+    const_iterator const &end() const;
   };
 
   /// Construct, starting with @n buckets.
@@ -176,14 +176,14 @@ public:
   IntrusiveHashMap(size_t n = DEFAULT_BUCKET_COUNT);
 
   /// Move constructor.
-  IntrusiveHashMap(self_type && that) = default;
+  IntrusiveHashMap(self_type &&that) = default;
 
   /** Remove all values from the table.
 
       The values are not cleaned up. The values are not touched in this method, therefore it is safe
       to destroy them first and then @c clear this table.
   */
-  self_type& clear();
+  self_type &clear();
 
   iterator begin();             ///< First element.
   const_iterator begin() const; ///< First element.
@@ -235,13 +235,13 @@ public:
 
       @return An iterator the next value past @a loc. [STL compatibility]
   */
-  iterator erase(iterator const& loc);
+  iterator erase(iterator const &loc);
 
   /// Remove all elements in the @c range @a r.
-  iterator erase(range const& r);
+  iterator erase(range const &r);
 
   /// Remove all elements in the range (start, limit]
-  iterator erase(iterator const& start, iterator const& limit);
+  iterator erase(iterator const &start, iterator const &limit);
 
   /// Remove a @a value from the container.
   /// @a value is checked for being a member of the container.
@@ -258,7 +258,7 @@ public:
    * @param f The function to apply.
    * @return
    */
-  template<typename F> self_type& apply(F&& f);
+  template <typename F> self_type &apply(F &&f);
 
   /** Expand the hash if needed.
 
@@ -273,13 +273,13 @@ public:
   size_t bucket_count() const;
 
   /// Set the expansion policy to @a policy.
-  self_type& set_expansion_policy(ExpansionPolicy policy);
+  self_type &set_expansion_policy(ExpansionPolicy policy);
 
   /// Get the current expansion policy
   ExpansionPolicy get_expansion_policy() const;
 
   /// Set the limit value for the expansion policy.
-  self_type& set_expansion_limit(size_t n);
+  self_type &set_expansion_limit(size_t n);
 
   /// Set the limit value for the expansion policy.
   size_t get_expansion_limit() const;
@@ -300,21 +300,24 @@ protected:
   size_t _expansion_limit{DEFAULT_EXPANSION_LIMIT};            ///< Limit value for expansion.
 
   // noncopyable
-  IntrusiveHashMap(const IntrusiveHashMap&) = delete;
+  IntrusiveHashMap(const IntrusiveHashMap &) = delete;
 
-  IntrusiveHashMap& operator=(const IntrusiveHashMap&) = delete;
+  IntrusiveHashMap &operator=(const IntrusiveHashMap &) = delete;
 
   // Hash table size prime list.
-  static constexpr std::array<size_t, 29> PRIME = {{1, 3, 7, 13, 31, 61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749, 65521, 131071, 262139, 524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554393, 67108859, 134217689, 268435399, 536870909}};
+  static constexpr std::array<size_t, 29> PRIME = {{1,        3,        7,         13,        31,       61,      127,     251,
+                                                    509,      1021,     2039,      4093,      8191,     16381,   32749,   65521,
+                                                    131071,   262139,   524287,    1048573,   2097143,  4194301, 8388593, 16777213,
+                                                    33554393, 67108859, 134217689, 268435399, 536870909}};
 };
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::Bucket::Linkage::next_ptr(Bucket *b) -> Bucket *& {
   return b->_link._next;
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::Bucket::Linkage::prev_ptr(Bucket *b) -> Bucket *& {
   return b->_link._prev;
@@ -322,27 +325,27 @@ IntrusiveHashMap<H>::Bucket::Linkage::prev_ptr(Bucket *b) -> Bucket *& {
 
 // This is designed so that if the bucket is empty, then @c nullptr is returned, which will immediately terminate
 // a search loop on an empty bucket because that will start with a nullptr candidate, matching the limit.
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::Bucket::limit() const -> value_type * {
   Bucket *n{_link._next};
   return n ? n->_v : nullptr;
 };
 
-template<typename H>
+template <typename H>
 void
 IntrusiveHashMap<H>::Bucket::clear() {
-  _v = nullptr;
-  _count = 0;
+  _v       = nullptr;
+  _count   = 0;
   _mixed_p = false;
   // Need to clear these, or they persist after an expansion which breaks the active bucket list.
   _link._next = _link._prev = nullptr;
 }
 
-template<typename H>
+template <typename H>
 bool
 IntrusiveHashMap<H>::Bucket::contains(value_type *v) const {
-  value_type *x = _v;
+  value_type *x     = _v;
   value_type *limit = this->limit();
   while (x != limit && x != v) {
     x = H::next_ptr(x);
@@ -351,72 +354,72 @@ IntrusiveHashMap<H>::Bucket::contains(value_type *v) const {
 }
 
 // ---------------------
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::range::begin() const -> iterator const& {
+IntrusiveHashMap<H>::range::begin() const -> iterator const & {
   return super_type::first;
 }
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::range::end() const -> iterator const& {
+IntrusiveHashMap<H>::range::end() const -> iterator const & {
   return super_type::second;
 }
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::const_range::begin() const -> const_iterator const& {
+IntrusiveHashMap<H>::const_range::begin() const -> const_iterator const & {
   return super_type::first;
 }
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::const_range::end() const -> const_iterator const& {
+IntrusiveHashMap<H>::const_range::end() const -> const_iterator const & {
   return super_type::second;
 }
 
 // ---------------------
 
-template<typename H> IntrusiveHashMap<H>::IntrusiveHashMap(size_t n) {
+template <typename H> IntrusiveHashMap<H>::IntrusiveHashMap(size_t n) {
   if (n) {
     _table.resize(*std::lower_bound(PRIME.begin(), PRIME.end(), n));
   }
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::bucket_for(key_type key) -> Bucket * {
   return &_table[H::hash_of(key) % _table.size()];
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::begin() -> iterator {
   return _list.begin();
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::begin() const -> const_iterator {
   return _list.begin();
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::end() -> iterator {
   return _list.end();
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::end() const -> const_iterator {
   return _list.end();
 }
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::clear() -> self_type& {
-  for (auto& b : _table) {
+IntrusiveHashMap<H>::clear() -> self_type & {
+  for (auto &b : _table) {
     b.clear();
   }
   // Clear container data.
@@ -425,11 +428,11 @@ IntrusiveHashMap<H>::clear() -> self_type& {
   return *this;
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::find(key_type key) -> iterator {
-  Bucket *b = this->bucket_for(key);
-  value_type *v = b->_v;
+  Bucket *b         = this->bucket_for(key);
+  value_type *v     = b->_v;
   value_type *limit = b->limit();
   while (v != limit && !H::equal(key, H::key_of(v))) {
     v = H::next_ptr(v);
@@ -437,13 +440,13 @@ IntrusiveHashMap<H>::find(key_type key) -> iterator {
   return v == limit ? _list.end() : _list.iterator_for(v);
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::find(key_type key) const -> const_iterator {
   return const_cast<self_type *>(this)->find(key);
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::equal_range(key_type key) -> range {
   iterator first{this->find(key)};
@@ -457,44 +460,44 @@ IntrusiveHashMap<H>::equal_range(key_type key) -> range {
   return range{first, last};
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::equal_range(key_type key) const -> const_range {
   return const_cast<self_type *>(this)->equal_range(key);
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::iterator_for(const value_type *v) const -> const_iterator {
   return _list.iterator_for(v);
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::iterator_for(value_type *v) -> iterator {
   return _list.iterator_for(v);
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::find(value_type *v) -> iterator {
   Bucket *b = this->bucket_for(H::key_of(v));
   return b->contains(v) ? _list.iterator_for(v) : this->end();
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::find(value_type const *v) const -> const_iterator {
   return const_cast<self_type *>(this)->find(const_cast<value_type *>(v));
 }
 
-template<typename H>
+template <typename H>
 void
 IntrusiveHashMap<H>::insert(value_type *v) {
-  auto key = H::key_of(v);
-  Bucket *bucket = this->bucket_for(key);
+  auto key         = H::key_of(v);
+  Bucket *bucket   = this->bucket_for(key);
   value_type *spot = bucket->_v;
-  bool mixed_p = false; // Found a different key in the bucket.
+  bool mixed_p     = false; // Found a different key in the bucket.
 
   if (nullptr == spot) { // currently empty bucket, set it and add to active list.
     _list.append(v);
@@ -512,7 +515,9 @@ IntrusiveHashMap<H>::insert(value_type *v) {
     }
     if (spot != limit) {
       // If an equal key was found, walk past those to insert at the upper end of the range.
-      do { spot = H::next_ptr(spot); } while (spot != limit && H::equal(key, H::key_of(spot)));
+      do {
+        spot = H::next_ptr(spot);
+      } while (spot != limit && H::equal(key, H::key_of(spot)));
       if (spot != limit) { // something not equal past last equivalent, it's going to be mixed.
         mixed_p = true;
       }
@@ -533,15 +538,15 @@ IntrusiveHashMap<H>::insert(value_type *v) {
   }
 }
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::erase(iterator const& loc) -> iterator {
-  value_type *v = loc;
-  iterator zret = ++(this->iterator_for(v)); // get around no const_iterator -> iterator.
-  Bucket *b = this->bucket_for(H::key_of(v));
-  value_type *nv = H::next_ptr(v);
+IntrusiveHashMap<H>::erase(iterator const &loc) -> iterator {
+  value_type *v     = loc;
+  iterator zret     = ++(this->iterator_for(v)); // get around no const_iterator -> iterator.
+  Bucket *b         = this->bucket_for(H::key_of(v));
+  value_type *nv    = H::next_ptr(v);
   value_type *limit = b->limit();
-  if (b->_v == v) { // removed first element in bucket, update bucket
+  if (b->_v == v) {    // removed first element in bucket, update bucket
     if (limit == nv) { // that was also the only element, deactivate bucket
       _active_buckets.erase(b);
       b->clear();
@@ -554,7 +559,7 @@ IntrusiveHashMap<H>::erase(iterator const& loc) -> iterator {
   return zret;
 }
 
-template<typename H>
+template <typename H>
 bool
 IntrusiveHashMap<H>::erase(value_type *value) {
   auto loc = this->find(value);
@@ -565,14 +570,14 @@ IntrusiveHashMap<H>::erase(value_type *value) {
   return false;
 }
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::erase(iterator const& start, iterator const& limit) -> iterator {
+IntrusiveHashMap<H>::erase(iterator const &start, iterator const &limit) -> iterator {
   auto spot{start};
   Bucket *bucket{this->bucket_for(spot)};
   while (spot != limit) {
-    auto target = bucket;
-    bucket = bucket->_link._next; // bump now to avoid forward iteration problems in case of bucket removal.
+    auto target         = bucket;
+    bucket              = bucket->_link._next; // bump now to avoid forward iteration problems in case of bucket removal.
     value_type *v_limit = bucket ? bucket->_v : nullptr;
     while (spot != v_limit && spot != limit) {
       --(target->_count);
@@ -586,9 +591,9 @@ IntrusiveHashMap<H>::erase(iterator const& start, iterator const& limit) -> iter
   return _list.iterator_for(limit); // convert from const_iterator back to iterator
 };
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::erase(range const& r) -> iterator {
+IntrusiveHashMap<H>::erase(range const &r) -> iterator {
   return this->erase(r.first, r.second);
 }
 
@@ -599,17 +604,17 @@ namespace detail {
 // also must be done via free functions and not method overloads because the compiler forces a match up of method
 // definitions and declarations before any template instantiation.
 
-template<typename H, typename F>
+template <typename H, typename F>
 auto
-IntrusiveHashMapApply(IntrusiveHashMap<H>& map, F&& f)
--> decltype(f(*static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map) {
+IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
+  -> decltype(f(*static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map) {
   return map.apply([&f](typename IntrusiveHashMap<H>::value_type *v) { return f(*v); });
 }
 
-template<typename H, typename F>
+template <typename H, typename F>
 auto
-IntrusiveHashMapApply(IntrusiveHashMap<H>& map, F&& f)
--> decltype(f(static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map) {
+IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
+  -> decltype(f(static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map) {
   auto spot{map.begin()};
   auto limit{map.end()};
   while (spot != limit) {
@@ -619,19 +624,19 @@ IntrusiveHashMapApply(IntrusiveHashMap<H>& map, F&& f)
 }
 } // namespace detail
 
-template<typename H>
-template<typename F>
+template <typename H>
+template <typename F>
 auto
-IntrusiveHashMap<H>::apply(F&& f) -> self_type& {
+IntrusiveHashMap<H>::apply(F &&f) -> self_type & {
   return detail::IntrusiveHashMapApply(*this, f);
 };
 
-template<typename H>
+template <typename H>
 void
 IntrusiveHashMap<H>::expand() {
   ExpansionPolicy org_expansion_policy = _expansion_policy; // save for restore.
-  value_type *old = _list.head();      // save for repopulating.
-  auto old_size = _table.size();
+  value_type *old                      = _list.head();      // save for repopulating.
+  auto old_size                        = _table.size();
 
   // Reset to empty state.
   this->clear();
@@ -640,49 +645,49 @@ IntrusiveHashMap<H>::expand() {
   _expansion_policy = MANUAL; // disable any auto expand while we're expanding.
   while (old) {
     value_type *v = old;
-    old = H::next_ptr(old);
+    old           = H::next_ptr(old);
     this->insert(v);
   }
   // stashed array gets cleaned up when @a tmp goes out of scope.
   _expansion_policy = org_expansion_policy; // reset to original value.
 }
 
-template<typename H>
+template <typename H>
 size_t
 IntrusiveHashMap<H>::count() const {
   return _list.count();
 }
 
-template<typename H>
+template <typename H>
 size_t
 IntrusiveHashMap<H>::bucket_count() const {
   return _table.size();
 }
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::set_expansion_policy(ExpansionPolicy policy) -> self_type& {
+IntrusiveHashMap<H>::set_expansion_policy(ExpansionPolicy policy) -> self_type & {
   _expansion_policy = policy;
   return *this;
 }
 
-template<typename H>
+template <typename H>
 auto
 IntrusiveHashMap<H>::get_expansion_policy() const -> ExpansionPolicy {
   return _expansion_policy;
 }
 
-template<typename H>
+template <typename H>
 auto
-IntrusiveHashMap<H>::set_expansion_limit(size_t n) -> self_type& {
+IntrusiveHashMap<H>::set_expansion_limit(size_t n) -> self_type & {
   _expansion_limit = n;
   return *this;
 }
 
-template<typename H>
+template <typename H>
 size_t
 IntrusiveHashMap<H>::get_expansion_limit() const {
   return _expansion_limit;
 }
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS

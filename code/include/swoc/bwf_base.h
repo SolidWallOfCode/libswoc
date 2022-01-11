@@ -43,14 +43,14 @@ struct Spec {
   static constexpr char CAPTURE_TYPE = 1;   ///< Internal type to mark a capture.
 
   static constexpr char SIGN_ALWAYS = '+'; ///< Always print a sign character.
-  static constexpr char SIGN_NEVER = ' '; ///< Never print a sign character.
-  static constexpr char SIGN_NEG = '-'; ///< Print a sign character only for negative values (default).
+  static constexpr char SIGN_NEVER  = ' '; ///< Never print a sign character.
+  static constexpr char SIGN_NEG    = '-'; ///< Print a sign character only for negative values (default).
 
   /// Constructor a default instance.
   constexpr Spec() {}
 
   /// Construct by parsing @a fmt.
-  Spec(const TextView& fmt);
+  Spec(const TextView &fmt);
 
   /// Parse a specifier.
   /// State is not reset, @a this should be default constructed before calling.
@@ -65,14 +65,14 @@ struct Spec {
     RIGHT,                           ///< Right alignment '>'.
     CENTER,                          ///< Center alignment '^'.
     SIGN                             ///< Align plus/minus sign before numeric fill. '='
-  } _align = Align::NONE;  ///< Output field alignment.
-  char _type = DEFAULT_TYPE; ///< Type / radix indicator.
+  } _align           = Align::NONE;  ///< Output field alignment.
+  char _type         = DEFAULT_TYPE; ///< Type / radix indicator.
   bool _radix_lead_p = false;        ///< Print leading radix indication.
   // @a _min is unsigned because there's no point in an invalid default, 0 works fine.
   unsigned int _min = 0;                                        ///< Minimum width.
-  int _prec = -1;                                       ///< Precision
+  int _prec         = -1;                                       ///< Precision
   unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maximum width
-  int _idx = -1;                                       ///< Positional "name" of the specification.
+  int _idx          = -1;                                       ///< Positional "name" of the specification.
   std::string_view _name;                                       ///< Name of the specification.
   std::string_view _ext;                                        ///< Extension if provided.
 
@@ -113,11 +113,11 @@ protected:
     /// Flag storage, indexed by character value.
     uint8_t _data[0x100];
     /// Flag mask values.
-    static constexpr uint8_t ALIGN_MASK = 0x0F; ///< Alignment type.
-    static constexpr uint8_t TYPE_CHAR = 0x10; ///< A valid type character.
-    static constexpr uint8_t UPPER_TYPE_CHAR = 0x20; ///< Upper case flag.
+    static constexpr uint8_t ALIGN_MASK        = 0x0F; ///< Alignment type.
+    static constexpr uint8_t TYPE_CHAR         = 0x10; ///< A valid type character.
+    static constexpr uint8_t UPPER_TYPE_CHAR   = 0x20; ///< Upper case flag.
     static constexpr uint8_t NUMERIC_TYPE_CHAR = 0x40; ///< Numeric output.
-    static constexpr uint8_t SIGN_CHAR = 0x80; ///< Is sign character.
+    static constexpr uint8_t SIGN_CHAR         = 0x80; ///< Is sign character.
   } _prop;
 };
 
@@ -149,7 +149,7 @@ public:
      * @param spec [out] The next format specifier.
      * @return @c true if @a spec was filled out, @c false if no specifier was found.
      */
-    bool operator()(std::string_view& literal_v, Spec& spec);
+    bool operator()(std::string_view &literal_v, Spec &spec);
 
     /** Parse elements of a format string.
 
@@ -162,7 +162,7 @@ public:
         the case of no specifier found (@c false) or an empty specifier (@c true).
 
      */
-    static bool parse(TextView& fmt, std::string_view& literal, std::string_view& specifier);
+    static bool parse(TextView &fmt, std::string_view &literal, std::string_view &specifier);
   };
 
   /// Wrap the format string in an extractor.
@@ -170,11 +170,11 @@ public:
 
   /// Extraction support for pre-parsed format strings.
   struct FormatExtractor {
-    const std::vector<Spec>& _fmt; ///< Parsed format string.
+    const std::vector<Spec> &_fmt; ///< Parsed format string.
     int _idx = 0;                  ///< Element index.
     explicit operator bool() const;
 
-    bool operator()(std::string_view& literal_v, Spec& spec);
+    bool operator()(std::string_view &literal_v, Spec &spec);
   };
 
   /// Wrap the format instance in an extractor.
@@ -196,7 +196,7 @@ protected:
  *
  * The functor is expected to write to @a w based on @a spec.
  */
-using ExternalGeneratorSignature = BufferWriter&(BufferWriter& w, Spec const& spec);
+using ExternalGeneratorSignature = BufferWriter &(BufferWriter &w, Spec const &spec);
 
 /** Base class for implementing a name binding functor.
  *
@@ -221,7 +221,7 @@ public:
    *
    * @return @a w
    */
-  virtual BufferWriter& operator()(BufferWriter& w, Spec const& spec) const = 0;
+  virtual BufferWriter &operator()(BufferWriter &w, Spec const &spec) const = 0;
 
 protected:
   /** Standardized missing name method.
@@ -230,7 +230,7 @@ protected:
    * @param spec Format specifier, used to determine the invalid name.
    * @return @a w
    */
-  static BufferWriter& err_invalid_name(BufferWriter& w, Spec const& spec);
+  static BufferWriter &err_invalid_name(BufferWriter &w, Spec const &spec);
 };
 
 /** An explicitly empty set of bound names.
@@ -243,7 +243,7 @@ class NilBinding : public NameBinding {
 public:
   /// Do name based formatted output.
   /// This always throws an exception.
-  BufferWriter& operator()(BufferWriter&, Spec const&) const override;
+  BufferWriter &operator()(BufferWriter &, Spec const &) const override;
 };
 
 /** Associate generators with names.
@@ -254,7 +254,7 @@ public:
  * directly. A subclass should inherit from this by providing a function type @a F that is
  * suitable for the subclass generators.
  */
-template<typename F> class NameMap {
+template <typename F> class NameMap {
 private:
   using self_type = NameMap; ///< self reference type.
 public:
@@ -265,18 +265,18 @@ public:
   NameMap();
 
   /// Construct and assign the names and generators in @a list
-  NameMap(std::initializer_list<std::tuple<std::string_view, Generator const&>> list);
+  NameMap(std::initializer_list<std::tuple<std::string_view, Generator const &>> list);
 
   /** Assign the @a generator to the @a name.
    *
    * @param name Name associated with the @a generator.
    * @param generator The generator function.
    */
-  self_type& assign(std::string_view const& name, Generator const& generator);
+  self_type &assign(std::string_view const &name, Generator const &generator);
 
 protected:
   /// Copy @a name in to local storage and return a view of it.
-  std::string_view localize(std::string_view const& name);
+  std::string_view localize(std::string_view const &name);
 
   using Map = std::unordered_map<std::string_view, Generator>;
   Map _map;              ///< Mapping of name -> generator
@@ -298,10 +298,10 @@ public:
   using super_type::super_type; // import constructors.
 
   /// The bound accessor is this class.
-  NameBinding const& bind() const;
+  NameBinding const &bind() const;
 
   /// Bound name access.
-  BufferWriter& operator()(BufferWriter& w, const Spec& spec) const override;
+  BufferWriter &operator()(BufferWriter &w, const Spec &spec) const override;
 
   /// @copydoc NameMap::assign(std::string_view const &name, Generator const &generator)
 };
@@ -326,11 +326,10 @@ public:
  *
  * This is used by the formatting logic by calling the @c bind method with a context object.
  */
-template<typename T>
-class ContextNames : public NameMap<BufferWriter&(BufferWriter&, const Spec&, T&)> {
+template <typename T> class ContextNames : public NameMap<BufferWriter &(BufferWriter &, const Spec &, T &)> {
 private:
   using self_type  = ContextNames; ///< self reference type.
-  using super_type = NameMap<BufferWriter&(BufferWriter&, const Spec&, T&)>;
+  using super_type = NameMap<BufferWriter &(BufferWriter &, const Spec &, T &)>;
   using Map        = typename super_type::Map;
 
 public:
@@ -353,16 +352,16 @@ public:
      * This is called from the formatting logic to generate output for a named specifier. Subclasses
      * that need to handle name dispatch differently need only override this method.
      */
-    BufferWriter&
-    operator()(BufferWriter& w, const Spec& spec) const override {
+    BufferWriter &
+    operator()(BufferWriter &w, const Spec &spec) const override {
       return _names(w, spec, _ctx);
     }
 
   protected:
-    Binding(ContextNames const& names, context_type& ctx) : _ctx(ctx), _names(names) {}
+    Binding(ContextNames const &names, context_type &ctx) : _ctx(ctx), _names(names) {}
 
-    context_type& _ctx;         ///< Context for generators.
-    ContextNames const& _names; ///< Base set of names.
+    context_type &_ctx;         ///< Context for generators.
+    ContextNames const &_names; ///< Base set of names.
 
     friend ContextNames;
   };
@@ -375,7 +374,7 @@ public:
    * @param bg An external generator that requires no context.
    * @return @c *this
    */
-  self_type& assign(std::string_view const& name, const ExternalGenerator& bg);
+  self_type &assign(std::string_view const &name, const ExternalGenerator &bg);
 
   /** Assign the @a generator to the @a name.
    *
@@ -385,7 +384,7 @@ public:
    * @internal This is a covarying override of the super type, added to covary and
    * provide documentation.
    */
-  self_type& assign(std::string_view const& name, Generator const& generator);
+  self_type &assign(std::string_view const &name, Generator const &generator);
 
   /** Bind the name map to a specific @a context.
    *
@@ -394,7 +393,7 @@ public:
    *
    * This is used when passing the context name map to the formatter.
    */
-  Binding bind(context_type& context);
+  Binding bind(context_type &context);
 
 protected:
   /** Generate output based on the name in @a spec.
@@ -408,7 +407,7 @@ protected:
    * that need to handle name dispatch differently should override this method. This method
    * performs a name lookup in the local nameset.
    */
-  virtual BufferWriter& operator()(BufferWriter& w, const Spec& spec, context_type& ctx) const;
+  virtual BufferWriter &operator()(BufferWriter &w, const Spec &spec, context_type &ctx) const;
 };
 
 /** Default global names.
@@ -475,7 +474,9 @@ Format::bind() const -> FormatExtractor {
   return {_items};
 }
 
-inline Format::TextViewExtractor::operator bool() const { return !_fmt.empty(); }
+inline Format::TextViewExtractor::operator bool() const {
+  return !_fmt.empty();
+}
 
 inline Format::FormatExtractor::operator bool() const {
   return _idx < static_cast<int>(_fmt.size());
@@ -483,25 +484,25 @@ inline Format::FormatExtractor::operator bool() const {
 
 /// --- Names / Generators ---
 
-inline BufferWriter&
-NameBinding::err_invalid_name(BufferWriter& w, const Spec& spec) {
+inline BufferWriter &
+NameBinding::err_invalid_name(BufferWriter &w, const Spec &spec) {
   return w.print("{{~{}~}}", spec._name);
 }
 
-inline BufferWriter&
-NilBinding::operator()(BufferWriter&, bwf::Spec const&) const {
+inline BufferWriter &
+NilBinding::operator()(BufferWriter &, bwf::Spec const &) const {
   throw std::runtime_error("Use of nil bound names in BW formatting");
 }
 
-template<typename T>
+template <typename T>
 inline auto
-ContextNames<T>::bind(context_type& ctx) -> Binding {
+ContextNames<T>::bind(context_type &ctx) -> Binding {
   return {*this, ctx};
 }
 
-template<typename T>
-BufferWriter&
-ContextNames<T>::operator()(BufferWriter& w, const Spec& spec, context_type& ctx) const {
+template <typename T>
+BufferWriter &
+ContextNames<T>::operator()(BufferWriter &w, const Spec &spec, context_type &ctx) const {
   if (!spec._name.empty()) {
     if (auto spot = super_type::_map.find(spec._name); spot != super_type::_map.end()) {
       spot->second(w, spec, ctx);
@@ -512,32 +513,31 @@ ContextNames<T>::operator()(BufferWriter& w, const Spec& spec, context_type& ctx
   return w;
 }
 
-template<typename F> NameMap<F>::NameMap() {}
+template <typename F> NameMap<F>::NameMap() {}
 
-template<typename F>
-NameMap<F>::NameMap(std::initializer_list<std::tuple<std::string_view, const Generator&>> list) {
+template <typename F> NameMap<F>::NameMap(std::initializer_list<std::tuple<std::string_view, const Generator &>> list) {
   for (auto &&[name, generator] : list) {
     this->assign(name, generator);
   }
 }
 
-template<typename F>
+template <typename F>
 std::string_view
-NameMap<F>::localize(std::string_view const& name) {
+NameMap<F>::localize(std::string_view const &name) {
   auto span = _arena.alloc(name.size());
   memcpy(span, name);
   return span.view();
 }
 
-template<typename F>
+template <typename F>
 auto
-NameMap<F>::assign(std::string_view const& name, Generator const& generator) -> self_type& {
+NameMap<F>::assign(std::string_view const &name, Generator const &generator) -> self_type & {
   _map[this->localize(name)] = generator;
   return *this;
 }
 
-inline BufferWriter&
-ExternalNames::operator()(BufferWriter& w, const Spec& spec) const {
+inline BufferWriter &
+ExternalNames::operator()(BufferWriter &w, const Spec &spec) const {
   if (!spec._name.empty()) {
     if (auto spot = _map.find(spec._name); spot != _map.end()) {
       spot->second(w, spec);
@@ -548,23 +548,22 @@ ExternalNames::operator()(BufferWriter& w, const Spec& spec) const {
   return w;
 }
 
-inline NameBinding const&
+inline NameBinding const &
 ExternalNames::bind() const {
   return *this;
 }
 
-template<typename T>
+template <typename T>
 auto
-ContextNames<T>::assign(std::string_view const& name, ExternalGenerator const& bg) -> self_type& {
+ContextNames<T>::assign(std::string_view const &name, ExternalGenerator const &bg) -> self_type & {
   // wrap @a bg in a shim that discards the context so it can be stored in the map.
-  super_type::assign(name, [bg](BufferWriter& w, Spec const& spec
-                                , context_type&) -> BufferWriter& { return bg(w, spec); });
+  super_type::assign(name, [bg](BufferWriter &w, Spec const &spec, context_type &) -> BufferWriter & { return bg(w, spec); });
   return *this;
 }
 
-template<typename T>
+template <typename T>
 auto
-ContextNames<T>::assign(std::string_view const& name, Generator const& g) -> self_type& {
+ContextNames<T>::assign(std::string_view const &name, Generator const &g) -> self_type & {
   super_type::assign(name, g);
   return *this;
 }
@@ -573,12 +572,10 @@ ContextNames<T>::assign(std::string_view const& name, Generator const& g) -> sel
 
 /// Internal signature for template generated formatting.
 /// @a args is a forwarded tuple of arguments to be processed.
-template<typename TUPLE> using ArgFormatterSignature = BufferWriter& (*)(BufferWriter& w
-                                                                         , Spec const&
-                                                                         , TUPLE const& args);
+template <typename TUPLE> using ArgFormatterSignature = BufferWriter &(*)(BufferWriter &w, Spec const &, TUPLE const &args);
 
 /// Internal error / reporting message generators
-void Err_Bad_Arg_Index(BufferWriter& w, int i, size_t n);
+void Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n);
 
 // MSVC will expand the parameter pack inside a lambda but not gcc, so this indirection is required.
 
@@ -586,9 +583,9 @@ void Err_Bad_Arg_Index(BufferWriter& w, int i, size_t n);
 /// (or the equivalent lambda) is needed because the array of formatters must have a homogenous
 /// signature, not vary per argument. Effectively this indirection erases the type of the specific
 /// argument being formatted. Instances of this have the signature @c ArgFormatterSignature.
-template<typename TUPLE, size_t I>
-BufferWriter&
-Arg_Formatter(BufferWriter& w, Spec const& spec, TUPLE const& args) {
+template <typename TUPLE, size_t I>
+BufferWriter &
+Arg_Formatter(BufferWriter &w, Spec const &spec, TUPLE const &args) {
   return bwformat(w, spec, std::get<I>(args));
 }
 
@@ -596,7 +593,7 @@ Arg_Formatter(BufferWriter& w, Spec const& spec, TUPLE const& args) {
 /// @a TUPLE.  Due to language limitations it cannot be done directly. The formatters can be
 /// accessed via standard array access in contrast to templated tuple access. The actual array is
 /// static and therefore at run time the only operation is loading the address of the array.
-template<typename TUPLE, size_t... N>
+template <typename TUPLE, size_t... N>
 ArgFormatterSignature<TUPLE> *
 Get_Arg_Formatter_Array(std::index_sequence<N...>) {
   static ArgFormatterSignature<TUPLE> fa[sizeof...(N)] = {&bwf::Arg_Formatter<TUPLE, N>...};
@@ -607,7 +604,7 @@ Get_Arg_Formatter_Array(std::index_sequence<N...>) {
 /// This is the normal mechanism, in cases where the length can be known or limited before
 /// conversion, it can be more efficient to work in a temporary local buffer and copy out
 /// as needed without moving data in the output buffer.
-void Adjust_Alignment(BufferWriter& aux, Spec const& spec);
+void Adjust_Alignment(BufferWriter &aux, Spec const &spec);
 
 /** Format @a n as an integral value.
  *
@@ -619,7 +616,7 @@ void Adjust_Alignment(BufferWriter& aux, Spec const& spec);
  *
  * A leading sign character will be output based on @a spec and @a negative_p.
  */
-BufferWriter& Format_Integer(BufferWriter& w, Spec const& spec, uintmax_t n, bool negative_p);
+BufferWriter &Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t n, bool negative_p);
 
 /** Format @a f as a floating point value.
  *
@@ -631,7 +628,7 @@ BufferWriter& Format_Integer(BufferWriter& w, Spec const& spec, uintmax_t n, boo
  *
  * A leading sign character will be output based on @a spec and @a negative_p.
  */
-BufferWriter& Format_Float(BufferWriter& w, Spec const& spec, double f, bool negative_p);
+BufferWriter &Format_Float(BufferWriter &w, Spec const &spec, double f, bool negative_p);
 
 /** Format output as a hexadecimal dump.
  *
@@ -641,7 +638,7 @@ BufferWriter& Format_Float(BufferWriter& w, Spec const& spec, double f, bool neg
  *
  * This dumps the memory in the @a view as a hexadecimal string.
  */
-void Format_As_Hex(BufferWriter& w, std::string_view view, const char *digits);
+void Format_As_Hex(BufferWriter &w, std::string_view view, const char *digits);
 
 /* Capture support, which allows format extractors to capture arguments and consume them.
  * This was built in order to support C style formatting, which needs to capture arguments
@@ -655,43 +652,43 @@ void Format_As_Hex(BufferWriter& w, std::string_view view, const char *digits);
  * depend on tuple explicitly.
  */
 /// The signature for accessing an element of a tuple.
-template<typename T> using TupleAccessorSignature = std::any (*)(T const& t);
+template <typename T> using TupleAccessorSignature = std::any (*)(T const &t);
 
 /// Template access method.
-template<size_t IDX, typename T>
+template <size_t IDX, typename T>
 std::any
-TupleAccessor(T const& t) {
+TupleAccessor(T const &t) {
   return std::any(&std::get<IDX>(t));
 }
 
 /// Create and return an array of specialized accessors, indexed by tuple index.
-template<typename T, size_t... N>
-std::array<TupleAccessorSignature<T>, sizeof...(N)>&
+template <typename T, size_t... N>
+std::array<TupleAccessorSignature<T>, sizeof...(N)> &
 Tuple_Accessor_Array(std::index_sequence<N...>) {
   static std::array<TupleAccessorSignature<T>, sizeof...(N)> accessors = {&TupleAccessor<N>...};
   return accessors;
 }
 
 /// Get the Nth element of the tuple as @c std::any.
-template<typename T>
+template <typename T>
 std::any
-Tuple_Nth(T const& t, size_t idx) {
+Tuple_Nth(T const &t, size_t idx) {
   return Tuple_Accessor_Array<T>(std::make_index_sequence<std::tuple_size<T>::value>())[idx](t);
 }
 
 /// If capture is used, the format extractor must provide a @c capture method. This isn't required
 /// so make it compile time optional, but throw if the extractor sets up for capture and didn't
 /// provide one.
-template<typename F>
+template <typename F>
 auto
-arg_capture(F&&, BufferWriter&, Spec const&, std::any&&, swoc::meta::CaseTag<0>) -> void {
+arg_capture(F &&, BufferWriter &, Spec const &, std::any &&, swoc::meta::CaseTag<0>) -> void {
   throw std::runtime_error("Capture specification used in format extractor that does not support capture");
 }
 
-template<typename F>
+template <typename F>
 auto
-arg_capture(F&& f, BufferWriter& w, Spec const& spec, std::any&& value, swoc::meta::CaseTag<1>)
--> decltype(f.capture(w, spec, value)) {
+arg_capture(F &&f, BufferWriter &w, Spec const &spec, std::any &&value, swoc::meta::CaseTag<1>)
+  -> decltype(f.capture(w, spec, value)) {
   return f.capture(w, spec, value);
 }
 
@@ -709,10 +706,9 @@ arg_capture(F&& f, BufferWriter& w, Spec const& spec, std::any&& value, swoc::me
  * pass additional information along, particularly to a name binding without interfering with
  * the base use case.
  */
-template<typename EXTRACTOR, typename VIEW, typename SPEC>
+template <typename EXTRACTOR, typename VIEW, typename SPEC>
 auto
-extractor_spec_type(bool (EXTRACTOR::*)(VIEW, SPEC)) -> SPEC {
-}
+extractor_spec_type(bool (EXTRACTOR::*)(VIEW, SPEC)) -> SPEC {}
 
 /** A pack of arguments for formatting.
  *
@@ -746,7 +742,7 @@ public:
    *
    * @return @a w
    */
-  virtual BufferWriter& print(BufferWriter& w, Spec const& spec, unsigned idx) const = 0;
+  virtual BufferWriter &print(BufferWriter &w, Spec const &spec, unsigned idx) const = 0;
 
   /// Number of arguments in the pack.
   virtual unsigned count() const = 0;
@@ -759,40 +755,39 @@ public:
  * This contains a reference to the tuple, and so is only suitable for passing as a temporary.
  *
  */
-template<typename... Args> class ArgTuple : public ArgPack {
+template <typename... Args> class ArgTuple : public ArgPack {
 public:
   /// Construct from a tuple.
-  ArgTuple(std::tuple<Args...> const& tuple) : _tuple(tuple) {}
+  ArgTuple(std::tuple<Args...> const &tuple) : _tuple(tuple) {}
 
 protected:
   /// Numnber of arguments in the tuple.
   unsigned count() const override;
 
   /// Generate formatted output on @a w for argument at @a idx.
-  BufferWriter& print(BufferWriter& w, Spec const& spec, unsigned idx) const override;
+  BufferWriter &print(BufferWriter &w, Spec const &spec, unsigned idx) const override;
 
   /// Capture the @a idx argument for later use.
   std::any capture(unsigned idx) const override;
 
   /// The source arguments.
-  std::tuple<Args...> const& _tuple;
+  std::tuple<Args...> const &_tuple;
 };
 
-template<typename... Args>
+template <typename... Args>
 unsigned
 ArgTuple<Args...>::count() const {
   return sizeof...(Args);
 }
 
-template<typename... Args>
-BufferWriter&
-ArgTuple<Args...>::print(BufferWriter& w, Spec const& spec, unsigned idx) const {
-  static const auto _fa{
-      bwf::Get_Arg_Formatter_Array<std::tuple<Args...>>(std::index_sequence_for<Args...>{})};
+template <typename... Args>
+BufferWriter &
+ArgTuple<Args...>::print(BufferWriter &w, Spec const &spec, unsigned idx) const {
+  static const auto _fa{bwf::Get_Arg_Formatter_Array<std::tuple<Args...>>(std::index_sequence_for<Args...>{})};
   return _fa[idx](w, spec, _tuple);
 }
 
-template<typename... Args>
+template <typename... Args>
 std::any
 ArgTuple<Args...>::capture(unsigned idx) const {
   return {Tuple_Nth(_tuple, idx)};
@@ -800,16 +795,16 @@ ArgTuple<Args...>::capture(unsigned idx) const {
 
 } // namespace bwf
 
-template<typename Binding, typename Extractor>
-BufferWriter&
-BufferWriter::print_nfv(Binding&& names, Extractor&& ex, bwf::ArgPack const& args) {
+template <typename Binding, typename Extractor>
+BufferWriter &
+BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &args) {
   using namespace std::literals;
   // This gets the actual specifier type from the Extractor - it must be a subclass of @c bwf::Spec
   // but this enables format extractors to use a subclass if additional data needs to be passed
   // via the specifier.
   using spec_type =
-  typename std::remove_reference<decltype(bwf::extractor_spec_type(&std::remove_reference<Extractor>::type::operator()))>::type;
-  int N = args.count();
+    typename std::remove_reference<decltype(bwf::extractor_spec_type(&std::remove_reference<Extractor>::type::operator()))>::type;
+  int N       = args.count();
   int arg_idx = 0; // the next argument index to be processed.
 
   // Parser is required to return @c false if there's no more data, @c true if something was parsed.
@@ -862,41 +857,39 @@ BufferWriter::print_nfv(Binding&& names, Extractor&& ex, bwf::ArgPack const& arg
   return *this;
 }
 
-template<typename... Args>
-BufferWriter&
-BufferWriter::print(const TextView& fmt, Args&& ... args) {
-  return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), bwf::ArgTuple{
-      std::forward_as_tuple(args...)});
+template <typename... Args>
+BufferWriter &
+BufferWriter::print(const TextView &fmt, Args &&... args) {
+  return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), bwf::ArgTuple{std::forward_as_tuple(args...)});
 }
 
-template<typename... Args>
-BufferWriter&
-BufferWriter::print(bwf::Format const& fmt, Args&& ... args) {
-  return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), bwf::ArgTuple{
-      std::forward_as_tuple(args...)});
+template <typename... Args>
+BufferWriter &
+BufferWriter::print(bwf::Format const &fmt, Args &&... args) {
+  return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), bwf::ArgTuple{std::forward_as_tuple(args...)});
 }
 
-template<typename... Args>
-BufferWriter&
-BufferWriter::print_v(TextView const& fmt, std::tuple<Args...> const& args) {
+template <typename... Args>
+BufferWriter &
+BufferWriter::print_v(TextView const &fmt, std::tuple<Args...> const &args) {
   return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), bwf::ArgTuple{args});
 }
 
-template<typename... Args>
-BufferWriter&
-BufferWriter::print_v(const bwf::Format& fmt, const std::tuple<Args...>& args) {
+template <typename... Args>
+BufferWriter &
+BufferWriter::print_v(const bwf::Format &fmt, const std::tuple<Args...> &args) {
   return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), bwf::ArgTuple{args});
 }
 
-template<typename Binding, typename Extractor>
-BufferWriter&
-BufferWriter::print_nfv(Binding const& names, Extractor&& f) {
+template <typename Binding, typename Extractor>
+BufferWriter &
+BufferWriter::print_nfv(Binding const &names, Extractor &&f) {
   return print_nfv(names, f, bwf::ArgTuple{std::make_tuple()});
 }
 
-template<typename Binding>
-BufferWriter&
-BufferWriter::print_n(Binding const& names, TextView const& fmt) {
+template <typename Binding>
+BufferWriter &
+BufferWriter::print_n(Binding const &names, TextView const &fmt) {
   return print_nfv(names, bwf::Format::bind(fmt), bwf::ArgTuple{std::make_tuple()});
 }
 
@@ -908,11 +901,11 @@ BufferWriter::aux_span() {
 // ---- Formatting for specific types.
 
 // Must be first because it is used by other formatters, and is not inline.
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, std::string_view sv);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv);
 
 // Pointers that are not specialized.
-inline BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, const void *ptr) {
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr) {
   using namespace swoc::literals;
   bwf::Spec ptr_spec{spec};
   ptr_spec._radix_lead_p = true;
@@ -920,7 +913,7 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, const void *ptr) {
   if (ptr == nullptr) {
     if (spec._type == 's' || spec._type == 'S') {
       ptr_spec._type = bwf::Spec::DEFAULT_TYPE;
-      ptr_spec._ext = ""_sv; // clear any extension.
+      ptr_spec._ext  = ""_sv; // clear any extension.
       return bwformat(w, spec, spec._type == 's' ? "null"_sv : "NULL"_sv);
     } else if (spec._type == bwf::Spec::DEFAULT_TYPE) {
       return w; // print nothing if there is no format character override.
@@ -935,11 +928,11 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, const void *ptr) {
   return bwf::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
 }
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, MemSpan<void> const& span);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span);
 
-template<typename T>
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, MemSpan<T> const& span) {
+template <typename T>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<T> const &span) {
   bwf::Spec s{spec};
   // If the precision isn't already specified, make it the size of the objects in the span.
   // This will break the output into blocks of that size.
@@ -949,20 +942,20 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, MemSpan<T> const& span) {
   return bwformat(w, s, span.template rebind<void>());
 }
 
-template<size_t N>
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, const char (& a)[N]) {
+template <size_t N>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, const char (&a)[N]) {
   return bwformat(w, spec, std::string_view(a, N - 1));
 }
 
 // Capture this explicitly so it doesn't go to any other pointer type.
-inline BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, std::nullptr_t) {
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::nullptr_t) {
   return bwformat(w, spec, static_cast<void *>(nullptr));
 }
 
-inline BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, const char *v) {
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, const char *v) {
   if (spec._type == 'x' || spec._type == 'X' || spec._type == 'p' || spec._type == 'P') {
     bwformat(w, spec, static_cast<const void *>(v));
   } else if (v != nullptr) {
@@ -973,28 +966,28 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, const char *v) {
   return w;
 }
 
-inline BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, std::string const& s) {
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::string const &s) {
   return bwformat(w, spec, std::string_view{s});
 }
 
-inline BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, TextView tv) {
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, TextView tv) {
   return bwformat(w, spec, static_cast<std::string_view>(tv));
 }
 
-template<typename X, typename V>
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const&, TransformView<X, V>&& view) {
+template <typename X, typename V>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &, TransformView<X, V> &&view) {
   while (view)
     w.write(char(*(view++)));
   return w;
 }
 
-template<typename F>
+template <typename F>
 auto
-bwformat(BufferWriter& w, bwf::Spec const& spec, F&& f) ->
-typename std::enable_if<std::is_floating_point<typename std::remove_reference<F>::type>::value, BufferWriter&>::type {
+bwformat(BufferWriter &w, bwf::Spec const &spec, F &&f) ->
+  typename std::enable_if<std::is_floating_point<typename std::remove_reference<F>::type>::value, BufferWriter &>::type {
   return f < 0 ? bwf::Format_Float(w, spec, -f, true) : bwf::Format_Float(w, spec, f, false);
 }
 
@@ -1010,35 +1003,37 @@ typename std::enable_if<std::is_floating_point<typename std::remove_reference<F>
    of integer types, rather tuning and hoping to get just the right set of overloads.
  */
 
-template<typename I>
+template <typename I>
 auto
-bwformat(BufferWriter& w, bwf::Spec const& spec, I&& i) ->
-typename std::enable_if<std::is_unsigned<typename std::remove_reference<I>::type>::value &&
-                        std::is_integral<typename std::remove_reference<I>::type>::value, BufferWriter&>::type {
+bwformat(BufferWriter &w, bwf::Spec const &spec, I &&i) ->
+  typename std::enable_if<std::is_unsigned<typename std::remove_reference<I>::type>::value &&
+                            std::is_integral<typename std::remove_reference<I>::type>::value,
+                          BufferWriter &>::type {
   return bwf::Format_Integer(w, spec, i, false);
 }
 
-template<typename I>
+template <typename I>
 auto
-bwformat(BufferWriter& w, bwf::Spec const& spec, I&& i) ->
-typename std::enable_if<std::is_signed<typename std::remove_reference<I>::type>::value &&
-                        std::is_integral<typename std::remove_reference<I>::type>::value, BufferWriter&>::type {
-  bool neg_p = false;
+bwformat(BufferWriter &w, bwf::Spec const &spec, I &&i) ->
+  typename std::enable_if<std::is_signed<typename std::remove_reference<I>::type>::value &&
+                            std::is_integral<typename std::remove_reference<I>::type>::value,
+                          BufferWriter &>::type {
+  bool neg_p  = false;
   uintmax_t n = static_cast<uintmax_t>(i);
   if (i < 0) {
-    n = static_cast<uintmax_t>(-i);
+    n     = static_cast<uintmax_t>(-i);
     neg_p = true;
   }
   return bwf::Format_Integer(w, spec, n, neg_p);
 }
 
-inline BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const&, char c) {
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &, char c) {
   return w.write(c);
 }
 
-inline BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, bool f) {
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, bool f) {
   using namespace std::literals;
   if ('s' == spec._type) {
     w.write(f ? "true"sv : "false"sv);
@@ -1067,9 +1062,9 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, bool f) {
  * need to generate formatted output. For direct use there is an overload that takes an argument
  * list.
  */
-template<typename... Args>
-std::string&
-bwprint_v(std::string& s, TextView fmt, std::tuple<Args...> const& args) {
+template <typename... Args>
+std::string &
+bwprint_v(std::string &s, TextView fmt, std::tuple<Args...> const &args) {
   auto len = s.size(); // remember initial size
   size_t n = FixedBufferWriter(s.data(), s.size()).print_v(fmt, args).extent();
   s.resize(n);   // always need to resize - if shorter, must clip pre-existing text.
@@ -1094,35 +1089,35 @@ bwprint_v(std::string& s, TextView fmt, std::tuple<Args...> const& args) {
  * @note This is intended for direct use. For indirect use (as a backend for another class) see the
  * overload that takes an argument tuple.
  */
-template<typename... Args>
-std::string&
-bwprint(std::string& s, TextView fmt, Args&& ... args) {
+template <typename... Args>
+std::string &
+bwprint(std::string &s, TextView fmt, Args &&... args) {
   return bwprint_v(s, fmt, std::forward_as_tuple(args...));
 }
 
 /// @cond COVARY
-template<typename... Args>
+template <typename... Args>
 auto
-FixedBufferWriter::print(TextView fmt, Args&& ... args) -> self_type& {
-  return static_cast<self_type&>(this->super_type::print_v(fmt, std::forward_as_tuple(args...)));
+FixedBufferWriter::print(TextView fmt, Args &&... args) -> self_type & {
+  return static_cast<self_type &>(this->super_type::print_v(fmt, std::forward_as_tuple(args...)));
 }
 
-template<typename... Args>
+template <typename... Args>
 auto
-FixedBufferWriter::print_v(TextView fmt, std::tuple<Args...> const& args) -> self_type& {
-  return static_cast<self_type&>(this->super_type::print_v(fmt, args));
+FixedBufferWriter::print_v(TextView fmt, std::tuple<Args...> const &args) -> self_type & {
+  return static_cast<self_type &>(this->super_type::print_v(fmt, args));
 }
 
-template<typename... Args>
+template <typename... Args>
 auto
-FixedBufferWriter::print(bwf::Format const& fmt, Args&& ... args) -> self_type& {
-  return static_cast<self_type&>(this->super_type::print_v(fmt, std::forward_as_tuple(args...)));
+FixedBufferWriter::print(bwf::Format const &fmt, Args &&... args) -> self_type & {
+  return static_cast<self_type &>(this->super_type::print_v(fmt, std::forward_as_tuple(args...)));
 }
 
-template<typename... Args>
+template <typename... Args>
 auto
-FixedBufferWriter::print_v(bwf::Format const& fmt, std::tuple<Args...> const& args) -> self_type& {
-  return static_cast<self_type&>(this->super_type::print_v(fmt, args));
+FixedBufferWriter::print_v(bwf::Format const &fmt, std::tuple<Args...> const &args) -> self_type & {
+  return static_cast<self_type &>(this->super_type::print_v(fmt, args));
 }
 
 /// @endcond
@@ -1130,24 +1125,22 @@ FixedBufferWriter::print_v(bwf::Format const& fmt, std::tuple<Args...> const& ar
 // Special case support for @c Scalar, because @c Scalar is a base utility for some other utilities
 // there can be some unpleasant cirularities if @c Scalar includes BufferWriter formatting. If the
 // support is here then it's fine because anything using BWF for @c Scalar must include this header.
-template<intmax_t N, typename C, typename T> class Scalar;
+template <intmax_t N, typename C, typename T> class Scalar;
 namespace detail {
-template<typename T>
+template <typename T>
 auto
-tag_label(BufferWriter&, const bwf::Spec&, meta::CaseTag<0>) -> void {
-}
+tag_label(BufferWriter &, const bwf::Spec &, meta::CaseTag<0>) -> void {}
 
-template<typename T>
+template <typename T>
 auto
-tag_label(BufferWriter& w, const bwf::Spec&
-          , meta::CaseTag<1>) -> decltype(T::label, meta::TypeFunc<void>()) {
+tag_label(BufferWriter &w, const bwf::Spec &, meta::CaseTag<1>) -> decltype(T::label, meta::TypeFunc<void>()) {
   w.print("{}", T::label);
 }
 } // namespace detail
 
-template<intmax_t N, typename C, typename T>
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, Scalar<N, C, T> const& x) {
+template <intmax_t N, typename C, typename T>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, Scalar<N, C, T> const &x) {
   bwformat(w, spec, x.value());
   if (!spec.has_numeric_type()) {
     detail::tag_label<T>(w, spec, meta::CaseArg);
@@ -1156,9 +1149,9 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, Scalar<N, C, T> const& x) {
 }
 
 // Generically a stream operator is a formatter with the default specification.
-template<typename V>
-BufferWriter&
-operator<<(BufferWriter& w, V&& v) {
+template <typename V>
+BufferWriter &
+operator<<(BufferWriter &w, V &&v) {
   return bwformat(w, bwf::Spec::DEFAULT, std::forward<V>(v));
 }
 
@@ -1193,14 +1186,14 @@ struct HexDump {
  * @internal This function exists so that other types can overload it for special processing,
  * which would not be possible with just @c HexDump.
  */
-template<typename T>
+template <typename T>
 HexDump
-As_Hex(T const& t) {
+As_Hex(T const &t) {
   return HexDump(&t, sizeof(T));
 }
 
 } // namespace bwf
 
-BufferWriter& bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::HexDump const& hex);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex);
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS

@@ -20,13 +20,12 @@
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
-namespace tag
-{
+namespace tag {
 /// A generic tag for @c Scalar types, used as the default.
 struct generic;
 } // namespace tag
 
-template<intmax_t N, typename C, typename T> class Scalar;
+template <intmax_t N, typename C, typename T> class Scalar;
 
 namespace detail {
 /// @cond INTERNAL_DETAIL
@@ -41,7 +40,7 @@ namespace detail {
 // N,S are powers of 2 I have verified recent GNU compilers will optimize to bit operations.
 
 // Convert a count @a c that is scale @a S to scale @c N
-template<intmax_t N, intmax_t S, typename C>
+template <intmax_t N, intmax_t S, typename C>
 C
 scale_conversion_round_up(C c) {
   using R = std::ratio<N, S>;
@@ -56,7 +55,7 @@ scale_conversion_round_up(C c) {
 }
 
 // Convert a count @a c that is scale @a S to scale @c N
-template<intmax_t N, intmax_t S, typename C>
+template <intmax_t N, intmax_t S, typename C>
 C
 scale_conversion_round_down(C c) {
   using R = std::ratio<N, S>;
@@ -99,10 +98,10 @@ scale_conversion_round_down(C c) {
  */
 
 // Unit value, to be rounded up.
-template<typename C> struct scalar_unit_round_up_t {
+template <typename C> struct scalar_unit_round_up_t {
   C _n;
 
-  template<intmax_t N, typename I>
+  template <intmax_t N, typename I>
   constexpr I
   scale() const {
     return static_cast<I>(_n / N + (0 != (_n % N)));
@@ -110,10 +109,10 @@ template<typename C> struct scalar_unit_round_up_t {
 };
 
 // Unit value, to be rounded down.
-template<typename C> struct scalar_unit_round_down_t {
+template <typename C> struct scalar_unit_round_down_t {
   C _n;
 
-  template<intmax_t N, typename I>
+  template <intmax_t N, typename I>
   constexpr I
   scale() const {
     return static_cast<I>(_n / N);
@@ -121,19 +120,19 @@ template<typename C> struct scalar_unit_round_down_t {
 };
 
 // Scalar value, to be rounded up.
-template<intmax_t N, typename C, typename T> struct scalar_round_up_t {
+template <intmax_t N, typename C, typename T> struct scalar_round_up_t {
   C _n;
 
-  template<intmax_t S, typename I> constexpr operator Scalar<S, I, T>() const {
+  template <intmax_t S, typename I> constexpr operator Scalar<S, I, T>() const {
     return Scalar<S, I, T>(scale_conversion_round_up<S, N>(_n));
   }
 };
 
 // Scalar value, to be rounded down.
-template<intmax_t N, typename C, typename T> struct scalar_round_down_t {
+template <intmax_t N, typename C, typename T> struct scalar_round_down_t {
   C _n;
 
-  template<intmax_t S, typename I> constexpr operator Scalar<S, I, T>() const {
+  template <intmax_t S, typename I> constexpr operator Scalar<S, I, T>() const {
     return Scalar<S, I, T>(scale_conversion_round_down<S, N>(_n));
   }
 };
@@ -166,14 +165,14 @@ template<intmax_t N, typename C, typename T> struct scalar_round_down_t {
     @see round_up
     @see round_down
  */
-template<intmax_t N, typename C = int, typename T = tag::generic> class Scalar {
+template <intmax_t N, typename C = int, typename T = tag::generic> class Scalar {
   using self_type = Scalar; ///< Self reference type.
 
 public:
   /// Scaling factor - make it external accessible.
   constexpr static intmax_t SCALE = N;
-  using Counter = C; ///< Type used to hold the count.
-  using Tag = T;     ///< Tag for the scalar.
+  using Counter                   = C; ///< Type used to hold the count.
+  using Tag                       = T; ///< Tag for the scalar.
 
   static_assert(N > 0, "The scaling factor (1st template argument) must be a positive integer");
   static_assert(std::is_integral<C>::value, "The counter type (2nd template argument) must be an integral type");
@@ -184,28 +183,28 @@ public:
   explicit constexpr Scalar(Counter n);
 
   /// Copy constructor.
-  constexpr Scalar(self_type const& that); /// Copy constructor.
+  constexpr Scalar(self_type const &that); /// Copy constructor.
 
   /// Copy constructor for same scale.
-  template<typename I> constexpr Scalar(Scalar<N, I, T> const& that);
+  template <typename I> constexpr Scalar(Scalar<N, I, T> const &that);
 
   /// Direct conversion constructor.
   /// @note Requires that @c S be an integer multiple of @c SCALE.
-  template<intmax_t S, typename I> constexpr Scalar(Scalar<S, I, T> const& that);
+  template <intmax_t S, typename I> constexpr Scalar(Scalar<S, I, T> const &that);
 
   /// @cond INTERNAL_DETAIL
   // Assignment from internal rounding structures.
   // Conversion constructor.
-  constexpr Scalar(detail::scalar_round_up_t<N, C, T> const& that);
+  constexpr Scalar(detail::scalar_round_up_t<N, C, T> const &that);
 
   // Conversion constructor.
-  constexpr Scalar(detail::scalar_round_down_t<N, C, T> const& that);
+  constexpr Scalar(detail::scalar_round_down_t<N, C, T> const &that);
 
   // Conversion constructor.
-  template<typename I> constexpr Scalar(detail::scalar_unit_round_up_t<I> v);
+  template <typename I> constexpr Scalar(detail::scalar_unit_round_up_t<I> v);
 
   // Conversion constructor.
-  template<typename I> constexpr Scalar(detail::scalar_unit_round_down_t<I> v);
+  template <typename I> constexpr Scalar(detail::scalar_unit_round_down_t<I> v);
   /// @endcond
 
   /** Assign value from @a that.
@@ -219,10 +218,10 @@ public:
    * isn't the case then the @c round_up or @c round_down must be used to indicate the rounding
    * direction.
    */
-  template<intmax_t S, typename I> self_type& operator=(Scalar<S, I, T> const& that);
+  template <intmax_t S, typename I> self_type &operator=(Scalar<S, I, T> const &that);
 
   /// Self type assignment.
-  self_type& operator=(self_type const& that);
+  self_type &operator=(self_type const &that);
 
   /// @cond INTERNAL_DETAIL
   /** Internal method to assign a unit value to be rounded up to the internal @c SCALE.
@@ -231,7 +230,7 @@ public:
    * @param n The value to be scaled.
    * @return @a this
    */
-  template<typename I> self_type& operator=(detail::scalar_unit_round_up_t<I> n);
+  template <typename I> self_type &operator=(detail::scalar_unit_round_up_t<I> n);
 
   /** Internal method to assign a unit value to be rounded down to the internal @c SCALE.
    *
@@ -239,7 +238,7 @@ public:
    * @param n The value to be scaled.
    * @return @a this
    */
-  template<typename I> self_type& operator=(detail::scalar_unit_round_down_t<I> n);
+  template <typename I> self_type &operator=(detail::scalar_unit_round_down_t<I> n);
 
   /** Internal method to assign a differently scaled SCALR to be rounded up.
    *
@@ -249,7 +248,7 @@ public:
    * The template parameters of @a v carry the static information needed to correctly scale
    * it to the local scale.
    */
-  self_type& operator=(detail::scalar_round_up_t<N, C, T> v);
+  self_type &operator=(detail::scalar_round_up_t<N, C, T> v);
 
   /** Internal method to assign a differently scaled SCALR to be rounded down.
    *
@@ -259,7 +258,7 @@ public:
    * The template parameters of @a v carry the static information needed to correctly scale
    * it to the local scale.
    */
-  self_type& operator=(detail::scalar_round_down_t<N, C, T> v);
+  self_type &operator=(detail::scalar_round_down_t<N, C, T> v);
   /// @endcond
 
   /** Set the scaled count to @a n.
@@ -271,22 +270,22 @@ public:
    * for parsing, when the input is also in scaled units (e.g., the number of megabytes to use for
    * a file).
    */
-  self_type& assign(Counter n);
+  self_type &assign(Counter n);
 
   /// The value @a that is scaled appropriately.
   /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this
   /// isn't the case then the @c round_up or @c round_down must be used to indicate the rounding
   /// direction.
-  template<intmax_t S, typename I> self_type& assign(Scalar<S, I, T> const& that);
+  template <intmax_t S, typename I> self_type &assign(Scalar<S, I, T> const &that);
 
   /// @cond INTERNAL_DETAIL
-  template<typename I> self_type& assign(detail::scalar_unit_round_up_t<I> n);
+  template <typename I> self_type &assign(detail::scalar_unit_round_up_t<I> n);
 
-  template<typename I> self_type& assign(detail::scalar_unit_round_down_t<I> n);
+  template <typename I> self_type &assign(detail::scalar_unit_round_down_t<I> n);
 
-  self_type& assign(detail::scalar_round_up_t<N, C, T> v);
+  self_type &assign(detail::scalar_round_up_t<N, C, T> v);
 
-  self_type& assign(detail::scalar_round_down_t<N, C, T> v);
+  self_type &assign(detail::scalar_round_down_t<N, C, T> v);
   /// @endcond
 
   /// The number of scale units.
@@ -302,61 +301,61 @@ public:
   /// The value is scaled from @a that to @a this.
   /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this isn't the case then
   /// the @c scale_up or @c scale_down casts must be used to indicate the rounding direction.
-  self_type& operator+=(self_type const& that);
+  self_type &operator+=(self_type const &that);
 
-  template<intmax_t S, typename I> self_type& operator+=(Scalar<S, I, T> const& that);
+  template <intmax_t S, typename I> self_type &operator+=(Scalar<S, I, T> const &that);
 
   /// @cond INTERNAL_DETAIL
-  template<typename I> self_type& operator+=(detail::scalar_unit_round_up_t<I> n);
+  template <typename I> self_type &operator+=(detail::scalar_unit_round_up_t<I> n);
 
-  template<typename I> self_type& operator+=(detail::scalar_unit_round_down_t<I> n);
+  template <typename I> self_type &operator+=(detail::scalar_unit_round_down_t<I> n);
 
-  self_type& operator+=(detail::scalar_round_up_t<N, C, T> v);
+  self_type &operator+=(detail::scalar_round_up_t<N, C, T> v);
 
-  self_type& operator+=(detail::scalar_round_down_t<N, C, T> v);
+  self_type &operator+=(detail::scalar_round_down_t<N, C, T> v);
   /// @endcond
 
   /// Increment - increase count by 1.
-  self_type& operator++();
+  self_type &operator++();
 
   /// Increment - increase count by 1.
   self_type operator++(int);
 
   /// Decrement - decrease count by 1.
-  self_type& operator--();
+  self_type &operator--();
 
   /// Decrement - decrease count by 1.
   self_type operator--(int);
 
   /// Increment by @a n.
-  self_type& inc(Counter n);
+  self_type &inc(Counter n);
 
   /// Decrement by @a n.
-  self_type& dec(Counter n);
+  self_type &dec(Counter n);
 
   /// Subtraction operator.
   /// The value is scaled from @a that to @a this.
   /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this isn't the case then
   /// the @c scale_up or @c scale_down casts must be used to indicate the rounding direction.
-  self_type& operator-=(self_type const& that);
+  self_type &operator-=(self_type const &that);
 
-  template<intmax_t S, typename I> self_type& operator-=(Scalar<S, I, T> const& that);
+  template <intmax_t S, typename I> self_type &operator-=(Scalar<S, I, T> const &that);
 
   /// @cond INTERNAL_DETAIL
-  template<typename I> self_type& operator-=(detail::scalar_unit_round_up_t<I> n);
+  template <typename I> self_type &operator-=(detail::scalar_unit_round_up_t<I> n);
 
-  template<typename I> self_type& operator-=(detail::scalar_unit_round_down_t<I> n);
+  template <typename I> self_type &operator-=(detail::scalar_unit_round_down_t<I> n);
 
-  self_type& operator-=(detail::scalar_round_up_t<N, C, T> v);
+  self_type &operator-=(detail::scalar_round_up_t<N, C, T> v);
 
-  self_type& operator-=(detail::scalar_round_down_t<N, C, T> v);
+  self_type &operator-=(detail::scalar_round_down_t<N, C, T> v);
   /// @endcond
 
   /// Multiplication - multiple the count by @a n.
-  self_type& operator*=(C n);
+  self_type &operator*=(C n);
 
   /// Division - divide (rounding down) the count by @a n.
-  self_type& operator/=(C n);
+  self_type &operator/=(C n);
 
   /// Utility overload of the function operator to create instances at the same scale.
   self_type operator()(Counter n) const;
@@ -374,154 +373,148 @@ protected:
   Counter _n; ///< Number of scale units.
 };
 
-template<intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar() : _n() {}
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar() : _n() {}
 
-template<intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(Counter n) : _n(n) {}
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(Counter n) : _n(n) {}
 
-template<intmax_t N, typename C, typename T>
-constexpr Scalar<N, C, T>::Scalar(self_type const& that) : _n(that._n) {}
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(self_type const &that) : _n(that._n) {}
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
-constexpr Scalar<N, C, T>::Scalar(Scalar<N, I, T> const& that) : _n(static_cast<C>(that.count())) {}
+template <intmax_t N, typename C, typename T>
+template <typename I>
+constexpr Scalar<N, C, T>::Scalar(Scalar<N, I, T> const &that) : _n(static_cast<C>(that.count())) {}
 
-template<intmax_t N, typename C, typename T>
-template<intmax_t S, typename I>
-constexpr
-Scalar<N, C, T>::Scalar(Scalar<S, I, T> const& that) : _n(std::ratio<S, N>::num * that.count()) {
-  static_assert(std::ratio<S, N>::den ==
-                1, "Construction not permitted - target scale is not an integral multiple of source scale.");
+template <intmax_t N, typename C, typename T>
+template <intmax_t S, typename I>
+constexpr Scalar<N, C, T>::Scalar(Scalar<S, I, T> const &that) : _n(std::ratio<S, N>::num * that.count()) {
+  static_assert(std::ratio<S, N>::den == 1,
+                "Construction not permitted - target scale is not an integral multiple of source scale.");
 }
 
-template<intmax_t N, typename C, typename T>
-constexpr Scalar<N, C, T>::Scalar(detail::scalar_round_up_t<N, C, T> const& v) : _n(v._n) {}
+template <intmax_t N, typename C, typename T>
+constexpr Scalar<N, C, T>::Scalar(detail::scalar_round_up_t<N, C, T> const &v) : _n(v._n) {}
 
-template<intmax_t N, typename C, typename T>
-constexpr Scalar<N, C, T>::Scalar(detail::scalar_round_down_t<N, C, T> const& v) : _n(v._n) {}
+template <intmax_t N, typename C, typename T>
+constexpr Scalar<N, C, T>::Scalar(detail::scalar_round_down_t<N, C, T> const &v) : _n(v._n) {}
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
-constexpr
-Scalar<N, C, T>::Scalar(detail::scalar_unit_round_up_t<I> v) : _n(v.template scale<N, C>()) {}
+template <intmax_t N, typename C, typename T>
+template <typename I>
+constexpr Scalar<N, C, T>::Scalar(detail::scalar_unit_round_up_t<I> v) : _n(v.template scale<N, C>()) {}
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
-constexpr
-Scalar<N, C, T>::Scalar(detail::scalar_unit_round_down_t<I> v) : _n(v.template scale<N, C>()) {}
+template <intmax_t N, typename C, typename T>
+template <typename I>
+constexpr Scalar<N, C, T>::Scalar(detail::scalar_unit_round_down_t<I> v) : _n(v.template scale<N, C>()) {}
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 constexpr auto
 Scalar<N, C, T>::count() const -> Counter {
   return _n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 constexpr C
 Scalar<N, C, T>::value() const {
   return _n * SCALE;
 }
 
-template<intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::operator C() const {
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::operator C() const {
   return _n * SCALE;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 inline auto
-Scalar<N, C, T>::assign(Counter n) -> self_type& {
+Scalar<N, C, T>::assign(Counter n) -> self_type & {
   _n = n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 inline auto
-Scalar<N, C, T>::operator=(self_type const& that) -> self_type& {
+Scalar<N, C, T>::operator=(self_type const &that) -> self_type & {
   _n = that._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 inline auto
-Scalar<N, C, T>::operator=(detail::scalar_round_up_t<N, C, T> v) -> self_type& {
+Scalar<N, C, T>::operator=(detail::scalar_round_up_t<N, C, T> v) -> self_type & {
   _n = v._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 inline auto
-Scalar<N, C, T>::assign(detail::scalar_round_up_t<N, C, T> v) -> self_type& {
+Scalar<N, C, T>::assign(detail::scalar_round_up_t<N, C, T> v) -> self_type & {
   _n = v._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 inline auto
-Scalar<N, C, T>::operator=(detail::scalar_round_down_t<N, C, T> v) -> self_type& {
+Scalar<N, C, T>::operator=(detail::scalar_round_down_t<N, C, T> v) -> self_type & {
   _n = v._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 inline auto
-Scalar<N, C, T>::assign(detail::scalar_round_down_t<N, C, T> v) -> self_type& {
+Scalar<N, C, T>::assign(detail::scalar_round_down_t<N, C, T> v) -> self_type & {
   _n = v._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
+template <intmax_t N, typename C, typename T>
+template <typename I>
 inline auto
-Scalar<N, C, T>::operator=(detail::scalar_unit_round_up_t<I> v) -> self_type& {
+Scalar<N, C, T>::operator=(detail::scalar_unit_round_up_t<I> v) -> self_type & {
   _n = v.template scale<N, C>();
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
+template <intmax_t N, typename C, typename T>
+template <typename I>
 inline auto
-Scalar<N, C, T>::assign(detail::scalar_unit_round_up_t<I> v) -> self_type& {
+Scalar<N, C, T>::assign(detail::scalar_unit_round_up_t<I> v) -> self_type & {
   _n = v.template scale<N, C>();
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
+template <intmax_t N, typename C, typename T>
+template <typename I>
 inline auto
-Scalar<N, C, T>::operator=(detail::scalar_unit_round_down_t<I> v) -> self_type& {
+Scalar<N, C, T>::operator=(detail::scalar_unit_round_down_t<I> v) -> self_type & {
   _n = v.template scale<N, C>();
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
+template <intmax_t N, typename C, typename T>
+template <typename I>
 inline auto
-Scalar<N, C, T>::assign(detail::scalar_unit_round_down_t<I> v) -> self_type& {
+Scalar<N, C, T>::assign(detail::scalar_unit_round_down_t<I> v) -> self_type & {
   _n = v.template scale<N, C>();
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<intmax_t S, typename I>
+template <intmax_t N, typename C, typename T>
+template <intmax_t S, typename I>
 auto
-Scalar<N, C, T>::operator=(Scalar<S, I, T> const& that) -> self_type& {
+Scalar<N, C, T>::operator=(Scalar<S, I, T> const &that) -> self_type & {
   using R = std::ratio<S, N>;
-  static_assert(R::den ==
-                1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
+  static_assert(R::den == 1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
   _n = that.count() * R::num;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<intmax_t S, typename I>
+template <intmax_t N, typename C, typename T>
+template <intmax_t S, typename I>
 auto
-Scalar<N, C, T>::assign(Scalar<S, I, T> const& that) -> self_type& {
+Scalar<N, C, T>::assign(Scalar<S, I, T> const &that) -> self_type & {
   using R = std::ratio<S, N>;
-  static_assert(R::den ==
-                1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
+  static_assert(R::den == 1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
   _n = that.count() * R::num;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 constexpr inline intmax_t
 Scalar<N, C, T>::scale() {
   return SCALE;
@@ -535,7 +528,7 @@ Scalar<N, C, T>::scale() {
  * @param n The value.
  * @return An unspecified type suitable to be assigned to a @c Scalar.
  */
-template<typename C>
+template <typename C>
 constexpr detail::scalar_unit_round_up_t<C>
 round_up(C n) {
   return {n};
@@ -549,7 +542,7 @@ round_up(C n) {
  * @param v The @c Scalar value.
  * @return
  */
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 constexpr detail::scalar_round_up_t<N, C, T>
 round_up(Scalar<N, C, T> v) {
   return {v.count()};
@@ -561,7 +554,7 @@ round_up(Scalar<N, C, T> v) {
  * @param n The value.
  * @return An unspecified type suitable to be assigned to a @c Scalar.
  */
-template<typename C>
+template <typename C>
 constexpr detail::scalar_unit_round_down_t<C>
 round_down(C n) {
   return {n};
@@ -575,7 +568,7 @@ round_down(C n) {
  * @param v The @c Scalar value.
  * @return
  */
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 constexpr detail::scalar_round_down_t<N, C, T>
 round_down(Scalar<N, C, T> v) {
   return {v.count()};
@@ -584,267 +577,263 @@ round_down(Scalar<N, C, T> v) {
 // --- Compare operators
 // These optimize nicely because if R::num or R::den is 1 the compiler will drop it.
 
-template<intmax_t N, typename C1, intmax_t S, typename I, typename T>
+template <intmax_t N, typename C1, intmax_t S, typename I, typename T>
 bool
-operator<(Scalar<N, C1, T> const& lhs, Scalar<S, I, T> const& rhs) {
+operator<(Scalar<N, C1, T> const &lhs, Scalar<S, I, T> const &rhs) {
   using R = std::ratio<N, S>;
   return lhs.count() * R::num < rhs.count() * R::den;
 }
 
-template<intmax_t N, typename C1, intmax_t S, typename I, typename T>
+template <intmax_t N, typename C1, intmax_t S, typename I, typename T>
 bool
-operator==(Scalar<N, C1, T> const& lhs, Scalar<S, I, T> const& rhs) {
+operator==(Scalar<N, C1, T> const &lhs, Scalar<S, I, T> const &rhs) {
   using R = std::ratio<N, S>;
   return lhs.count() * R::num == rhs.count() * R::den;
 }
 
-template<intmax_t N, typename C1, intmax_t S, typename I, typename T>
+template <intmax_t N, typename C1, intmax_t S, typename I, typename T>
 bool
-operator<=(Scalar<N, C1, T> const& lhs, Scalar<S, I, T> const& rhs) {
+operator<=(Scalar<N, C1, T> const &lhs, Scalar<S, I, T> const &rhs) {
   using R = std::ratio<N, S>;
   return lhs.count() * R::num <= rhs.count() * R::den;
 }
 
 // Derived compares.
-template<intmax_t N, typename C, intmax_t S, typename I, typename T>
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
 bool
-operator>(Scalar<N, C, T> const& lhs, Scalar<S, I, T> const& rhs) {
+operator>(Scalar<N, C, T> const &lhs, Scalar<S, I, T> const &rhs) {
   return rhs < lhs;
 }
 
-template<intmax_t N, typename C, intmax_t S, typename I, typename T>
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
 bool
-operator>=(Scalar<N, C, T> const& lhs, Scalar<S, I, T> const& rhs) {
+operator>=(Scalar<N, C, T> const &lhs, Scalar<S, I, T> const &rhs) {
   return rhs <= lhs;
 }
 
 // Arithmetic operators
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator+=(self_type const& that) -> self_type& {
+Scalar<N, C, T>::operator+=(self_type const &that) -> self_type & {
   _n += that._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<intmax_t S, typename I>
+template <intmax_t N, typename C, typename T>
+template <intmax_t S, typename I>
 auto
-Scalar<N, C, T>::operator+=(Scalar<S, I, T> const& that) -> self_type& {
+Scalar<N, C, T>::operator+=(Scalar<S, I, T> const &that) -> self_type & {
   using R = std::ratio<S, N>;
-  static_assert(R::den ==
-                1, "Addition not permitted - target scale is not an integral multiple of source scale.");
+  static_assert(R::den == 1, "Addition not permitted - target scale is not an integral multiple of source scale.");
   _n += that.count() * R::num;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
+template <intmax_t N, typename C, typename T>
+template <typename I>
 auto
-Scalar<N, C, T>::operator+=(detail::scalar_unit_round_up_t<I> v) -> self_type& {
+Scalar<N, C, T>::operator+=(detail::scalar_unit_round_up_t<I> v) -> self_type & {
   _n += v.template scale<N, C>();
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
+template <intmax_t N, typename C, typename T>
+template <typename I>
 auto
-Scalar<N, C, T>::operator+=(detail::scalar_unit_round_down_t<I> v) -> self_type& {
+Scalar<N, C, T>::operator+=(detail::scalar_unit_round_down_t<I> v) -> self_type & {
   _n += v.template scale<N, C>();
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator+=(detail::scalar_round_up_t<N, C, T> v) -> self_type& {
+Scalar<N, C, T>::operator+=(detail::scalar_round_up_t<N, C, T> v) -> self_type & {
   _n += v._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator+=(detail::scalar_round_down_t<N, C, T> v) -> self_type& {
+Scalar<N, C, T>::operator+=(detail::scalar_round_down_t<N, C, T> v) -> self_type & {
   _n += v._n;
   return *this;
 }
 
-template<intmax_t N, typename C, intmax_t S, typename I, typename T>
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
 auto
-operator+(Scalar<N, C, T> lhs
-          , Scalar<S, I, T> const& rhs) -> typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type {
+operator+(Scalar<N, C, T> lhs, Scalar<S, I, T> const &rhs) -> typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type {
   return typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type(lhs) += rhs;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator+(Scalar<N, C, T> const& lhs, Scalar<N, C, T> const& rhs) {
+operator+(Scalar<N, C, T> const &lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(lhs) += rhs;
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator+(detail::scalar_unit_round_up_t<I> lhs, Scalar<N, C, T> const& rhs) {
+operator+(detail::scalar_unit_round_up_t<I> lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(rhs) += lhs;
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator+(Scalar<N, C, T> const& lhs, detail::scalar_unit_round_up_t<I> rhs) {
+operator+(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_up_t<I> rhs) {
   return Scalar<N, C, T>(lhs) += rhs;
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator+(detail::scalar_unit_round_down_t<I> lhs, Scalar<N, C, T> const& rhs) {
+operator+(detail::scalar_unit_round_down_t<I> lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(rhs) += lhs;
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator+(Scalar<N, C, T> const& lhs, detail::scalar_unit_round_down_t<I> rhs) {
+operator+(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_down_t<I> rhs) {
   return Scalar<N, C, T>(lhs) += rhs;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator+(detail::scalar_round_up_t<N, C, T> lhs, Scalar<N, C, T> const& rhs) {
+operator+(detail::scalar_round_up_t<N, C, T> lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(rhs) += lhs._n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator+(Scalar<N, C, T> const& lhs, detail::scalar_round_up_t<N, C, T> rhs) {
+operator+(Scalar<N, C, T> const &lhs, detail::scalar_round_up_t<N, C, T> rhs) {
   return Scalar<N, C, T>(lhs) += rhs._n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator+(detail::scalar_round_down_t<N, C, T> lhs, Scalar<N, C, T> const& rhs) {
+operator+(detail::scalar_round_down_t<N, C, T> lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(rhs) += lhs._n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator+(Scalar<N, C, T> const& lhs, detail::scalar_round_down_t<N, C, T> rhs) {
+operator+(Scalar<N, C, T> const &lhs, detail::scalar_round_down_t<N, C, T> rhs) {
   return Scalar<N, C, T>(lhs) += rhs._n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator-=(self_type const& that) -> self_type& {
+Scalar<N, C, T>::operator-=(self_type const &that) -> self_type & {
   _n -= that._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<intmax_t S, typename I>
+template <intmax_t N, typename C, typename T>
+template <intmax_t S, typename I>
 auto
-Scalar<N, C, T>::operator-=(Scalar<S, I, T> const& that) -> self_type& {
+Scalar<N, C, T>::operator-=(Scalar<S, I, T> const &that) -> self_type & {
   using R = std::ratio<S, N>;
-  static_assert(R::den ==
-                1, "Subtraction not permitted - target scale is not an integral multiple of source scale.");
+  static_assert(R::den == 1, "Subtraction not permitted - target scale is not an integral multiple of source scale.");
   _n -= that.count() * R::num;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
+template <intmax_t N, typename C, typename T>
+template <typename I>
 auto
-Scalar<N, C, T>::operator-=(detail::scalar_unit_round_up_t<I> v) -> self_type& {
+Scalar<N, C, T>::operator-=(detail::scalar_unit_round_up_t<I> v) -> self_type & {
   _n -= v.template scale<N, C>();
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-template<typename I>
+template <intmax_t N, typename C, typename T>
+template <typename I>
 auto
-Scalar<N, C, T>::operator-=(detail::scalar_unit_round_down_t<I> v) -> self_type& {
+Scalar<N, C, T>::operator-=(detail::scalar_unit_round_down_t<I> v) -> self_type & {
   _n -= v.template scale<N, C>();
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator-=(detail::scalar_round_up_t<N, C, T> v) -> self_type& {
+Scalar<N, C, T>::operator-=(detail::scalar_round_up_t<N, C, T> v) -> self_type & {
   _n -= v._n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator-=(detail::scalar_round_down_t<N, C, T> v) -> self_type& {
+Scalar<N, C, T>::operator-=(detail::scalar_round_down_t<N, C, T> v) -> self_type & {
   _n -= v._n;
   return *this;
 }
 
-template<intmax_t N, typename C, intmax_t S, typename I, typename T>
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
 auto
-operator-(Scalar<N, C, T> lhs
-          , Scalar<S, I, T> const& rhs) -> typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type {
+operator-(Scalar<N, C, T> lhs, Scalar<S, I, T> const &rhs) -> typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type {
   return typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type(lhs) -= rhs;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator-(Scalar<N, C, T> const& lhs, Scalar<N, C, T> const& rhs) {
+operator-(Scalar<N, C, T> const &lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(lhs) -= rhs;
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator-(detail::scalar_unit_round_up_t<I> lhs, Scalar<N, C, T> const& rhs) {
+operator-(detail::scalar_unit_round_up_t<I> lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(lhs.template scale<N, C>()) -= rhs;
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator-(Scalar<N, C, T> const& lhs, detail::scalar_unit_round_up_t<I> rhs) {
+operator-(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_up_t<I> rhs) {
   return Scalar<N, C, T>(lhs) -= rhs;
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator-(detail::scalar_unit_round_down_t<I> lhs, Scalar<N, C, T> const& rhs) {
+operator-(detail::scalar_unit_round_down_t<I> lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(lhs.template scale<N, C>()) -= rhs;
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator-(Scalar<N, C, T> const& lhs, detail::scalar_unit_round_down_t<I> rhs) {
+operator-(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_down_t<I> rhs) {
   return Scalar<N, C, T>(lhs) -= rhs;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator-(detail::scalar_round_up_t<N, C, T> lhs, Scalar<N, C, T> const& rhs) {
+operator-(detail::scalar_round_up_t<N, C, T> lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(lhs._n) -= rhs;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator-(Scalar<N, C, T> const& lhs, detail::scalar_round_up_t<N, C, T> rhs) {
+operator-(Scalar<N, C, T> const &lhs, detail::scalar_round_up_t<N, C, T> rhs) {
   return Scalar<N, C, T>(lhs) -= rhs._n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator-(detail::scalar_round_down_t<N, C, T> lhs, Scalar<N, C, T> const& rhs) {
+operator-(detail::scalar_round_down_t<N, C, T> lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(lhs._n) -= rhs;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
-operator-(Scalar<N, C, T> const& lhs, detail::scalar_round_down_t<N, C, T> rhs) {
+operator-(Scalar<N, C, T> const &lhs, detail::scalar_round_down_t<N, C, T> rhs) {
   return Scalar<N, C, T>(lhs) -= rhs._n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator++() -> self_type& {
+Scalar<N, C, T>::operator++() -> self_type & {
   ++_n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
 Scalar<N, C, T>::operator++(int) -> self_type {
   self_type zret(*this);
@@ -852,14 +841,14 @@ Scalar<N, C, T>::operator++(int) -> self_type {
   return zret;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator--() -> self_type& {
+Scalar<N, C, T>::operator--() -> self_type & {
   --_n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
 Scalar<N, C, T>::operator--(int) -> self_type {
   self_type zret(*this);
@@ -867,89 +856,97 @@ Scalar<N, C, T>::operator--(int) -> self_type {
   return zret;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::inc(Counter n) -> self_type& {
+Scalar<N, C, T>::inc(Counter n) -> self_type & {
   _n += n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::dec(Counter n) -> self_type& {
+Scalar<N, C, T>::dec(Counter n) -> self_type & {
   _n -= n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator*=(C n) -> self_type& {
+Scalar<N, C, T>::operator*=(C n) -> self_type & {
   _n *= n;
   return *this;
 }
 
-template<intmax_t N, typename C, typename T>
-Scalar<N, C, T> operator*(Scalar<N, C, T> const& lhs, C n) {
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(Scalar<N, C, T> const &lhs, C n) {
   return Scalar<N, C, T>(lhs) *= n;
 }
 
-template<intmax_t N, typename C, typename T>
-Scalar<N, C, T> operator*(C n, Scalar<N, C, T> const& rhs) {
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(C n, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(rhs) *= n;
 }
 
-template<intmax_t N, typename C, typename T>
-Scalar<N, C, T> operator*(Scalar<N, C, T> const& lhs, int n) {
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(Scalar<N, C, T> const &lhs, int n) {
   return Scalar<N, C, T>(lhs) *= n;
 }
 
-template<intmax_t N, typename C, typename T>
-Scalar<N, C, T> operator*(int n, Scalar<N, C, T> const& rhs) {
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(int n, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(rhs) *= n;
 }
 
-template<intmax_t N> Scalar<N, int> operator*(Scalar<N, int> const& lhs, int n) {
+template <intmax_t N>
+Scalar<N, int>
+operator*(Scalar<N, int> const &lhs, int n) {
   return Scalar<N, int>(lhs) *= n;
 }
 
-template<intmax_t N> Scalar<N, int> operator*(int n, Scalar<N, int> const& rhs) {
+template <intmax_t N>
+Scalar<N, int>
+operator*(int n, Scalar<N, int> const &rhs) {
   return Scalar<N, int>(rhs) *= n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
-Scalar<N, C, T>::operator/=(C n) -> self_type& {
+Scalar<N, C, T>::operator/=(C n) -> self_type & {
   _n /= n;
   return *this;
 }
 
-template<intmax_t N, typename C, intmax_t S, typename I, typename T>
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
 auto
 operator/(Scalar<N, C, T> lhs, Scalar<S, I, T> rhs) -> typename std::common_type<C, I>::type {
   using R = std::ratio<N, S>;
   return (lhs.count() * R::num) / (rhs.count() * R::den);
 }
 
-template<intmax_t N, typename C, typename T, typename I>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
 operator/(Scalar<N, C, T> lhs, I n) {
   static_assert(std::is_integral<I>::value, "Scalar divsion only support integral types.");
   return Scalar<N, C, T>(lhs) /= n;
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
 Scalar<N, C, T>::operator()(Counter n) const -> self_type {
   return self_type{n};
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
 Scalar<N, C, T>::plus(Counter n) const -> self_type {
   return {_n + n};
 }
 
-template<intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T>
 auto
 Scalar<N, C, T>::minus(Counter n) const -> self_type {
   return {_n - n};
@@ -968,7 +965,7 @@ Scalar<N, C, T>::minus(Counter n) const -> self_type {
  * int r = swoc::round_up<10>(121); // r becomes 130.
  * @endcode
  */
-template<intmax_t N, typename C>
+template <intmax_t N, typename C>
 C
 round_up(C value) {
   return N * detail::scale_conversion_round_up<N, 1>(value);
@@ -987,34 +984,33 @@ round_up(C value) {
  * int r = swoc::round_down<10>(121); // r becomes 120.
  * @endcode
  */
-template<intmax_t N, typename C>
+template <intmax_t N, typename C>
 C
 round_down(C value) {
   return N * detail::scale_conversion_round_down<N, 1>(value);
 }
 
 namespace detail {
-template<typename T>
+template <typename T>
 auto
-tag_label(std::ostream&, const meta::CaseTag<0>&) -> void {}
+tag_label(std::ostream &, const meta::CaseTag<0> &) -> void {}
 
-template<typename T>
+template <typename T>
 auto
-tag_label(std::ostream& w, const meta::CaseTag<1>&) -> decltype(T::label, meta::TypeFunc<void>()) {
+tag_label(std::ostream &w, const meta::CaseTag<1> &) -> decltype(T::label, meta::TypeFunc<void>()) {
   w << T::label;
 }
 
-template<typename T>
-inline std::ostream&
-tag_label(std::ostream& w) {
+template <typename T>
+inline std::ostream &
+tag_label(std::ostream &w) {
   tag_label<T>(w, meta::CaseArg);
   return w;
 }
 } // namespace detail
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS
 
-namespace std
-{
+namespace std {
 /// Compute common type of two scalars.
 /// This is in `std` to overload the base definition. This yields a type that has the common type of
 /// the counter type and a scale that is the GCF of the input scales.

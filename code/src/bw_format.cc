@@ -48,8 +48,8 @@ Spec::Property::Property() {
   _data['x'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
   _data['X'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
 
-  _data[SIGN_NEVER] = SIGN_CHAR;
-  _data[SIGN_NEG] = SIGN_CHAR;
+  _data[SIGN_NEVER]  = SIGN_CHAR;
+  _data[SIGN_NEG]    = SIGN_CHAR;
   _data[SIGN_ALWAYS] = SIGN_CHAR;
 
   _data['<'] = static_cast<uint8_t>(Spec::Align::LEFT);
@@ -58,7 +58,9 @@ Spec::Property::Property() {
   _data['='] = static_cast<uint8_t>(Spec::Align::SIGN);
 }
 
-Spec::Spec(const TextView& fmt) { this->parse(fmt); }
+Spec::Spec(const TextView &fmt) {
+  this->parse(fmt);
+}
 
 /// Parse a format specification.
 bool
@@ -67,7 +69,7 @@ Spec::parse(TextView fmt) {
 
   _name = fmt.take_prefix_at(':');
   // if it's parsable as a number, treat it as an index.
-  num = _name;
+  num    = _name;
   auto n = svto_radix<10>(num);
   if (num.empty()) {
     _idx = static_cast<decltype(_idx)>(n);
@@ -75,7 +77,7 @@ Spec::parse(TextView fmt) {
 
   if (fmt.size()) {
     TextView sz = fmt.take_prefix_at(':'); // the format specifier.
-    _ext = fmt;                     // anything past the second ':' is the extension.
+    _ext        = fmt;                     // anything past the second ':' is the extension.
     if (sz.size()) {
       // fill and alignment
       if ('%' == *sz) { // enable URI encoding of the fill character so
@@ -125,10 +127,10 @@ Spec::parse(TextView fmt) {
         ++sz;
       }
       num = sz;
-      n = svto_radix<10>(num);
+      n   = svto_radix<10>(num);
       if (num.size() < sz.size()) {
         _min = static_cast<decltype(_min)>(n);
-        sz = num;
+        sz   = num;
         if (!sz.size()) {
           return true;
         }
@@ -136,10 +138,10 @@ Spec::parse(TextView fmt) {
       // precision
       if ('.' == *sz) {
         num = ++sz;
-        n = svto_radix<10>(num);
+        n   = svto_radix<10>(num);
         if (num.size() < sz.size()) {
           _prec = static_cast<decltype(_prec)>(n);
-          sz = num;
+          sz    = num;
           if (!sz.size()) {
             return true;
           }
@@ -157,10 +159,10 @@ Spec::parse(TextView fmt) {
       // maximum width
       if (',' == *sz) {
         num = ++sz;
-        n = svto_radix<10>(num);
+        n   = svto_radix<10>(num);
         if (num.size() < sz.size()) {
           _max = static_cast<decltype(_max)>(n);
-          sz = num;
+          sz   = num;
           if (!sz.size()) {
             return true;
           }
@@ -185,8 +187,7 @@ Spec::parse(TextView fmt) {
 /// Update @a fmt to strip the parsed text.
 /// @return @c true if a specifier was parsed, @c false if not.
 bool
-Format::TextViewExtractor::parse(TextView& fmt, std::string_view& literal
-                                 , std::string_view& specifier) {
+Format::TextViewExtractor::parse(TextView &fmt, std::string_view &literal, std::string_view &specifier) {
   TextView::size_type off;
 
   // Check for brace delimiters.
@@ -231,7 +232,7 @@ Format::TextViewExtractor::parse(TextView& fmt, std::string_view& literal
 }
 
 bool
-Format::TextViewExtractor::operator()(std::string_view& literal_v, Spec& spec) {
+Format::TextViewExtractor::operator()(std::string_view &literal_v, Spec &spec) {
   if (!_fmt.empty()) {
     std::string_view spec_v;
     if (parse(_fmt, literal_v, spec_v)) {
@@ -242,7 +243,7 @@ Format::TextViewExtractor::operator()(std::string_view& literal_v, Spec& spec) {
 }
 
 bool
-Format::FormatExtractor::operator()(std::string_view& literal_v, swoc::bwf::Spec& spec) {
+Format::FormatExtractor::operator()(std::string_view &literal_v, swoc::bwf::Spec &spec) {
   literal_v = {};
   if (_idx < int(_fmt.size()) && _fmt[_idx]._type == Spec::LITERAL_TYPE) {
     literal_v = _fmt[_idx++]._ext;
@@ -255,7 +256,7 @@ Format::FormatExtractor::operator()(std::string_view& literal_v, swoc::bwf::Spec
 }
 
 void
-Err_Bad_Arg_Index(BufferWriter& w, int i, size_t n) {
+Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n) {
   static const Format fmt{"{{BAD_ARG_INDEX:{} of {}}}"sv};
   w.print(fmt, i, n);
 }
@@ -267,17 +268,17 @@ Err_Bad_Arg_Index(BufferWriter& w, int i, size_t n) {
    cause this function to make no further adjustments.
  */
 void
-Adjust_Alignment(BufferWriter& aux, Spec const& spec) {
+Adjust_Alignment(BufferWriter &aux, Spec const &spec) {
   size_t extent = aux.extent();
-  size_t min = spec._min;
+  size_t min    = spec._min;
   if (extent < min) {
-    size_t delta = min - extent;
+    size_t delta      = min - extent;
     size_t left_delta = 0, right_delta = delta; // left justify values
     if (Spec::Align::RIGHT == spec._align) {
-      left_delta = delta;
+      left_delta  = delta;
       right_delta = 0;
     } else if (Spec::Align::CENTER == spec._align) {
-      left_delta = delta / 2;
+      left_delta  = delta / 2;
       right_delta = (delta + 1) / 2;
     }
     if (left_delta > 0) {
@@ -305,17 +306,17 @@ Adjust_Alignment(BufferWriter& aux, Spec const& spec) {
 // Conversions from remainder to character, in upper and lower case versions.
 // Really only useful for hexadecimal currently.
 namespace {
-char UPPER_DIGITS[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-char LOWER_DIGITS[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+char UPPER_DIGITS[]                                 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+char LOWER_DIGITS[]                                 = "0123456789abcdefghijklmnopqrstuvwxyz";
 static const std::array<uint64_t, 11> POWERS_OF_TEN = {
-    {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000}};
+  {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000}};
 } // namespace
 
 /// Templated radix based conversions. Only a small number of radix are
 /// supported and providing a template minimizes cut and paste code while also
 /// enabling compiler optimizations (e.g. for power of 2 radix the modulo /
 /// divide become bit operations).
-template<size_t RADIX>
+template <size_t RADIX>
 size_t
 To_Radix(uintmax_t n, char *buff, size_t width, char *digits) {
   static_assert(1 < RADIX && RADIX <= 36, "RADIX must be in the range 2..36");
@@ -341,63 +342,63 @@ To_Radix(uintmax_t n, char *buff, size_t width, char *digits) {
  * @param fill Fill character.
  * @param neg Character to use for negative (null char means do not output).
  */
-template<typename F>
+template <typename F>
 void
-Write_Aligned(BufferWriter& w, F const& f, Spec::Align align, int width, char fill, char neg) {
+Write_Aligned(BufferWriter &w, F const &f, Spec::Align align, int width, char fill, char neg) {
   switch (align) {
-    case Spec::Align::LEFT:
-      if (neg) {
-        w.write(neg);
-      }
-      f();
-      while (width-- > 0) {
-        w.write(fill);
-      }
-      break;
-    case Spec::Align::RIGHT:
-      while (width-- > 0) {
-        w.write(fill);
-      }
-      if (neg) {
-        w.write(neg);
-      }
-      f();
-      break;
-    case Spec::Align::CENTER:
-      for (int i = width / 2; i > 0; --i) {
-        w.write(fill);
-      }
-      if (neg) {
-        w.write(neg);
-      }
-      f();
-      for (int i = (width + 1) / 2; i > 0; --i) {
-        w.write(fill);
-      }
-      break;
-    case Spec::Align::SIGN:
-      if (neg) {
-        w.write(neg);
-      }
-      while (width-- > 0) {
-        w.write(fill);
-      }
-      f();
-      break;
-    default:
-      if (neg) {
-        w.write(neg);
-      }
-      f();
-      break;
+  case Spec::Align::LEFT:
+    if (neg) {
+      w.write(neg);
+    }
+    f();
+    while (width-- > 0) {
+      w.write(fill);
+    }
+    break;
+  case Spec::Align::RIGHT:
+    while (width-- > 0) {
+      w.write(fill);
+    }
+    if (neg) {
+      w.write(neg);
+    }
+    f();
+    break;
+  case Spec::Align::CENTER:
+    for (int i = width / 2; i > 0; --i) {
+      w.write(fill);
+    }
+    if (neg) {
+      w.write(neg);
+    }
+    f();
+    for (int i = (width + 1) / 2; i > 0; --i) {
+      w.write(fill);
+    }
+    break;
+  case Spec::Align::SIGN:
+    if (neg) {
+      w.write(neg);
+    }
+    while (width-- > 0) {
+      w.write(fill);
+    }
+    f();
+    break;
+  default:
+    if (neg) {
+      w.write(neg);
+    }
+    f();
+    break;
   }
 }
 
-BufferWriter&
-Format_Integer(BufferWriter& w, Spec const& spec, uintmax_t i, bool neg_p) {
-  size_t n = 0;
-  int width = static_cast<int>(spec._min); // amount left to fill.
-  char neg = 0;
+BufferWriter &
+Format_Integer(BufferWriter &w, Spec const &spec, uintmax_t i, bool neg_p) {
+  size_t n     = 0;
+  int width    = static_cast<int>(spec._min); // amount left to fill.
+  char neg     = 0;
   char prefix1 = spec._radix_lead_p ? '0' : 0;
   char prefix2 = 0;
   char buff[std::numeric_limits<uintmax_t>::digits + 1];
@@ -411,23 +412,29 @@ Format_Integer(BufferWriter& w, Spec const& spec, uintmax_t i, bool neg_p) {
   }
 
   switch (spec._type) {
-    case 'x':prefix2 = 'x';
-      n = bwf::To_Radix<16>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
-      break;
-    case 'X':prefix2 = 'X';
-      n = bwf::To_Radix<16>(i, buff, sizeof(buff), bwf::UPPER_DIGITS);
-      break;
-    case 'b':prefix2 = 'b';
-      n = bwf::To_Radix<2>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
-      break;
-    case 'B':prefix2 = 'B';
-      n = bwf::To_Radix<2>(i, buff, sizeof(buff), bwf::UPPER_DIGITS);
-      break;
-    case 'o':n = bwf::To_Radix<8>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
-      break;
-    default:prefix1 = 0;
-      n = bwf::To_Radix<10>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
-      break;
+  case 'x':
+    prefix2 = 'x';
+    n       = bwf::To_Radix<16>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
+    break;
+  case 'X':
+    prefix2 = 'X';
+    n       = bwf::To_Radix<16>(i, buff, sizeof(buff), bwf::UPPER_DIGITS);
+    break;
+  case 'b':
+    prefix2 = 'b';
+    n       = bwf::To_Radix<2>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
+    break;
+  case 'B':
+    prefix2 = 'B';
+    n       = bwf::To_Radix<2>(i, buff, sizeof(buff), bwf::UPPER_DIGITS);
+    break;
+  case 'o':
+    n = bwf::To_Radix<8>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
+    break;
+  default:
+    prefix1 = 0;
+    n       = bwf::To_Radix<10>(i, buff, sizeof(buff), bwf::LOWER_DIGITS);
+    break;
   }
   // Clip fill width by stuff that's already committed to be written.
   if (neg) {
@@ -458,15 +465,18 @@ Format_Integer(BufferWriter& w, Spec const& spec, uintmax_t i, bool neg_p) {
     }
     w.write(digits);
   } else { // use generic Write_Aligned
-    Write_Aligned(w, [&]() {
-      if (prefix1) {
-        w.write(prefix1);
-        if (prefix2) {
-          w.write(prefix2);
+    Write_Aligned(
+      w,
+      [&]() {
+        if (prefix1) {
+          w.write(prefix1);
+          if (prefix2) {
+            w.write(prefix2);
+          }
         }
-      }
-      w.write(digits);
-    }, spec._align, width, spec._fill, neg);
+        w.write(digits);
+      },
+      spec._align, width, spec._fill, neg);
   }
   return w;
 }
@@ -480,8 +490,8 @@ Format_Integer(BufferWriter& w, Spec const& spec, uintmax_t i, bool neg_p) {
 ///
 /// format: whole.fraction
 ///     or: left.right
-BufferWriter&
-Format_Float(BufferWriter& w, Spec const& spec, double f, bool negative_p) {
+BufferWriter &
+Format_Float(BufferWriter &w, Spec const &spec, double f, bool negative_p) {
   static const std::string_view infinity_bwf{"Inf"};
   static const std::string_view nan_bwf{"NaN"};
   static const std::string_view zero_bwf{"0"};
@@ -492,15 +502,20 @@ Format_Float(BufferWriter& w, Spec const& spec, double f, bool negative_p) {
   if (!std::isnormal(f)) {
     std::string_view unnormal;
     switch (std::fpclassify(f)) {
-      case FP_INFINITE:unnormal = infinity_bwf;
-        break;
-      case FP_NAN:unnormal = nan_bwf;
-        break;
-      case FP_ZERO:unnormal = zero_bwf;
-        break;
-      case FP_SUBNORMAL:unnormal = subnormal_bwf;
-        break;
-      default:unnormal = unknown_bwf;
+    case FP_INFINITE:
+      unnormal = infinity_bwf;
+      break;
+    case FP_NAN:
+      unnormal = nan_bwf;
+      break;
+    case FP_ZERO:
+      unnormal = zero_bwf;
+      break;
+    case FP_SUBNORMAL:
+      unnormal = subnormal_bwf;
+      break;
+    default:
+      unnormal = unknown_bwf;
     }
 
     w.write(unnormal);
@@ -518,10 +533,9 @@ Format_Float(BufferWriter& w, Spec const& spec, double f, bool negative_p) {
   size_t r = 0;
   char whole[std::numeric_limits<double>::digits10 + 1];
   char fraction[std::numeric_limits<double>::digits10 + 1];
-  char neg = 0;
-  int width = static_cast<int>(spec._min);                          // amount left to fill.
-  unsigned int precision = (spec._prec == Spec::DEFAULT._prec) ? 2
-                                                               : spec._prec; // default precision 2
+  char neg               = 0;
+  int width              = static_cast<int>(spec._min);                          // amount left to fill.
+  unsigned int precision = (spec._prec == Spec::DEFAULT._prec) ? 2 : spec._prec; // default precision 2
 
   frac = f - whole_part; // split the number
 
@@ -559,17 +573,20 @@ Format_Float(BufferWriter& w, Spec const& spec, double f, bool negative_p) {
   std::string_view whole_digits{whole + sizeof(whole) - l, l};
   std::string_view frac_digits{fraction + sizeof(fraction) - r, r};
 
-  Write_Aligned(w, [&]() {
-    w.write(whole_digits);
-    w.write(dec);
-    w.write(frac_digits);
-  }, spec._align, width, spec._fill, neg);
+  Write_Aligned(
+    w,
+    [&]() {
+      w.write(whole_digits);
+      w.write(dec);
+      w.write(frac_digits);
+    },
+    spec._align, width, spec._fill, neg);
 
   return w;
 }
 
 void
-Format_As_Hex(BufferWriter& w, std::string_view view, const char *digits) {
+Format_As_Hex(BufferWriter &w, std::string_view view, const char *digits) {
   const char *ptr = view.data();
   for (auto n = view.size(); n > 0; --n) {
     char c = *ptr++;
@@ -611,8 +628,8 @@ Format::Format(TextView fmt) {
 NameBinding::~NameBinding() {}
 } // namespace bwf
 
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, std::string_view sv) {
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv) {
   auto width = int(spec._min); // amount to fill.
   if (spec._prec > 0) {
     sv = sv.substr(0, spec._prec);
@@ -625,19 +642,20 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, std::string_view sv) {
     bwformat(w, spec, transform_view_of(&toupper, sv));
   } else {
     width -= sv.size();
-    bwf::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
+    bwf::Write_Aligned(
+      w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
   }
   return w;
 }
 
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::HexDump const& hex) {
-  char fmt_type = spec._type;
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex) {
+  char fmt_type      = spec._type;
   const char *digits = bwf::UPPER_DIGITS;
 
   if ('X' != fmt_type) {
     fmt_type = 'x';
-    digits = bwf::LOWER_DIGITS;
+    digits   = bwf::LOWER_DIGITS;
   }
 
   int width = int(spec._min) - hex._view.size() * 2; // amount left to fill.
@@ -646,15 +664,16 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::HexDump const& hex) {
     w.write(fmt_type);
     width -= 2;
   }
-  bwf::Write_Aligned(w, [&w, &hex, digits]() { bwf::Format_As_Hex(w, hex._view, digits); }, spec._align, width, spec._fill, 0);
+  bwf::Write_Aligned(
+    w, [&w, &hex, digits]() { bwf::Format_As_Hex(w, hex._view, digits); }, spec._align, width, spec._fill, 0);
   return w;
 }
 
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, MemSpan<void> const& span) {
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span) {
   if ('x' == spec._type || 'X' == spec._type) {
     const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
-    size_t block = spec._prec > 0 ? spec._prec : span.size();
+    size_t block       = spec._prec > 0 ? spec._prec : span.size();
     TextView view{span.view()};
     bool space_p = false;
     while (view) {
@@ -674,165 +693,164 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, MemSpan<void> const& span) {
   return w;
 }
 
-std::ostream&
-FixedBufferWriter::operator>>(std::ostream& s) const {
+std::ostream &
+FixedBufferWriter::operator>>(std::ostream &s) const {
   return s << this->view();
 }
 
-namespace
-{
+namespace {
 // Hand rolled, might not be totally compliant everywhere, but probably close
 // enough. The long string will be locally accurate. Clang requires the double
 // braces. Why, Turing only knows.
-  static const std::array<std::string_view, 134> ERRNO_SHORT_NAME = {{
-    "SUCCESS",
-    "EPERM",
-    "ENOENT",
-    "ESRCH",
-    "EINTR",
-    "EIO",
-    "ENXIO",
-    "E2BIG ",
-    "ENOEXEC",
-    "EBADF",
-    "ECHILD",
-    "EAGAIN",
-    "ENOMEM",
-    "EACCES",
-    "EFAULT",
-    "ENOTBLK",
-    "EBUSY",
-    "EEXIST",
-    "EXDEV",
-    "ENODEV",
-    "ENOTDIR",
-    "EISDIR",
-    "EINVAL",
-    "ENFILE",
-    "EMFILE",
-    "ENOTTY",
-    "ETXTBSY",
-    "EFBIG",
-    "ENOSPC",
-    "ESPIPE",
-    "EROFS",
-    "EMLINK",
-    "EPIPE",
-    "EDOM",
-    "ERANGE",
-    "EDEADLK",
-    "ENAMETOOLONG",
-    "ENOLCK",
-    "ENOSYS",
-    "ENOTEMPTY",
-    "ELOOP",
-    "EWOULDBLOCK",
-    "ENOMSG",
-    "EIDRM",
-    "ECHRNG",
-    "EL2NSYNC",
-    "EL3HLT",
-    "EL3RST",
-    "ELNRNG",
-    "EUNATCH",
-    "ENOCSI",
-    "EL2HTL",
-    "EBADE",
-    "EBADR",
-    "EXFULL",
-    "ENOANO",
-    "EBADRQC",
-    "EBADSLT",
-    "EDEADLOCK",
-    "EBFONT",
-    "ENOSTR",
-    "ENODATA",
-    "ETIME",
-    "ENOSR",
-    "ENONET",
-    "ENOPKG",
-    "EREMOTE",
-    "ENOLINK",
-    "EADV",
-    "ESRMNT",
-    "ECOMM",
-    "EPROTO",
-    "EMULTIHOP",
-    "EDOTDOT",
-    "EBADMSG",
-    "EOVERFLOW",
-    "ENOTUNIQ",
-    "EBADFD",
-    "EREMCHG",
-    "ELIBACC",
-    "ELIBBAD",
-    "ELIBSCN",
-    "ELIBMAX",
-    "ELIBEXEC",
-    "EILSEQ",
-    "ERESTART",
-    "ESTRPIPE",
-    "EUSERS",
-    "ENOTSOCK",
-    "EDESTADDRREQ",
-    "EMSGSIZE",
-    "EPROTOTYPE",
-    "ENOPROTOOPT",
-    "EPROTONOSUPPORT",
-    "ESOCKTNOSUPPORT",
-    "EOPNOTSUPP",
-    "EPFNOSUPPORT",
-    "EAFNOSUPPORT",
-    "EADDRINUSE",
-    "EADDRNOTAVAIL",
-    "ENETDOWN",
-    "ENETUNREACH",
-    "ENETRESET",
-    "ECONNABORTED",
-    "ECONNRESET",
-    "ENOBUFS",
-    "EISCONN",
-    "ENOTCONN",
-    "ESHUTDOWN",
-    "ETOOMANYREFS",
-    "ETIMEDOUT",
-    "ECONNREFUSED",
-    "EHOSTDOWN",
-    "EHOSTUNREACH",
-    "EALREADY",
-    "EINPROGRESS",
-    "ESTALE",
-    "EUCLEAN",
-    "ENOTNAM",
-    "ENAVAIL",
-    "EISNAM",
-    "EREMOTEIO",
-    "EDQUOT",
-    "ENOMEDIUM",
-    "EMEDIUMTYPE",
-    "ECANCELED",
-    "ENOKEY",
-    "EKEYEXPIRED",
-    "EKEYREVOKED",
-    "EKEYREJECTED",
-    "EOWNERDEAD",
-    "ENOTRECOVERABLE",
-    "ERFKILL",
-    "EHWPOISON",
-  }};
-  static constexpr DiscreteRange<unsigned> ERRNO_RANGE{0, ERRNO_SHORT_NAME.size()-1 };
-  // This provides convenient safe access to the errno short name array.
-  auto errno_short_name = [](unsigned n) { return ERRNO_RANGE.contains(n) ? ERRNO_SHORT_NAME[n] : "Unknown"sv; };
-}
+static const std::array<std::string_view, 134> ERRNO_SHORT_NAME = {{
+  "SUCCESS",
+  "EPERM",
+  "ENOENT",
+  "ESRCH",
+  "EINTR",
+  "EIO",
+  "ENXIO",
+  "E2BIG ",
+  "ENOEXEC",
+  "EBADF",
+  "ECHILD",
+  "EAGAIN",
+  "ENOMEM",
+  "EACCES",
+  "EFAULT",
+  "ENOTBLK",
+  "EBUSY",
+  "EEXIST",
+  "EXDEV",
+  "ENODEV",
+  "ENOTDIR",
+  "EISDIR",
+  "EINVAL",
+  "ENFILE",
+  "EMFILE",
+  "ENOTTY",
+  "ETXTBSY",
+  "EFBIG",
+  "ENOSPC",
+  "ESPIPE",
+  "EROFS",
+  "EMLINK",
+  "EPIPE",
+  "EDOM",
+  "ERANGE",
+  "EDEADLK",
+  "ENAMETOOLONG",
+  "ENOLCK",
+  "ENOSYS",
+  "ENOTEMPTY",
+  "ELOOP",
+  "EWOULDBLOCK",
+  "ENOMSG",
+  "EIDRM",
+  "ECHRNG",
+  "EL2NSYNC",
+  "EL3HLT",
+  "EL3RST",
+  "ELNRNG",
+  "EUNATCH",
+  "ENOCSI",
+  "EL2HTL",
+  "EBADE",
+  "EBADR",
+  "EXFULL",
+  "ENOANO",
+  "EBADRQC",
+  "EBADSLT",
+  "EDEADLOCK",
+  "EBFONT",
+  "ENOSTR",
+  "ENODATA",
+  "ETIME",
+  "ENOSR",
+  "ENONET",
+  "ENOPKG",
+  "EREMOTE",
+  "ENOLINK",
+  "EADV",
+  "ESRMNT",
+  "ECOMM",
+  "EPROTO",
+  "EMULTIHOP",
+  "EDOTDOT",
+  "EBADMSG",
+  "EOVERFLOW",
+  "ENOTUNIQ",
+  "EBADFD",
+  "EREMCHG",
+  "ELIBACC",
+  "ELIBBAD",
+  "ELIBSCN",
+  "ELIBMAX",
+  "ELIBEXEC",
+  "EILSEQ",
+  "ERESTART",
+  "ESTRPIPE",
+  "EUSERS",
+  "ENOTSOCK",
+  "EDESTADDRREQ",
+  "EMSGSIZE",
+  "EPROTOTYPE",
+  "ENOPROTOOPT",
+  "EPROTONOSUPPORT",
+  "ESOCKTNOSUPPORT",
+  "EOPNOTSUPP",
+  "EPFNOSUPPORT",
+  "EAFNOSUPPORT",
+  "EADDRINUSE",
+  "EADDRNOTAVAIL",
+  "ENETDOWN",
+  "ENETUNREACH",
+  "ENETRESET",
+  "ECONNABORTED",
+  "ECONNRESET",
+  "ENOBUFS",
+  "EISCONN",
+  "ENOTCONN",
+  "ESHUTDOWN",
+  "ETOOMANYREFS",
+  "ETIMEDOUT",
+  "ECONNREFUSED",
+  "EHOSTDOWN",
+  "EHOSTUNREACH",
+  "EALREADY",
+  "EINPROGRESS",
+  "ESTALE",
+  "EUCLEAN",
+  "ENOTNAM",
+  "ENAVAIL",
+  "EISNAM",
+  "EREMOTEIO",
+  "EDQUOT",
+  "ENOMEDIUM",
+  "EMEDIUMTYPE",
+  "ECANCELED",
+  "ENOKEY",
+  "EKEYEXPIRED",
+  "EKEYREVOKED",
+  "EKEYREJECTED",
+  "EOWNERDEAD",
+  "ENOTRECOVERABLE",
+  "ERFKILL",
+  "EHWPOISON",
+}};
+static constexpr DiscreteRange<unsigned> ERRNO_RANGE{0, ERRNO_SHORT_NAME.size() - 1};
+// This provides convenient safe access to the errno short name array.
+auto errno_short_name = [](unsigned n) { return ERRNO_RANGE.contains(n) ? ERRNO_SHORT_NAME[n] : "Unknown"sv; };
+} // namespace
 
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Errno const& e) {
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e) {
   static const bwf::Format number_fmt{"[{}]"sv}; // numeric value format.
 
-  if (spec.has_numeric_type()) {                 // if numeric type, print just the numeric part
+  if (spec.has_numeric_type()) { // if numeric type, print just the numeric part
     w.print(number_fmt, e._e);
   } else {
-    TextView ext { spec._ext };
+    TextView ext{spec._ext};
     bool short_p = false;
     if (ext.empty() || ext.npos != ext.find('s')) {
       w.write(errno_short_name(e._e));
@@ -852,11 +870,10 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Errno const& e) {
   return w;
 }
 
-bwf::Date::Date(std::string_view fmt)
-    : _epoch(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())), _fmt(fmt) {}
+bwf::Date::Date(std::string_view fmt) : _epoch(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())), _fmt(fmt) {}
 
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Date const& date) {
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date) {
   if (spec.has_numeric_type()) {
     bwformat(w, spec, date._epoch);
   } else {
@@ -865,7 +882,7 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Date const& date) {
     size_t n{0};
     // Verify @a fmt is null terminated, even outside the bounds of the view.
     if (date._fmt.data()[date._fmt.size() - 1] != 0 && date._fmt.data()[date._fmt.size()] != 0) {
-      throw (std::invalid_argument{"BWF Date String is not null terminated."});
+      throw(std::invalid_argument{"BWF Date String is not null terminated."});
     }
     // Get the time, GMT or local if specified.
     if (spec._ext == "local"sv) {
@@ -891,9 +908,9 @@ bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Date const& date) {
   return w;
 }
 
-BufferWriter&
-bwformat(BufferWriter& w, bwf::Spec const& spec, bwf::Pattern const& pattern) {
-  auto limit = std::min<size_t>(spec._max, pattern._text.size() * pattern._n);
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
+  auto limit        = std::min<size_t>(spec._max, pattern._text.size() * pattern._n);
   decltype(limit) n = 0;
   while (n < limit) {
     w.write(pattern._text);
@@ -963,21 +980,18 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, IpAddr const &addr)
 namespace {
 } // namespace
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS
 
-namespace std
-{
+namespace std {
 ostream &
-operator<<(ostream &s, swoc::FixedBufferWriter &w)
-{
+operator<<(ostream &s, swoc::FixedBufferWriter &w) {
   return s << w.view();
 }
 
 swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec)
-{
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec) {
   static const auto GENERIC_CATEGORY = &std::generic_category();
-  static const auto SYSTEM_CATEGORY = &std::system_category();
+  static const auto SYSTEM_CATEGORY  = &std::system_category();
 
   // This provides convenient safe access to the errno short name array.
   static const swoc::bwf::Format number_fmt{"[{}]"_sv}; // numeric value format.
@@ -985,8 +999,7 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &e
     // if numeric type, print just the numeric part.
     bwformat(w, spec, ec.value());
   } else {
-    if ((&ec.category() == GENERIC_CATEGORY || &ec.category() == SYSTEM_CATEGORY) &&
-        swoc::ERRNO_RANGE.contains(ec.value())) {
+    if ((&ec.category() == GENERIC_CATEGORY || &ec.category() == SYSTEM_CATEGORY) && swoc::ERRNO_RANGE.contains(ec.value())) {
       bwformat(w, spec, swoc::ERRNO_SHORT_NAME[ec.value()]);
     } else {
       w.write(ec.message());

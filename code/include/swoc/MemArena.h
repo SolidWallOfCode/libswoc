@@ -30,7 +30,7 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
  */
 class MemArena
 #if __has_include(<memory_resource>)
-    : public std::pmr::memory_resource
+  : public std::pmr::memory_resource
 #endif
 {
   using self_type = MemArena; ///< Self reference type.
@@ -58,7 +58,7 @@ public:
      * @param align Alignment requirement (must be a power of 2).
      * @return Value to add to @a ptr to achieve @a align.
      */
-    static size_t align_padding(void const * ptr, size_t align);
+    static size_t align_padding(void const *ptr, size_t align);
 
     /** Check if there is @a n bytes of space at @a align.
      *
@@ -85,7 +85,7 @@ public:
      *
      * @return @a this.
      */
-    Block& discard();
+    Block &discard();
 
     /** Check if the byte at address @a ptr is in this block.
      *
@@ -96,7 +96,6 @@ public:
 
     /// @return @c true if the block has at least @c MIN_FREE_SPACE bytes free.
     bool is_full() const;
-
 
   protected:
     friend MemArena;
@@ -109,7 +108,7 @@ public:
      *
      * @param ptr Memory to be de-allocated.
      */
-    static void operator delete(void * ptr) noexcept;
+    static void operator delete(void *ptr) noexcept;
 
     /** Override placement (non-allocated) @c delete.
      *
@@ -126,7 +125,7 @@ public:
      * interpretation of the spec. In practice this is never called because the constructor does
      * not throw.
      */
-    static void operator delete([[maybe_unused]] void * ptr, void * place) noexcept;
+    static void operator delete([[maybe_unused]] void *ptr, void *place) noexcept;
 
     /** Construct to have @a n bytes of available storage.
      *
@@ -143,9 +142,9 @@ public:
       Block *_next{nullptr};
       Block *_prev{nullptr};
 
-      static Block *& next_ptr(Block *);
+      static Block *&next_ptr(Block *);
 
-      static Block *& prev_ptr(Block *);
+      static Block *&prev_ptr(Block *);
     } _link;
   };
 
@@ -177,17 +176,17 @@ public:
   explicit MemArena(MemSpan<void> static_block);
 
   /// no copying
-  MemArena(self_type const& that) = delete;
+  MemArena(self_type const &that) = delete;
 
   /// Allow moving the arena.
-  MemArena(self_type&& that);
+  MemArena(self_type &&that);
 
   /// Destructor.
   ~MemArena();
 
-  self_type& operator=(self_type const& that) = delete;
+  self_type &operator=(self_type const &that) = delete;
 
-  self_type& operator=(self_type&& that);
+  self_type &operator=(self_type &&that);
 
   /** Make a self-contained instance.
    *
@@ -256,7 +255,7 @@ public:
       general it is a bad idea to make objects in the Arena that own memory that is not also in the
       Arena.
   */
-  template<typename T, typename... Args> T *make(Args&& ... args);
+  template <typename T, typename... Args> T *make(Args &&... args);
 
   /** Freeze reserved memory.
 
@@ -268,7 +267,7 @@ public:
       @param n Target number of available bytes in the next reserved internal block.
       @return @c *this
    */
-  MemArena& freeze(size_t n = 0);
+  MemArena &freeze(size_t n = 0);
 
   /** Unfreeze arena.
    *
@@ -276,7 +275,7 @@ public:
    *
    * @return @c *this
    */
-  self_type& thaw();
+  self_type &thaw();
 
   /** Release all memory.
 
@@ -290,7 +289,7 @@ public:
       @see discard
 
    */
-  MemArena& clear(size_t hint = 0);
+  MemArena &clear(size_t hint = 0);
 
   /** Discard all allocations.
    *
@@ -302,7 +301,7 @@ public:
    *
    * @see clear
    */
-  MemArena& discard(size_t hint = 0);
+  MemArena &discard(size_t hint = 0);
 
   /// @return The amount of memory allocated.
   size_t size() const;
@@ -322,7 +321,7 @@ public:
    * This forces the @c remnant to be at least @a n bytes of contiguous memory. A subsequent
    * @c alloc will use this space if the allocation size is at most the remnant size.
    */
-  self_type& require(size_t n, size_t align = DEFAULT_ALIGNMENT);
+  self_type &require(size_t n, size_t align = DEFAULT_ALIGNMENT);
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -366,17 +365,16 @@ protected:
   /// Clean up the active list
   void destroy_active();
 
-  using Page      = Scalar<4096>; ///< Size for rounding block sizes.
+  using Page        = Scalar<4096>;            ///< Size for rounding block sizes.
   using QuarterPage = Scalar<Page::SCALE / 4>; ///< Quarter page - unit for sub page sizes.
-  using Paragraph = Scalar<16>;   ///< Minimum unit of memory allocation.
+  using Paragraph   = Scalar<16>;              ///< Minimum unit of memory allocation.
 
   static constexpr size_t ALLOC_HEADER_SIZE = 16; ///< Guess of overhead of @c malloc
   /// Initial block size to allocate if not specified via API.
-  static constexpr size_t DEFAULT_BLOCK_SIZE =
-      Page::SCALE - Paragraph{round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
+  static constexpr size_t DEFAULT_BLOCK_SIZE = Page::SCALE - Paragraph{round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
 
   size_t _active_allocated = 0; ///< Total allocations in the active generation.
-  size_t _active_reserved = 0; ///< Total current reserved memory.
+  size_t _active_reserved  = 0; ///< Total current reserved memory.
   /// Total allocations in the previous generation. This is only non-zero while the arena is frozen.
   size_t _frozen_allocated = 0;
   /// Total frozen reserved memory.
@@ -390,7 +388,7 @@ protected:
   BlockList _active; ///< Current generation. Allocate here.
 
   /// Static block, if any.
-  Block* _static_block = nullptr;
+  Block *_static_block = nullptr;
 
   // Note on _active block list - blocks that become full are moved to the end of the list.
   // This means that when searching for a block with space, the first full block encountered
@@ -401,7 +399,7 @@ private:
   // PMR support methods.
 
   /// PMR allocation.
-  void * do_allocate(std::size_t bytes, std::size_t align) override;
+  void *do_allocate(std::size_t bytes, std::size_t align) override;
 
   /// PMR de-allocation.
   /// Does nothing.
@@ -409,7 +407,7 @@ private:
 
   /// PMR comparison of memory resources.
   /// @return @c true only if @a that is the same instance as @a this.
-  bool do_is_equal(std::pmr::memory_resource const& that) const noexcept override;
+  bool do_is_equal(std::pmr::memory_resource const &that) const noexcept override;
 #endif
 };
 
@@ -420,7 +418,7 @@ private:
  * A pool of unused / free instances of @a T is kept for reuse. If none are available then a new
  * instance is allocated from the arena.
  */
-template<typename T> class FixedArena {
+template <typename T> class FixedArena {
   using self_type = FixedArena; ///< Self reference type.
 protected:
   /// Rebinding type for instances on the free list.
@@ -429,14 +427,14 @@ protected:
   };
 
   Item _list{nullptr}; ///< List of dead instances.
-  MemArena& _arena;    ///< Memory source.
+  MemArena &_arena;    ///< Memory source.
 
 public:
   /** Construct a pool.
    *
    * @param arena The arena for memory.
    */
-  explicit FixedArena(MemArena& arena);
+  explicit FixedArena(MemArena &arena);
 
   /** Create a new instance.
    *
@@ -444,7 +442,7 @@ public:
    * @param args Constructor arguments.
    * @return A new instance of @a T.
    */
-  template<typename... Args> T *make(Args... args);
+  template <typename... Args> T *make(Args... args);
 
   /** Destroy an instance.
    *
@@ -459,138 +457,173 @@ public:
 };
 // Implementation
 
-inline auto MemArena::Block::Linkage::next_ptr(Block *b) -> Block *& {
+inline auto
+MemArena::Block::Linkage::next_ptr(Block *b) -> Block *& {
   return b->_link._next;
 }
 
-inline auto MemArena::Block::Linkage::prev_ptr(Block *b) -> Block *& {
+inline auto
+MemArena::Block::Linkage::prev_ptr(Block *b) -> Block *& {
   return b->_link._prev;
 }
 
 inline MemArena::Block::Block(size_t n) noexcept : size(n) {}
 
-inline char *MemArena::Block::data() {
+inline char *
+MemArena::Block::data() {
   return reinterpret_cast<char *>(this + 1);
 }
 
-inline const char *MemArena::Block::data() const {
+inline const char *
+MemArena::Block::data() const {
   return reinterpret_cast<const char *>(this + 1);
 }
 
-inline bool MemArena::Block::contains(const void *ptr) const {
+inline bool
+MemArena::Block::contains(const void *ptr) const {
   const char *base = this->data();
   return base <= ptr && ptr < base + size;
 }
 
-inline size_t MemArena::Block::remaining() const {
+inline size_t
+MemArena::Block::remaining() const {
   return size - allocated;
 }
 
-inline bool MemArena::Block::is_full() const {
+inline bool
+MemArena::Block::is_full() const {
   return this->remaining() < MIN_FREE_SPACE;
 }
 
-inline MemSpan<void> MemArena::Block::alloc(size_t n, size_t align) {
+inline MemSpan<void>
+MemArena::Block::alloc(size_t n, size_t align) {
   auto base = this->data() + allocated;
-  auto pad = align_padding(base, align);
+  auto pad  = align_padding(base, align);
   if ((n + pad) > this->remaining()) {
-    throw (std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
+    throw(std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
   }
-  MemSpan<void> zret = this->remnant().prefix(n+pad);
+  MemSpan<void> zret = this->remnant().prefix(n + pad);
   zret.remove_prefix(pad);
-  allocated += n+pad;
+  allocated += n + pad;
   return zret;
 }
 
-template<typename T>
-MemSpan<T> MemArena::alloc_span(size_t n) {
+template <typename T>
+MemSpan<T>
+MemArena::alloc_span(size_t n) {
   return this->alloc(sizeof(T) * n, size_t{alignof(T)}).rebind<T>();
 }
 
-template<typename T, typename... Args> T *MemArena::make(Args&& ... args) {
-  return new(this->alloc(sizeof(T)).data()) T(std::forward<Args>(args)...);
+template <typename T, typename... Args>
+T *
+MemArena::make(Args &&... args) {
+  return new (this->alloc(sizeof(T)).data()) T(std::forward<Args>(args)...);
 }
 
 inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
 
-inline MemSpan<void> MemArena::Block::remnant() {
+inline MemSpan<void>
+MemArena::Block::remnant() {
   return {this->data() + allocated, this->remaining()};
 }
 
-inline MemArena::Block& MemArena::Block::discard() {
+inline MemArena::Block &
+MemArena::Block::discard() {
   allocated = 0;
   return *this;
 }
 
-inline void MemArena::Block::operator delete(void *ptr) noexcept { ::free(ptr); }
-inline void MemArena::Block::operator delete([[maybe_unused]] void * ptr, void * place) noexcept { ::free(place); }
+inline void
+MemArena::Block::operator delete(void *ptr) noexcept {
+  ::free(ptr);
+}
+inline void
+MemArena::Block::operator delete([[maybe_unused]] void *ptr, void *place) noexcept {
+  ::free(place);
+}
 
-inline size_t MemArena::Block::align_padding(void const *ptr, size_t align) {
+inline size_t
+MemArena::Block::align_padding(void const *ptr, size_t align) {
   auto delta = uintptr_t(ptr) & (size_t(align) - 1);
   return delta ? size_t(align) - delta : delta;
 }
 
-inline size_t MemArena::size() const {
+inline size_t
+MemArena::size() const {
   return _active_allocated;
 }
 
-inline size_t MemArena::allocated_size() const {
+inline size_t
+MemArena::allocated_size() const {
   return _frozen_allocated + _active_allocated;
 }
 
-inline size_t MemArena::remaining() const {
+inline size_t
+MemArena::remaining() const {
   return _active.empty() ? 0 : _active.head()->remaining();
 }
 
-inline MemSpan<void> MemArena::remnant() {
+inline MemSpan<void>
+MemArena::remnant() {
   return _active.empty() ? MemSpan<void>() : _active.head()->remnant();
 }
 
-inline size_t MemArena::reserved_size() const {
+inline size_t
+MemArena::reserved_size() const {
   return _active_reserved + _frozen_reserved;
 }
 
-inline auto MemArena::begin() const -> const_iterator {
+inline auto
+MemArena::begin() const -> const_iterator {
   return _active.begin();
 }
 
-inline auto MemArena::end() const -> const_iterator {
+inline auto
+MemArena::end() const -> const_iterator {
   return _active.end();
 }
 
-inline auto MemArena::frozen_begin() const -> const_iterator {
+inline auto
+MemArena::frozen_begin() const -> const_iterator {
   return _frozen.begin();
 }
 
-inline auto MemArena::frozen_end() const -> const_iterator {
+inline auto
+MemArena::frozen_end() const -> const_iterator {
   return _frozen.end();
 }
 
-template<typename T> FixedArena<T>::FixedArena(MemArena& arena) : _arena(arena) {
+template <typename T> FixedArena<T>::FixedArena(MemArena &arena) : _arena(arena) {
   static_assert(sizeof(T) >= sizeof(T *));
 }
 
-template<typename T> template<typename... Args> T *FixedArena<T>::make(Args... args) {
+template <typename T>
+template <typename... Args>
+T *
+FixedArena<T>::make(Args... args) {
   if (_list._next) {
-    void *t = _list._next;
+    void *t     = _list._next;
     _list._next = _list._next->_next;
-    return new(t) T(std::forward<Args>(args)...);
+    return new (t) T(std::forward<Args>(args)...);
   }
   return _arena.template make<T>(std::forward<Args>(args)...);
 }
 
-template<typename T> void FixedArena<T>::destroy(T *t) {
+template <typename T>
+void
+FixedArena<T>::destroy(T *t) {
   if (t) {
     t->~T(); // destructor.
-    auto item = reinterpret_cast<Item *>(t);
+    auto item   = reinterpret_cast<Item *>(t);
     item->_next = _list._next;
     _list._next = item;
   }
 }
 
-template<typename T>
-void FixedArena<T>::clear() {
+template <typename T>
+void
+FixedArena<T>::clear() {
   _list._next = nullptr;
 }
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS

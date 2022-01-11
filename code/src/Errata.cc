@@ -46,11 +46,9 @@ Errata::Severity Errata::FAILURE_SEVERITY(2);
 Errata::Severity Errata::FILTER_SEVERITY(0);
 
 // Provide a somewhat reasonable set of default severities and names
-std::array<swoc::TextView, 4> Severity_Names { {
-  "Info", "Warning", "Error"
-}};
+std::array<swoc::TextView, 4> Severity_Names{{"Info", "Warning", "Error"}};
 
-swoc::MemSpan<TextView const> Errata::SEVERITY_NAMES { Severity_Names.data(), Severity_Names.size() };
+swoc::MemSpan<TextView const> Errata::SEVERITY_NAMES{Severity_Names.data(), Severity_Names.size()};
 
 Errata::~Errata() {
   if (_data) {
@@ -63,12 +61,12 @@ Errata::~Errata() {
   }
 }
 
-Errata&
-Errata::note(code_type const& code){
+Errata &
+Errata::note(code_type const &code) {
   return this->note("{}"_sv, code);
 }
 
-Errata&
+Errata &
 Errata::note(code_type const &code, Severity severity) {
   return this->note(severity, "{}"_sv, code);
 }
@@ -92,9 +90,9 @@ Errata::note_s(std::optional<Severity> severity, std::string_view text) {
   return *this;
 }
 
-Errata&
-Errata::note_localized(std::string_view const& text, std::optional<Severity> severity) {
-  auto d = this->data();
+Errata &
+Errata::note_localized(std::string_view const &text, std::optional<Severity> severity) {
+  auto d        = this->data();
   Annotation *n = d->_arena.make<Annotation>(text, severity);
   d->_notes.append(n);
   return *this;
@@ -105,16 +103,16 @@ Errata::alloc(size_t n) {
   return this->data()->_arena.alloc(n).rebind<char>();
 }
 
-Errata&
-Errata::note(const self_type& that) {
+Errata &
+Errata::note(const self_type &that) {
   auto d = this->data();
-  for (auto const& annotation : that) {
+  for (auto const &annotation : that) {
     d->_notes.append(d->_arena.make<Annotation>(d->localize(annotation._text), annotation._severity, annotation._level + 1));
   }
   return *this;
 }
 
-Errata&
+Errata &
 Errata::clear() {
   if (_data) {
     _data->_notes.clear();
@@ -123,12 +121,12 @@ Errata::clear() {
 }
 
 void
-Errata::register_sink(Sink::Handle const& s) {
+Errata::register_sink(Sink::Handle const &s) {
   Sink_List.push_back(s);
 }
 
-BufferWriter&
-bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata::Severity level) {
+BufferWriter &
+bwformat(BufferWriter &bw, bwf::Spec const &spec, Errata::Severity level) {
   if (level < Errata::SEVERITY_NAMES.size()) {
     bwformat(bw, spec, Errata::SEVERITY_NAMES[level]);
   } else {
@@ -137,37 +135,34 @@ bwformat(BufferWriter& bw, bwf::Spec const& spec, Errata::Severity level) {
   return bw;
 }
 
-BufferWriter&
-bwformat(BufferWriter& bw, bwf::Spec const&, Errata const& errata) {
-
+BufferWriter &
+bwformat(BufferWriter &bw, bwf::Spec const &, Errata const &errata) {
   bw.print("{}: ", errata.severity());
 
   if (errata.code()) {
     bw.print("[{0:s} {0:d}] ", errata.code());
   }
 
-  for (auto& note : errata) {
+  for (auto &note : errata) {
     if (note.text()) {
-      bw.print("{}{}{}\n"
-               , swoc::bwf::Pattern{int(note.level()), "  "}
-               , swoc::bwf::If(note.has_severity(), "{}: ", note.severity())
-               , note.text());
+      bw.print("{}{}{}\n", swoc::bwf::Pattern{int(note.level()), "  "}, swoc::bwf::If(note.has_severity(), "{}: ", note.severity()),
+               note.text());
     }
   }
   return bw;
 }
 
-std::ostream&
-Errata::write(std::ostream& out) const {
+std::ostream &
+Errata::write(std::ostream &out) const {
   std::string tmp;
   tmp.reserve(1024);
   bwprint(tmp, "{}", *this);
   return out << tmp;
 }
 
-std::ostream&
-operator<<(std::ostream& os, Errata const& err) {
+std::ostream &
+operator<<(std::ostream &os, Errata const &err) {
   return err.write(os);
 }
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS

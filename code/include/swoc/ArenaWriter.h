@@ -26,7 +26,7 @@ public:
    *
    * @param arena Arena to use for storage.
    */
-  ArenaWriter(MemArena& arena);
+  ArenaWriter(MemArena &arena);
 
   /** Write data to the buffer.
    *
@@ -34,10 +34,10 @@ public:
    * @param n Amount of data in bytes.
    * @return @a this
    */
-  ArenaWriter& write(void const *data, size_t n) override;
+  ArenaWriter &write(void const *data, size_t n) override;
 
   /// Write a single character @a c to the buffer.
-  ArenaWriter& write(char c) override;
+  ArenaWriter &write(char c) override;
 
   using super_type::write; // import super class write.
 
@@ -49,7 +49,7 @@ public:
   bool commit(size_t n) override;
 
 protected:
-  MemArena& _arena; ///< Arena for the buffer.
+  MemArena &_arena; ///< Arena for the buffer.
 
   /** Reallocate the buffer to increase the capacity.
    *
@@ -58,7 +58,6 @@ protected:
   void realloc(size_t n);
 };
 
-inline swoc::ArenaWriter::ArenaWriter(swoc::MemArena& arena)
-    : super_type(arena.remnant()), _arena(arena) {}
+inline swoc::ArenaWriter::ArenaWriter(swoc::MemArena &arena) : super_type(arena.remnant()), _arena(arena) {}
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS

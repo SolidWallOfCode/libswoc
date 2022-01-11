@@ -41,8 +41,8 @@ protected:
   size_t _count = 0;       ///< Number of elements.
 
 public:
-  using value_type = T;
-  using iterator = T *;
+  using value_type     = T;
+  using iterator       = T *;
   using const_iterator = T const *;
 
   /// Default constructor (empty buffer).
@@ -431,72 +431,70 @@ public:
 
 // -- Implementation --
 
-namespace detail
-{
-  /// pointer distance calculations for all types, @b including @c <void*>.
-  /// This is useful in templates.
-  inline size_t
-  ptr_distance(void const *first, void const *last) {
-    return static_cast<const char *>(last) - static_cast<const char *>(first);
-  }
+namespace detail {
+/// pointer distance calculations for all types, @b including @c <void*>.
+/// This is useful in templates.
+inline size_t
+ptr_distance(void const *first, void const *last) {
+  return static_cast<const char *>(last) - static_cast<const char *>(first);
+}
 
-  template <typename T>
-  size_t
-  ptr_distance(T const *first, T const *last) {
-    return last - first;
-  }
+template <typename T>
+size_t
+ptr_distance(T const *first, T const *last) {
+  return last - first;
+}
 
-  inline void *
-  ptr_add(void *ptr, size_t count) {
-    return static_cast<char *>(ptr) + count;
-  }
+inline void *
+ptr_add(void *ptr, size_t count) {
+  return static_cast<char *>(ptr) + count;
+}
 
-  /** Functor to convert span types.
+/** Functor to convert span types.
+ *
+ * @tparam T Source span type.
+ * @tparam U Destination span type.
+ *
+ * @internal More void handling. This can't go in @c MemSpan because template specialization is
+ * invalid in class scope and this needs to be specialized for @c void.
+ */
+template <typename T, typename U> struct is_span_compatible {
+  /// @c true if the size of @a T is an integral multiple of the size of @a U or vice versa.
+  static constexpr bool value = std::ratio<sizeof(T), sizeof(U)>::num == 1 || std::ratio<sizeof(U), sizeof(T)>::num == 1;
+  /** Compute the new size in units of @c sizeof(U).
    *
-   * @tparam T Source span type.
-   * @tparam U Destination span type.
+   * @param size Size in bytes.
+   * @return Size in units of @c sizeof(U).
    *
-   * @internal More void handling. This can't go in @c MemSpan because template specialization is
-   * invalid in class scope and this needs to be specialized for @c void.
+   * The critical part of this is the @c static_assert that guarantees the result is an integral
+   * number of instances of @a U.
    */
-  template <typename T, typename U> struct is_span_compatible {
-    /// @c true if the size of @a T is an integral multiple of the size of @a U or vice versa.
-    static constexpr bool value = std::ratio<sizeof(T), sizeof(U)>::num == 1 || std::ratio<sizeof(U), sizeof(T)>::num == 1;
-    /** Compute the new size in units of @c sizeof(U).
-     *
-     * @param size Size in bytes.
-     * @return Size in units of @c sizeof(U).
-     *
-     * The critical part of this is the @c static_assert that guarantees the result is an integral
-     * number of instances of @a U.
-     */
-    static size_t count(size_t size);
-  };
+  static size_t count(size_t size);
+};
 
-  template <typename T, typename U>
-  size_t
-  is_span_compatible<T, U>::count(size_t size) {
-    if (size % sizeof(U))
-    {
-      throw std::invalid_argument("MemSpan rebind where span size is not a multiple of the element size");
-    }
-    return size / sizeof(U);
+template <typename T, typename U>
+size_t
+is_span_compatible<T, U>::count(size_t size) {
+  if (size % sizeof(U)) {
+    throw std::invalid_argument("MemSpan rebind where span size is not a multiple of the element size");
   }
+  return size / sizeof(U);
+}
 
-  /// @cond INTERNAL_DETAIL
-  // Must specialize for rebinding to @c void because @c sizeof doesn't work. Rebinding from @c void
-  // is handled by the @c MemSpan<void>::rebind specialization and doesn't use this mechanism.
-  template <typename T> struct is_span_compatible<T, void> {
-    static constexpr bool value = true;
-    static size_t count(size_t size);
-  };
+/// @cond INTERNAL_DETAIL
+// Must specialize for rebinding to @c void because @c sizeof doesn't work. Rebinding from @c void
+// is handled by the @c MemSpan<void>::rebind specialization and doesn't use this mechanism.
+template <typename T> struct is_span_compatible<T, void> {
+  static constexpr bool value = true;
+  static size_t count(size_t size);
+};
 
-  template <typename T>
-  size_t
-  is_span_compatible<T, void>::count(size_t size) {
-    return size;
-  }
-  /// @endcond
+template <typename T>
+size_t
+is_span_compatible<T, void>::count(size_t size) {
+  return size;
+}
+/// @endcond
 
 } // namespace detail
 
@@ -509,19 +507,16 @@ memcmp(MemSpan<T> const &lhs, MemSpan<T> const &rhs) {
   size_t n = lhs.size();
 
   // Seems a bit ugly but size comparisons must be done anyway to get the memcmp args.
-  if (lhs.count() < rhs.count())
-  {
+  if (lhs.count() < rhs.count()) {
     zret = 1;
-  } else if (lhs.count() > rhs.count())
-  {
+  } else if (lhs.count() > rhs.count()) {
     zret = -1;
     n    = rhs.size();
   }
   // else the counts are equal therefore @a n and @a zret are already correct.
 
   int r = std::memcmp(lhs.data(), rhs.data(), n);
-  if (0 != r)
-  { // If we got a not-equal, override the size based result.
+  if (0 != r) { // If we got a not-equal, override the size based result.
     zret = r;
   }
 
@@ -564,8 +559,7 @@ using std::memcpy;
 template <typename T>
 inline MemSpan<T> const &
 memset(MemSpan<T> const &dst, T const &t) {
-  for (auto &e : dst)
-  {
+  for (auto &e : dst) {
     e = t;
   }
   return dst;
@@ -643,7 +637,9 @@ MemSpan<T>::operator!=(self_type const &that) const {
   return !(*this == that);
 }
 
-template <typename T> bool MemSpan<T>::operator!() const {
+template <typename T>
+bool
+MemSpan<T>::operator!() const {
   return _count == 0;
 }
 
@@ -675,7 +671,9 @@ MemSpan<T>::end() const {
   return _ptr + _count;
 }
 
-template <typename T> T &MemSpan<T>::operator[](size_t idx) const {
+template <typename T>
+T &
+MemSpan<T>::operator[](size_t idx) const {
   return _ptr[idx];
 }
 
@@ -760,8 +758,7 @@ template <typename T>
 template <typename F>
 MemSpan<T> &
 MemSpan<T>::apply(F &&f) {
-  for (auto &item : *this)
-  {
+  for (auto &item : *this) {
     f(item);
   }
   return *this;
@@ -828,7 +825,8 @@ MemSpan<void>::operator!=(self_type const &that) const {
   return !(*this == that);
 }
 
-inline bool MemSpan<void>::operator!() const {
+inline bool
+MemSpan<void>::operator!() const {
   return _size == 0;
 }
 
@@ -917,28 +915,27 @@ MemSpan<void>::view() const {
   return {static_cast<char const *>(_ptr), _size};
 }
 
-}} // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS
 
 /// @cond NO_DOXYGEN
 // STL tuple support - this allows the @c MemSpan to be used as a tuple of a pointer
 // and size.
 namespace std {
-template<size_t IDX, typename R> class tuple_element<IDX, swoc::MemSpan<R>> {
+template <size_t IDX, typename R> class tuple_element<IDX, swoc::MemSpan<R>> {
   static_assert("swoc::MemSpan tuple index out of range");
 };
 
-template<typename R> class tuple_element<0, swoc::MemSpan<R>> {
+template <typename R> class tuple_element<0, swoc::MemSpan<R>> {
 public:
   using type = R *;
 };
 
-template<typename R> class tuple_element<1, swoc::MemSpan<R>> {
+template <typename R> class tuple_element<1, swoc::MemSpan<R>> {
 public:
   using type = size_t;
 };
 
-template<typename R> class tuple_size<swoc::MemSpan<R>> : public std::integral_constant<size_t, 2> {
-};
+template <typename R> class tuple_size<swoc::MemSpan<R>> : public std::integral_constant<size_t, 2> {};
 
 } // namespace std
 
