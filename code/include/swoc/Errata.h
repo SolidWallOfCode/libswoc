@@ -200,6 +200,7 @@ public:
   ~Errata();                                                       ///< Destructor.
 
   // Note based constructors.
+  explicit Errata(Severity severity);
   Errata(code_type const &type, Severity severity, std::string_view const &text);
   Errata(Severity severity, std::string_view const &text);
   Errata(code_type const &type, std::string_view const &text);
@@ -322,9 +323,24 @@ public:
    */
   self_type &note(self_type &&that);
 
-  /// Remove all messages.
-  /// @note This is also used to prevent logging.
+  /** Reset to default state.
+   *
+   * @return @a this
+   *
+   * All messages are discarded and the state is returned to success.
+   */
   self_type &clear();
+
+  /** Log and clear @a this.
+   *
+   * @return @a this
+   *
+   * The content is sent to the defined @c Sink instances then reset to the default state.
+   *
+   * @see register_sink
+   * @see clear
+   */
+  self_type & sink();
 
   friend std::ostream &operator<<(std::ostream &, self_type const &);
 
@@ -422,7 +438,8 @@ public:
   /// Convenience wrapper class to enable using functions directly for sinks.
   struct SinkWrapper : public Sink {
     /// Constructor.
-    SinkWrapper(SinkHandler f) : _f(f) {}
+    SinkWrapper(SinkHandler const& f) : _f(f) {}
+    SinkWrapper(SinkHandler && f) : _f(std::move(f)) {}
     /// Operator to invoke the function.
     void operator()(Errata const &e) const override;
     SinkHandler _f; ///< Client supplied handler.
@@ -432,6 +449,12 @@ public:
   static void
   register_sink(SinkHandler const &f) {
     register_sink(Sink::Handle(new SinkWrapper(f)));
+  }
+
+  /// Register a sink function for abandonded erratum.
+  static void
+  register_sink(SinkHandler && f) {
+    register_sink(Sink::Handle(new SinkWrapper(std::move(f))));
   }
 
   /** Simple formatted output.
@@ -451,9 +474,6 @@ protected:
   /// Force data existence.
   /// @return A pointer to the data.
   Data *data();
-
-  /// Destroy the data.
-  void reset();
 
   /** Allocate a span of memory.
    *
@@ -807,6 +827,10 @@ inline Errata::Errata(self_type &&that) noexcept {
   std::swap(_data, that._data);
 }
 
+inline Errata::Errata(Severity severity) {
+  this->data()->_severity = severity;
+}
+
 inline Errata::Errata(const code_type &code, Severity severity) {
   auto d       = this->data();
   d->_severity = severity;
@@ -835,18 +859,19 @@ Errata::Errata(Severity severity, std::string_view fmt, Args &&... args)
 template <typename... Args>
 Errata::Errata(std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) {}
 
-inline void
-Errata::reset() {
-  _data->~Data(); // destructs the @c MemArena in @a _data which releases memory.
-  _data = nullptr;
+inline Errata&
+Errata::clear() {
+  if (_data) {
+    _data->~Data(); // destructs the @c MemArena in @a _data which releases memory.
+    _data = nullptr;
+  }
+  return *this;
 }
 
 inline auto
 Errata::operator=(self_type &&that) -> self_type & {
   if (this != &that) {
-    if (_data) {
-      this->reset();
-    }
+    this->clear();
     std::swap(_data, that._data);
   }
   return *this;

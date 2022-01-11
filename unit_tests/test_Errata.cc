@@ -27,12 +27,20 @@ std::array<swoc::TextView, 5> Severity_Names { {
   "Debug", "Diag", "Info", "Warn", "Error"
 }};
 
+std::string ErrataSinkText;
+
 // Call from unit test main before starting tests.
 void test_Errata_init() {
   swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
   swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
   swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView const>(Severity_Names.data(), Severity_Names.size());
+
+  swoc::Errata::register_sink([](swoc::Errata const& errata) ->void {
+    bwprint(ErrataSinkText, "{}", errata);
+  });
 }
+
+
 
 Errata
 Noteworthy(std::string_view text)
@@ -218,6 +226,44 @@ TEST_CASE("Errata example", "[libswoc][Errata]") {
   REQUIRE(w.view().find("enoent") != swoc::TextView::npos);
 }
 
+TEST_CASE("Errata sink", "[libswoc][Errata]") {
+  auto & s = ErrataSinkText;
+  {
+    Errata errata{ERRATA_ERROR, "Nominal failure"};
+    NoteInfo(errata, "Some");
+    errata.note(ERRATA_DIAG, "error code {}", std::error_code(EPERM, std::system_category()));
+  }
+  // Destruction should write this out to the string.
+  REQUIRE(s.size() > 0);
+  REQUIRE(std::string::npos != s.find("Error: Nominal"));
+  REQUIRE(std::string::npos != s.find("Info: Some"));
+  REQUIRE(std::string::npos != s.find("Diag: error"));
+
+  {
+    Errata errata{ERRATA_ERROR, "Nominal failure"};
+    NoteInfo(errata, "Some");
+    errata.note(ERRATA_DIAG, "error code {}", std::error_code(EPERM, std::system_category()));
+    errata.sink();
+
+    REQUIRE(s.size() > 0);
+    REQUIRE(std::string::npos != s.find("Error: Nominal"));
+    REQUIRE(std::string::npos != s.find("Info: Some"));
+    REQUIRE(std::string::npos != s.find("Diag: error"));
+
+    s.clear();
+  }
+
+  REQUIRE(s.empty() == true);
+  {
+    Errata errata{ERRATA_ERROR, "Nominal failure"};
+    NoteInfo(errata, "Some");
+    errata.note(ERRATA_DIAG, "error code {}", std::error_code(EPERM, std::system_category()));
+    errata.clear(); // cleared - no logging
+    REQUIRE(errata.is_ok() == true);
+  }
+  REQUIRE(s.empty() == true);
+}
+
 TEST_CASE("Errata local severity", "[libswoc][Errata]") {
   std::string s;
   {
@@ -241,4 +287,9 @@ TEST_CASE("Errata local severity", "[libswoc][Errata]") {
     REQUIRE(std::string::npos != s.find("Info: Some"));
     REQUIRE(std::string::npos == s.find("Diag: error"));
   }
+
+  Errata base{ERRATA_INFO, "Something happened"};
+  base.note(Errata{ERRATA_WARN}.note(ERRATA_INFO, "Thing one").note(ERRATA_INFO, "Thing Two"));
+  REQUIRE(base.length() == 3);
+  REQUIRE(base.severity() == ERRATA_WARN);
 }

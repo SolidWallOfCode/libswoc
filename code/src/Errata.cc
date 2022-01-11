@@ -51,14 +51,18 @@ std::array<swoc::TextView, 4> Severity_Names{{"Info", "Warning", "Error"}};
 swoc::MemSpan<TextView const> Errata::SEVERITY_NAMES{Severity_Names.data(), Severity_Names.size()};
 
 Errata::~Errata() {
+  this->sink();
+}
+
+Errata&
+Errata::sink() {
   if (_data) {
-    if (!_data->empty()) {
-      for (auto &f : Sink_List) {
-        (*f)(*this);
-      }
+    for (auto &f : Sink_List) {
+      (*f)(*this);
     }
-    this->reset();
+    this->clear();
   }
+  return *this;
 }
 
 Errata &
@@ -105,17 +109,12 @@ Errata::alloc(size_t n) {
 
 Errata &
 Errata::note(const self_type &that) {
-  auto d = this->data();
-  for (auto const &annotation : that) {
-    d->_notes.append(d->_arena.make<Annotation>(d->localize(annotation._text), annotation._severity, annotation._level + 1));
-  }
-  return *this;
-}
-
-Errata &
-Errata::clear() {
-  if (_data) {
-    _data->_notes.clear();
+  if (that._data) {
+    auto d       = this->data();
+    d->_severity = std::max<Severity>(d->_severity, that._data->_severity);
+    for (auto const &annotation : that) {
+      d->_notes.append(d->_arena.make<Annotation>(d->localize(annotation._text), annotation._severity, annotation._level + 1));
+    }
   }
   return *this;
 }
