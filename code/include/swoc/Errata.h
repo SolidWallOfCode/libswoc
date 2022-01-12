@@ -116,7 +116,7 @@ public:
     /// @return The local severity or @a default_severity if none is set.
     Severity severity(Severity default_severity) const;
 
-    /// Set the severity.
+    /// Set the @a severity of @a this.
     self_type &assign(Severity severity);
 
   protected:
@@ -381,6 +381,26 @@ public:
    * @return Max severity for all messages.
    */
   Severity severity() const;
+
+  /** Set the @a severity.
+   *
+   * @param severity Severity value.
+   * @return @a this
+   *
+   * @see update
+   */
+  self_type & assign(Severity severity);
+
+  /** Set the severity.
+     *
+     * @param severity Minimum severity
+     * @return @a this
+     *
+     * This sets the internal severity to the maximum of @a severity and the current severity.
+     *
+     * @see assign
+   */
+  self_type &update(Severity severity);
 
   /// The code for the top message.
   code_type const &code() const;
@@ -896,6 +916,25 @@ Errata::code() const -> code_type const & {
   return this->empty() ? DEFAULT_CODE : _data->_code;
 }
 
+inline auto
+Errata::severity() const -> Severity {
+  return _data ? _data->_severity : DEFAULT_SEVERITY;
+}
+
+inline auto Errata::assign(Severity severity) -> self_type & {
+  this->data()->_severity = severity;
+  return *this;
+}
+
+inline auto Errata::update(Severity severity) -> self_type & {
+  if (_data) {
+    _data->_severity = std::max(_data->_severity, severity);
+  } else {
+    this->assign(severity);
+  }
+  return *this;
+}
+
 inline size_t
 Errata::length() const {
   return _data ? _data->_notes.count() : 0;
@@ -936,6 +975,10 @@ Errata::note(Severity severity, std::string_view text) {
 template <typename... Args>
 Errata &
 Errata::note_sv(std::optional<Severity> severity, std::string_view fmt, std::tuple<Args...> const &args) {
+  if (severity.has_value()) {
+    this->update(*severity);
+  }
+
   if (!severity.has_value() || *severity >= FILTER_SEVERITY) {
     Data *data = this->data();
     auto span  = data->remnant();
@@ -975,11 +1018,6 @@ template <typename... Args>
 Errata &
 Errata::note(Severity severity, std::string_view fmt, Args &&... args) {
   return this->note_sv(severity, fmt, std::forward_as_tuple(args...));
-}
-
-inline auto
-Errata::severity() const -> Severity {
-  return _data ? _data->_severity : DEFAULT_SEVERITY;
 }
 
 inline Errata::iterator

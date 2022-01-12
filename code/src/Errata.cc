@@ -86,6 +86,9 @@ Errata::data() {
 
 Errata &
 Errata::note_s(std::optional<Severity> severity, std::string_view text) {
+  if (severity.has_value()) {
+    this->update(*severity);
+  }
   if (!severity.has_value() || *severity >= FILTER_SEVERITY) {
     auto span = this->alloc(text.size());
     memcpy(span, text);
