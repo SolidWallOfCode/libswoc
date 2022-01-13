@@ -119,15 +119,16 @@ The initialization is done in :code:`test_Errata_init` which is called from :cod
 
 If there is no external initialization, then there are three levels of severity 0..2 with
 the names "Info", "Warning", and "Error". The default severity is "Error" (2) with a failure threshold
-of 2.
+of 2 ("Error").
 
 By default annotations do not have a severity, that is a property of the :code:`Errata`. However a
-severity can be added to an annotation. This has no effect on the severity of the :code:`Errata` and
-is intended purely for display and filtering. The latter can be done by adjusting the value of
-:code:`swoc::Errata::FILTER_SEVERITY`. If a severity is provided with an annotation (via some variant
-of the :code:`note` method) then this is checked against :code:`FILTER_SEVERITY` and if it is less
-than that the annotation is not added. This enables an application to dynamically control the
-verbosity of errors without changing how they are generated.
+severity can be added to an annotation. If this is done the the severity of the :code:`Errata` is
+updated to that severity if it is larger (more severe) than the current severity. Annotations can be
+filtered by adjusting the value of :code:`swoc::Errata::FILTER_SEVERITY`. If a severity is provided
+with an annotation (via some variant of the :code:`note` method) then this is checked against
+:code:`FILTER_SEVERITY` and if it is less than that the annotation is not added. This enables an
+application to dynamically control the verbosity of errors without changing how they are generated.
+The :code:`Errata` serverity is updated as appropriate even if the annotation is discarded.
 
 Examples
 ========

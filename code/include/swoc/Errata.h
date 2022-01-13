@@ -226,6 +226,7 @@ public:
    *
    * The error code is set to the default.
    * @a text is localized to @a this and does not need to be persistent.
+   * The severity is updated to @a severity if the latter is more severe.
    */
   self_type &note(Severity severity, std::string_view text);
 
@@ -254,6 +255,8 @@ public:
    * This is a unified interface for other fixed text @c note methods which all forward to this
    * method. If @a severity does not have a value then the annotation is never filtered.
    *
+   * The severity is updated to @a severity if the latter is set and more severe.
+   *
    * @see FILTER_SEVERITY
    */
   self_type &note_s(std::optional<Severity> severity, std::string_view text);
@@ -280,6 +283,8 @@ public:
    * @param fmt Format string (@c BufferWriter style).
    * @param args Arguments for values in @a fmt.
    * @return A reference to this object.
+   *
+   * The severity is updated to @a severity if the latter is more severe.
    */
   template <typename... Args> self_type &note(Severity severity, std::string_view fmt, Args &&... args);
 
@@ -291,6 +296,8 @@ public:
    *
    * This is intended for use by external "helper" methods that pass their own arguments to this
    * using @c forward_as_tuple.
+   *
+   * The severity is updated to @a severity if the latter is more severe.
    */
   template <typename... Args> self_type &note_v(Severity severity, std::string_view fmt, std::tuple<Args...> const &args);
 
@@ -299,6 +306,8 @@ public:
    * @param fmt Format string (@c BufferWriter style).
    * @param args Arguments for values in @a fmt.
    * @return A reference to this object.
+   *
+   * The severity is updated to @a severity if the latter is set and more severe.
    *
    * This the effective implementation method for all variadic styles of the @a note method.
    */
@@ -404,6 +413,9 @@ public:
 
   /// The code for the top message.
   code_type const &code() const;
+
+  /// Set the @a code for @a this.
+  self_type & assign(code_type code);
 
   /// Number of messages in the errata.
   size_t length() const;
@@ -914,6 +926,11 @@ Errata::empty() const {
 inline auto
 Errata::code() const -> code_type const & {
   return this->empty() ? DEFAULT_CODE : _data->_code;
+}
+
+inline auto Errata::assign(code_type code) -> self_type & {
+  this->data()->_code = code;
+  return *this;
 }
 
 inline auto
