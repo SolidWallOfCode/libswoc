@@ -17,11 +17,10 @@
 #include <memory.h>
 #include <string>
 #include <string_view>
-#include "swoc/string_view_util.h"
 #include <limits>
 
 #include "swoc/swoc_version.h"
-//#include "swoc/swoc_meta.h"
+#include "swoc/string_view_util.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 

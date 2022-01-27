@@ -13,9 +13,6 @@
 #include <string_view>
 #include <limits>
 
-#include "swoc/swoc_version.h"
-#include "swoc/swoc_meta.h"
-
 /** Compare views with ordering, ignoring case.
  *
  * @param lhs input view
