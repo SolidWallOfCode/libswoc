@@ -40,19 +40,57 @@ public:
 
   Hash32FNV1a() = default;
 
+  /** Update the hash value.
+   *
+   * @param data Input data to hash.
+   * @return @a this
+   */
   self_type &update(std::string_view const &data);
 
+  /** Finalize the hash value.
+   *
+   * @return @a this
+   *
+   * No more updates are valid after finalization.
+   */
   self_type & final();
 
+  /// Return the hash value.
   value_type get() const;
 
+  /// Re-initialize to default state.
   self_type &clear();
 
+  /** Update with transformed data.
+   *
+   * @tparam X Transform functor.
+   * @tparam V Input data
+   * @param view transformed view
+   * @return @a this
+   *
+   * The hash is updated using the transformed data provided by @a view.
+   */
   template <typename X, typename V> self_type &update(TransformView<X, V> view);
 
-  template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
-
+  /** Update and finalize.
+   *
+   * @param data Input data to hash.
+   * @return The final hash value.
+   *
+   * Convenience method to compute a hash in one step.
+   */
   value_type hash_immediate(std::string_view const &data);
+
+  /** Update and finalized with transformed data.
+   *
+   * @tparam X Transform functor.
+   * @tparam V Input data
+   * @param view transformed view
+   * @return @a this
+   *
+   * The hash is updated using the transformed data provided by @a view, then finalized.
+   */
+  template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
 
 private:
   value_type hval{INIT};
@@ -68,19 +106,57 @@ public:
 
   Hash64FNV1a() = default;
 
+  /** Update the hash value.
+   *
+   * @param data Input data to hash.
+   * @return @a this
+   */
   self_type &update(std::string_view const &data);
 
+  /** Finalize the hash value.
+   *
+   * @return @a this
+   *
+   * No more updates are valid after finalization.
+   */
   self_type & final();
 
+  /// Return the hash value.
   value_type get() const;
 
+  /// Re-initialize to default state.
   self_type &clear();
 
+  /** Update with transformed data.
+   *
+   * @tparam X Transform functor.
+   * @tparam V Input data
+   * @param view transformed view
+   * @return @a this
+   *
+   * The hash is updated using the transformed data provided by @a view.
+   */
   template <typename X, typename V> self_type &update(TransformView<X, V> view);
 
-  template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
-
+  /** Update and finalize.
+   *
+   * @param data Input data to hash.
+   * @return The final hash value.
+   *
+   * Convenience method to compute a hash in one step.
+   */
   value_type hash_immediate(std::string_view const &data);
+
+  /** Update and finalized with transformed data.
+   *
+   * @tparam X Transform functor.
+   * @tparam V Input data type.
+   * @param view transformed view
+   * @return @a this
+   *
+   * The hash is updated using the transformed data provided by @a view, then finalized.
+   */
+  template <typename X, typename V> value_type hash_immediate(TransformView<X, V> const &view);
 
 private:
   value_type hval{INIT};
