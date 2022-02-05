@@ -484,26 +484,32 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
 TEST_CASE("TransformView", "[libswoc][TransformView]")
 {
   std::string_view source{"Evil Dave Rulz"};
+  std::string_view rot13("Rivy Qnir Ehym");
+
   // Because, sadly, the type of @c tolower varies between compilers since @c noexcept
   // is part of the signature in C++17.
   swoc::TransformView<decltype(&tolower), std::string_view> xv1(&tolower, source);
   auto xv2 = swoc::transform_view_of(&tolower, source);
+  // Rot13 transform
+  auto rotter = swoc::transform_view_of([](char c){return isalpha(c) ? c > 'Z' ? ( 'a' + ((c - 'a' + 13 ) % 26 )) : ( 'A' + ((c - 'A' + 13 ) % 26 )) : c; }, source);
+  auto identity = swoc::transform_view_of(source);
+
   TextView tv{source};
 
   REQUIRE(xv1 == xv2);
 
+  // Do this with inline post-fix increments.
   bool match_p = true;
   while (xv1) {
-    if (*xv1 != tolower(*tv)) {
+    if (*xv1++ != tolower(*tv++)) {
       match_p = false;
       break;
     }
-    ++xv1;
-    ++tv;
   }
   REQUIRE(match_p);
   REQUIRE(xv1 != xv2);
 
+  // Do this one with separate pre-fix increments.
   tv      = source;
   match_p = true;
   while (xv2) {
@@ -514,5 +520,20 @@ TEST_CASE("TransformView", "[libswoc][TransformView]")
     ++xv2;
     ++tv;
   }
+
   REQUIRE(match_p);
-};
+
+  std::string check;
+  std::copy(rotter.begin(), rotter.end(), std::back_inserter(check));
+  REQUIRE(check == rot13);
+
+  check.clear();
+  for ( auto c : identity ) {
+    check.push_back(c);
+  }
+  REQUIRE(check == source);
+
+  check.clear();
+  check.append(rotter.begin(), rotter.end());
+  REQUIRE(check == rot13);
+}

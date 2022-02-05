@@ -1558,18 +1558,23 @@ extern template std::ostream &TextView::stream_write(std::ostream &, const TextV
  * std::string_view source; // original text.
  * auto xv = transform_view_of(&tolower, source);
  * @endcode
+ *
+ * This class supports iterators but those should be avoided as use of them makes extra copies of the instance which
+ * may be expensive if the functor is expensive. In cases where the functor is a function pointer or a lambda this isn't
+ * an issue.
  */
 template <typename X, typename V> class TransformView {
   using self_type = TransformView; ///< Self reference type.
-  using iter      = decltype(static_cast<V *>(nullptr)->begin());
+  using source_iterator = decltype(V{}.begin());
 
 public:
   using transform_type    = X; ///< Export transform functor type.
   using source_view_type  = V; ///< Export source view type.
-  using source_value_type = decltype(**static_cast<iter *>(nullptr));
+  using source_value_type = std::remove_reference_t<decltype(*source_iterator{})>;
   /// Result type of calling the transform on an element of the source view.
-  using value_type = decltype(
-    (*static_cast<transform_type *>(nullptr))(*static_cast<typename std::remove_reference<source_value_type>::type *>(nullptr)));
+  using value_type = std::invoke_result_t<transform_type, source_value_type>;
+  /// This class serves as its own iterator.
+  using iterator = self_type;
 
   /** Construct a transform view using transform @a xf on source view @a v.
    *
@@ -1612,10 +1617,18 @@ public:
   /// Check if bool is not empty.
   explicit operator bool() const;
 
+  /// Iterator to first transformed character.
+  iterator begin() const { return *this; }
+  /// Iterator past last transformed character.
+  iterator end() const { return self_type{_xf, _limit}; }
+
 protected:
-  transform_type _xf; ///< Per character transform functor.
-  iter _spot;         ///< Current location in the source view.
-  iter _limit;        ///< End of source view.
+  transform_type _xf;     ///< Per character transform functor.
+  source_iterator _spot;  ///< Current location in the source view.
+  source_iterator _limit; ///< End of source view.
+
+  /// Special constructor for making an empty instance to serve as the @c end iterator.
+  TransformView(transform_type && xf, source_iterator && limit) : _xf(xf), _spot(limit), _limit(limit) {}
 };
 
 template <typename X, typename V>
@@ -1682,7 +1695,7 @@ transform_view_of(X const &xf, V const &src) {
   return TransformView<X, V>(xf, src);
 }
 
-/** Indentity transform view.
+/** Identity transform view.
  *
  * @tparam V The source type.
  *
@@ -1692,13 +1705,15 @@ transform_view_of(X const &xf, V const &src) {
 template <typename V> class TransformView<void, V> {
   using self_type = TransformView; ///< Self reference type.
   /// Iterator over source, for internal use.
-  using iter = decltype(static_cast<V *>(nullptr)->begin());
+  using source_iterator = decltype(V{}.begin());
 
 public:
   using source_view_type  = V; ///< Export source view type.
-  using source_value_type = decltype(**static_cast<iter *>(nullptr));
+  using source_value_type = std::remove_reference_t<decltype(*source_iterator{})>;
   /// Result type of calling the transform on an element of the source view.
   using value_type = source_value_type;
+  /// This class serves as its own iterator.
+  using iterator = self_type;
 
   /** Construct identity transform view from @a v.
    *
@@ -1722,36 +1737,82 @@ public:
   bool operator!=(self_type const &that) const;
 
   /// Get the current element.
-  value_type
-  operator*() const {
-    return *_spot;
-  }
+  value_type operator*() const;
+
   /// Move to next element.
-  self_type &
-  operator++() {
-    ++_spot;
-    return *this;
-  }
+  self_type & operator++();
+
   /// Move to next element.
-  self_type
-  operator++(int) {
-    auto zret{*this};
-    ++*this;
-    return zret;
-  }
+  self_type operator++(int);
 
   /// Check if view is empty.
-  bool
-  empty() const {
-    return _spot == _limit;
-  }
+  bool empty() const;
+
   /// Check if bool is not empty.
-  explicit operator bool() const { return _spot != _limit; }
+  explicit operator bool() const;
+
+  /// Iterator to first transformed character.
+  iterator begin() const;
+  /// Iterator past last transformed character.
+  iterator end() const;
 
 protected:
-  iter _spot;  ///< Current location.
-  iter _limit; ///< End marker.
+  source_iterator _spot;  ///< Current location.
+  source_iterator _limit; ///< End marker.
+
+  /// Special constructor for making an empty instance to serve as the @c end iterator.
+  explicit TransformView(source_iterator && limit) : _spot(limit), _limit(limit) {}
 };
+
+template <typename V>
+auto
+TransformView<void, V>::operator*() const -> value_type {
+  return *_spot;
+}
+
+template <typename V>
+auto
+TransformView<void, V>::operator++() -> self_type & {
+  ++_spot;
+  return *this;
+}
+
+template <typename V>
+auto
+TransformView<void, V>::operator++(int) -> self_type {
+  auto zret{*this};
+  ++*this;
+  return zret;
+}
+
+template <typename V>
+bool
+TransformView<void, V>::operator==(const self_type &that) const {
+  return _spot == that._spot && _limit == that._limit;
+}
+
+template <typename V>
+bool
+TransformView<void, V>::operator!=(const self_type &that) const {
+  return _spot != that._spot || _limit != that._limit;
+}
+
+template <typename V>
+bool
+TransformView<void, V>::empty() const {
+  return _spot == _limit;
+}
+
+template <typename V>
+TransformView<void, V>::operator bool() const {
+  return _spot != _limit;
+}
+
+template <typename V>
+auto TransformView<void, V>::begin() const -> self_type { return *this; }
+
+template <typename V>
+auto TransformView<void, V>::end() const -> self_type { return self_type{_limit}; }
 
 /// @cond INTERNAL_DETAIL
 // Capture @c void transforms and make them identity transforms.
@@ -1760,6 +1821,7 @@ TransformView<void, V>
 transform_view_of(V const &v) {
   return TransformView<void, V>(v);
 }
+
 /// @endcond
 
 /** User literals for TextView.
