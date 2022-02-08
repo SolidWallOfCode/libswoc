@@ -132,19 +132,24 @@ void post_processing_performance_test(Space & space) {
       a6.push_back(++IP6Addr(a));
     }
   }
-  auto t0 = std::chrono::system_clock::now();
-  for ( auto const& addr : a4) {
-    [[maybe_unused]] auto spot = space.find(addr);
-  }
-  auto delta = std::chrono::system_clock::now() - t0;
-  std::cout << W().print("IPv4 time - {} addresses, {} ns total, {} ns per lookup\n",
-    a4.size(), delta.count(), delta.count() / a4.size());
 
-  t0 = std::chrono::system_clock::now();
-  for ( auto const& addr : a6) {
-    [[maybe_unused]] auto spot = space.find(addr);
+  if (! a4.empty()) {
+    auto t0 = std::chrono::system_clock::now();
+    for (auto const &addr : a4) {
+      [[maybe_unused]] auto spot = space.find(addr);
+    }
+    auto delta = std::chrono::system_clock::now() - t0;
+    std::cout << W().print("IPv4 time - {} addresses, {} ns total, {} ns per lookup\n", a4.size(), delta.count(),
+                           delta.count() / a4.size());
   }
-  delta = std::chrono::system_clock::now() - t0;
-  std::cout << W().print("IPv6 time - {} addresses, {} ns total, {} ns per lookup\n",
-      a6.size(), delta.count(), delta.count() / a6.size());
+
+  if (!a6.empty()) {
+    auto t0 = std::chrono::system_clock::now();
+    for (auto const &addr : a6) {
+      [[maybe_unused]] auto spot = space.find(addr);
+    }
+    auto delta = std::chrono::system_clock::now() - t0;
+    std::cout << W().print("IPv6 time - {} addresses, {} ns total, {} ns per lookup\n", a6.size(), delta.count(),
+                           delta.count() / a6.size());
+  }
 }
