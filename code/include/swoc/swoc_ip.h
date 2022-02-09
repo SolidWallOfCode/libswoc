@@ -577,6 +577,7 @@ class IPAddr {
 public:
   IPAddr()                      = default; ///< Default constructor - invalid result.
   IPAddr(self_type const &that) = default; ///< Copy constructor.
+  self_type & operator = (self_type const& that) = default;
 
   /// Construct using IPv4 @a addr.
   explicit IPAddr(in_addr_t addr);

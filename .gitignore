@@ -26,8 +26,7 @@ unit_tests/test_libswoc
 *.cmake
 CMakeFiles/
 CMakeCache.txt
-cmake-build-debug/
-cmake-build-release/
+cmake-build-*/
 Makefile
 .idea/
 
