@@ -263,33 +263,21 @@ public:
   bool load(string_view const &text);
 
   /// Standard ternary compare.
-  int
-  cmp(self_type const &that) const {
-    return _addr < that._addr ? -1 : _addr > that._addr ? 1 : 0;
-  }
+  int cmp(self_type const &that) const;
 
   /// Get the IP address family.
   /// @return @c AF_INET
   /// @note Useful primarily for template classes.
   constexpr sa_family_t family();
 
-  /// Test for ANY address.
-  bool
-  is_any() const {
-    return _addr == INADDR_ANY;
-  }
+  /// @return @c true if this is the "any" address, @c false if not.
+  bool is_any() const;
 
-  /// Test for multicast
-  bool
-  is_multicast() const {
-    return IN_MULTICAST(_addr);
-  }
+  /// @return @c true if this is a multicast address, @c false if not.
+  bool is_multicast() const;
 
-  /// Test for loopback
-  bool
-  is_loopback() const {
-    return (*this)[3] == IN_LOOPBACKNET;
-  }
+  /// @return @c true if this is a loopback address, @c false if not.
+  bool is_loopback() const;
 
   /** Left shift.
    *
@@ -349,7 +337,9 @@ protected:
 };
 
 /** Storage for an IPv6 address.
-    This should be presumed to be in network order.
+    Internal storage is not necessarily network ordered.
+    @see network_order
+    @see copy_to
  */
 class IP6Addr {
   using self_type = IP6Addr; ///< Self reference type.
@@ -359,7 +349,7 @@ class IP6Addr {
 
 public:
   static constexpr size_t WIDTH         = 128;                                                ///< Number of bits in the address.
-  static constexpr size_t SIZE          = WIDTH / std::numeric_limits<unsigned char>::digits; ///< Size of address in bytes.
+  static constexpr size_t SIZE          = WIDTH / std::numeric_limits<uint8_t>::digits; ///< Size of address in bytes.
   static constexpr sa_family_t AF_value = AF_INET6;                                           ///< Address family type.
 
   using quad_type                 = uint16_t;                 ///< Size of one segment of an IPv6 address.
@@ -367,14 +357,14 @@ public:
 
   /// Direct access type for the address.
   /// Equivalent to the data type for data member @c s6_addr in @c in6_addr.
-  using raw_type = std::array<unsigned char, SIZE>;
+  using raw_type = std::array<uint8_t, SIZE>;
 
   /// Direct access type for the address by quads (16 bits).
   /// This corresponds to the elements of the text format of the address.
   using quad_store_type = std::array<quad_type, N_QUADS>;
 
   /// Number of bits per quad.
-  static constexpr size_t QUAD_WIDTH = std::numeric_limits<unsigned char>::digits * sizeof(quad_type);
+  static constexpr size_t QUAD_WIDTH = std::numeric_limits<uint8_t>::digits * sizeof(quad_type);
 
   /// A bit mask of all 1 bits the size of a quad.
   static constexpr quad_type QUAD_MASK = ~quad_type{0};
@@ -385,10 +375,10 @@ public:
   static constexpr size_t WORD_SIZE = sizeof(word_type);
 
   /// Number of bits per word.
-  static constexpr size_t WORD_WIDTH = std::numeric_limits<unsigned char>::digits * WORD_SIZE;
+  static constexpr size_t WORD_WIDTH = std::numeric_limits<uint8_t>::digits * WORD_SIZE;
 
   /// Number of words used for basic address storage.
-  static constexpr size_t N_STORE = SIZE / sizeof(word_type);
+  static constexpr size_t N_STORE = SIZE / WORD_SIZE;
 
   /// Type used to store the address.
   using word_store_type = std::array<word_type, N_STORE>;
@@ -452,6 +442,8 @@ public:
   /// Decrement address.
   self_type &operator--();
 
+  self_type & operator = (self_type const& that) = default;
+
   /// Assign from IPv6 raw address.
   self_type &operator=(in6_addr const &ip);
 
@@ -476,44 +468,60 @@ public:
   */
   bool load(string_view const &str);
 
-  /// Generic compare.
+  /// Generic three value compare.
   int cmp(self_type const &that) const;
 
-  /// Get the address family.
   /// @return The address family.
-  /// @note Useful primarily for templates.
   constexpr sa_family_t family();
 
-  /// Test for ANY address.
-  bool
-  is_any() const {
-    return _addr._store[0] == 0 && _addr._store[1] == 0;
-  }
+  /// @return @c true if this is the "any" address, @c false if not.
+  bool is_any() const;
 
-  /// Test for loopback
-  bool
-  is_loopback() const {
-    return _addr._store[0] == 0 && _addr._store[1] == 1;
-  }
+  /// @return @c true if this is a loopback address, @c false if not.
+  bool is_loopback() const;
 
-  /// Test for multicast
-  bool
-  is_multicast() const {
-    return _addr._raw[7] == 0xFF;
-  }
+  /// @return @c true if this is a multicast address, @c false if not.
+  bool is_multicast() const;
 
-  self_type &
-  clear() {
-    _addr._store[0] = _addr._store[1] = 0;
-    return *this;
-  }
+  ///  @return @c true if this is an IPv4 addressed mapped to IPv6, @c false if not.
+  bool is_mapped_ipv4() const;
 
+  /** Reset to default constructed state.
+   *
+   * @return @a this
+   */
+  self_type & clear();
+
+  /** Bitwise AND.
+   *
+   * @param that Source address.
+   * @return @a this.
+   *
+   * The bits in @a this are set to the bitwise AND of the corresponding bits in @a this and @a that.
+   */
   self_type &operator&=(IPMask const &mask);
 
+  /** Bitwise OR.
+   *
+   * @param that Source address.
+   * @return @a this.
+   *
+   * The bits in @a this are set to the bitwise OR of the corresponding bits in @a this and @a that.
+   */
   self_type &operator|=(IPMask const &mask);
 
+  /** Convert between network and host ordering.
+   *
+   * @param dst Destination for re-ordered address.
+   * @param src Original address.
+   */
   static void reorder(in6_addr &dst, raw_type const &src);
 
+  /** Convert between network and host ordering.
+   *
+   * @param dst Destination for re-ordered address.
+   * @param src Original address.
+   */
   static void reorder(raw_type &dst, in6_addr const &src);
 
 protected:
@@ -542,6 +550,10 @@ protected:
   /// This converts from the position in the text format to the quads in the binary format.
   static constexpr std::array<unsigned, N_QUADS> QUAD_IDX = {3, 2, 1, 0, 7, 6, 5, 4};
 
+  /// Convert between network and host order.
+  /// The conversion is symmetric.
+  /// @param dst Output where reordered value is placed.
+  /// @param src Input value to resorder.
   static void reorder(unsigned char dst[WORD_SIZE], unsigned char const src[WORD_SIZE]);
 
   /** Construct from two 64 bit values.
@@ -1114,18 +1126,7 @@ public:
 
   /// Equality
   bool
-  operator==(self_type const &that) const {
-    if (_family != that._family) {
-      return false;
-    }
-    if (this->is_ip4()) {
-      return _range._ip4 == that._range._ip4;
-    }
-    if (this->is_ip6()) {
-      return _range._ip6 == that._range._ip6;
-    }
-    return true;
-  }
+  operator==(self_type const &that) const;
 
   /// @return @c true if this is an IPv4 range, @c false if not.
   bool
@@ -2396,12 +2397,32 @@ IP4Addr::operator|=(IPMask const &mask) {
   return *this;
 }
 
+inline bool
+IP4Addr::is_any() const {
+  return _addr == INADDR_ANY;
+}
+
+inline bool
+IP4Addr::is_loopback() const {
+  return (*this)[3] == IN_LOOPBACKNET;
+}
+
+inline bool
+IP4Addr::is_multicast() const {
+  return IN_MULTICAST(_addr);
+}
+
+inline int
+IP4Addr::cmp(IP4Addr::self_type const &that) const {
+  return _addr < that._addr ? -1 : _addr > that._addr ? 1 : 0;
+}
+
 constexpr in_addr_t
 IP4Addr::reorder(in_addr_t src) {
   return ((src & 0xFF) << 24) | (((src >> 8) & 0xFF) << 16) | (((src >> 16) & 0xFF) << 8) | ((src >> 24) & 0xFF);
 }
 
-// ---
+// +++ IP6Addr +++
 
 inline IP6Addr::IP6Addr(in6_addr const &addr) {
   *this = addr;
@@ -2415,6 +2436,26 @@ inline IP6Addr::IP6Addr(std::string_view const &text) {
 
 inline IP6Addr::IP6Addr(IPAddr const &addr) : _addr{addr._addr._ip6._addr} {}
 
+inline bool
+IP6Addr::is_loopback() const {
+  return _addr._store[0] == 0 && _addr._store[1] == 1;
+}
+
+inline bool
+IP6Addr::is_multicast() const {
+  return _addr._raw[7] == 0xFF;
+}
+
+inline bool
+IP6Addr::is_any() const {
+  return _addr._store[0] == 0 && _addr._store[1] == 0;
+}
+
+inline bool
+IP6Addr::is_mapped_ipv4() const {
+  return 0 == _addr._store[0] && (_addr._quad[7] == 0 && _addr._quad[6] == 0xFFFF);
+}
+
 inline in6_addr &
 IP6Addr::copy_to(in6_addr &addr) const {
   self_type::reorder(addr, _addr._raw);
@@ -2425,6 +2466,12 @@ inline in6_addr
 IP6Addr::network_order() const {
   in6_addr zret;
   return this->copy_to(zret);
+}
+
+inline auto
+IP6Addr::clear() -> self_type & {
+  _addr._store[0] = _addr._store[1] = 0;
+  return *this;
 }
 
 inline auto

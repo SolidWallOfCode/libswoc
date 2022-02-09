@@ -215,6 +215,12 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   IP4Addr a4 { &ep.sa4 };
   REQUIRE(a4.is_loopback() == true);
   REQUIRE(a4.is_any() == false);
+
+  CHECK_FALSE(IP6Addr("1337:0:0:ded:BEEF:0:0:0").is_mapped_ipv4());
+  CHECK_FALSE(IP6Addr("1337:0:0:ded:BEEF::").is_mapped_ipv4());
+  CHECK(IP6Addr("::FFFF:C0A8:381F").is_mapped_ipv4());
+  CHECK_FALSE(IP6Addr("FFFF:C0A8:381F::").is_mapped_ipv4());
+  CHECK_FALSE(IP6Addr("::C0A8:381F").is_mapped_ipv4());
 };
 
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {

@@ -1019,6 +1019,20 @@ IPRange::network_mask() const {
   return {};
 }
 
+bool
+IPRange::operator==(self_type const &that) const {
+  if (_family != that._family) {
+    return false;
+  }
+  if (this->is_ip4()) {
+    return _range._ip4 == that._range._ip4;
+  }
+  if (this->is_ip6()) {
+    return _range._ip6 == that._range._ip6;
+  }
+  return true;
+}
+
 IPMask
 IP6Range::network_mask() const {
   NetSource nets{*this};
