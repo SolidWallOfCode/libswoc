@@ -105,9 +105,14 @@ clean-local:
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
 TEXT
+(cd ${ATS} ; git add ${BASE_PATH}/swoc/Makefile.am)
 
-sed -i -e 's!lib/yamlcpp/Makefile!lib/swoc/Makefile\n  &!' ${ATS}/configure.ac
-sed -i -e '/SUBDIRS =/s!$! swoc!' ${ATS}/${BASE_PATH}/Makefile.am
-(cd ${ATS} ; git add configure.ac ${BASE_PATH}/Makefile.am ${BASE_PATH}/swoc/Makefile.am)
+if ! grep -q swoc ${ATS}/configure.ac ; then
+  sed -i -e 's!lib/yamlcpp/Makefile!lib/swoc/Makefile\n  &!' ${ATS}/configure.ac
+  (cd ${ATS} ; git add configure.ac)
+fi
 
-# need to tweak tools/git/pre-comment to exclude lib/swoc
+if ! grep -q swoc ${ATS}/${BASE_PATH}/Makefile.am ; then
+  sed -i -e '/SUBDIRS =/s!$! swoc!' ${ATS}/${BASE_PATH}/Makefile.am
+  (cd ${ATS} ; git add ${BASE_PATH}/Makefile.am)
+fi
