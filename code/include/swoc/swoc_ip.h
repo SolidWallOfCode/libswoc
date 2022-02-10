@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include <limits.h>
+#include <climits>
 #include <netinet/in.h>
 #include <string_view>
 #include <variant>
@@ -39,7 +39,10 @@ class IP6Net;
 class IPNet;
 
 using ::std::string_view;
-extern void *const pseudo_nullptr;
+
+namespace detail {
+  extern void *const pseudo_nullptr;
+}
 
 /** A union to hold @c sockaddr compliant IP address structures.
 
@@ -59,17 +62,20 @@ union IPEndpoint {
 
   /// Default construct invalid instance.
   IPEndpoint();
-
-  IPEndpoint(self_type const &that);
+  IPEndpoint(self_type const &that); ///< Copy constructor.
+  ~IPEndpoint() = default;
 
   /// Construct from the @a text representation of an address.
   IPEndpoint(string_view const &text);
 
-  // Construct from @a IPAddr
+  // Construct from @c IPAddr
   explicit IPEndpoint(IPAddr const &addr);
 
   // Construct from @c sockaddr
   IPEndpoint(sockaddr const *sa);
+
+  /// Copy assignment.
+  self_type &operator=(self_type const &that);
 
   /** Break a string in to IP address relevant tokens.
    *
@@ -81,6 +87,8 @@ union IPEndpoint {
    *
    * Any of the out parameters can be @c nullptr in which case they are not updated.
    * This parses and discards the IPv6 brackets.
+   *
+   * @note This is intended for internal use to do address parsing, but it can be useful in other contexts.
    */
   static bool tokenize(string_view src, string_view *host = nullptr, string_view *port = nullptr, string_view *rest = nullptr);
 
@@ -98,9 +106,6 @@ union IPEndpoint {
 
   /// Invalidate this endpoint.
   self_type &invalidate();
-
-  /// Copy constructor.
-  self_type &operator=(self_type const &that);
 
   /** Copy (assign) the contents of @a src to @a dst.
    *
@@ -122,7 +127,7 @@ union IPEndpoint {
   self_type &assign(IPAddr const &addr, in_port_t port = 0);
 
   /// Copy to @a sa.
-  const self_type &fill(sockaddr *addr) const;
+  const self_type &copy_to(sockaddr *addr) const;
 
   /// Test for valid IP address.
   bool is_valid() const;
@@ -246,7 +251,7 @@ public:
   self_type &operator|=(IPMask const &mask);
 
   /// Write this adddress and @a port to the sockaddr @a sa.
-  sockaddr_in *fill(sockaddr_in *sa, in_port_t port = 0) const;
+  sockaddr_in *copy_to(sockaddr_in *sa, in_port_t port = 0) const;
 
   /// @return The address in network order.
   in_addr_t network_order() const;
@@ -348,9 +353,9 @@ class IP6Addr {
   friend class IPMask;
 
 public:
-  static constexpr size_t WIDTH         = 128;                                                ///< Number of bits in the address.
+  static constexpr size_t WIDTH         = 128;                                          ///< Number of bits in the address.
   static constexpr size_t SIZE          = WIDTH / std::numeric_limits<uint8_t>::digits; ///< Size of address in bytes.
-  static constexpr sa_family_t AF_value = AF_INET6;                                           ///< Address family type.
+  static constexpr sa_family_t AF_value = AF_INET6;                                     ///< Address family type.
 
   using quad_type                 = uint16_t;                 ///< Size of one segment of an IPv6 address.
   static constexpr size_t N_QUADS = SIZE / sizeof(quad_type); ///< # of quads in an IPv6 address.
@@ -445,7 +450,7 @@ public:
   self_type & operator = (self_type const& that) = default;
 
   /// Assign from IPv6 raw address.
-  self_type &operator=(in6_addr const &ip);
+  self_type &operator=(in6_addr const &addr);
 
   /// Set to the address in @a addr.
   self_type &operator=(sockaddr_in6 const *addr);
@@ -568,7 +573,9 @@ protected:
   friend IP6Addr operator|(IP6Addr const &addr, IPMask const &mask);
 };
 
-/** Storage for an IP address.
+/** An IPv4 or IPv6 address.
+ *
+ * The family type is stored. For comparisons, invalid < IPv4 < IPv6. All invalid instances are equal.
  */
 class IPAddr {
   friend class IPRange;
@@ -577,7 +584,7 @@ class IPAddr {
 public:
   IPAddr()                      = default; ///< Default constructor - invalid result.
   IPAddr(self_type const &that) = default; ///< Copy constructor.
-  self_type & operator = (self_type const& that) = default;
+  self_type & operator = (self_type const& that) = default; ///< Copy assignment.
 
   /// Construct using IPv4 @a addr.
   explicit IPAddr(in_addr_t addr);
@@ -610,10 +617,10 @@ public:
   /// Set to the address in @a addr.
   self_type &assign(sockaddr_in6 const *addr);
 
-  /// Set to the address in @a addr.
+  /// Set to IPv4 @a addr.
   self_type &assign(in_addr_t addr);
 
-  /// Set to address in @a addr.
+  /// Set to IPv6 @a addr
   self_type &assign(in6_addr const &addr);
 
   /// Assign from end point.
@@ -623,7 +630,7 @@ public:
   self_type &operator=(in_addr_t ip);
 
   /// Assign from IPv6 raw address.
-  self_type &operator=(in6_addr const &ip);
+  self_type &operator=(in6_addr const &addr);
 
   bool operator==(self_type const &that) const;
 
@@ -709,8 +716,6 @@ protected:
   union raw_addr_type {
     IP4Addr _ip4;                                    ///< IPv4 address (host)
     IP6Addr _ip6;                                    ///< IPv6 address (host)
-    uint8_t _octet[IP6Addr::SIZE];                   ///< IPv4 octets.
-    uint64_t _u64[IP6Addr::SIZE / sizeof(uint64_t)]; ///< As 64 bit chunks.
 
     constexpr raw_addr_type();
 
@@ -739,9 +744,15 @@ class IPMask {
 public:
   using raw_type = uint8_t; ///< Storage for mask width.
 
-  IPMask() = default;
+  IPMask() = default; ///< Default construct to invalid mask.
 
-  explicit IPMask(raw_type count);
+  /** Construct a mask of @a width.
+   *
+   * @param width Number of bits in the mask.
+   *
+   * @note Because this is a network mask, it is always left justified.
+   */
+  explicit IPMask(raw_type width);
 
   /// @return @c true if the mask is valid, @c false if not.
   bool is_valid() const;
@@ -755,7 +766,7 @@ public:
 
   /** Copmute a mask for the network at @a addr.
    * @param addr Lower bound of network.
-   * @return The width of the largest network starting at @a addr.
+   * @return A mask with the width of the largest network starting at @a addr.
    */
   static self_type mask_for(IPAddr const &addr);
 
@@ -771,27 +782,29 @@ public:
    */
   static self_type mask_for(IP6Addr const &addr);
 
-  /// Force @a this to an invalid state.
-  self_type &
-  clear() {
-    _cidr = INVALID;
-    return *this;
-  }
+  /// Change to default constructed state (invalid).
+  self_type & clear();
 
   /// The width of the mask.
   raw_type width() const;
 
-  self_type &
-  operator<<=(raw_type n) {
-    _cidr -= n;
-    return *this;
-  }
+  /** Extend the mask (cover more addresses).
+   *
+   * @param n Number of bits to extend.
+   * @return @a this
+   *
+   * Effectively shifts the mask left, bringing in 0 bits on the right.
+   */
+  self_type & operator<<=(raw_type n);
 
-  self_type &
-  operator>>=(raw_type n) {
-    _cidr += n;
-    return *this;
-  }
+  /** Narrow the mask (cover fewer addresses).
+   *
+   * @param n Number of bits to narrow.
+   * @return @a this
+   *
+   * Effectively shift the mask right, bringing in 1 bits on the left.
+   */
+  self_type & operator>>=(raw_type n);
 
   /** The mask as an IPv4 address.
    *
@@ -919,7 +932,7 @@ public:
   using const_iterator = iterator;
 
   iterator begin() const; ///< First network.
-  iterator end() const;   ///< Past last network.
+  static iterator end() ;   ///< Past last network.
 
   /// Return @c true if there are valid networks, @c false if not.
   bool empty() const;
@@ -960,7 +973,7 @@ protected:
 
   void search_narrower();
 
-  bool is_valid(IP4Addr mask);
+  bool is_valid(IP4Addr mask) const;
 };
 
 class IP6Range : public DiscreteRange<IP6Addr> {
@@ -1056,7 +1069,7 @@ public:
   iterator begin() const; ///< First network.
   iterator end() const;   ///< Past last network.
 
-  /// Return @c true if there are valid networks, @c false if not.
+  /// @return @c true if there are valid networks, @c false if not.
   bool empty() const;
 
   /// @return The current network.
@@ -1065,19 +1078,12 @@ public:
   /// Access @a this as if it were an @c IP6Net.
   self_type *operator->();
 
-  /// Iterator support.
   /// @return The current network address.
-  IP6Addr const &
-  addr() const {
-    return _range.min();
-  }
+  IP6Addr const & addr() const;
 
   /// Iterator support.
   /// @return The current network mask.
-  IPMask
-  mask() const {
-    return _mask;
-  }
+  IPMask mask() const;
 
   /// Move to next network.
   self_type &operator++();
@@ -1585,18 +1591,11 @@ public:
   template <typename F, typename U = PAYLOAD> self_type &blend(IPRange const &range, U const &color, F &&blender);
 
   template <typename F, typename U = PAYLOAD>
-  self_type &
-  blend(IP4Range const &range, U const &color, F &&blender) {
-    _ip4.blend(range, color, blender);
-    return *this;
-  }
+  self_type & blend(IP4Range const &range, U const &color, F &&blender);
 
   template <typename F, typename U = PAYLOAD>
   self_type &
-  blend(IP6Range const &range, U const &color, F &&blender) {
-    _ip6.blend(range, color, blender);
-    return *this;
-  }
+  blend(IP6Range const &range, U const &color, F &&blender);
 
   /// @return The number of distinct ranges.
   size_t
@@ -1692,7 +1691,7 @@ public:
     bool operator!=(self_type const &that) const;
 
   protected:
-    // These are stored non-const to make implementing @c iterator easier. This class provides the
+    // These are stored non-const to make implementing @c iterator easier. The containing class provides the
     // required @c const protection. This is basic a tuple of iterators - for forward iteration if
     // the primary (ipv4) iterator is at the end, then use the secondary (ipv6) iterator. The reverse
     // is done for reverse iteration. This depends on the extra support @c IntrusiveDList iterators
@@ -1700,11 +1699,7 @@ public:
     typename IP4Space::iterator _iter_4; ///< IPv4 sub-space iterator.
     typename IP6Space::iterator _iter_6; ///< IPv6 sub-space iterator.
     /// Current value.
-    value_type _value{IPRange{}, *static_cast<PAYLOAD *>(pseudo_nullptr)};
-
-    /// Dummy payload.
-    /// @internal Used to initialize @c value_type for invalid iterators.
-    //    static constexpr PAYLOAD * const null_payload = nullptr;
+    value_type _value{IPRange{}, *static_cast<PAYLOAD *>(detail::pseudo_nullptr)};
 
     /** Internal constructor.
      *
@@ -1907,7 +1902,7 @@ IPSpace<PAYLOAD>::const_iterator::operator++() -> self_type & {
       return *this;
     }
   }
-  new (&_value) value_type{IPRange{}, *static_cast<PAYLOAD *>(pseudo_nullptr)};
+  new (&_value) value_type{IPRange{}, *static_cast<PAYLOAD *>(detail::pseudo_nullptr)};
   return *this;
 }
 
@@ -1932,7 +1927,7 @@ IPSpace<PAYLOAD>::const_iterator::operator--() -> self_type & {
     new (&_value) value_type{_iter_4->range(), _iter_4->payload()};
     return *this;
   }
-  new (&_value) value_type{IPRange{}, *static_cast<PAYLOAD *>(pseudo_nullptr)};
+  new (&_value) value_type{IPRange{}, *static_cast<PAYLOAD *>(detail::pseudo_nullptr)};
   return *this;
 }
 
@@ -2092,7 +2087,7 @@ IPAddr::isCompatibleWith(self_type const &that) {
 
 inline bool
 IPAddr::is_loopback() const {
-  return (AF_INET == _family && 0x7F == _addr._octet[0]) || (AF_INET6 == _family && _addr._ip6.is_loopback());
+  return (AF_INET == _family && _addr._ip4.is_loopback()) || (AF_INET6 == _family && _addr._ip6.is_loopback());
 }
 
 inline IPAddr &
@@ -2235,7 +2230,7 @@ IPEndpoint::assign(sockaddr const *src) {
 }
 
 inline IPEndpoint const &
-IPEndpoint::fill(sockaddr *addr) const {
+IPEndpoint::copy_to(sockaddr *addr) const {
   self_type::assign(addr, &sa);
   return *this;
 }
@@ -2283,8 +2278,8 @@ IPEndpoint::port(sockaddr *sa) {
 }
 
 inline in_port_t
-IPEndpoint::port(sockaddr const *addr) {
-  return self_type::port(const_cast<sockaddr *>(addr));
+IPEndpoint::port(sockaddr const *sa) {
+  return self_type::port(const_cast<sockaddr *>(sa));
 }
 
 inline in_port_t
@@ -2463,6 +2458,14 @@ IP6Addr::copy_to(in6_addr &addr) const {
   return addr;
 }
 
+inline sockaddr *
+IP6Addr::copy_to(sockaddr *sa, in_port_t port) const {
+  IPEndpoint addr(sa);
+  self_type::reorder(addr.sa6.sin6_addr, _addr._raw);
+  addr.network_order_port() = port;
+  return sa;
+}
+
 inline in6_addr
 IP6Addr::network_order() const {
   in6_addr zret;
@@ -2578,7 +2581,7 @@ IPAddr::operator==(self_type const &that) const {
   case AF_INET6:
     return that._family == AF_INET6 && _addr._ip6 == that._addr._ip6;
   default:
-    return false;
+    return ! that.is_valid();
   }
 }
 
@@ -2723,6 +2726,24 @@ IPMask::as_ip4() const {
     addr <<= IP4Addr::WIDTH - _cidr;
   }
   return IP4Addr{addr};
+}
+
+inline auto
+IPMask::clear() ->  self_type & {
+  _cidr = INVALID;
+  return *this;
+}
+
+inline auto
+IPMask::operator<<=(raw_type n) -> self_type & {
+  _cidr -= n;
+  return *this;
+}
+
+inline auto
+IPMask::operator>>=(IPMask::raw_type n) -> self_type & {
+  _cidr += n;
+  return *this;
 }
 
 // +++ mixed mask operators +++
@@ -2923,7 +2944,7 @@ operator==(IP6Net const &lhs, IPNet const &rhs) {
 // +++ Range -> Network classes +++
 
 inline bool
-IP4Range::NetSource::is_valid(swoc::IP4Addr mask) {
+IP4Range::NetSource::is_valid(swoc::IP4Addr mask) const {
   return ((mask._addr & _range._min._addr) == _range._min._addr) && ((_range._min._addr | ~mask._addr) <= _range._max._addr);
 }
 
@@ -2938,7 +2959,7 @@ IP4Range::NetSource::begin() const {
 }
 
 inline IP4Range::NetSource::iterator
-IP4Range::NetSource::end() const {
+IP4Range::NetSource::end() {
   return self_type{range_type{}};
 }
 
@@ -3010,6 +3031,16 @@ IP6Range::NetSource::operator==(IP6Range::NetSource::self_type const &that) cons
 inline bool
 IP6Range::NetSource::operator!=(IP6Range::NetSource::self_type const &that) const {
   return !(*this == that);
+}
+
+inline IP6Addr const &
+IP6Range::NetSource::addr() const {
+  return _range.min();
+}
+
+inline IPMask
+IP6Range::NetSource::mask() const {
+  return _mask;
 }
 
 inline IPRange::NetSource::NetSource(IPRange::NetSource::range_type const &range) {
@@ -3140,6 +3171,22 @@ IPSpace<PAYLOAD>::blend(IPRange const &range, U const &color, F &&blender) -> se
 }
 
 template <typename PAYLOAD>
+template <typename F, typename U>
+auto
+IPSpace<PAYLOAD>::blend(IP4Range const &range, U const &color, F &&blender) -> self_type & {
+  _ip4.blend(range, color, std::forward<F>(blender));
+  return *this;
+}
+
+template <typename PAYLOAD>
+template <typename F, typename U>
+auto
+IPSpace<PAYLOAD>::blend(IP6Range const &range, U const &color, F &&blender) -> self_type & {
+  _ip6.blend(range, color, std::forward<F>(blender));
+  return *this;
+}
+
+template <typename PAYLOAD>
 void
 IPSpace<PAYLOAD>::clear() {
   _ip4.clear();
@@ -3170,14 +3217,14 @@ template <typename PAYLOAD>
 auto
 IPSpace<PAYLOAD>::end_ip4() const -> const_iterator {
   auto nc_this = const_cast<self_type *>(this);
-  return iterator(nc_this->_ip4.end(), nc_this->_ip6.begin());
+  return { nc_this->_ip4.end(), nc_this->_ip6.begin() };
 }
 
 template <typename PAYLOAD>
 auto
 IPSpace<PAYLOAD>::begin_ip6() const -> const_iterator {
   auto nc_this = const_cast<self_type *>(this);
-  return iterator(nc_this->_ip4.end(), nc_this->_ip6.begin());
+  return { nc_this->_ip4.end(), nc_this->_ip6.begin() };
 }
 
 template <typename PAYLOAD>

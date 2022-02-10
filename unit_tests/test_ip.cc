@@ -158,6 +158,15 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(IPAddr(a4_3) == IPAddr(a4_3));
   REQUIRE(IPAddr(a4_3) <= IPAddr(a4_3));
   REQUIRE(IPAddr(a4_3) >= IPAddr(a4_3));
+  REQUIRE(IPAddr(a4_3) < IPAddr(a6_3));
+  REQUIRE(IPAddr{} < IPAddr(a4_3));
+  REQUIRE(IPAddr{} == IPAddr{});
+
+  REQUIRE(IPAddr(a4_3).cmp(IPAddr(a6_3)) == -1);
+  REQUIRE(IPAddr{}.cmp(IPAddr(a4_3)) == -1);
+  REQUIRE(IPAddr{}.cmp(IPAddr{}) == 0);
+  REQUIRE(IPAddr(a6_3).cmp(IPAddr(a4_3)) == 1);
+  REQUIRE(IPAddr{a4_3}.cmp(IPAddr{}) == 1);
 
   // For this data, the bytes should be in IPv6 network order.
   static const std::tuple<TextView, bool, IP6Addr::raw_type> ipv6_ex[] = {
