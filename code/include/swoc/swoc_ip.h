@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include <array>
 #include <climits>
 #include <netinet/in.h>
 #include <string_view>
