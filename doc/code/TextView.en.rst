@@ -63,11 +63,11 @@ sometimes use |TV| because of the lack of support for instance reuse in |SV| - e
 :code:`assign` or :code:`clear` methods.
 
 When passing |TV| as an argument, it is very debatable whether passing by value or passing by
-reference is more efficient, therefore it's not likely to matter in production code. My personal
-heuristic is whether the function will modify the value. If so, passing by value saves a copy to a
-local variable therefore it should be passed by value. If the function simply passes the |TV| on to
-other functions, then pass by constant reference. This distinction is irrelevant to the caller, the
-same code at the call site will work in either case.
+reference is more efficient. The appropriate conclusion is it's not likely to matter in production
+code. My personal heuristic is whether the function will modify the value. If so, passing by value
+saves a copy to a local variable therefore it should be passed by value. If the function simply
+passes the |TV| on to other functions, then pass by constant reference. This distinction is
+irrelevant to the caller, the same code at the call site will work in either case.
 
 As noted, |TV| is designed as a pointer style class. Therefore it has an increment operator which is
 equivalent to :code:`std::string_view::remove_prefix`. |TV| also has  a dereference operator, which
@@ -120,6 +120,11 @@ the view. This is almost always the correct behavior, but if it isn't an explici
 
 A |TV| can be constructed from a null :code:`char const*` pointer or a straight :code:`nullptr`. This
 will construct an empty |TV| identical to one default constructed.
+
+|TV| supports a generic constructor that will accept any class that provides the :code:`data` and
+:code:`size` methods that return values convertible to :code:`char const *` and :code:`size_t`.
+This enables greater interoperability with other libraries, as any well written C++ library with
+its own string class will have these methods implemented sensibly.
 
 Searching
 ---------
@@ -176,7 +181,7 @@ A secondary distinction is what is done to the view by the methods.
 This is a table of the affix oriented methods, grouped by the properties of the methods. "Bounded"
 indicates whether the operation requires the target character, however specified, to be within the
 bounds of the view. A bounded method does nothing if the target character is not in the view. On
-this note, the :code:`remove_prefix` and :code:`remove_suffix` are differently implement in |TV|
+this note, the :code:`remove_prefix` and :code:`remove_suffix` are implemented differently in |TV|
 compared to :code:`std::string_view`. Rather than being undefined, the methods will clear the view
 if the size specified is larger than the contents of the view.
 

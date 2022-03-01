@@ -96,6 +96,33 @@ TEST_CASE("TextView Operations", "[libswoc][TextView]")
   REQUIRE(strcasecmp(tv, tv) == 0);
   REQUIRE(strcasecmp(tv, tv_lower) == 0);
   REQUIRE(strcasecmp(nothing, tv) != 0);
+
+  // Check generic construction from a "string like" class.
+  struct Stringy {
+    char const * data() const { return _data; }
+    size_t size() const { return _size; }
+
+    char const * _data = nullptr;
+    size_t _size;
+  };
+
+  char const * stringy_text = "Evil Dave Rulez";
+  Stringy stringy{stringy_text, strlen(stringy_text)};
+
+  // Can construct directly.
+  TextView from_stringy{stringy};
+  REQUIRE(0 == strcmp(from_stringy, stringy_text));
+
+  // Can assign directly.
+  TextView assign_stringy;
+  REQUIRE(assign_stringy.empty() == true);
+  assign_stringy.assign(stringy);
+  REQUIRE(0 == strcmp(assign_stringy, stringy_text));
+
+  // Pass as argument to TextView parameter.
+  auto stringy_f = [&](TextView txt) -> bool { return 0 == strcmp(txt, stringy_text); };
+  REQUIRE(true == stringy_f(stringy));
+  REQUIRE(false == stringy_f(tv_lower));
 }
 
 TEST_CASE("TextView Trimming", "[libswoc][TextView]")
