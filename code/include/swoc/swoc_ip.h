@@ -9,6 +9,7 @@
 #include <array>
 #include <climits>
 #include <netinet/in.h>
+#include <sys/socket.h>
 #include <string_view>
 #include <variant>
 
