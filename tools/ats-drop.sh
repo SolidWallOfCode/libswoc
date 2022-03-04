@@ -36,12 +36,18 @@ else
   mkdir -p ${TARGET_INC_DIR}
 fi
 
+if [ -d "${TARGET_INC_DIR}/ext" ] ; then
+  rm -f ${TARGET_INC_DIR}/ext/*.h
+else
+  mkdir -p ${TARGET_INC_DIR}/ext
+fi
+
 cp code/include/swoc/*.h ${TARGET_INC_DIR}
+cp code/include/swoc/ext/*.h ${TARGET_INC_DIR}/ext
 cp code/include/swoc/ext/HashFNV.h ${TARGET_INC_DIR}
 rm ${TARGET_INC_DIR}/string_view_util.h
 sed -i -e "s!swoc/string_view_util.h!tscpp/util/string_view_util.h!g" ${TARGET_INC_DIR}/*.h
-sed -i -e 's!ext/HashFNV.h!HashFNV.h!' ${TARGET_INC_DIR}/*.h
-(cd ${ATS}; git add ${INC_PATH}/*.h)
+(cd ${ATS}; git add ${INC_PATH}/*.h ; git add ${INC_PATH}/ext/*.h)
 
 # Build the source
 cat <<'TEXT' > ${ATS}/${BASE_PATH}/swoc/Makefile.am
