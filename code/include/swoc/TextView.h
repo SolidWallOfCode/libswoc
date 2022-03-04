@@ -88,11 +88,11 @@ public:
    * to @c char @c const @c * and @c size_t respectively.
    */
   template < typename C
-    , typename = typename std::enable_if<
+    , typename = std::enable_if_t<
         std::is_convertible_v<decltype(std::declval<C>().data()), char const*> &&
         std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
         , void
-      >::type
+      >
   > constexpr TextView(C const& c);
 
   /** Construct from literal string or array.
@@ -180,7 +180,7 @@ public:
   /// Explicitly set the view from a @c std::string
   self_type &assign(std::string const &s);
 
-  /** Assogm from any character container following STL standards.
+  /** Assign from any character container following STL standards.
    *
    * @tparam C Container type.
    * @param c container
@@ -189,11 +189,11 @@ public:
    * to @c char @c const @c * and @c size_t respectively.
    */
   template < typename C
-            , typename = typename std::enable_if<
+            , typename = std::enable_if_t<
                 std::is_convertible_v<decltype(std::declval<C>().data()), char const*> &&
                 std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
                 , void
-              >::type
+              >
             > constexpr self_type & assign(C const& c) {
     return this->assign(c.data(), c.size());
   }
