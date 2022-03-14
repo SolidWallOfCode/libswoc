@@ -64,7 +64,7 @@ target_include_directories(libswoc
         $<INSTALL_INTERFACE:include>
     )
 
-if (LIBSWOC_INSTALL STREQUAL "on")
+if (LIBSWOC_INSTALL)
     # These install target variables are created by GNUInstallDirs.
     install(TARGETS libswoc
         EXPORT libswoc-config
