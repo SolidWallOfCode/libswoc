@@ -5,6 +5,10 @@ set(LIBSWOC_VERSION "1.3.8")
 set(CMAKE_CXX_STANDARD 17)
 include(GNUInstallDirs)
 
+cmake_dependent_option(LIBSWOC_INSTALL
+    "Enable generation of libswoc install targets" ON
+    "CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR" OFF)
+
 set(HEADER_FILES
     include/swoc/swoc_version.h
     include/swoc/ArenaWriter.h
@@ -60,22 +64,24 @@ target_include_directories(libswoc
         $<INSTALL_INTERFACE:include>
     )
 
-# These install target variables are created by GNUInstallDirs.
-install(TARGETS libswoc
-    EXPORT libswoc-config
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # seems to have no effect.
-    )
-install(DIRECTORY include/swoc DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if (LIBSWOC_INSTALL)
+    # These install target variables are created by GNUInstallDirs.
+    install(TARGETS libswoc
+        EXPORT libswoc-config
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # seems to have no effect.
+        )
+    install(DIRECTORY include/swoc DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(EXPORT libswoc-config
-    NAMESPACE libswoc::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libswoc
-    )
+    install(EXPORT libswoc-config
+        NAMESPACE libswoc::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libswoc
+        )
 
 
-set(PKG_CONFIG_FILE ${CMAKE_INSTALL_LIBDIR}/libswoc.pc)
-configure_file("libswoc.pc.cmake" ${PKG_CONFIG_FILE} @ONLY)
-install(FILES ${PKG_CONFIG_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+    set(PKG_CONFIG_FILE ${CMAKE_INSTALL_LIBDIR}/libswoc.pc)
+    configure_file("libswoc.pc.cmake" ${PKG_CONFIG_FILE} @ONLY)
+    install(FILES ${PKG_CONFIG_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+endif()
 
 # Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.
 # AFAICT the file isn't created at all even with this enabled.
