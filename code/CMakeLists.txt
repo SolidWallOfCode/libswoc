@@ -26,6 +26,7 @@ set(HEADER_FILES
     include/swoc/swoc_file.h
     include/swoc/swoc_meta.h
     include/swoc/string_view.h
+    include/swoc/Vectray.h
     )
 
 # These are external but required.

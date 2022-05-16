@@ -77,31 +77,29 @@ auto UnitParser::operator()(swoc::TextView const& src) const noexcept -> Rv<valu
   TextView text = src; // Keep @a src around to report error offsets.
 
   while (text.ltrim_if(&isspace)) {
-    // Get a count first.
-    auto ptr = text.data(); // save for error reporting.
-    auto count = text.clip_prefix_of(&isdigit);
-    if (count.empty()) {
-      return Errata("Required count not found at offset {}", ptr - src.data());
+    TextView parsed;
+    auto n = swoc::svtou(text, &parsed);
+    if (parsed.empty()) {
+      return Errata("Required count not found at offset {}", text.data() - src.data());
+    } else if (n == std::numeric_limits<decltype(n)>::max()) {
+      return Errata("Count at offset {} was out of bounds", text.data() - src.data());
     }
-    // Should always parse correctly as @a count is a non-empty sequence of digits.
-    auto n = svtou(count);
-
-    // Next, the unit.
-    ptr = text.ltrim_if(&isspace).data(); // save for error reporting.
+    text.remove_prefix(parsed.size());
+    auto ptr = text.ltrim_if(&isspace).data(); // save for error reporting.
     // Everything up to the next digit or whitespace.
     auto unit = text.clip_prefix_of([](char c) { return !(isspace(c) || isdigit(c)); } );
     if (unit.empty()) {
       if (_unit_required_p) {
         return Errata("Required unit not found at offset {}", ptr - src.data());
       }
-      zret += n; // no metric -> unit metric.
     } else {
       auto mult = _units[unit]; // What's the multiplier?
       if (mult == 0) {
         return Errata("Unknown unit \"{}\" at offset {}", unit, ptr - src.data());
       }
-      zret += mult * n;
+      n *= mult;
     }
+    zret += n;
   }
   return zret;
 }
@@ -110,43 +108,56 @@ auto UnitParser::operator()(swoc::TextView const& src) const noexcept -> Rv<valu
 
 TEST_CASE("UnitParser Bytes", "[Lexicon][UnitParser]") {
   UnitParser bytes{
-      UnitParser::Units{
-          {
-              {1, {"B", "bytes"}}
-              , {1024, {"K", "KB", "kilo", "kilobyte"}}
-              , {1048576, {"M", "MB", "mega", "megabyte"}}
-              , {1 << 30, {"G", "GB", "giga", "gigabytes"}}
-          }}
+    UnitParser::Units{
+      {
+        {1, {"B", "bytes"}}
+      , {1024, {"K", "KB", "kilo", "kilobyte", "kilobytes"}}
+      , {1048576, {"M", "MB", "mega", "megabyte", "megabytes"}}
+      , {1 << 30, {"G", "GB", "giga", "gigabyte", "gigabytes"}}
+      }
+    }
   };
   bytes.unit_required(false);
 
   REQUIRE(bytes("56 bytes") == 56);
   REQUIRE(bytes("3 kb") == 3 * (1 << 10));
   REQUIRE(bytes("6k128bytes") == 6 * (1 << 10) + 128);
+  REQUIRE(bytes("6 k128bytes") == 6 * (1 << 10) + 128);
+  REQUIRE(bytes("6 K128 bytes") == 6 * (1 << 10) + 128);
+  REQUIRE(bytes("6 kilo 0x80 bytes") == 6 * (1 << 10) + 128);
+  REQUIRE(bytes("6kilo 0x8b bytes") == 6 * (1 << 10) + 0x8b);
   REQUIRE(bytes("111") == 111);
-  REQUIRE(bytes("4K") == 4 * (1 << 10));
+  REQUIRE(bytes("4MB") == 4 * (uintmax_t(1) << 20));
+  REQUIRE(bytes("4 giga") == 4 * (uintmax_t(1) << 30));
+  REQUIRE(bytes("10M 256K 512") == 10 * (1<<20) + 256*(1<<10) + 512);
+  REQUIRE(bytes("512 256 kilobytes 10 megabytes") == 10 * (1<<20) + 256*(1<<10) + 512);
+  REQUIRE(bytes("0x100000000") == 0x100000000);
   auto result = bytes("56delain");
   REQUIRE(result.is_ok() == false);
   REQUIRE(result.errata().front().text() == "Unknown unit \"delain\" at offset 2");
   result = bytes("12K delain");
   REQUIRE(result.is_ok() == false);
   REQUIRE(result.errata().front().text() == "Required count not found at offset 4");
+  result = bytes("99999999999999999999");
+  REQUIRE(result.is_ok() == false);
+  REQUIRE(result.errata().front().text() == "Count at offset 0 was out of bounds");
 }
 
 TEST_CASE("UnitParser Time", "[Lexicon][UnitParser]") {
   using namespace std::chrono;
   UnitParser time {
-      UnitParser::Units{
-          {
-              {nanoseconds{1}.count(), {"ns", "nanosec", "nanoseconds" }}
-              , {nanoseconds{microseconds{1}}.count(), {"us", "microsec", "microseconds"}}
-              , {nanoseconds{milliseconds{1}}.count(), {"ms", "millisec", "milliseconds"}}
-              , {nanoseconds{seconds{1}}.count(), {"s", "sec", "seconds"}}
-              , {nanoseconds{minutes{1}}.count(), {"m", "min", "minutes"}}
-              , {nanoseconds{hours{1}}.count(), {"h", "hours"}}
-              , {nanoseconds{hours{24}}.count(), {"d", "days"}}
-              , {nanoseconds{hours{168}}.count(), {"w", "weeks"}}
-          }}
+    UnitParser::Units{
+      {
+        {nanoseconds{1}.count(), {"ns", "nanosec", "nanoseconds" }}
+      , {nanoseconds{microseconds{1}}.count(), {"us", "microsec", "microseconds"}}
+      , {nanoseconds{milliseconds{1}}.count(), {"ms", "millisec", "milliseconds"}}
+      , {nanoseconds{seconds{1}}.count(), {"s", "sec", "seconds"}}
+      , {nanoseconds{minutes{1}}.count(), {"m", "min", "minutes"}}
+      , {nanoseconds{hours{1}}.count(), {"h", "hour", "hours"}}
+      , {nanoseconds{hours{24}}.count(), {"d", "day", "days"}}
+      , {nanoseconds{hours{168}}.count(), {"w", "week", "weeks"}}
+      }
+    }
   };
 
   REQUIRE(nanoseconds{time("2s")} == seconds{2});
