@@ -38,6 +38,7 @@ unrelated projects. Hence this library. I hope you find it as useful as I have.
    code/Lexicon.en
    code/Errata.en
    code/Scalar.en
+   code/Vectray.en
    code/IPSpace.en
    appendix.en
 

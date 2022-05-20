@@ -359,7 +359,7 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   s.remove_prefix_at('!');
   REQUIRE(s == "file.cc.org");
 
-  static constexpr TextView ctv {"http://delain.nl/albums/Lucidity.html"};
+  static constexpr TextView ctv{"http://delain.nl/albums/Lucidity.html"};
   static constexpr TextView ctv_scheme{ctv.prefix(4)};
   static constexpr TextView ctv_stem{ctv.suffix(4)};
   static constexpr TextView ctv_host{ctv.substr(7, 9)};
@@ -484,6 +484,34 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
   x = n3;
   REQUIRE(25 == swoc::svto_radix<8>(x));
   REQUIRE(x.size() == 0);
+
+  // Check overflow conditions
+  static constexpr auto MAX = std::numeric_limits<uintmax_t>::max();
+
+  // One less than max.
+  x.assign("18446744073709551614");
+  REQUIRE(MAX-1 == swoc::svto_radix<10>(x));
+  REQUIRE(x.size() == 0);
+
+  // Exactly max.
+  x.assign("18446744073709551615");
+  REQUIRE(MAX == swoc::svto_radix<10>(x));
+  REQUIRE(x.size() == 0);
+
+  // Should overflow and clamp.
+  x.assign("18446744073709551616");
+  REQUIRE(MAX == swoc::svto_radix<10>(x));
+  REQUIRE(x.size() == 0);
+
+  // Even more digits.
+  x.assign("18446744073709551616123456789");
+  REQUIRE(MAX == swoc::svto_radix<10>(x));
+  REQUIRE(x.size() == 0);
+
+  // This is a special value - where N*10 > N while also overflowing. The final "1" causes this.
+  // Be sure overflow is detected.
+  x.assign("27381885734412615681");
+  REQUIRE(MAX == swoc::svto_radix<10>(x));
 
   // floating point is never exact, so "good enough" is all that is measureable. This checks the
   // value is within one epsilon (minimum change possible) of the compiler generated value.

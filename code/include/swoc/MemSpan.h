@@ -13,6 +13,7 @@
 #include <iosfwd>
 #include <iostream>
 #include <cstddef>
+#include <array>
 #include <string_view>
 #include <type_traits>
 #include <ratio>
@@ -71,6 +72,37 @@ public:
    * @param a The array.
    */
   template <size_t N> MemSpan(T (&a)[N]);
+
+  /** Construct from a @c std::array.
+   *
+   * @tparam N Array size.
+   * @param a Array instance.
+   */
+  template <auto N> constexpr MemSpan(std::array<T, N> const& a);
+
+  /** Construct from a @c std::array.
+   *
+   * @tparam N Array size.
+   * @param a Array instance.
+   */
+  template <auto N> constexpr MemSpan(std::array<T, N> & a);
+
+  /** Construct a span of constant values from a span of non-constant.
+   *
+   * @tparam U Span types.
+   * @tparam META Metaprogramming type to control conversion existence.
+   * @param that Source span.
+   *
+   * This enables the standard conversion from non-const to const.
+   */
+  template < typename U
+           , typename META = std::enable_if_t<
+             std::conjunction_v<
+               std::is_const<T>
+               , std::is_same<U, std::remove_const_t<T>>
+   >>>
+   constexpr MemSpan(MemSpan<U> const& that) : _ptr(that.data()), _count(that.count()) {}
+
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -598,6 +630,9 @@ template <typename T> constexpr MemSpan<T>::MemSpan(T *first, T *last) : _ptr{fi
 template <typename T> template <size_t N> MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {}
 
 template <typename T> constexpr MemSpan<T>::MemSpan(std::nullptr_t) {}
+
+template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(std::array<T,N> const& a) : _ptr{a.data()} , _count{a.size()} {}
+template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(std::array<T,N> & a) : _ptr{a.data()} , _count{a.size()} {}
 
 template <typename T>
 MemSpan<T> &
