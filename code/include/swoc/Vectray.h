@@ -1,3 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Apache Software Foundation 2019
+/** @file
+
+    Container that acts like a vector but has static storage to avoid memory allocation for
+    some specified number of elements.
+*/
+
 #pragma once
 
 #include <array>
@@ -32,13 +40,17 @@ class Vectray {
 
 public: // STL compliance types.
   using value_type = T;
+  using reference = std::remove_reference<T>&;
+  using const_reference = std::remove_reference<T> const&;
+  using pointer = std::remove_reference<T>*;
+  using const_pointer = std::remove_reference<T> const*;
   using allocator_type = A;
   using size_type = typename vector_type::size_type;
   using difference_type = typename vector_type::difference_type;
   using iterator = typename swoc::MemSpan<T>::iterator;
   using const_iterator = typename swoc::MemSpan<const T>::iterator;
+  // Need to add reverse iterators - @c reverse_iterator and @c const_reverse_iterator
 
-protected:
   /// Internal (fixed) storage.
   struct FixedStore {
     std::array<std::byte, sizeof(T) * N> _raw; ///< Raw memory for element storage.
@@ -57,6 +69,12 @@ protected:
 
     /// @return A span containing the valid elements.
     MemSpan<T> span();
+
+    /// @return A pointer to the data.
+    T * data();
+
+    /// @return A pointer to the data.
+    T const * data() const;
   };
 
   using DynamicStore = vector_type; ///< Dynamic (heap) storage.
@@ -89,6 +107,15 @@ public:
 
   /// @return The number of elements in the container.
   size_type size() const;
+
+  /// @return A pointer to the data.
+  T * data();
+
+  /// @return A pointer to the data.
+  T const * data() const;
+
+  /// @return @c true if no valid elements, @c false if at least one valid element.
+  bool empty() const;
 
   /// Implicitly convert to a @c MemSpan.
   operator span () { return this->items(); }
@@ -237,6 +264,16 @@ MemSpan<T> Vectray<T, N, A>::FixedStore::span() {
   return MemSpan(_raw).template rebind<T>();
 }
 
+template<typename T, size_t N, class A>
+T * Vectray<T, N, A>::FixedStore::data() {
+  return reinterpret_cast<T*>(_raw.data());
+}
+
+template<typename T, size_t N, class A>
+T const * Vectray<T, N, A>::FixedStore::data() const {
+  return reinterpret_cast<T*>(_raw.data());
+}
+
 template<typename T, size_t N, typename A>
 T& Vectray<T,N,A>::operator[](size_type idx) {
   return this->items()[idx];
@@ -310,9 +347,17 @@ auto Vectray<T, N, A>::pop_back() -> self_type & {
 template<typename T, size_t N, typename A>
 auto Vectray<T,N,A>::size() const -> size_type {
   return std::visit(swoc::meta::vary{
-      [](FixedStore const& fs) { return fs._count; }
+        [](FixedStore const& fs) { return fs._count; }
       , [](DynamicStore const& ds) { return ds.size(); }
   }, _store);
+}
+
+template<typename T, size_t N, typename A>
+bool Vectray<T,N,A>::empty() const {
+  return std::visit(swoc::meta::vary{
+           [](FixedStore const& fs) { return fs._count > 0; }
+         , [](DynamicStore const& ds) { return ds.empty(); }
+         }, _store);
 }
 
 // --- iterators
@@ -347,6 +392,22 @@ auto Vectray<T, N, A>::items() const -> const_span {
       [](FixedStore const& fs) { fs.span(); }
       , [](DynamicStore const& ds) { return const_span(ds.data(), ds.size()); }
   }, _store);
+}
+
+template<typename T, size_t N, class A>
+T * Vectray<T, N, A>::data() {
+  return std::visit(swoc::meta::vary{
+                      [](FixedStore const& fs) { fs.data(); }
+                      , [](DynamicStore const& ds) { return ds.data(); }
+                    }, _store);
+}
+
+template<typename T, size_t N, class A>
+T const * Vectray<T, N, A>::data() const {
+  return std::visit(swoc::meta::vary{
+                      [](FixedStore const& fs) { fs.data(); }
+                      , [](DynamicStore const& ds) { return ds.data(); }
+                    }, _store);
 }
 
 template<typename T, size_t N, class A>
