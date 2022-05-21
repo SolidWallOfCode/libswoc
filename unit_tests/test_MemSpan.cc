@@ -112,3 +112,19 @@ TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
   REQUIRE(left.size() + span.size() == 1024);
 
 };
+
+TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
+{
+  std::array<int, 10> a1;
+  auto const & ra1 = a1;
+  auto ms1 = MemSpan<int>(a1);
+  [[maybe_unused]] auto ms2 = MemSpan(a1);
+  [[maybe_unused]] auto ms3 = MemSpan<int const>(ra1);
+  [[maybe_unused]] auto ms4 = MemSpan(ra1);
+  // Construct a span of constant from a const ref to an array with non-const type.
+  MemSpan<const int> ms5 { ra1 };
+  // Construct a span of constant from a ref to an array with non-const type.
+  MemSpan<const int> ms6 { a1 };
+
+  [[maybe_unused]] MemSpan<int const> c1 = ms1; // Conversion from T to T const.
+}
