@@ -117,10 +117,10 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
 {
   std::array<int, 10> a1;
   auto const & ra1 = a1;
-  auto ms1 = MemSpan<int>(a1);
-  [[maybe_unused]] auto ms2 = MemSpan(a1);
-  [[maybe_unused]] auto ms3 = MemSpan<int const>(ra1);
-  [[maybe_unused]] auto ms4 = MemSpan(ra1);
+  auto ms1 = MemSpan<int>(a1); // construct from array
+  [[maybe_unused]] auto ms2 = MemSpan(a1); // construct from array, deduction guide
+  [[maybe_unused]] auto ms3 = MemSpan<int const>(ra1); // construct from const array
+  [[maybe_unused]] auto ms4 = MemSpan(ra1); // construct from const array, deduction guided.
   // Construct a span of constant from a const ref to an array with non-const type.
   MemSpan<const int> ms5 { ra1 };
   // Construct a span of constant from a ref to an array with non-const type.
