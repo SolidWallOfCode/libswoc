@@ -510,7 +510,7 @@ public:
    * @return The prefix bounded by the first character satisfying @a pred, or all of @a this if none
    * is found.
    *
-   * The prefix is removed and returned if a a character satisfying @a pred is found, otherwise
+   * The prefix is removed and returned if a character satisfying @a pred is found, otherwise
    * all of @a this is removed and returned.
    *
    * @note The matching character is discarded if found.
@@ -1753,7 +1753,7 @@ transform_view_of(X const &xf, V const &src) {
  * @tparam V The source type.
  *
  * This is a transform that returns the input unmodified. This is convenient when a transform is
- * required in general but not in in all cases.
+ * required in general but not in all cases.
  */
 template <typename V> class TransformView<void, V> {
   using self_type = TransformView; ///< Self reference type.

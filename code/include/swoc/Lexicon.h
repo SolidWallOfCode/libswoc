@@ -124,7 +124,7 @@ public:
    * The first value is the primary value and is required. Subsequent values are optional
    * and become secondary values.
    *
-   * The default handlers are optional can be be omitted. If so, exceptions are thrown when values
+   * The default handlers are optional can be omitted. If so, exceptions are thrown when values
    * or names not in the @c Lexicon are used. See @c set_default for more details.
    *
    * @see set_default.
@@ -140,7 +140,7 @@ public:
    *
    * Each item in the intializers must be a @c Pair, that is a name and a value.
    *
-   * The default handlers are optional can be be omitted. If so, exceptions are thrown when values
+   * The default handlers are optional can be omitted. If so, exceptions are thrown when values
    * or names not in the @c Lexicon are used. See @c set_default for more details.
    *
    * @see set_default.
@@ -153,7 +153,7 @@ public:
    * @param handler_1 A default handler.
    * @param handler_2 A default handler.
    *
-   * @a handler_2 is optional can be be omitted. The argument values are the same as for
+   * @a handler_2 is optional can be omitted. The argument values are the same as for
    * @c set_default.
    *
    * @see set_default.
