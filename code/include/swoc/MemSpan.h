@@ -21,6 +21,7 @@
 #include <exception>
 
 #include "swoc/swoc_version.h"
+#include "swoc/Scalar.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 /** A span of contiguous piece of memory.
@@ -442,7 +443,7 @@ public:
 
       @return An instance that contains the leading @a n bytes of @a this.
   */
-  self_type prefix(size_t n) const;
+  constexpr self_type prefix(size_t n);
 
   /** Shrink the span by removing @a n leading bytes.
    *
@@ -457,7 +458,7 @@ public:
    * @param n Number of bytes to retrieve.
    * @return An instance that contains the trailing @a count elements of @a this.
    */
-  self_type suffix(size_t n) const;
+  constexpr self_type suffix(size_t n);
 
   /** Shrink the span by removing @a n bytes.
    *
@@ -477,6 +478,26 @@ public:
    * this span is returned, which may be the empty span.
    */
   constexpr self_type subspan(size_t offset, size_t count) const;
+
+  /** Align span for a type.
+   *
+   * @tparam T Alignment type.
+   * @return A suffix of the span suitably aligned for @a T.
+   *
+   * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
+   * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty).
+   */
+  template <typename T> self_type align() const;
+
+  /** Force memory alignment.
+   *
+   * @param n Alignment size (must be power of 2).
+   * @return An aligned span.
+   *
+   * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
+   * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty).
+   */
+  self_type align(size_t n) const;
 
   /** Return a view of the memory.
    *
@@ -953,7 +974,7 @@ MemSpan<void>::contains(value_type const *ptr) const {
 }
 
 inline MemSpan<void>
-MemSpan<void>::prefix(size_t n) const {
+constexpr MemSpan<void>::prefix(size_t n) {
   return {_ptr, std::min(n, _size)};
 }
 
@@ -966,7 +987,7 @@ MemSpan<void>::remove_prefix(size_t n) {
 }
 
 inline MemSpan<void>
-MemSpan<void>::suffix(size_t count) const {
+constexpr MemSpan<void>::suffix(size_t count) {
   count = std::min(count, _size);
   return {static_cast<char *>(this->data_end()) - count, count};
 }
@@ -975,6 +996,17 @@ inline MemSpan<void> &
 MemSpan<void>::remove_suffix(size_t count) {
   _size -= std::min(count, _size);
   return *this;
+}
+
+template <typename T>
+MemSpan<void>::self_type
+MemSpan<void>::align() const { return this->align(alignof(T)); }
+
+inline MemSpan<void>::self_type
+MemSpan<void>::align(size_t n) const {
+  auto p = uintptr_t(_ptr);
+  auto padding = p & (n - 1);
+  return { reinterpret_cast<void*>(p + padding), _size - std::min<uintptr_t>(_size, padding) };
 }
 
 template <typename U>

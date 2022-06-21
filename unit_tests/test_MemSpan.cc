@@ -98,6 +98,21 @@ TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
   REQUIRE(left.data_end() == span.data());
   REQUIRE(left.size() + span.size() == 1024);
 
+  MemSpan<void> a(buff, sizeof(buff));
+  MemSpan<void> b;
+  b = a.align<int>();
+  REQUIRE(b.data() == a.data());
+  REQUIRE(b.size() == a.size());
+
+  b = a.suffix(a.size() - 2).align<int>();
+  REQUIRE(b.data() != a.data());
+  REQUIRE(b.size() != a.size());
+  auto i = a.rebind<int>();
+  REQUIRE(b.data() == i.data() + 1);
+
+  b = a.suffix(a.size() - 2).align(alignof(int));
+  REQUIRE(b.data() == i.data() + 1);
+  REQUIRE(b.rebind<int>().count() == i.count() - 1);
 };
 
 TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")

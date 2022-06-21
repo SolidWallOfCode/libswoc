@@ -261,7 +261,7 @@ template <typename T, size_t N, class A> Vectray<T, N, A>::FixedStore::~FixedSto
 
 template<typename T, size_t N, class A>
 MemSpan<T> Vectray<T, N, A>::FixedStore::span() {
-  return MemSpan(_raw).template rebind<T>();
+  return MemSpan<std::byte>(_raw).template rebind<T>();
 }
 
 template<typename T, size_t N, class A>
