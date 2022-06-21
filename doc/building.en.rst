@@ -18,6 +18,9 @@
 Building
 ********
 
+SCONS
+=====
+
 The library is usually built using CMake, but is also intended to be buildable as a part for
 `SCons <http://scons.org>`__ using the `Parts <https://pypi.org/project/scons-parts/>` extensions.
 For this reason the overall codebase is split into the library code and the test code. As a library
@@ -36,3 +39,8 @@ The object that depends on this library would then have ::
       , Component("swoc++")
       , # ... more dependencies
    ])
+
+CMake
+=====
+
+The library can be built directly with CMake.
