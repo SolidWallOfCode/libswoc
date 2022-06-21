@@ -53,9 +53,9 @@ protected:
   size_t _count = 0;       ///< Number of elements.
 
 public:
-  using value_type     = T;
-  using iterator       = T *;
-  using const_iterator = T const *;
+  using value_type     = T; ///< Element type for span.
+  using iterator       = T *; ///< Iterator.
+  using const_iterator = T const *; ///< Constant iterator.
 
   /// Default constructor (empty buffer).
   constexpr MemSpan() = default;
@@ -488,8 +488,7 @@ public:
 // -- Implementation --
 
 namespace detail {
-/// pointer distance calculations for all types, @b including @c <void*>.
-/// This is useful in templates.
+/// @cond INTERNAL_DETAIL
 inline size_t
 ptr_distance(void const *first, void const *last) {
   return static_cast<const char *>(last) - static_cast<const char *>(first);
@@ -505,6 +504,7 @@ inline void *
 ptr_add(void *ptr, size_t count) {
   return static_cast<char *>(ptr) + count;
 }
+/// @endcond
 
 /** Meta Function to check the type compatibility of two spans..
  *
@@ -618,32 +618,46 @@ memcpy(MemSpan<void> &span, std::string_view view) {
 using std::memcpy;
 using std::memcpy;
 
+/** Set contents of a span to a fixed @a value.
+ *
+ * @tparam T Span type.
+ * @param dst Span to change.
+ * @param value Source value.
+ * @return
+ */
 template <typename T>
 inline MemSpan<T> const &
-memset(MemSpan<T> const &dst, T const &t) {
+memset(MemSpan<T> const &dst, T const &value) {
   for (auto &e : dst) {
-    e = t;
+    e = value;
   }
   return dst;
 }
 
+/// @cond INTERNAL_DETAIL
+
+// Optimization for @c char.
 inline MemSpan<char> const &
 memset(MemSpan<char> const &dst, char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
 
+// Optimization for @c unsigned @c char
 inline MemSpan<unsigned char> const &
 memset(MemSpan<unsigned char> const &dst, unsigned char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
 
+// Optimization for @c char.
 inline MemSpan<void> const &
 memset(MemSpan<void> const &dst, char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
+
+/// @endcond
 
 using std::memset;
 
@@ -821,7 +835,7 @@ MemSpan<T>::back() {
 
 template <typename T>
 template <typename F>
-MemSpan<T> &
+typename MemSpan<T>::self_type &
 MemSpan<T>::apply(F &&f) {
   for (auto &item : *this) {
     f(item);
