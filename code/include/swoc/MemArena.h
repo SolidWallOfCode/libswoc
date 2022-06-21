@@ -138,6 +138,7 @@ public:
     size_t size;         ///< Actual block size.
     size_t allocated{0}; ///< Current allocated (in use) bytes.
 
+    /// Intrusive list support.
     struct Linkage {
       Block *_next{nullptr};
       Block *_prev{nullptr};

@@ -202,8 +202,22 @@ Optional(TextView fmt, ARG &&arg) {
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern);
 
+/** Format an integer as an @c errno value.
+ *
+ * @param w Output.
+ * @param spec Format specifier.
+ * @param e Error code.
+ * @return @a w
+ */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e);
 
+/** Format a timestamp wrapped in a @c Date.
+ *
+ * @param w Output.
+ * @param spec Format specifier.
+ * @param date Timestamp.
+ * @return @a w
+ */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date);
 
 template <typename... Args>

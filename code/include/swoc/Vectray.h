@@ -157,14 +157,14 @@ public:
   }
   /** Append an element by copy.
    *
-   * @param src Element to add.
+   * @param t Element to add.
    * @return @a this.
    */
   self_type& push_back(T const& t);
 
   /** Append an element by move.
    *
-   * @param src Element to add.
+   * @param t Element to add.
    * @return @a this.
    */
   self_type& push_back(T && t);

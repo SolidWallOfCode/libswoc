@@ -60,6 +60,9 @@ public:
   using code_type     = std::error_code; ///< Type for message code.
   using severity_type = uint8_t;         ///< Underlying type for @c Severity.
 
+  /// Severity value for an instance.
+  /// This provides conversion to a numeric value, but not from. The result is constructors must be
+  /// passed an explicit serverity, avoiding ambiguity with other possible numeric arguments.
   struct Severity {
     severity_type _raw; ///< Severity numeric value
 
@@ -142,6 +145,8 @@ public:
     /** Construct with @a text.
      *
      * @param text Annotation content (literal).
+     * @param severity Local severity.
+     * @param level Nesting level.
      *
      * @a text is presumed to be stable for the @c Annotation lifetime - this constructor simply copies
      * the view.
@@ -280,6 +285,7 @@ public:
   template <typename... Args> self_type &note_v(std::string_view fmt, std::tuple<Args...> const &args);
 
   /** Append an @c Annotation.
+   * @param severity Local severity.
    * @param fmt Format string (@c BufferWriter style).
    * @param args Arguments for values in @a fmt.
    * @return A reference to this object.
@@ -1225,6 +1231,7 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata const &);
 
 // Tuple / structured binding support.
 namespace std {
+/// @cond INTERNAL_DETAIL
 template <size_t IDX, typename R> class tuple_element<IDX, swoc::Rv<R>> { static_assert("swoc:Rv tuple index out of range"); };
 
 template <typename R> class tuple_element<0, swoc::Rv<R>> {
@@ -1238,7 +1245,7 @@ public:
 };
 
 template <typename R> class tuple_size<swoc::Rv<R>> : public std::integral_constant<size_t, 2> {};
-
+/// @endcond
 } // namespace std
 
 namespace swoc { inline namespace SWOC_VERSION_NS {

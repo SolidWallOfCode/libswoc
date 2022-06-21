@@ -1,27 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
 /** @file
 
     TextView unit tests.
-
-    @section license License
-
-    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
-    agreements.  See the NOTICE file distributed with this work for additional information regarding
-    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with the License.  You may
-    obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software distributed under the
-    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-    express or implied. See the License for the specific language governing permissions and
-    limitations under the License.
 */
 
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <map>
+#include <unordered_map>
 
 #include "swoc/TextView.h"
 #include "catch.hpp"
@@ -591,4 +579,22 @@ TEST_CASE("TransformView", "[libswoc][TransformView]")
   check.clear();
   check.append(rotter.begin(), rotter.end());
   REQUIRE(check == rot13);
+}
+
+TEST_CASE("TextView compat", "[libswoc][TextView]")
+{
+  struct Thing {
+    int n = 0;
+  };
+  std::map<TextView, Thing> map;
+  std::unordered_map<TextView, Thing> umap;
+
+  // This isn't rigorous, it's mainly testing compilation.
+  map.insert({ "bob"_tv, Thing{2} });
+  map["dave"] = Thing{3};
+  umap.insert({ "bob"_tv, Thing{4} });
+  umap["dave"] = Thing{6};
+
+  REQUIRE(map["bob"].n == 2);
+  REQUIRE(umap["dave"].n == 6);
 }
