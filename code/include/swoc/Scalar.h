@@ -391,6 +391,8 @@ protected:
   Counter _n; ///< Number of scale units.
 };
 
+/// @cond Scalar_INTERNAL
+// Avoid issues with doxygen matching externally defined methods.
 template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar() : _n() {}
 
 template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(Counter n) : _n(n) {}
@@ -408,7 +410,6 @@ constexpr Scalar<N, C, T>::Scalar(Scalar<S, I, T> const &that) : _n(std::ratio<S
                 "Construction not permitted - target scale is not an integral multiple of source scale.");
 }
 
-/// @cond INTERNAL_DETAIL
 template <intmax_t N, typename C, typename T>
 constexpr Scalar<N, C, T>::Scalar(detail::scalar_round_up_t<N, C, T> const &v) : _n(v._n) {}
 
@@ -422,7 +423,6 @@ constexpr Scalar<N, C, T>::Scalar(detail::scalar_unit_round_up_t<I> v) : _n(v.te
 template <intmax_t N, typename C, typename T>
 template <typename I>
 constexpr Scalar<N, C, T>::Scalar(detail::scalar_unit_round_down_t<I> v) : _n(v.template scale<N, C>()) {}
-/// @endcond
 
 template <intmax_t N, typename C, typename T>
 constexpr auto
@@ -454,8 +454,6 @@ Scalar<N, C, T>::operator=(self_type const &that) -> self_type & {
   return *this;
 }
 
-/// @cond INTERNAL_DETAIL
-
 template <intmax_t N, typename C, typename T>
 inline auto
 Scalar<N, C, T>::operator=(detail::scalar_round_up_t<N, C, T> v) -> self_type &{
@@ -483,8 +481,6 @@ Scalar<N, C, T>::assign(detail::scalar_round_down_t<N, C, T> v) -> self_type & {
   _n = v._n;
   return *this;
 }
-
-/// @endcond
 
 template <intmax_t N, typename C, typename T>
 template <typename I>
@@ -543,6 +539,8 @@ constexpr inline intmax_t
 Scalar<N, C, T>::scale() {
   return SCALE;
 }
+
+/// @endcond Scalar_INTERNAL
 
 // --- Functions ---
 
@@ -692,12 +690,17 @@ operator+(Scalar<N, C, T> lhs, Scalar<S, I, T> const &rhs) -> typename std::comm
   return typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type(lhs) += rhs;
 }
 
+/** Add a two scalars of the same type.
+ * @return A scalar of the same type holding the sum.
+ */
 template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
 operator+(Scalar<N, C, T> const &lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(lhs) += rhs;
 }
 
+/// @cond INTERNAL_DETAIL
+// These handle adding a wrapper and a scalar.
 template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
 operator+(detail::scalar_unit_round_up_t<I> lhs, Scalar<N, C, T> const &rhs) {
@@ -745,6 +748,7 @@ Scalar<N, C, T>
 operator+(Scalar<N, C, T> const &lhs, detail::scalar_round_down_t<N, C, T> rhs) {
   return Scalar<N, C, T>(lhs) += rhs._n;
 }
+/// @endcond
 
 template <intmax_t N, typename C, typename T>
 auto
@@ -803,12 +807,17 @@ operator-(Scalar<N, C, T> lhs, Scalar<S, I, T> const &rhs) -> typename std::comm
   return typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type(lhs) -= rhs;
 }
 
+/** Subtract scalars.
+ * @return A scalar of the same type holding the difference @a lhs - @a rhs
+ */
 template <intmax_t N, typename C, typename T>
 Scalar<N, C, T>
 operator-(Scalar<N, C, T> const &lhs, Scalar<N, C, T> const &rhs) {
   return Scalar<N, C, T>(lhs) -= rhs;
 }
 
+/// @cond INTERNAL_DETAIL
+// Handle subtraction for intermediate wrappers.
 template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
 operator-(detail::scalar_unit_round_up_t<I> lhs, Scalar<N, C, T> const &rhs) {
@@ -856,6 +865,7 @@ Scalar<N, C, T>
 operator-(Scalar<N, C, T> const &lhs, detail::scalar_round_down_t<N, C, T> rhs) {
   return Scalar<N, C, T>(lhs) -= rhs._n;
 }
+/// @endcond
 
 template <intmax_t N, typename C, typename T>
 auto

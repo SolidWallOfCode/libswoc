@@ -1252,9 +1252,10 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
 // Not sure how much of this is needed, but experimentally all of these were needed in one
 // use case or another of structured binding. I wasn't able to make this work if this was
 // defined in namespace @c std. Also, because functions can't be partially specialized, it is
-// necessary to use @c constexpr @c if to handle the case. This should roll up nicely when
+// necessary to use @c constexpr @c if to handle the cases. This should roll up nicely when
 // compiled.
 
+/// @cond INTERNAL_DETAIL
 template <size_t IDX, typename R>
 typename std::tuple_element<IDX, swoc::Rv<R>>::type &
 get(swoc::Rv<R> &&rv) {
@@ -1290,5 +1291,5 @@ get(swoc::Rv<R> const &rv) {
   // Shouldn't need this due to the @c static_assert but the Intel compiler requires it.
   throw std::domain_error("Errata index value out of bounds");
 }
-
+/// @endcond
 }} // namespace swoc::SWOC_VERSION_NS

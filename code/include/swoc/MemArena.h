@@ -36,7 +36,7 @@ class MemArena
   using self_type = MemArena; ///< Self reference type.
 
 public:
-  static constexpr size_t DEFAULT_ALIGNMENT{1};
+  static constexpr size_t DEFAULT_ALIGNMENT{1}; ///< Default memory alignment.
 
   /// Simple internal arena block of memory. Maintains the underlying memory.
   struct Block {
@@ -98,7 +98,7 @@ public:
     bool is_full() const;
 
   protected:
-    friend MemArena;
+    friend MemArena; ///< Container.
 
     /** Override @c operator @c delete.
      *
@@ -138,17 +138,19 @@ public:
     size_t size;         ///< Actual block size.
     size_t allocated{0}; ///< Current allocated (in use) bytes.
 
-    /// Intrusive list support.
     struct Linkage {
+      /// @cond INTERNAL_DETAIL
       Block *_next{nullptr};
       Block *_prev{nullptr};
 
       static Block *&next_ptr(Block *);
 
       static Block *&prev_ptr(Block *);
-    } _link;
+      /// @endcond
+    } _link; ///< Intrusive list support.
   };
 
+  /// Intrusive list of blocks.
   using BlockList = IntrusiveDList<Block::Linkage>;
 
   /** Construct with reservation hint.
@@ -185,9 +187,11 @@ public:
   /// Destructor.
   ~MemArena();
 
-  self_type &operator=(self_type const &that) = delete;
+  /// No copy assignment.
+  self_type & operator=(self_type const & that) = delete;
 
-  self_type &operator=(self_type &&that);
+  /// Move assignment.
+  self_type & operator=(self_type &&that);
 
   /** Make a self-contained instance.
    *
@@ -360,17 +364,19 @@ public:
    */
   size_t reserved_size() const;
 
-  using const_iterator = BlockList::const_iterator;
-  using iterator       = const_iterator; // only const iteration allowed on blocks.
+  using const_iterator = BlockList::const_iterator; ///< Constant element iteration.
+  using iterator       = const_iterator; ///< Element iteration.
 
-  /// Iterate over active blocks.
+  /// First active block.
   const_iterator begin() const;
 
+  /// After Last active block.
   const_iterator end() const;
 
-  /// Iterator over frozen blocks.
+  /// First frozen block.
   const_iterator frozen_begin() const;
 
+  /// After last frozen block.
   const_iterator frozen_end() const;
 protected:
   /** Internally allocates a new block of memory of size @a n bytes.
@@ -476,7 +482,9 @@ public:
   /// Drop all items in the free list.
   void clear();
 };
-// Implementation
+
+// --- Implementation ---
+/// @cond INTERNAL_DETAIL
 
 inline auto
 MemArena::Block::Linkage::next_ptr(Block *b) -> Block *& {
@@ -662,5 +670,7 @@ void
 FixedArena<T>::clear() {
   _list._next = nullptr;
 }
+
+/// @endcond INTERNAL_DETAIL
 
 }} // namespace swoc::SWOC_VERSION_NS

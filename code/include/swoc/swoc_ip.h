@@ -2371,26 +2371,31 @@ operator==(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr == rhs._addr;
 }
 
+/// @return @c true if @a lhs is equal to @a rhs.
 inline bool
 operator!=(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr != rhs._addr;
 }
 
+/// @return @c true if @a lhs is less than @a rhs (host order).
 inline bool
 operator<(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr < rhs._addr;
 }
 
+/// @return @c true if @a lhs is less than or equal to@a rhs (host order).
 inline bool
 operator<=(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr <= rhs._addr;
 }
 
+/// @return @c true if @a lhs is greater than @a rhs (host order).
 inline bool
 operator>(IP4Addr const &lhs, IP4Addr const &rhs) {
   return rhs < lhs;
 }
 
+/// @return @c true if @a lhs is greater than or equal to @a rhs (host order).
 inline bool
 operator>=(IP4Addr const &lhs, IP4Addr const &rhs) {
   return rhs <= lhs;
@@ -2532,33 +2537,39 @@ IP6Addr::reorder(unsigned char dst[WORD_SIZE], unsigned char const src[WORD_SIZE
   }
 }
 
+/// @return @c true if @a lhs is equal to @a rhs.
 inline bool
 operator==(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[0] == rhs._addr._store[0] && lhs._addr._store[1] == rhs._addr._store[1];
 }
 
+/// @return @c true if @a lhs is not equal to @a rhs.
 inline bool
 operator!=(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[0] != rhs._addr._store[0] || lhs._addr._store[1] != rhs._addr._store[1];
 }
 
+/// @return @c true if @a lhs is less than @a rhs.
 inline bool
 operator<(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[0] < rhs._addr._store[0] ||
          (lhs._addr._store[0] == rhs._addr._store[0] && lhs._addr._store[1] < rhs._addr._store[1]);
 }
 
+/// @return @c true if @a lhs is greater than @a rhs.
 inline bool
 operator>(IP6Addr const &lhs, IP6Addr const &rhs) {
   return rhs < lhs;
 }
 
+/// @return @c true if @a lhs is less than or equal to @a rhs.
 inline bool
 operator<=(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[0] < rhs._addr._store[0] ||
          (lhs._addr._store[0] == rhs._addr._store[0] && lhs._addr._store[1] <= rhs._addr._store[1]);
 }
 
+/// @return @c true if @a lhs is greater than or equal to @a rhs.
 inline bool
 operator>=(IP6Addr const &lhs, IP6Addr const &rhs) {
   return rhs <= lhs;

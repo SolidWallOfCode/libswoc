@@ -967,6 +967,8 @@ double svtod(swoc::TextView text, swoc::TextView *parsed = nullptr);
 // definition and the reference documentation is messed up. Sigh.
 
 // === TextView Implementation ===
+/// @cond TextView_INTERNAL
+// Doxygen doesn't match these up well due to various type and template issues.
 inline constexpr TextView::TextView(const char *ptr, size_t n) noexcept
   : super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n) {}
 inline constexpr TextView::TextView(char const *first, char const *last) noexcept : super_type(first, last - first) {}
@@ -1057,13 +1059,13 @@ TextView::assign(char * & c_str) -> self_type & {
   return this->assign(c_str, strlen(c_str));
 }
 
-inline TextView &
-TextView::assign(char const * & c_str) {
+inline auto
+TextView::assign(char const * & c_str) -> self_type & {
   return this->assign(c_str, strlen(c_str));
 }
 
-inline TextView &
-TextView::assign(const std::string &s) {
+inline auto
+TextView::assign(const std::string &s) -> self_type & {
   *this = super_type(s);
   return *this;
 }
@@ -1590,6 +1592,7 @@ TextView::clip_suffix_of(F const &pred) {
   this->remove_suffix(idx);
   return token;
 }
+/// @endcond TextView_INTERNAL
 
 // Provide an instantiation for @c std::ostream as it's likely this is the only one ever used.
 extern template std::ostream &TextView::stream_write(std::ostream &, const TextView &) const;
