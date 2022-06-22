@@ -481,6 +481,9 @@ public:
 
   /// Drop all items in the free list.
   void clear();
+
+  /// Access the wrapped arena directly.
+  MemArena & arena();
 };
 
 // --- Implementation ---
@@ -670,6 +673,8 @@ void
 FixedArena<T>::clear() {
   _list._next = nullptr;
 }
+
+template < typename T > MemArena & FixedArena<T>::arena() { return _arena; }
 
 /// @endcond INTERNAL_DETAIL
 
