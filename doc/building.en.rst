@@ -43,4 +43,20 @@ The object that depends on this library would then have ::
 CMake
 =====
 
-The library can be built directly with CMake.
+The library can be built directly with CMake. To use libswoc in another CMake project use ::
+   FetchContent_Declare(
+       libSWOC
+       GIT_REPOSITORY "https://github.com/solidwallofcode/libswoc"
+       GIT_TAG "master"
+   )
+   set(LIBSWOC_INSTALL off)
+   FetchContent_MakeAvailable(libSWOC)
+
+This will fetch the latest version. ``GIT_TAG`` can be changed to any release tag to use a specific
+release (usually the better choice). Disabling ``LIBSWOC_INSTALL`` prevents the install logic in
+libswoc from interfering with the current project. For a target such as "plugin" that needs libswoc
+to build ::
+
+   target_link_libraries(plugin PRIVATE libswoc)
+   target_include_directories(plugin PRIVATE libswoc)
+

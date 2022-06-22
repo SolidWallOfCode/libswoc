@@ -321,20 +321,6 @@ public:
    */
   template <typename T> MemSpan<T> remnant_span(size_t n);
 
-  /** Get remnant memory.
-   *
-   * @param n Memory size in bytes.
-   * @return The remnant memory.
-   *
-   * This differs from  similar methods in that
-   * - the memory is not aligned
-   * - the remnant is forced to be sufficiently large
-   *
-   * Generally not the best choice, but useful when writing other templated methods on top of
-   * @c MemArena by handling the edge case of @c void.
-   */
-  template <> MemSpan<void> remnant_span<void>(size_t n);
-
   /// @return Contiguous free space in the current internal block.
   MemSpan<void> remnant();
 
