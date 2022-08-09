@@ -116,7 +116,7 @@ public:
    *
    * @internal @a src a reference because it is otherwise ambiguous with the literal constructor.
    */
-  TextView(char * & src) : super_type(src) {}
+  TextView(char * & src) : super_type(src, src ? strlen(src) : 0) {}
 
   /** Construct from a const C-string.
    *
@@ -126,7 +126,7 @@ public:
    *
    * @internal @a src a reference because it is otherwise ambiguous with the literal constructor.
    */
-  TextView(char const * & src) : super_type(src) {}
+  TextView(char const * & src) : super_type(src, src ? strlen(src) : 0) {}
 
   /** Construct from nullptr.
       This implicitly makes the length 0.

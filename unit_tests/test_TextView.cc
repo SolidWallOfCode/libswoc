@@ -56,6 +56,11 @@ TEST_CASE("TextView Constructor", "[libswoc][TextView]")
   REQUIRE(tv.data() == qcp);
   tv = std::string_view(base);
   REQUIRE(tv.size() == base.size());
+
+  qp = nullptr;
+  REQUIRE(TextView(qp).size() == 0);
+  qcp = nullptr;
+  REQUIRE(TextView(qcp).size() == 0);
 };
 
 TEST_CASE("TextView Operations", "[libswoc][TextView]")
