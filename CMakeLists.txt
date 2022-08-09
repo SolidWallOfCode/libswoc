@@ -4,9 +4,17 @@ project("Solid Wall Of C++ Library")
 include(CMakeDependentOption)
 set(INSTALL_DIR ${CMAKE_HOME_DIRECTORY})
 
+cmake_dependent_option(LIBSWOC_TEST
+    "Enable generation of libswoc test targets" ON
+    "CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR" OFF)
+
 # Fortunately this has no external dependencies so the set up can be simple.
 add_subdirectory(code)
-add_subdirectory(unit_tests)
-add_subdirectory(example)
+
+if (LIBSWOC_TEST)
+    add_subdirectory(unit_tests)
+    add_subdirectory(example)
+endif()
+
 add_subdirectory(doc EXCLUDE_FROM_ALL)
 
