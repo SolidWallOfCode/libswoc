@@ -54,6 +54,9 @@ Values and names can be associated either using pairs of values and names, or a 
 and a list of names, the first of which is the primary name. This must be consistent for all of
 the defined values, so if one value has multiple names, all names must use the value, name list form.
 
+Defaults
+========
+
 In addition, defaults can be specified. Because all possible defaults have distinct signatures
 there is no need to order them - the constructor can deduce what is meant. Defaults are very handy
 when using a Lexicon for parsing - the default value can be an invalid value, in which case checking
@@ -80,52 +83,28 @@ equivalence. This is only a benefit if the pointer is to be stored and compared 
 
    token = lex[lex[token]]; // Normalize string pointer.
 
-Examples
-========
+Iteration
+=========
 
-For illustrative purposes, consider using :ref:`ip-space` where each address has a set of flags
-representing the type of address, such as production, edge, secure, etc. This is stored in memory
-as a ``std::bitset``. To load up the data a comma separated value file is provided which has the
-first column as the IP address range and the subsequent values are flag names.
+For iteration, the lexicon is treated as a list of pairs of values and names. Standard iteration is
+over the values and the primary names for those values. The value type of the iterator is a tuple
+of the value and name. ::
 
-The starting point is an enumeration with the address types:
+   extern swoc::Lexicon<Type> lex; // Initialized elsewhere.
+   for ( auto const & pair : lex ) {
+     std::cout << std::get<Lexicon<Type>::VALUE_IDX>(pair) << " has the name "
+               << std::get<Lexicon<Type>::NAME_IDX>(pair) << std::endl;
+   }
 
-.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
-   :start-after: doc.1.begin
-   :end-before: doc.1.end
+It is possible to iterate over the names
+as well using the :libswoc:`Lexicon::begin_names` and :libswoc:`Lexicon::end_names` methods. For
+convience there the method :libswoc:`Lexicon::by_names` returns a temporary object which has :code:`begin`
+and :code:`end` methods which return name iterators. This makes container iteration easier. ::
 
-To do conversions a Lexicon is created:
-
-.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
-   :start-after: doc.2.begin
-   :end-before: doc.2.end
-
-The file loading and parsing is then:
-
-.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
-   :start-after: doc.load.begin
-   :end-before: doc.load.end
-
-with the simulated file contents
-
-.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
-   :start-after: doc.file.begin
-   :end-before: doc.file.end
-
-This uses the Lexicon to convert the strings in the file to the enumeration values, which are the
-bitset indices. The defalt is set to ``INVALID`` so that any string that doesn't match a string
-in the Lexicon is mapped to ``INVALID``.
-
-Once the IP Space is loaded, lookup is simple, given an address:
-
-.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
-   :start-after: doc.lookup.begin
-   :end-before: doc.lookup.end
-
-At this point ``flags`` has the set of flags stored for that address from the original data. Data
-can be accessed like ::
-
-   if (flags[NetType::PROD]) { ... }
+   extern swoc::Lexicon<Type> lex; // Initialized elsewhere.
+   for ( auto const & pair : lex.by_names() ) {
+     // code  for each pair.
+   }
 
 Constructing
 ============
@@ -174,6 +153,57 @@ are the first elements in the list of names. This is fine for any debugging or d
 because only the ``true`` and ``false`` values would be stored, ``INVALID`` indicates a parsing
 error. The enumeration values were chosen so casting from ``bool`` to ``BoolTag`` yields the
 appropriate string.
+
+Examples
+========
+
+For illustrative purposes, consider using :ref:`ip-space` where each address has a set of flags
+representing the type of address, such as production, edge, secure, etc. This is stored in memory
+as a ``std::bitset``. To load up the data a comma separated value file is provided which has the
+first column as the IP address range and the subsequent values are flag names.
+
+The starting point is an enumeration with the address types:
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.1.begin
+   :end-before: doc.1.end
+
+To do conversions a Lexicon is created:
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.2.begin
+   :end-before: doc.2.end
+
+The file loading and parsing is then:
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.load.begin
+   :end-before: doc.load.end
+
+with the simulated file contents
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.file.begin
+   :end-before: doc.file.end
+
+This uses the Lexicon to convert the strings in the file to the enumeration values, which are the
+bitset indices. The defalt is set to ``INVALID`` so that any string that doesn't match a string
+in the Lexicon is mapped to ``INVALID``.
+
+Once the IP Space is loaded, lookup is simple, given an address:
+
+.. literalinclude:: ../../unit_tests/ex_Lexicon.cc
+   :start-after: doc.lookup.begin
+   :end-before: doc.lookup.end
+
+At this point ``flags`` has the set of flags stored for that address from the original data. Data
+can be accessed like ::
+
+   if (flags[NetType::PROD]) { ... }
+
+The example :swoc:git:`example/ex_host_file.cc` processes a standard host file into a lexicon that
+enables forward and reverse lookups. A name can be used to find an address and an address can be
+used to find the first name with that address.
 
 Design Notes
 ************

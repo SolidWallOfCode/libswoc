@@ -3367,28 +3367,25 @@ get(swoc::IPNet const &net) {
 namespace std {
 /// Standard hash support for @a IP4Addr.
 template <> struct hash<swoc::IP4Addr> {
-  uint32_t operator()(swoc::IP4Addr const &addr) const {
+  size_t operator()(swoc::IP4Addr const &addr) const {
     return addr.network_order();
   }
 };
 
 /// Standard hash support for @a IP6Addr.
 template <> struct hash<swoc::IP6Addr> {
-  uint32_t operator()(swoc::IP6Addr const &addr) const {
+  size_t operator()(swoc::IP6Addr const &addr) const {
     // XOR the 64 chunks then XOR that down to 32 bits.
     auto words = addr.as_span<uint64_t>();
-    union {
-      uint64_t w;
-      uint32_t n[2];
-    } x{words[0] ^ words[1]};
-    return x.n[0] ^ x.n[1];
+    return words[0] ^ words[1];
   }
 };
 
 /// Standard hash support for @a IPAddr.
 template <> struct hash<swoc::IPAddr> {
-  uint32_t operator()(swoc::IPAddr const &addr) const {
+  size_t operator()(swoc::IPAddr const &addr) const {
     return addr.is_ip4() ? hash<swoc::IP4Addr>()(addr.ip4()) : addr.is_ip6() ? hash<swoc::IP6Addr>()(addr.ip6()) : 0;
   }
 };
+
 } // namespace std
