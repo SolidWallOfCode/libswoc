@@ -603,3 +603,12 @@ TEST_CASE("TextView compat", "[libswoc][TextView]")
   REQUIRE(map["bob"].n == 2);
   REQUIRE(umap["dave"].n == 6);
 }
+
+TEST_CASE("TextView tokenizing", "[libswoc][TextView]")
+{
+  TextView src="alpha,bravo,,charlie";
+  auto tokens = { "alpha" , "bravo" , "", "charlie"};
+  for ( auto token : tokens ) {
+    REQUIRE(src.take_prefix_at(',') == token);
+  }
+}

@@ -84,6 +84,9 @@ int main(int, char *[]) {
   for ( auto const & item : hosts_ipv4.by_names()) {
     std::cout << swoc::detail::what("{} -> {}\n", std::get<V4Lexicon::NAME_IDX>(item), std::get<V4Lexicon::VALUE_IDX>(item));
   }
+  for ( auto const & item : hosts_ipv6.by_names()) {
+    std::cout << swoc::detail::what("{} -> {}\n", std::get<V4Lexicon::NAME_IDX>(item), std::get<V4Lexicon::VALUE_IDX>(item));
+  }
 
   return 0;
 }
