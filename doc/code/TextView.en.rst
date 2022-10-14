@@ -276,32 +276,59 @@ of the form "A.B.old" and just the "A.B" part was needed, sans leading white spa
 Parsing with TextView
 =====================
 
-Time for some examples demonstrating string parsing using |TV|. One of the goals of the design of |TV|
-was to minimize the need to allocate memory to hold intermediate results. For this reason, the normal
+Time for some examples demonstrating string parsing using |TV|. There are two major reasons for
+developing |TV| parsing.
+
+The first was to minimize the need to allocate memory to hold intermediate results. For this reason, the normal
 style of use is a streaming / incremental one, where tokens are extracted from a source one by one
 and placed in |TV| instances, with the orignal source |TV| being reduced by each extraction until
 it is empty.
 
+The second was to minimize cut and paste coding. Typical C or C++ parsing logic consists mostly of
+very generic code to handle pointer and size updates. The point of |TV| is to automate all of that
+so the resulting code is focused entirely on the parsing logic, not boiler plate string or view manipulation.
+It is a common occurrence to not get such code exactly correct leading to hard to track bugs. Use
+of |TV| eliminates those problems.
+
+The minimization of exceptions on sizes beyond the view boundaries was done primarily to help
+parsing. It noticeably simplifies the logic if excessive removal or advancement yields an empty
+view rather than an exception.
+
 CSV Example
 -----------
 
-For example, assume :arg:`value` contains a null terminated string which is possibly several tokens
-separated by commas.
+For example, assume :arg:`value` contains a null terminated string which is expected to be tokens
+separated by commas. To handle this generically a function could be written which takes a token
+handler and calls it for each token.
 
 .. literalinclude:: ../../unit_tests/ex_TextView.cc
-   :lines: 26,40-50
+   :start-after: doc csv start
+   :end-before: doc csv end
 
-.. sidebar:: Verification
+If :arg:`value` was :literal:`"bob  ,dave, sam"` then :arg:`token` would be successively
+:literal:`bob`, :literal:`dave`, :literal:`sam`. Each loop iteration is guaranteed to remove text
+from :arg:`src` making the loop eventually terminate when all text has been removed, because an
+empty :code:`TextView` is :code:`false`. This is a recommended style because :code:`TextView` instances
+are very cheap to copy. This is essentially the same as having a current pointer and and end pointer
+and checking for :code:`current >= end` except :code:`TextView` does all the work, leading to
+simpler and less buggy code.
 
-   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/1.3.12/unit_tests/ex_TextView.cc#L67>`__.
+White space is dropped because of the calls to :code:`ltrim_if` and `rtrim_if`. By calling in the
+loop condition, the loop exits if the remaining text is only whitespace and no token is processed.
+Alternatively :code:`trim_if` could be used after extraction. The performance will be *slightly*
+better because although :code:`trim_if` calls :code:`ltrim_if` and :code:`rtrim_if`, a final
+token extraction on trailing whitespace will be avoided. In practice it won't make a difference,
+do what's convenient.
 
-If :arg:`value` was :literal:`bob  ,dave, sam` then :arg:`token` would be successively
-:literal:`bob`, :literal:`dave`, :literal:`sam`. After :literal:`sam` was extracted :arg:`value`
-would be empty and the loop would exit. :arg:`token` can be empty in the case of adjacent commas, a
-trailing comma, or commas separated only by whitespasce. Note no memory allocation is done because
-each view is a pointer in to :arg:`value`. Because the size is contained in the view there is no
-need to put nul characters in the source string as would be done by :code:`strtok` and therefore
-this can be used on constant source strings.
+It could be tempting to squeeze the code a bit to be
+
+.. literalinclude:: ../../unit_tests/ex_TextView.cc
+   :start-after: doc csv non-empty start
+   :end-before: doc csv non-empty end
+
+However this causes a significant behavior difference - the loop terminates on an empty token because
+that token will be :code:`false`. That is, this will work if there is a guarantee of no empty tokens
+(e.g. adjacent separators).
 
 Key / Value Example
 -------------------
@@ -311,16 +338,18 @@ A similar case is parsing a list of key / value pairs in a comma separated list.
 for values that are boolean.
 
 .. literalinclude:: ../../unit_tests/ex_TextView.cc
-   :lines: 26,52-62
+   :start-after: doc kv start
+   :end-before: doc kv end
 
 .. sidebar:: Verification
 
-   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/1.3.12/unit_tests/ex_TextView.cc#L74>`__.
+   `Test code for example <https://github.com/SolidWallOfCode/libswoc/blob/1.3.12/unit_tests/ex_TextView.cc#L73>`__.
 
-The basic list processing is the same as the previous example, with each element being treated as
-a "list" with ``=`` as the separator. Note if there is no ``=`` character then all of the list
-element is moved to :arg:`key` leaving :arg:`value` empty, which is the desired result. A bit of
-extra white space trimming it done in case there was space between the key and the ``=``.
+The basic list processing is the same as the previous example, extracting each comma separated
+element. The resulting element is treated as a "list" with ``=`` as the separator. Note if there is
+no ``=`` character then all of the list element is moved to :arg:`key` leaving :arg:`value` empty,
+which is the desired result. A bit of extra white space trimming it done in case there was space
+next to the ``=``.
 
 Line Processing
 ---------------

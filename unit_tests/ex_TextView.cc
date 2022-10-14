@@ -22,39 +22,57 @@ using namespace swoc::literals;
 namespace
 {
 // Standard results array so these names can be used repeatedly.
-std::array<char const *, 6> alphabet{{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot"}};
+std::array<TextView, 6> alphabet{{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot"}};
 
+// -- doc csv start
 void
-parse_csv(char const *value, std::function<void(TextView)> const &f)
+parse_csv(TextView src, std::function<void(TextView)> const &f)
 {
-  TextView v(value, strlen(value));
-  while (v) {
-    TextView token{v.take_prefix_at(',').trim_if(&isspace)};
+  while (src.ltrim_if(&isspace)) {
+    TextView token{src.take_prefix_at(',').rtrim_if(&isspace)};
     if (token) { // skip empty tokens (double separators)
       f(token);
     }
   }
 }
+// -- doc csv end
 
+// -- doc csv non-empty start
+void
+parse_csv_non_empty(TextView src, std::function<void(TextView)> const &f)
+{
+  TextView token;
+  while ((token = src.take_prefix_at(',').trim_if(&isspace))) {
+    f(token);
+  }
+}
+// -- doc csv non-empty end
+
+// -- doc kv start
 void
 parse_kw(TextView src, std::function<void(TextView, TextView)> const &f)
 {
   while (src) {
     TextView value{src.take_prefix_at(',').trim_if(&isspace)};
     if (value) {
-      TextView key{value.take_prefix_at('=').rtrim_if(&isspace)};
-      f(key, value);
+      TextView key{value.take_prefix_at('=')};
+      // Trim any space that might have been around the '='.
+      f(key.rtrim_if(&isspace), value.ltrim_if(&isspace));
     }
   }
 }
+// -- doc kv end
 
 } // namespace
 
 TEST_CASE("TextView Example CSV", "[libswoc][example][textview][csv]")
 {
-  char const *src = "alpha, bravo,charlie,  delta  ,echo ,, ,foxtrot";
+  char const *src = "alpha,bravo,  charlie,delta  ,  echo  ,, ,foxtrot";
+  char const *src_non_empty = "alpha,bravo,  charlie,   delta, echo  ,foxtrot";
   int idx         = 0;
   parse_csv(src, [&](TextView tv) -> void { REQUIRE(tv == alphabet[idx++]); });
+  idx = 0;
+  parse_csv_non_empty(src_non_empty, [&](TextView tv) -> void { REQUIRE(tv == alphabet[idx++]); });
 };
 
 TEST_CASE("TextView Example KW", "[libswoc][example][textview][kw]")
