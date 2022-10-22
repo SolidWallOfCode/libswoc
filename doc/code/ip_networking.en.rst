@@ -25,9 +25,9 @@ IPEndpoint
 
 :libswoc:`swoc::IPEndpoint` is a wrapper around :code:`sockaddr` and provides a number of utilities.
 It enables constructing an instance from the string representation of an address, supporting IPv4
-and IPv6. It will also parse and store the port if that is part of the string. Some of the internal
+and IPv6. It will also parse and store the host_order_port if that is part of the string. Some of the internal
 logic is exposed via :libswoc:`swoc::IPEndpoint::tokenize` which finds and returns the elements of
-an address string, the host (address), port, and any trailing remnants. This is useful for doing
+an address string, the host (address), host_order_port, and any trailing remnants. This is useful for doing
 syntax checks or more specialized processing of the address string.
 
 IPAddr
@@ -49,6 +49,14 @@ instance and provides an indication of whether the input was valid.
 
 Conversions to and from :code:`sockaddr` are provided. This is handier with :code:`IPAddr` as it
 will conform to the family of the address in the :code:`sockaddr`.
+
+IPSrv
+=====
+
+A container for an address and a host_order_port. There is no really good name for this therefore I used the
+DNS term for such an object. This consists of the usual triplet of classes, :swoc:`IP4Srv`, :swoc:`IP6Srv`,
+and :swoc:`IPSrv`. The first two are protocol family specific and the third holds an instance of
+either an :code:`IP4Srv` or an `IP6Srv`. The address and host_order_port can be manipulated separately.
 
 IPRange
 =======

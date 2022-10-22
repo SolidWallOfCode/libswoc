@@ -22,6 +22,10 @@ set(HEADER_FILES
     include/swoc/IntrusiveDList.h
     include/swoc/IntrusiveHashMap.h
     include/swoc/swoc_ip.h
+    include/swoc/IPEndpoint.h
+    include/swoc/IPAddr.h
+    include/swoc/IPSrv.h
+    include/swoc/IPRange.h
     include/swoc/Lexicon.h
     include/swoc/MemArena.h
     include/swoc/MemSpan.h

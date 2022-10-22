@@ -949,7 +949,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, IpAddr const &addr)
 {
-  bwf::Spec local_spec{spec}; // Format for address elements and port.
+  bwf::Spec local_spec{spec}; // Format for address elements and host_order_port.
   bool addr_p{true};
   bool family_p{false};
 

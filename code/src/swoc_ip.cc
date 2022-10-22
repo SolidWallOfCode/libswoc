@@ -124,7 +124,7 @@ IPEndpoint::tokenize(std::string_view str, std::string_view *addr, std::string_v
         // Exactly one colon - leave post colon stuff in @a src.
         *addr   = src.take_prefix(last);
         colon_p = true;
-      } else { // presume no port, use everything.
+      } else { // presume no host_order_port, use everything.
         *addr = src;
         src.clear();
       }
@@ -295,6 +295,16 @@ IP4Addr::copy_to(sockaddr_in *sa, in_port_t port) const {
   return sa;
 }
 
+// --- IPv6
+
+sockaddr *
+IP6Addr::copy_to(sockaddr *sa, in_port_t port) const {
+  IPEndpoint addr(sa);
+  self_type::reorder(addr.sa6.sin6_addr, _addr._raw);
+  addr.network_order_port() = port;
+  return sa;
+}
+
 int
 IP6Addr::cmp(const self_type &that) const {
   return *this < that ? -1 : *this > that ? 1 : 0;
@@ -437,6 +447,15 @@ void
 IP6Addr::reorder(raw_type &dst, in6_addr const &src) {
   self_type::reorder(dst.data(), src.s6_addr);
   self_type::reorder(dst.data() + WORD_SIZE, src.s6_addr + WORD_SIZE);
+}
+
+IPAddr::IPAddr(IPEndpoint const &addr) {
+  this->assign(&addr.sa);
+}
+
+IPAddr &
+IPAddr::operator=(IPEndpoint const &addr) {
+  return this->assign(&addr.sa);
 }
 
 bool
@@ -632,6 +651,40 @@ IPMask::as_ip6() const {
     return {MASK, MASK << (2 * IP6Addr::WORD_WIDTH - _cidr)};
   }
   return {MASK, MASK};
+}
+
+// --- SRV ---
+
+IPSrv::IPSrv(IPAddr addr, in_port_t port) {
+  _family = addr.family();
+  if (addr.is_ip4()) {
+    _srv._ip4.assign(addr.ip4(), port);
+  } else if (addr.is_ip6()) {
+    _srv._ip6.assign(addr.ip6(), port);
+  } else {
+    _family = AF_UNSPEC;
+  }
+}
+
+IPSrv::IPSrv(IPEndpoint const& ep) {
+  if (ep.is_ip4()) {
+    _family = _srv._ip4.family();
+    _srv._ip4.assign(&ep.sa4);
+  } else if (ep.is_ip6()) {
+    _family = _srv._ip6.family();
+    _srv._ip6.assign(&ep.sa6);
+  }
+}
+
+auto IPSrv::assign(const sockaddr *sa) -> self_type & {
+  if (AF_INET == sa->sa_family) {
+    _family = AF_INET;
+    _srv._ip4.assign(reinterpret_cast<sockaddr_in const *>(sa));
+  } else if (AF_INET6 == sa->sa_family) {
+    _family = AF_INET6;
+    _srv._ip6.assign(reinterpret_cast<sockaddr_in6 const *>(sa));
+  }
+  return *this;
 }
 
 // ++ IPNet ++

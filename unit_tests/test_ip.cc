@@ -272,7 +272,7 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   w.clear().print("{:: =a}", ep);
   REQUIRE(w.view() == "ffee:   0:   0:   0:24c3:3349:3cee: 143");
 
-  // Verify @c IPEndpoint will parse without the port.
+  // Verify @c IPEndpoint will parse without the host_order_port.
   REQUIRE(ep.parse(addr_8) == true);
   REQUIRE(ep.network_order_port() == 0);
   REQUIRE(ep.parse(addr_9) == true);
@@ -322,8 +322,8 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(ep.parse(addr_7) == true);
   w.clear().print("To {}", ep);
   REQUIRE(w.view() == "To 172.19.3.105:4951");
-  w.clear().print("To {0::a} on port {0::p}", ep); // no need to pass the argument twice.
-  REQUIRE(w.view() == "To 172.19.3.105 on port 4951");
+  w.clear().print("To {0::a} on host_order_port {0::p}", ep); // no need to pass the argument twice.
+  REQUIRE(w.view() == "To 172.19.3.105 on host_order_port 4951");
   w.clear().print("To {::=}", ep);
   REQUIRE(w.view() == "To 172.019.003.105:04951");
   w.clear().print("{::a}", ep);
@@ -1738,3 +1738,31 @@ TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
   }
 }
 
+TEST_CASE("IPSrv", "[libswoc][IPSrv]") {
+  using swoc::IP4Srv;
+  using swoc::IP6Srv;
+  using swoc::IPSrv;
+
+  IP4Srv s4;
+  IP6Srv s6;
+  IPSrv s;
+
+  IP4Addr a1 { "192.168.34.56" };
+  IP4Addr a2 { "10.9.8.7" };
+  IP6Addr aa1 { "ffee:1f2d:c587:24c3:9128:3349:3cee:143" };
+
+  s6.assign(aa1, 99);
+  REQUIRE(s6.addr() == aa1);
+  REQUIRE(s6.host_order_port() == 99);
+  REQUIRE(s6 == IP6Srv(aa1, 99));
+
+  // Test various constructors.
+  s4.assign(a2, 88);
+  IP4Addr tmp1{s4.addr()};
+  REQUIRE(s4 == tmp1);
+  IP4Addr tmp2 = s4;
+  REQUIRE(s4 == tmp2);
+  IP4Addr tmp3{s4};
+  REQUIRE(s4 == tmp3);
+  REQUIRE(s4.addr() == tmp3); // double check equality.
+}

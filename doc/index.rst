@@ -39,7 +39,7 @@ unrelated projects. Hence this library. I hope you find it as useful as I have.
    code/Errata.en
    code/Scalar.en
    code/Vectray.en
-   code/IPSpace.en
+   code/ip_networking.en
    appendix.en
 
 Indices and tables

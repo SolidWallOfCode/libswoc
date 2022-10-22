@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ATS=${1:-../ats}
+ATS=${1:-../ts}
 
 if [ ! -d "${ATS}" ] ; then
   echo "Target ${ATS} is not a directory"
@@ -71,7 +71,7 @@ cat <<'TEXT' > ${ATS}/${BASE_PATH}/swoc/Makefile.am
 
 include $(top_srcdir)/build/tidy.mk
 
-lib_LTLIBRARIES = libtsswoc.la
+noinst_LTLIBRARIES = libtsswoc.la
 
 library_includedir=$(includedir)/swoc
 
@@ -100,6 +100,8 @@ library_include_HEADERS = \
         include/swoc/RBTree.h \
         include/swoc/Scalar.h \
         include/swoc/swoc_file.h \
+        include/swoc/IPAddr.h \
+        include/swoc/IPSrv.h \
         include/swoc/swoc_ip.h \
         include/swoc/swoc_meta.h \
         include/swoc/swoc_version.h\
