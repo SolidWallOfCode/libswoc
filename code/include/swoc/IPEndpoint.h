@@ -5,11 +5,15 @@
  */
 
 #pragma once
+
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include <stdexcept>
+
 #include "swoc/swoc_version.h"
 #include "swoc/TextView.h"
+
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
 using ::std::string_view;
@@ -168,5 +172,105 @@ union IPEndpoint {
   /// The string name of the address family.
   static string_view family_name(sa_family_t family);
 };
+
+inline IPEndpoint::IPEndpoint() {
+  sa.sa_family = AF_UNSPEC;
+}
+
+inline IPEndpoint::IPEndpoint(IPAddr const &addr) {
+  this->assign(addr);
+}
+
+inline IPEndpoint::IPEndpoint(sockaddr const *sa) {
+  this->assign(sa);
+}
+
+inline IPEndpoint::IPEndpoint(IPEndpoint::self_type const &that) : self_type(&that.sa) {}
+
+inline IPEndpoint &
+IPEndpoint::invalidate() {
+  sa.sa_family = AF_UNSPEC;
+  return *this;
+}
+
+inline void
+IPEndpoint::invalidate(sockaddr *addr) {
+  addr->sa_family = AF_UNSPEC;
+}
+
+inline bool
+IPEndpoint::is_valid() const {
+  return sa.sa_family == AF_INET || sa.sa_family == AF_INET6;
+}
+
+inline IPEndpoint &
+IPEndpoint::operator=(self_type const &that) {
+  self_type::assign(&sa, &that.sa);
+  return *this;
+}
+
+inline IPEndpoint &
+IPEndpoint::assign(sockaddr const *src) {
+  self_type::assign(&sa, src);
+  return *this;
+}
+
+inline IPEndpoint const &
+IPEndpoint::copy_to(sockaddr *addr) const {
+  self_type::assign(addr, &sa);
+  return *this;
+}
+
+inline bool
+IPEndpoint::is_ip4() const {
+  return AF_INET == sa.sa_family;
+}
+
+inline bool
+IPEndpoint::is_ip6() const {
+  return AF_INET6 == sa.sa_family;
+}
+
+inline sa_family_t
+IPEndpoint::family() const {
+  return sa.sa_family;
+}
+
+inline in_port_t &
+IPEndpoint::network_order_port() {
+  return self_type::port(&sa);
+}
+
+inline in_port_t
+IPEndpoint::network_order_port() const {
+  return self_type::port(&sa);
+}
+
+inline in_port_t
+IPEndpoint::host_order_port() const {
+  return ntohs(this->network_order_port());
+}
+
+inline in_port_t &
+IPEndpoint::port(sockaddr *sa) {
+  switch (sa->sa_family) {
+  case AF_INET:
+    return reinterpret_cast<sockaddr_in *>(sa)->sin_port;
+    case AF_INET6:
+      return reinterpret_cast<sockaddr_in6 *>(sa)->sin6_port;
+  }
+  // Force a failure upstream by returning a null reference.
+  throw std::domain_error("sockaddr is not a valid IP address");
+}
+
+inline in_port_t
+IPEndpoint::port(sockaddr const *sa) {
+  return self_type::port(const_cast<sockaddr *>(sa));
+}
+
+inline in_port_t
+IPEndpoint::host_order_port(sockaddr const *sa) {
+  return ntohs(self_type::port(sa));
+}
 
 }} // namespace swoc::SWOC_VERSION_NS

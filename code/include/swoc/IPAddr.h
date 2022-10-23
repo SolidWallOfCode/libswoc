@@ -10,6 +10,8 @@
 #include <sys/socket.h>
 
 #include "swoc/swoc_version.h"
+#include "swoc/swoc_meta.h"
+#include "swoc/MemSpan.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
