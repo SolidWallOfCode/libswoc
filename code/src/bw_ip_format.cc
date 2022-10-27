@@ -82,7 +82,7 @@ bwformat(BufferWriter &w, Spec const &spec, in6_addr const &addr) {
 
 BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, sockaddr const *addr) {
-  Spec local_spec{spec}; // Format for address elements and host_order_port.
+  Spec local_spec{spec}; // Format for address elements and port.
   bool port_p{true};
   bool addr_p{true};
   bool family_p{false};
@@ -209,7 +209,7 @@ bwformat(BufferWriter &w, Spec const &spec, IP6Addr const &addr) {
 
 BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IPAddr const &addr) {
-  Spec local_spec{spec}; // Format for address elements and host_order_port.
+  Spec local_spec{spec}; // Format for address elements and port.
   bool addr_p{true};
   bool family_p{false};
 

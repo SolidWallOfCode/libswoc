@@ -124,7 +124,7 @@ IPEndpoint::tokenize(std::string_view str, std::string_view *addr, std::string_v
         // Exactly one colon - leave post colon stuff in @a src.
         *addr   = src.take_prefix(last);
         colon_p = true;
-      } else { // presume no host_order_port, use everything.
+      } else { // presume no port, use everything.
         *addr = src;
         src.clear();
       }
