@@ -797,7 +797,7 @@ public:
   void clear();
 
   /** Constant iterator.
-   * THe value type is a tuple of the IP address range and the @a PAYLOAD. Both are constant.
+   * The value type is a tuple of the IP address range and the @a PAYLOAD. Both are constant.
    *
    * @internal The non-const iterator is a subclass of this, in order to share implementation. This
    * also makes it easy to convert from iterator to const iterator, which is desirable.
@@ -871,7 +871,7 @@ public:
 
   protected:
     // These are stored non-const to make implementing @c iterator easier. The containing class provides the
-    // required @c const protection. This is basic a tuple of iterators - for forward iteration if
+    // required @c const protection. Internally a tuple of iterators is stored for forward iteration. If
     // the primary (ipv4) iterator is at the end, then use the secondary (ipv6) iterator. The reverse
     // is done for reverse iteration. This depends on the extra support @c IntrusiveDList iterators
     // provide.
@@ -885,7 +885,7 @@ public:
      * @param iter4 Starting place for IPv4 subspace.
      * @param iter6 Starting place for IPv6 subspace.
      *
-     * In practice, both iterators should be either the beginning or ending iterator for the subspace.
+     * In practice, at most one iterator should be "internal", the other should be the beginning or end.
      */
     const_iterator(typename IP4Space::iterator const &iter4, typename IP6Space::iterator const &iter6);
   };
@@ -902,62 +902,63 @@ public:
 
     friend class IPSpace;
 
-  public:
+  protected:
+    using super_type::super_type; /// Inherit supertype constructors.
+    /// Protected constructor to convert const to non-const.
+    /// @note This makes for much less code duplication in iterator relevant methods.
+    iterator(const_iterator const& that) : const_iterator(that) {}
   public:
     /// Value type of iteration.
     using value_type = std::tuple<IPRange const, PAYLOAD &>;
-  using pointer    = value_type *;
-  using reference  = value_type &;
+    using pointer    = value_type *;
+    using reference  = value_type &;
 
-  /// Default constructor.
-  iterator() = default;
+    /// Default constructor.
+    iterator() = default;
 
-  /// Copy constructor.
-  iterator(self_type const &that);
+    /// Copy constructor.
+    iterator(self_type const &that);
 
-  /// Assignment.
-  self_type &operator=(self_type const &that);
+    /// Assignment.
+    self_type &operator=(self_type const &that);
 
-  /// Pre-increment.
-  /// Move to the next element in the list.
-  /// @return The iterator.
-  self_type &operator++();
+    /// Pre-increment.
+    /// Move to the next element in the list.
+    /// @return The iterator.
+    self_type &operator++();
 
-  /// Pre-decrement.
-  /// Move to the previous element in the list.
-  /// @return The iterator.
-  self_type &operator--();
+    /// Pre-decrement.
+    /// Move to the previous element in the list.
+    /// @return The iterator.
+    self_type &operator--();
 
-  /// Post-increment.
-  /// Move to the next element in the list.
-  /// @return The iterator value before the increment.
-  self_type
-  operator++(int) {
-    self_type zret{*this};
-    ++*this;
-    return zret;
-  }
+    /// Post-increment.
+    /// Move to the next element in the list.
+    /// @return The iterator value before the increment.
+    self_type
+    operator++(int) {
+      self_type zret{*this};
+      ++*this;
+      return zret;
+    }
 
-  /// Post-decrement.
-  /// Move to the previous element in the list.
-  /// @return The iterator value before the decrement.
-  self_type
-  operator--(int) {
-    self_type zret{*this};
-    --*this;
-    return zret;
-  }
+    /// Post-decrement.
+    /// Move to the previous element in the list.
+    /// @return The iterator value before the decrement.
+    self_type
+    operator--(int) {
+      self_type zret{*this};
+      --*this;
+      return zret;
+    }
 
-  /// Dereference.
-  /// @return A reference to the referent.
-  value_type operator*() const;
+    /// Dereference.
+    /// @return A reference to the referent.
+    value_type operator*() const;
 
-  /// Dereference.
-  /// @return A pointer to the referent.
-  value_type const *operator->() const;
-
-  protected:
-    using super_type::super_type; /// Inherit supertype constructors.
+    /// Dereference.
+    /// @return A pointer to the referent.
+    value_type const *operator->() const;
   };
 
   /** Find the payload for an @a addr.
@@ -965,74 +966,80 @@ public:
    * @param addr Address to find.
    * @return Iterator for the range containing @a addr.
    */
-  iterator
-  find(IPAddr const &addr) {
-    if (addr.is_ip4()) {
-      return this->find(addr.ip4());
-    } else if (addr.is_ip6()) {
-      return this->find(addr.ip6());
-    }
-    return this->end();
-  }
+  iterator find(IPAddr const &addr);
 
   /** Find the payload for an @a addr.
    *
    * @param addr Address to find.
-   * @return The payload if any, @c nullptr if the address is not in the space.
+   * @return Iterator for the range containing @a addr.
    */
-  iterator
-  find(IP4Addr const &addr) {
-    auto spot = _ip4.find(addr);
-    return spot == _ip4.end() ? this->end() : iterator{_ip4.find(addr), _ip6.begin()};
-  }
+  const_iterator find(IPAddr const &addr) const;
 
   /** Find the payload for an @a addr.
    *
    * @param addr Address to find.
-   * @return The payload if any, @c nullptr if the address is not in the space.
+   * @return An iterator which is valid if @a addr was found, @c end if not.
    */
-  iterator
-  find(IP6Addr const &addr) {
-    return {_ip4.end(), _ip6.find(addr)};
-  }
+  iterator find(IP4Addr const &addr);
+
+  /** Find the payload for an @a addr.
+   *
+   * @param addr Address to find.
+   * @return An iterator which is valid if @a addr was found, @c end if not.
+   */
+  const_iterator find(IP4Addr const &addr) const;
+
+  /** Find the payload for an @a addr.
+   *
+   * @param addr Address to find.
+   * @return An iterator which is valid if @a addr was found, @c end if not.
+   */
+  iterator find(IP6Addr const &addr);
+
+  /** Find the payload for an @a addr.
+   *
+   * @param addr Address to find.
+   * @return An iterator which is valid if @a addr was found, @c end if not.
+   */
+  const_iterator find(IP6Addr const &addr) const;
+
+  /// @return An iterator to the first element.
+  iterator begin();
 
   /// @return A constant iterator to the first element.
   const_iterator begin() const;
 
-  /// @return A constent iterator past the last element.
-  const_iterator end() const;
-
-  iterator begin();
-
+  /// @return An iterator past the last element.
   iterator end();
 
-  /// Iterator to the first IPv4 address.
+  /// @return A constant iterator past the last element.
+  const_iterator end() const;
+
+  /// @return Iterator to the first IPv4 address.
+  iterator begin_ip4();
+  /// @return Iterator to the first IPv4 address.
   const_iterator begin_ip4() const;
-  /// Iterator past the last IPv4 address.
+
+  /// @return Iterator past the last IPv4 address.
+  iterator end_ip4();
+  /// @return Iterator past the last IPv4 address.
   const_iterator end_ip4() const;
 
+  /// @return Iterator at the first IPv6 address.
+  iterator begin_ip6();
+  /// @return Iterator at the first IPv6 address.
   const_iterator begin_ip6() const;
+  /// @return Iterator past the last IPv6 address.
+  iterator end_ip6();
+  /// @return Iterator past the last IPv6 address.
   const_iterator end_ip6() const;
 
-  const_iterator
-  begin(sa_family_t family) const {
-    if (AF_INET == family) {
-      return this->begin_ip4();
-    } else if (AF_INET6 == family) {
-      return this->begin_ip6();
-    }
-    return this->end();
-  }
+  /// @return Iterator to the first address of @a family.
+  const_iterator begin(sa_family_t family) const;
 
+  /// @return Iterator past the last address of @a family.
   const_iterator
-  end(sa_family_t family) const {
-    if (AF_INET == family) {
-      return this->end_ip4();
-    } else if (AF_INET6 == family) {
-      return this->end_ip6();
-    }
-    return this->end();
-  }
+  end(sa_family_t family) const;
 
 protected:
   IP4Space _ip4; ///< Sub-space containing IPv4 ranges.
@@ -1648,55 +1655,102 @@ IPSpace<PAYLOAD>::clear() {
 }
 
 template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin() -> iterator { return iterator{_ip4.begin(), _ip6.begin()}; }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin() const -> const_iterator { return const_cast<self_type *>(this)->begin(); }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end() -> iterator { return iterator{_ip4.end(), _ip6.end()}; }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end() const -> const_iterator { return const_cast<self_type *>(this)->end(); }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin_ip4() -> iterator { return this->begin(); }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin_ip4() const -> const_iterator { return this->begin(); }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end_ip4() -> iterator { return { _ip4.end(), _ip6.begin() }; }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end_ip4() const -> const_iterator { return const_cast<self_type*>(this)->end_ip4(); }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin_ip6() -> iterator {
+  return { _ip4.end(), _ip6.begin() };
+}
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::begin_ip6() const -> const_iterator {
+  return const_cast<self_type*>(this)->begin_ip6();
+}
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end_ip6() -> iterator { return this->end(); }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::end_ip6() const -> const_iterator { return this->end(); }
+
+template <typename PAYLOAD>
 auto
-IPSpace<PAYLOAD>::begin() const -> const_iterator {
-  auto nc_this = const_cast<self_type *>(this);
-  return const_iterator(nc_this->_ip4.begin(), nc_this->_ip6.begin());
+IPSpace<PAYLOAD>::find(IPAddr const &addr) -> iterator {
+  if (addr.is_ip4()) {
+    return this->find(addr.ip4());
+  } else if (addr.is_ip6()) {
+    return this->find(addr.ip6());
+  }
+  return this->end();
+}
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::find(IPAddr const &addr) const -> const_iterator {
+  return const_cast<self_type *>(this)->find(addr);
 }
 
 template <typename PAYLOAD>
 auto
-IPSpace<PAYLOAD>::end() const -> const_iterator {
-  auto nc_this = const_cast<self_type *>(this);
-  return const_iterator(nc_this->_ip4.end(), nc_this->_ip6.end());
-}
-
-template <typename PAYLOAD>
-auto
-IPSpace<PAYLOAD>::begin_ip4() const -> const_iterator {
-  return this->begin();
-}
-
-template <typename PAYLOAD>
-auto
-IPSpace<PAYLOAD>::end_ip4() const -> const_iterator {
-  auto nc_this = const_cast<self_type *>(this);
-  return { nc_this->_ip4.end(), nc_this->_ip6.begin() };
-}
-
-template <typename PAYLOAD>
-auto
-IPSpace<PAYLOAD>::begin_ip6() const -> const_iterator {
-  auto nc_this = const_cast<self_type *>(this);
-  return { nc_this->_ip4.end(), nc_this->_ip6.begin() };
-}
-
-template <typename PAYLOAD>
-auto
-IPSpace<PAYLOAD>::end_ip6() const -> const_iterator {
+IPSpace<PAYLOAD>::find(IP4Addr const &addr) -> iterator {
+  if ( auto spot = _ip4.find(addr) ; spot != _ip4.end()) {
+    return { spot, _ip6.begin() };
+  }
   return this->end();
 }
 
 template <typename PAYLOAD>
 auto
-IPSpace<PAYLOAD>::begin() -> iterator {
-  return iterator{_ip4.begin(), _ip6.begin()};
+IPSpace<PAYLOAD>::find(IP4Addr const &addr) const -> const_iterator {
+  return const_cast<self_type *>(this)->find(addr);
+}
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::find(IP6Addr const &addr) -> iterator { return {_ip4.end(), _ip6.find(addr)}; }
+
+template <typename PAYLOAD>
+auto IPSpace<PAYLOAD>::find(IP6Addr const &addr) const -> const_iterator { return {_ip4.end(), _ip6.find(addr)}; }
+
+template <typename PAYLOAD>
+auto
+IPSpace<PAYLOAD>::begin(sa_family_t family) const -> const_iterator {
+  if (AF_INET == family) {
+    return this->begin_ip4();
+  } else if (AF_INET6 == family) {
+    return this->begin_ip6();
+  }
+  return this->end();
 }
 
 template <typename PAYLOAD>
 auto
-IPSpace<PAYLOAD>::end() -> iterator {
-  return iterator{_ip4.end(), _ip6.end()};
+IPSpace<PAYLOAD>::end(sa_family_t family) const -> const_iterator {
+  if (AF_INET == family) {
+    return this->end_ip4();
+  } else if (AF_INET6 == family) {
+    return this->end_ip6();
+  }
+  return this->end();
 }
 
 template <typename PAYLOAD>

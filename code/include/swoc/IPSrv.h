@@ -45,6 +45,14 @@ public:
    */
   IP4Srv(sockaddr_in const * s) : _addr(s), _port(ntohs(s->sin_port)) {}
 
+  /** Construct from a string.
+   *
+   * @param text Input text.
+   *
+   * If the port is not present it is set to zero.
+   */
+  explicit IP4Srv(swoc::TextView text);
+
   /// Implicit conversion to an address.
   constexpr operator IP4Addr const& () const;
 
@@ -69,6 +77,13 @@ public:
   bool operator <= (self_type const& that) const;
   bool operator > (self_type const& that) const;
   bool operator >= (self_type const& that) const;
+
+  /** Load from a string.
+   *
+   * @param text Input string.
+   * @return @c true if @a text in a valid format, @c false if not.
+   */
+  bool load(swoc::TextView text);
 
   /** Change the address.
    *
@@ -132,6 +147,21 @@ public:
    * @param s Socket address.
    */
   explicit IP6Srv(sockaddr_in6 const * s);
+
+  /** Construct from a string.
+   *
+   * @param text Input text.
+   *
+   * If the port is not present it is set to zero.
+   */
+  explicit IP6Srv(swoc::TextView text);
+
+  /** Load from a string.
+   *
+   * @param text Input string.
+   * @return @c true if @a text in a valid format, @c false if not.
+   */
+  bool load(swoc::TextView text);
 
   /// Implicit conversion to address.
   constexpr operator IP6Addr const& () const;
@@ -205,19 +235,34 @@ public:
   explicit IPSrv(sockaddr_in6 const * s);
   explicit IPSrv(IPEndpoint const& ep);
 
+  /** Construct from a string.
+   *
+   * @param text Input text.
+   *
+   * If the port is not present it is set to zero.
+   */
+  explicit IPSrv(swoc::TextView text);
+
+  /** Load from a string.
+   *
+   * @param text Input string.
+   * @return @c true if @a text in a valid format, @c false if not.
+   */
+  bool load(swoc::TextView text);
+
   /// @return The address.
-  IPAddr addr() const { return _srv.addr(_family); }
+  IPAddr addr() const;
   /// @return The host_order_port in host order..
   constexpr in_port_t host_order_port() const;
   /// @return The host_order_port in network order.
   in_port_t network_order_port() const;
   /// @return The protocol of the current value.
-  constexpr sa_family_t family() const { return _family; }
+  constexpr sa_family_t family() const;
 
   /// @return @c true if the data is IPv4, @c false if not.
-  bool is_ip4() const { return _family == AF_INET; }
+  bool is_ip4() const;
   /// @return @c true if hte data is IPv6, @c false if not.
-  bool is_ip6() const { return _family == AF_INET6; }
+  bool is_ip6() const;
 
   /// @return The IPv4 data.
   IP4Srv const& ip4() const { return _srv._ip4; }
@@ -401,6 +446,11 @@ IP6Srv::assign(sockaddr_in6 const *s) -> self_type & {
 inline IPSrv::IPSrv(const sockaddr_in *s) : _srv(s), _family(AF_INET) {}
 inline IPSrv::IPSrv(const sockaddr_in6 *s) : _srv(s), _family(AF_INET6) {}
 inline IPSrv::IPSrv(const sockaddr *sa) { this->assign(sa); }
+
+inline IPAddr IPSrv::addr() const { return _srv.addr(_family); }
+inline constexpr sa_family_t IPSrv::family() const { return _family; }
+inline bool IPSrv::is_ip4() const { return _family == AF_INET; }
+inline bool IPSrv::is_ip6() const { return _family == AF_INET6; }
 
 inline auto
 IPSrv::assign(IP6Addr const &addr) -> self_type & {
@@ -591,6 +641,40 @@ inline bool operator >= (IPSrv const& lhs, IP6Srv const& rhs) {
 
 inline bool operator >= (IP6Srv const& lhs, IPSrv const& rhs) {
   return rhs.is_ip6() && lhs >= rhs.ip6();
+}
+
+// --- Cross address equality
+
+inline bool operator == (IPSrv const& lhs, IP4Addr const& rhs) {
+  return lhs.is_ip4() && lhs.ip4() == rhs;
+}
+
+inline bool operator == (IP4Addr const& lhs, IPSrv const& rhs) {
+  return rhs.is_ip4() && lhs == rhs.ip4();
+}
+
+inline bool operator != (IPSrv const& lhs, IP4Addr const& rhs) {
+  return ! lhs.is_ip4() || lhs.ip4() != rhs;
+}
+
+inline bool operator != (IP4Addr const& lhs, IPSrv const& rhs) {
+  return ! rhs.is_ip4() || lhs != rhs.ip4();
+}
+
+inline bool operator == (IPSrv const& lhs, IP6Addr const& rhs) {
+  return lhs.is_ip6() && lhs.ip6() == rhs;
+}
+
+inline bool operator == (IP6Addr const& lhs, IPSrv const& rhs) {
+  return rhs.is_ip6() && lhs == rhs.ip6();
+}
+
+inline bool operator != (IPSrv const& lhs, IP6Addr const& rhs) {
+  return ! lhs.is_ip6() || lhs.ip6() != rhs;
+}
+
+inline bool operator != (IP6Addr const& lhs, IPSrv const& rhs) {
+  return ! rhs.is_ip6() || lhs != rhs.ip6();
 }
 
 }} // namespace swoc::SWOC_VERSION_NS
