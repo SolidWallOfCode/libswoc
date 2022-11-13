@@ -107,6 +107,11 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(alpha[2] == 0x0D);
   REQUIRE(alpha[3] == 0x56);
   CHECK_FALSE(alpha.load("192.172.3."));
+  CHECK(alpha.load("192.0xAC.014.135"));
+  REQUIRE(alpha[0] == 192);
+  REQUIRE(alpha[1] == 172);
+  REQUIRE(alpha[2] == 12);
+  REQUIRE(alpha[3] == 135);
 
   CHECK(IP6Addr().load("ffee:1f2d:c587:24c3:9128:3349:3cee:143"));
 
@@ -349,7 +354,7 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   w.clear().print("{:: =a}", ep);
   REQUIRE(w.view() == "ffee:   0:   0:   0:24c3:3349:3cee: 143");
 
-  // Verify @c IPEndpoint will parse without the host_order_port.
+  // Verify @c IPEndpoint will parse without the port.
   REQUIRE(ep.parse(addr_8) == true);
   REQUIRE(ep.network_order_port() == 0);
   REQUIRE(ep.parse(addr_9) == true);
@@ -399,8 +404,8 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(ep.parse(addr_7) == true);
   w.clear().print("To {}", ep);
   REQUIRE(w.view() == "To 172.19.3.105:4951");
-  w.clear().print("To {0::a} on host_order_port {0::p}", ep); // no need to pass the argument twice.
-  REQUIRE(w.view() == "To 172.19.3.105 on host_order_port 4951");
+  w.clear().print("To {0::a} on port {0::p}", ep); // no need to pass the argument twice.
+  REQUIRE(w.view() == "To 172.19.3.105 on port 4951");
   w.clear().print("To {::=}", ep);
   REQUIRE(w.view() == "To 172.019.003.105:04951");
   w.clear().print("{::a}", ep);
@@ -1849,6 +1854,7 @@ TEST_CASE("IPSrv", "[libswoc][IPSrv]") {
   CHECK(s4_1.load("10.2:56"));
   CHECK_FALSE(s4_1.load("10.1.2.3.567899"));
   CHECK_FALSE(s4_1.load("10.1.2.3.56f"));
+  CHECK_FALSE(s4_1.load("10.1.2.56f"));
   CHECK(s4_1.load("10.1.2.3"));
   REQUIRE(s4_1.host_order_port() == 0);
 

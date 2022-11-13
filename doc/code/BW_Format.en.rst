@@ -501,14 +501,14 @@ Specific types
          The pointer address is printed as hexadecimal lower ('p') or upper ('P') case.
 
    The extension can be used to control which parts of the address are printed. These can be in any order,
-   the output is always address, host_order_port, family. The default is the equivalent of "ap". In addition, the
+   the output is always address, port, family. The default is the equivalent of "ap". In addition, the
    character '=' ("numeric align") can be used to internally right justify the elements.
 
    'a'
       The address.
 
    'p'
-      The host_order_port (host order).
+      The port (host order).
 
    'f'
       The IP address family.
@@ -521,7 +521,7 @@ Specific types
 
       void func(sockaddr const* addr) {
         bw.print("To {}", addr); // -> "To 172.19.3.105:4951"
-        bw.print("To {0::a} on host_order_port {0::p}", addr); // -> "To 172.19.3.105 on host_order_port 4951"
+        bw.print("To {0::a} on port {0::p}", addr); // -> "To 172.19.3.105 on port 4951"
         bw.print("To {::=}", addr); // -> "To 127.019.003.105:04951"
         bw.print("Using address family {::f}", addr);
         bw.print("{::a}",addr);      // -> "172.19.3.105"
