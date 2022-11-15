@@ -50,6 +50,14 @@ instance and provides an indication of whether the input was valid.
 Conversions to and from :code:`sockaddr` are provided. This is handier with :code:`IPAddr` as it
 will conform to the family of the address in the :code:`sockaddr`.
 
+IPSrv
+=====
+
+A container for an address and a port. There is no really good name for this therefore I used the
+DNS term for such an object. This consists of the usual triplet of classes, :swoc:`IP4Srv`, :swoc:`IP6Srv`,
+and :swoc:`IPSrv`. The first two are protocol family specific and the third holds an instance of
+either an :code:`IP4Srv` or an `IP6Srv`. The address and port can be manipulated separately.
+
 IPRange
 =======
 
@@ -186,7 +194,7 @@ Blending Bitsets
 
    Some details are omitted for brevity and because they aren't directly relevant. The full
    implementation, which is run as a unit test to verify its correctness,
-   `is available here <https://github.com/SolidWallOfCode/libswoc/blob/1.3.12/unit_tests/ex_ipspace_properties.cc>`__.
+   `is available here <https://github.com/SolidWallOfCode/libswoc/blob/1.4.0/unit_tests/ex_ipspace_properties.cc>`__.
    You can compile and step through the code to see how it works in more detail, or experiment
    with changing some of the example data.
 

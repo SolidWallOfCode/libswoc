@@ -66,7 +66,7 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
       , {{"[ffee::24c3:3349:3cee:0143]"}         , {"ffee::24c3:3349:3cee:0143"}           , {nullptr}, {nullptr}}
       , {{"[ffee::24c3:3349:3cee:0143]:80"}      , {"ffee::24c3:3349:3cee:0143"}           , {"80"}   , {nullptr}}
       , {{"[ffee::24c3:3349:3cee:0143]:8080x"}   , {"ffee::24c3:3349:3cee:0143"}           , {"8080"} , {"x"}}
-      ,};
+      };
 
   for (auto const&s : names) {
     std::string_view host, port, rest;
@@ -79,26 +79,76 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
 
   IP4Addr alpha{"172.96.12.134"};
   CHECK(alpha == IP4Addr{"172.96.12.134"});
-  CHECK(alpha == IP4Addr{IPAddr{"172.96.12.134"}});
   CHECK(alpha == IPAddr{IPEndpoint{"172.96.12.134:80"}});
   CHECK(alpha == IPAddr{IPEndpoint{"172.96.12.134"}});
+  REQUIRE(alpha[1] == 96);
+  REQUIRE(alpha[2] == 12);
+  REQUIRE(alpha[3] == 134);
+
+  // Alternate forms - inet_aton compabitility. Note in truncated forms, the last value is for
+  // all remaining octets, those are not zero filled as in IPv6.
+  CHECK(alpha.load("172.96.12"));
+  REQUIRE(alpha[0] == 172);
+  REQUIRE(alpha[2] == 0);
+  REQUIRE(alpha[3] == 12);
+  CHECK_FALSE(alpha.load("172.96.71117"));
+  CHECK(alpha.load("172.96.3136"));
+  REQUIRE(alpha[0] == 172);
+  REQUIRE(alpha[2] == 0xC);
+  REQUIRE(alpha[3] == 0x40);
+  CHECK(alpha.load("172.12586118"));
+  REQUIRE(alpha[0] == 172);
+  REQUIRE(alpha[1] == 192);
+  REQUIRE(alpha[2] == 12);
+  REQUIRE(alpha[3] == 134);
+  CHECK(alpha.load("172.0xD00D56"));
+  REQUIRE(alpha[0] == 172);
+  REQUIRE(alpha[1] == 0xD0);
+  REQUIRE(alpha[2] == 0x0D);
+  REQUIRE(alpha[3] == 0x56);
+  CHECK_FALSE(alpha.load("192.172.3."));
+  CHECK(alpha.load("192.0xAC.014.135"));
+  REQUIRE(alpha[0] == 192);
+  REQUIRE(alpha[1] == 172);
+  REQUIRE(alpha[2] == 12);
+  REQUIRE(alpha[3] == 135);
+
+  CHECK(IP6Addr().load("ffee:1f2d:c587:24c3:9128:3349:3cee:143"));
 
   IP4Addr lo{"127.0.0.1"};
-  REQUIRE(lo.is_loopback() == true);
+  CHECK(lo.is_loopback());
   REQUIRE(lo.is_any() == false);
+  REQUIRE(lo.is_multicast() == false);
+  REQUIRE(lo.is_link_local() == false);
+  REQUIRE(lo[0] == 0x7F);
+
   IP4Addr any{"0.0.0.0"};
   REQUIRE(any.is_loopback() == false);
   REQUIRE(any.is_any() == true);
+  REQUIRE(lo.is_link_local() == false);
+  REQUIRE(any == IP4Addr("0"));
+
   IP6Addr lo6{"::1"};
   REQUIRE(lo6.is_loopback() == true);
   REQUIRE(lo6.is_any() == false);
   REQUIRE(lo6.is_multicast() == false);
+  REQUIRE(lo.is_link_local() == false);
+
   IP6Addr any6{"::"};
   REQUIRE(any6.is_loopback() == false);
   REQUIRE(any6.is_any() == true);
-  IP6Addr multi6{"FF02::1"};
+  REQUIRE(lo.is_link_local() == false);
+
+  IP6Addr multi6{"FF02::19"};
   REQUIRE(multi6.is_loopback() == false);
   REQUIRE(multi6.is_multicast() == true);
+  REQUIRE(lo.is_link_local() == false);
+  REQUIRE(IPAddr(multi6).is_multicast() == true);
+
+  IP6Addr ll{"FE80::56"};
+  REQUIRE(ll.is_link_local() == true);
+  REQUIRE(ll.is_multicast() == false);
+  REQUIRE(IPAddr(ll).is_link_local() == true);
 
   // Do a bit of IPv6 testing.
   IP6Addr a6_null;
@@ -124,6 +174,13 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(0 == a6_2.cmp(a6_2));
   REQUIRE(1 == a6_1.cmp(a6_2));
 
+  REQUIRE(a6_1[0] == 0xFE);
+  REQUIRE(a6_1[1] == 0x80);
+  REQUIRE(a6_2[3] == 0xB5);
+  REQUIRE(a6_3[11] == 0xAE);
+  REQUIRE(a6_3[14] == 0x1C);
+  REQUIRE(a6_2[15] == 0x34);
+
   // Little bit of IP4 address arithmetic / comparison testing.
   IP4Addr a4_null;
   IP4Addr a4_1{"172.28.56.33"};
@@ -135,6 +192,8 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(a4_loopback == ip4_loopback);
   REQUIRE(a4_loopback.is_loopback() == true);
   REQUIRE(ip4_loopback.is_loopback() == true);
+  CHECK(a4_2.is_private());
+  CHECK_FALSE(a4_3.is_private());
 
   REQUIRE(a4_1 != a4_null);
   REQUIRE(a4_1 != a4_2);
@@ -195,7 +254,10 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
     }
   }
 
+  IPRange r;
   IP4Range r4;
+  IP6Range r6;
+
   REQUIRE(r4.load("10.242.129.0-10.242.129.127") == true);
   REQUIRE(r4.min() == IP4Addr("10.242.129.0"));
   REQUIRE(r4.max() == IP4Addr("10.242.129.127"));
@@ -207,6 +269,25 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(r4.max() == IP4Addr("2.2.2.2"));
   REQUIRE(r4.load("2.2.2.2.2") == false);
   REQUIRE(r4.load("2.2.2.2-fe80:20c::29ff:feae:5587::1c33") == false);
+  CHECK(r4.load("0xC0A83801"));
+  REQUIRE(r4 == IP4Addr("192.168.56.1"));
+
+  // A few special cases.
+  static constexpr TextView all_4_txt { "0/0" };
+  static constexpr TextView all_6_txt { "::/0" };
+
+  CHECK(r4.load(all_4_txt));
+  CHECK(r.load(all_4_txt));
+  REQUIRE(r.ip4() == r4);
+  REQUIRE(r4.min() == IP4Addr::MIN);
+  REQUIRE(r4.max() == IP4Addr::MAX);
+  CHECK(r.load(all_6_txt));
+  CHECK(r6.load(all_6_txt));
+  REQUIRE(r.ip6() == r6);
+  REQUIRE(r6.min() == IP6Addr::MIN);
+  REQUIRE(r6.max() == IP6Addr::MAX);
+  CHECK_FALSE(r6.load("2.2.2.2-fe80:20c::29ff:feae:5587::1c33"));
+  CHECK_FALSE(r.load("2.2.2.2-fe80:20c::29ff:feae:5587::1c33"));
 
   IPEndpoint ep;
   ep.set_to_any(AF_INET);
@@ -225,11 +306,12 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(a4.is_loopback() == true);
   REQUIRE(a4.is_any() == false);
 
-  CHECK_FALSE(IP6Addr("1337:0:0:ded:BEEF:0:0:0").is_mapped_ipv4());
-  CHECK_FALSE(IP6Addr("1337:0:0:ded:BEEF::").is_mapped_ipv4());
-  CHECK(IP6Addr("::FFFF:C0A8:381F").is_mapped_ipv4());
-  CHECK_FALSE(IP6Addr("FFFF:C0A8:381F::").is_mapped_ipv4());
-  CHECK_FALSE(IP6Addr("::C0A8:381F").is_mapped_ipv4());
+  CHECK_FALSE(IP6Addr("1337:0:0:ded:BEEF:0:0:0").is_mapped_ip4());
+  CHECK_FALSE(IP6Addr("1337:0:0:ded:BEEF::").is_mapped_ip4());
+  CHECK(IP6Addr("::FFFF:C0A8:381F").is_mapped_ip4());
+  CHECK_FALSE(IP6Addr("FFFF:C0A8:381F::").is_mapped_ip4());
+  CHECK_FALSE(IP6Addr("::C0A8:381F").is_mapped_ip4());
+  CHECK(IP6Addr(a4_2).is_mapped_ip4());
 };
 
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
@@ -408,8 +490,8 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
   CHECK(r_5.min() == (r_5.min() | mask));
   CHECK(r_5.min() != (r_5.min() & mask));
 
-  swoc::IP6Addr a_1{"2001:1f2d:c587:24c4::"};
-  CHECK(a_1 == (a_1 & swoc::IPMask{62}));
+  swoc::IP6Addr aa_1{"2001:1f2d:c587:24c4::"};
+  CHECK(aa_1 == (aa_1 & swoc::IPMask{62}));
 
   std::array<swoc::IP4Net, 7> r_4_nets =
       {{
@@ -627,17 +709,17 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
        }};
 
   auto r5_net = r_5_nets.begin();
-  for (auto const&[addr, mask] : r_5.networks()) {
+  for (auto const&[a, m] : r_5.networks()) {
     REQUIRE(r5_net != r_5_nets.end());
-    CHECK(*r5_net == swoc::IP6Net{addr, mask});
+    CHECK(*r5_net == swoc::IP6Net{a, m});
     ++r5_net;
   }
 
   // Try it again, using @c IPNet.
   r5_net = r_5_nets.begin();
-  for ( auto const&[addr, mask] : IPRange{r_5}.networks()) {
+  for ( auto const&[a, m] : IPRange{r_5}.networks()) {
     REQUIRE(r5_net != r_5_nets.end());
-    CHECK(*r5_net == swoc::IPNet{addr, mask});
+    CHECK(*r5_net == swoc::IPNet{a, m});
     ++r5_net;
   }
 }
@@ -1738,3 +1820,55 @@ TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
   }
 }
 
+TEST_CASE("IPSrv", "[libswoc][IPSrv]") {
+  using swoc::IP4Srv;
+  using swoc::IP6Srv;
+  using swoc::IPSrv;
+
+  IP4Srv s4;
+  IP6Srv s6;
+  IPSrv s;
+
+  IP4Addr a1 { "192.168.34.56" };
+  IP4Addr a2 { "10.9.8.7" };
+  IP6Addr aa1 { "ffee:1f2d:c587:24c3:9128:3349:3cee:143" };
+
+  s6.assign(aa1, 99);
+  REQUIRE(s6.addr() == aa1);
+  REQUIRE(s6.host_order_port() == 99);
+  REQUIRE(s6 == IP6Srv(aa1, 99));
+
+  // Test various constructors.
+  s4.assign(a2, 88);
+  IP4Addr tmp1{s4.addr()};
+  REQUIRE(s4 == tmp1);
+  IP4Addr tmp2 = s4;
+  REQUIRE(s4 == tmp2);
+  IP4Addr tmp3{s4};
+  REQUIRE(s4 == tmp3);
+  REQUIRE(s4.addr() == tmp3); // double check equality.
+
+  IP4Srv s4_1 { "10.9.8.7:56" };
+  REQUIRE(s4_1.host_order_port() == 56);
+  REQUIRE(s4_1 == a2);
+  CHECK(s4_1.load("10.2:56"));
+  CHECK_FALSE(s4_1.load("10.1.2.3.567899"));
+  CHECK_FALSE(s4_1.load("10.1.2.3.56f"));
+  CHECK_FALSE(s4_1.load("10.1.2.56f"));
+  CHECK(s4_1.load("10.1.2.3"));
+  REQUIRE(s4_1.host_order_port() == 0);
+
+  CHECK(s6.load("[ffee:1f2d:c587:24c3:9128:3349:3cee:143]:956"));
+  REQUIRE(s6 == aa1);
+  REQUIRE(s6.host_order_port() == 956);
+  CHECK(s6.load("ffee:1f2d:c587:24c3:9128:3349:3cee:143"));
+  REQUIRE(s6 == aa1);
+  REQUIRE(s6.host_order_port() == 0);
+
+  CHECK(s.load("[ffee:1f2d:c587:24c3:9128:3349:3cee:143]:956"));
+  REQUIRE(s == aa1);
+  REQUIRE(s.host_order_port() == 956);
+  CHECK(s.load("ffee:1f2d:c587:24c3:9128:3349:3cee:143"));
+  REQUIRE(s == aa1);
+  REQUIRE(s.host_order_port() == 0);
+}

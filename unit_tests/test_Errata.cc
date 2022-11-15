@@ -40,8 +40,6 @@ void test_Errata_init() {
   });
 }
 
-
-
 Errata
 Noteworthy(std::string_view text)
 {

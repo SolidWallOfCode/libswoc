@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 project(Lib-SWOC CXX)
-set(LIBSWOC_VERSION "1.3.12")
+set(LIBSWOC_VERSION "1.4.0")
 set(CMAKE_CXX_STANDARD 17)
 include(GNUInstallDirs)
 
@@ -22,6 +22,10 @@ set(HEADER_FILES
     include/swoc/IntrusiveDList.h
     include/swoc/IntrusiveHashMap.h
     include/swoc/swoc_ip.h
+    include/swoc/IPEndpoint.h
+    include/swoc/IPAddr.h
+    include/swoc/IPSrv.h
+    include/swoc/IPRange.h
     include/swoc/Lexicon.h
     include/swoc/MemArena.h
     include/swoc/MemSpan.h
