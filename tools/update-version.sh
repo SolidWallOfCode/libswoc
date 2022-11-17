@@ -17,5 +17,5 @@ find doc -name "*.en.rst" -exec sed -i {} --expr "s!/libswoc/blob/[0-9.]*/unit_t
 
 sed -i code/CMakeLists.txt --expr "s/\(LIBSWOC_VERSION *\)\"[^\"]*\"/\\1\"$1.$2.$3\"/"
 sed -i code/libswoc.part --expr "s/PartVersion(\"[0-9.]*\")/PartVersion(\"$1.$2.$3\")/"
-sed -i tools/ats-drop.sh --expr "s/-release (\"[0-9.]*\")/-release (\"$1.$2.$3\")/"
+sed -i tools/ats-drop.sh --expr "s/-release [0-9.]*/-release $1.$2.$3/"
 
