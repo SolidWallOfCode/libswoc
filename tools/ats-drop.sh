@@ -24,7 +24,6 @@ else
 fi
 
 cp code/src/*.cc ${TARGET_SRC_DIR}
-rm ${TARGET_SRC_DIR}/string_view_util.cc
 (cd ${ATS}; git add ${SRC_PATH}/*.cc)
 
 INC_PATH="${BASE_PATH}/swoc/include/swoc"
@@ -45,8 +44,6 @@ fi
 cp code/include/swoc/*.h ${TARGET_INC_DIR}
 cp code/include/swoc/ext/*.h ${TARGET_INC_DIR}/ext
 cp code/include/swoc/ext/HashFNV.h ${TARGET_INC_DIR}
-rm ${TARGET_INC_DIR}/string_view_util.h
-sed -i -e "s!swoc/string_view_util.h!tscpp/util/string_view_util.h!g" ${TARGET_INC_DIR}/*.h
 (cd ${ATS}; git add ${INC_PATH}/*.h ; git add ${INC_PATH}/ext/*.h)
 
 # Build the source
@@ -69,19 +66,17 @@ cat <<'TEXT' > ${ATS}/${BASE_PATH}/swoc/Makefile.am
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/tidy.mk
-
-noinst_LTLIBRARIES = libtsswoc.la
+lib_LTLIBRARIES = libtsswoc.la
 
 library_includedir=$(includedir)/swoc
 
-AM_CPPFLAGS += -I$(abs_top_srcdir)/include -I$(abs_top_srcdir)/lib/swoc/include
+AM_CPPFLAGS += @SWOC_INCLUDES@
 
-libtsswoc_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@
-
+libtsswoc_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -release 1.4.0
 libtsswoc_la_SOURCES = \
-	src/ArenaWriter.cc  src/bw_format.cc  src/bw_ip_format.cc  src/Errata.cc  src/MemArena.cc  src/RBTree.cc  src/swoc_file.cc  src/swoc_ip.cc  src/TextView.cc
+	src/ArenaWriter.cc  src/bw_format.cc  src/bw_ip_format.cc  src/Errata.cc  src/MemArena.cc  src/RBTree.cc  src/swoc_file.cc  src/swoc_ip.cc  src/TextView.cc src/string_view_util.cc
 
+if EXPORT_SWOC_HEADERS
 library_include_HEADERS = \
         include/swoc/ArenaWriter.h \
         include/swoc/BufferWriter.h \
@@ -94,22 +89,24 @@ library_include_HEADERS = \
         include/swoc/Errata.h \
         include/swoc/IntrusiveDList.h \
         include/swoc/IntrusiveHashMap.h \
+        include/swoc/IPAddr.h \
+        include/swoc/IPEndpoint.h \
+        include/swoc/IPRange.h \
+        include/swoc/IPSrv.h \
         include/swoc/Lexicon.h \
         include/swoc/MemArena.h \
         include/swoc/MemSpan.h \
         include/swoc/RBTree.h \
         include/swoc/Scalar.h \
         include/swoc/swoc_file.h \
-        include/swoc/IPEndpoint.h \
-        include/swoc/IPAddr.h \
-        include/swoc/IPSrv.h \
-        include/swoc/IPRange.h \
         include/swoc/swoc_ip.h \
         include/swoc/swoc_meta.h \
         include/swoc/swoc_version.h\
+        include/swoc/string_view_util.h \
         include/swoc/TextView.h \
         include/swoc/Vectray.h \
         include/swoc/HashFNV.h
+endif
 
 clean-local:
 
