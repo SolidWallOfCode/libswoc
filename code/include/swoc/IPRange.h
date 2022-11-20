@@ -80,6 +80,9 @@ public:
    */
   IPMask network_mask() const;
 
+  /// @return The range family.
+  sa_family_t family() const { return AF_INET; }
+
   class NetSource;
 
   /** Generate a list of networks covering @a this range.
@@ -215,6 +218,9 @@ public:
    * @see IPMask::is_valid
    */
   IPMask network_mask() const;
+
+  /// @return The range family.
+  sa_family_t family() const { return AF_INET6; }
 
   class NetSource;
 
@@ -372,6 +378,9 @@ public:
 
   /// @return The IPv6 range.
   IP6Range const & ip6() const { return _range._ip6; }
+
+  /// @return The range family.
+  sa_family_t family() const { return _family; }
 
   /** Compute the mask for @a this as a network.
    *
