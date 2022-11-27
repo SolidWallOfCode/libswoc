@@ -106,6 +106,8 @@ public:
 
 /** Network generator class.
  * This generates networks from a range and acts as both a forward iterator and a container.
+ *
+ * @see IP4Range::networks
  */
 class IP4Range::NetSource {
   using self_type = NetSource; ///< Self reference type.
@@ -245,6 +247,8 @@ public:
 
 /** Network generator class.
  * This generates networks from a range and acts as both a forward iterator and a container.
+ *
+ * @see IP6Range::networks
  */
 class IP6Range::NetSource {
   using self_type = NetSource; ///< Self reference type.
@@ -431,6 +435,8 @@ protected:
 
 /** Network generator class.
  * This generates networks from a range and acts as both a forward iterator and a container.
+ *
+ * @see IPRange::networks
  */
 class IPRange::NetSource {
   using self_type = NetSource; ///< Self reference type.
