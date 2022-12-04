@@ -37,6 +37,12 @@ class MemArena
 
 public:
   static constexpr size_t DEFAULT_ALIGNMENT{1}; ///< Default memory alignment.
+  /// Correct type for a unique pointer to an instance.
+  /// Initialzation is
+  /// @code
+  ///     MemArena::unique_ptr arena(nullptr, std::destroy_at<MemArena>);
+  /// @endcode
+  using unique_ptr = std::unique_ptr<self_type, void (*)(self_type *)>;
 
   /// Simple internal arena block of memory. Maintains the underlying memory.
   struct Block {

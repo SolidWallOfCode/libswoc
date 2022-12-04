@@ -338,6 +338,35 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
     }
     // Really, at this point just make sure there's no memory corruption on destruction.
   }
+
+  { // as previouis but delay construction. Use destroy_at instead of a lambda.
+    std::unique_ptr<MemArena, void (*)(MemArena*)> arena(nullptr, std::destroy_at<MemArena>);
+    arena.reset(MemArena::construct_self_contained());
+    static constexpr unsigned MAX = 512;
+    std::uniform_int_distribution<unsigned> length_gen{6, MAX};
+    char buffer[MAX];
+    for (unsigned i = 0; i < 50; ++i) {
+      auto n = length_gen(randu);
+      for (unsigned k = 0; k < n; ++k) {
+        buffer[k] = CHARS[char_gen(randu)];
+      }
+      localize(*arena, {buffer, n});
+    }
+    // Really, at this point just make sure there's no memory corruption on destruction.
+  }
+
+  { // as previous but delay construction. Use destroy_at instead of a lambda.
+    MemArena::unique_ptr arena(nullptr, std::destroy_at<MemArena>);
+    arena.reset(MemArena::construct_self_contained());
+  }
+
+  { // And what if the arena is never constructed?
+    struct Thing {
+      int x;
+      std::unique_ptr<MemArena, void (*)(MemArena *)> arena{nullptr, std::destroy_at<MemArena>};
+    } thing;
+    thing.x = 56; // force access to instance.
+  }
 }
 
 // --- temporary allocation
