@@ -505,8 +505,8 @@ protected:
 
   /// Implementation instance.
   /// @internal Because this is used with a self-containing @c MemArena standard smart pointers do not
-  /// work correctly. Instead the @c reset method must be used to release the memory.
-  /// @see reset
+  /// work correctly. Instead the @c clear method must be used to release the memory.
+  /// @see clear
   Data *_data = nullptr;
 
   /// Force data existence.

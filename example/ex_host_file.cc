@@ -62,16 +62,14 @@ int main(int, char *[]) {
       continue;
     }
     auto addr_token = line.take_prefix_if(&isspace);
-    IPAddr addr;
-    if (! addr.load(addr_token)) {
-      continue; // invalid address.
-    }
-    while (line.ltrim_if(&isspace)) {
-      auto host = line.take_prefix_if(&isspace);
-      if (addr.is_ip4()) {
-        hosts_ipv4.define(IP4Addr(addr), host);
-      } else if (addr.is_ip6()) {
-        hosts_ipv6.define(IP6Addr(addr), host);
+    if (IPAddr addr ; addr.load(addr_token)) {
+      while (line.ltrim_if(&isspace)) {
+        auto host = line.take_prefix_if(&isspace);
+        if (addr.is_ip4()) {
+          hosts_ipv4.define(addr.ip4(), host);
+        } else if (addr.is_ip6()) {
+          hosts_ipv6.define(addr.ip6(), host);
+        }
       }
     }
   }

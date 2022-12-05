@@ -224,6 +224,22 @@ TEST_CASE("Errata example", "[libswoc][Errata]") {
   REQUIRE(w.view().find("enoent") != swoc::TextView::npos);
 }
 
+TEST_CASE("Errata API", "[libswoc][Errata]") {
+  // Check that if an int is expected from a function, it can be changed to
+  // @c Rv<int> without change at the call site.
+  int size = -7;
+  auto f = [&] () -> Rv<int> {
+    if (size > 0) return size;
+    return { -1, Errata(ERRATA_ERROR, "No size, doofus!")};
+  };
+
+  int r1 = f();
+  REQUIRE(r1 == -1);
+  size = 10;
+  int r2 = f();
+  REQUIRE(r2 == 10);
+}
+
 TEST_CASE("Errata sink", "[libswoc][Errata]") {
   auto & s = ErrataSinkText;
   {
