@@ -1079,7 +1079,7 @@ TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
   auto rack_blender = [] (Data &data, int r) { data._rack = r; return true; };
   auto code_blender = [] (Data &data, int c) { data._code = c; return true; };
   swoc::IPSpace<Data> space;
-  // This is overkill, but no reason to not slam the code a lot.
+  // This is overkill, but no reason to not slam the code.
   // For the original bug that triggered this testing, only the first line is actually necessary
   // to cause the problem.
   TextView content = R"(10.215.88.12-10.215.88.12,pdb,9
@@ -1681,6 +1681,8 @@ TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
       REQUIRE(br2.max() < br1.min()); // This is supposed to be an invariant! Make sure.
     }
   }
+
+  // Do some range intersection checks.
 }
 
 TEST_CASE("IPSpace skew overlap blend", "[libswoc][ipspace][blend][skew]") {
@@ -1817,6 +1819,84 @@ TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
     auto &&[r, p] = *(space.find(IPAddr{"192.168.55.255"}));
     REQUIRE(false == r.empty());
     REQUIRE(p == 0);
+  }
+}
+
+TEST_CASE("IPSpace intersect", "[libswoc][ipspace][intersect]") {
+  std::string dbg;
+  using PAYLOAD = unsigned;
+  using Space   = swoc::IPSpace<PAYLOAD>;
+
+  std::array<std::tuple<TextView, unsigned>, 7> ranges{{
+    {"172.28.56.12-172.28.56.99"_tv, 1},
+    {"10.10.35.0/24"_tv, 2},
+    {"192.168.56.0/25"_tv, 3},
+    {"10.12.148.0/23"_tv, 6},
+    {"10.14.56.0/24"_tv, 9},
+    {"192.168.57.0/25"_tv, 7},
+    {"192.168.58.0/25"_tv, 5}
+  }};
+
+  Space space;
+
+  for (auto &&[text, v] : ranges) {
+    space.fill(IPRange{text}, v);
+  }
+
+  {
+    IPRange r{"172.0.0.0/16"};
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(begin == end);
+  }
+  {
+    IPRange r{"172.0.0.0/8"};
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 1);
+  }
+  {
+    IPRange r{"10.0.0.0/8"};
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 3);
+  }
+  {
+    IPRange r{"10.10.35.17-10.12.148.7"};
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 2);
+  }
+  {
+    IPRange r{"10.10.35.0-10.14.56.0"};
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 3);
+  }
+  {
+    IPRange r{"10.13.0.0-10.15.148.7"}; // past the end
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 1);
+  }
+  {
+    IPRange r{"10.13.0.0-10.14.55.127"}; // inside a gap.
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(begin == end);
+  }
+  {
+    IPRange r{"192.168.56.127-192.168.67.35"}; // include last range.
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin,end) == 3);
+  }
+  {
+    IPRange r{"192.168.57.128-192.168.67.35"}; // only last range.
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin,end) == 1);
+  }
+  {
+    IPRange r{"192.168.57.128-192.168.58.10"}; // only last range.
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin,end) == 1);
+  }
+  {
+    IPRange r{"192.168.50.0-192.168.57.35"}; // include last range.
+    auto && [ begin, end ] = space.intersection(r);
+    REQUIRE(std::distance(begin,end) == 2);
   }
 }
 

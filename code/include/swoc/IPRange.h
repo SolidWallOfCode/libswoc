@@ -552,7 +552,7 @@ public:
   bool operator!=(self_type const &that) const;
 
 protected:
-  IP4Addr _addr; ///< Network address (also lower_bound).
+  IP4Addr _addr; ///< Network address (also lower_node).
   IPMask _mask;  ///< Network mask.
 };
 
@@ -618,7 +618,7 @@ public:
   bool operator!=(self_type const &that) const;
 
 protected:
-  IP6Addr _addr; ///< Network address (also lower_bound).
+  IP6Addr _addr; ///< Network address (also lower_node).
   IPMask _mask;  ///< Network mask.
 };
 
@@ -845,7 +845,7 @@ public:
     const_iterator() = default;
 
     /// Copy constructor.
-    const_iterator(self_type const &that);
+    const_iterator(self_type const &that) = default;
 
     /// Assignment.
     self_type &operator=(self_type const &that);
@@ -932,7 +932,7 @@ public:
     iterator() = default;
 
     /// Copy constructor.
-    iterator(self_type const &that);
+    iterator(self_type const &that) = default;
 
     /// Assignment.
     self_type &operator=(self_type const &that);
@@ -1053,12 +1053,52 @@ public:
   const_iterator begin(sa_family_t family) const;
 
   /// @return Iterator past the last address of @a family.
-  const_iterator
-  end(sa_family_t family) const;
+  const_iterator end(sa_family_t family) const;
+
+  /** Sequnce of ranges that intersect @a r.
+   *
+   * @param r Search range.
+   * @return Iterator pair covering ranges that intersect @a r.
+   */
+  std::pair<iterator, iterator> intersection(IP4Range const& r) {
+    auto && [ begin, end ] = _ip4.intersection(r);
+    return { this->iterator_at(begin), this->iterator_at(end) };
+  }
+
+  /** Sequnce of ranges that intersect @a r.
+   *
+   * @param r Search range.
+   * @return Iterator pair covering ranges that intersect @a r.
+   */
+  std::pair<iterator, iterator> intersection(IP6Range const& r) {
+    auto && [ begin, end ] = _ip6.intersection(r);
+    return { this->iterator_at(begin), this->iterator_at(end) };
+  }
+
+  /** Sequnce of ranges that intersect @a r.
+   *
+   * @param r Search range.
+   * @return Iterator pair covering ranges that intersect @a r.
+   */
+  std::pair<iterator, iterator> intersection(IPRange const& r) {
+    if (r.is_ip4()) {
+      return this->intersection(r.ip4());
+    } else if (r.is_ip6()) {
+      return this->intersection(r.ip6());
+    }
+    return { this->end(), this->end() };
+  }
 
 protected:
   IP4Space _ip4; ///< Sub-space containing IPv4 ranges.
   IP6Space _ip6; ///< sub-space containing IPv6 ranges.
+
+  iterator iterator_at(typename IP4Space::iterator const& spot) {
+    return iterator(spot, _ip6.begin());
+  }
+  iterator iterator_at(typename IP6Space::iterator const& spot) {
+    return iterator(_ip4.end(), spot);
+  }
 };
 
 template <typename PAYLOAD>
@@ -1069,10 +1109,6 @@ IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator con
   } else if (_iter_6.has_next()) {
     new (&_value) value_type{_iter_6->range(), _iter_6->payload()};
   }
-}
-
-template <typename PAYLOAD> IPSpace<PAYLOAD>::const_iterator::const_iterator(self_type const &that) {
-  *this = that;
 }
 
 template <typename PAYLOAD>
@@ -1170,10 +1206,6 @@ template <typename PAYLOAD>
 bool
 IPSpace<PAYLOAD>::const_iterator::operator!=(self_type const &that) const {
   return _iter_4 != that._iter_4 || _iter_6 != that._iter_6;
-}
-
-template <typename PAYLOAD> IPSpace<PAYLOAD>::iterator::iterator(self_type const &that) {
-  *this = that;
 }
 
 template <typename PAYLOAD>
