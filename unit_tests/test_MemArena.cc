@@ -339,8 +339,8 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
     // Really, at this point just make sure there's no memory corruption on destruction.
   }
 
-  { // as previouis but delay construction. Use destroy_at instead of a lambda.
-    std::unique_ptr<MemArena, void (*)(MemArena*)> arena(nullptr, std::destroy_at<MemArena>);
+  { // as previouis but delay construction. Use internal functor instead of a lambda.
+    std::unique_ptr<MemArena, void (*)(MemArena*)> arena(nullptr, MemArena::destroyer);
     arena.reset(MemArena::construct_self_contained());
     static constexpr unsigned MAX = 512;
     std::uniform_int_distribution<unsigned> length_gen{6, MAX};
@@ -356,7 +356,7 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
   }
 
   { // as previous but delay construction. Use destroy_at instead of a lambda.
-    MemArena::unique_ptr arena(nullptr, std::destroy_at<MemArena>);
+    MemArena::unique_ptr arena(nullptr, MemArena::destroyer);
     arena.reset(MemArena::construct_self_contained());
   }
 
