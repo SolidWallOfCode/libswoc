@@ -309,21 +309,21 @@ public:
  *
  * - No subscript operator.
  * - No array initialization.
- * - All other @c MemSpan types implicitly convert to this type.
+ * - Other non-const @c MemSpan types implicitly convert to this type.
  *
  * @internal I tried to be clever about the base template but there were too many differences
  * One major issue was the array initialization did not work at all if the @c void case didn't
  * exclude that. Once separate there are a number of useful tweaks available.
  */
-template <> class MemSpan<void> {
+template <> class MemSpan<void const> {
   using self_type = MemSpan; ///< Self reference type.
   template <typename U> friend class MemSpan;
 
 public:
-  using value_type = void; /// Export base type.
+  using value_type = void const; /// Export base type.
 
 protected:
-  value_type *_ptr = nullptr; ///< Pointer to base of memory chunk.
+  void *_ptr = nullptr; ///< Pointer to base of memory chunk.
   size_t _size     = 0;       ///< Number of bytes in the chunk.
 
 public:
@@ -340,7 +340,7 @@ public:
    *
    * @tparam U Type for source span.
    * @param that Source span.
-   *
+   *`
    * This enables any @c MemSpan to be automatically converted to a void span, just as any pointer
    * can convert to a void pointer.
    */
@@ -374,7 +374,7 @@ public:
    */
   bool operator==(self_type const &that) const;
 
-  /** Identical.
+  /** Equivalent.
 
       Check if the spans refer to the same span of memory.
 
@@ -388,17 +388,13 @@ public:
    */
   bool operator!=(self_type const &that) const;
 
-  /// Assignment - the span is copied, not the content.
-  /// Any type of @c MemSpan can be assigned to @c MemSpan<void>.
-  template <typename U> self_type &operator=(MemSpan<U> const &that);
+  /// Check for non-empty span.
+  /// @return @c true if the span contains bytes.
+  explicit operator bool() const;
 
   /// Check for empty span.
   /// @return @c true if the span is empty (no contents), @c false otherwise.
   bool operator!() const;
-
-  /// Check for non-empty span.
-  /// @return @c true if the span contains bytes.
-  explicit operator bool() const;
 
   /// Check for empty span (no content).
   /// @see operator bool
@@ -413,12 +409,9 @@ public:
   /// Pointer to just after memory in the span.
   value_type *data_end() const;
 
-  /** Create a new span for a different type @a V on the same memory.
-   *
-   * @tparam V Type for the created span.
-   * @return A @c MemSpan which contains the same memory as instances of @a V.
-   */
-  template <typename U> MemSpan<U> rebind() const;
+  /// Assignment - the span is copied, not the content.
+  /// Any type of @c MemSpan can be assigned to @c MemSpan<void>.
+  template <typename U> self_type &operator=(MemSpan<U> const &that);
 
   /** Update the span.
    *
@@ -436,11 +429,18 @@ public:
    */
   self_type &assign(value_type *first, value_type const *last);
 
+  /** Create a new span for a different type @a V on the same memory.
+   *
+   * @tparam V Type for the created span.
+   * @return A @c MemSpan which contains the same memory as instances of @a V.
+   */
+  template <typename U> MemSpan<U> rebind() const;
+
   /// Clear the span (become an empty span).
   self_type &clear();
 
   /// @return @c true if the byte at @a *ptr is in the span.
-  bool contains(value_type const *ptr) const;
+  bool contains(void const *ptr) const;
 
   /** Get the initial segment of @a n bytes.
 
@@ -453,7 +453,6 @@ public:
    * @param count The number of elements to remove.
    * @return @c *this
    */
-
   self_type &remove_prefix(size_t count);
 
   /** Get the trailing segment of @a n bytes.
@@ -509,6 +508,146 @@ public:
   std::string_view view() const;
 };
 
+template <> class MemSpan<void> : public MemSpan<void const> {
+  using self_type = MemSpan;
+  using super_type = MemSpan<void const>;
+  template <typename U> friend class MemSpan;
+public:
+  using value_type = void;
+
+  /// Default constructor (empty buffer).
+  constexpr MemSpan() = default;
+
+  /// Copy constructor.
+  constexpr MemSpan(self_type const &that) = default;
+
+  /// Copy assignment
+  constexpr self_type & operator = (self_type const& that) = default;
+
+  /** Cross type copy constructor.
+   *
+   * @tparam U Type for source span.
+   * @param that Source span.
+   *`
+   * This enables any @c MemSpan to be automatically converted to a void span, just as any pointer
+   * can convert to a void pointer.
+   */
+  template <typename U> constexpr MemSpan(MemSpan<U> const &that);
+
+  /** Construct from a pointer @a start and a size @a n bytes.
+   *
+   * @param start Start of the span.
+   * @param n # of bytes in the span.
+   */
+  constexpr MemSpan(value_type *start, size_t n);
+
+  /** Construct from a half open range of [start, last).
+   *
+   * @param start Start of the range.
+   * @param last Past end of range.
+   */
+  MemSpan(value_type *start, value_type *last);
+
+  /** Construct from nullptr.
+      This implicitly makes the length 0.
+  */
+  constexpr MemSpan(std::nullptr_t);
+
+  /// Pointer to memory in the span.
+  constexpr value_type *data() const;
+
+  /// Pointer to just after memory in the span.
+  value_type *data_end() const;
+
+  /// Assignment - the span is copied, not the content.
+  /// Any type of @c MemSpan can be assigned to @c MemSpan<void>.
+  template <typename U> self_type &operator=(MemSpan<U> const &that);
+
+  /** Update the span.
+   *
+   * @param ptr Start of span memory.
+   * @param n Number of elements in the span.
+   * @return @a this
+   */
+  self_type &assign(value_type *ptr, size_t n);
+
+  /** Update the span.
+   *
+   * @param first First element in the span.
+   * @param last One past the last element in the span.
+   * @return @a this
+   */
+  self_type &assign(value_type *first, value_type const *last);
+
+   /// @return An instance that contains the leading @a n bytes of @a this.
+  self_type prefix(size_t n) const;
+
+  /** Shrink the span by removing @a n leading bytes.
+   *
+   * @param count The number of elements to remove.
+   * @return @c *this
+   */
+  self_type &remove_prefix(size_t count);
+
+  /** Get the trailing segment of @a n bytes.
+   *
+   * @param n Number of bytes to retrieve.
+   * @return An instance that contains the trailing @a count elements of @a this.
+   */
+  self_type suffix(size_t n) const;
+
+  /** Shrink the span by removing @a n bytes.
+   *
+   * @param n Number of bytes to remove.
+   * @return @c *this
+   */
+  self_type &remove_suffix(size_t n);
+
+  /** Return a sub span of @a this span.
+   *
+   * @param offset Offset (index) of first element.
+   * @param count Number of elements.
+   * @return The span starting at @a offset for @a count elements in @a this.
+   *
+   * The result is clipped by @a this - if @a offset is out of range an empty span is returned. Otherwise @c count is clipped by the
+   * number of elements available in @a this. In effect the intersection of the span described by ( @a offset , @a count ) and @a
+   * this span is returned, which may be the empty span.
+   */
+  constexpr self_type subspan(size_t offset, size_t count) const;
+
+  /** Align span for a type.
+   *
+   * @tparam T Alignment type.
+   * @return A suffix of the span suitably aligned for @a T.
+   *
+   * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
+   * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty).
+   */
+  template <typename T> self_type align() const;
+
+  /** Force memory alignment.
+   *
+   * @param n Alignment size (must be power of 2).
+   * @return An aligned span.
+   *
+   * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
+   * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty).
+   */
+  self_type align(size_t n) const;
+
+  /** Create a new span for a different type @a V on the same memory.
+   *
+   * @tparam V Type for the created span.
+   * @return A @c MemSpan which contains the same memory as instances of @a V.
+   */
+  template <typename U> MemSpan<U> rebind() const;
+
+  /// Clear the span (become an empty span).
+  self_type &clear();
+
+};
+
+
 // -- Implementation --
 
 namespace detail {
@@ -528,6 +667,12 @@ inline void *
 ptr_add(void *ptr, size_t count) {
   return static_cast<char *>(ptr) + count;
 }
+
+inline void const *
+ptr_add(void const * ptr, size_t count) {
+  return static_cast<char const *>(ptr) + count;
+}
+
 /// @endcond
 
 /** Meta Function to check the type compatibility of two spans..
@@ -578,6 +723,17 @@ template <typename T> struct is_span_compatible<T, void> {
 template <typename T>
 size_t
 is_span_compatible<T, void>::count(size_t size) {
+  return size;
+}
+
+template <typename T> struct is_span_compatible<T, void const> {
+  static constexpr bool value = true;
+  static size_t count(size_t size);
+};
+
+template <typename T>
+size_t
+is_span_compatible<T, void const>::count(size_t size) {
   return size;
 }
 /// @endcond
@@ -888,69 +1044,117 @@ MemSpan<T>::view() const {
   return {static_cast<const char *>(_ptr), this->size()};
 }
 
-// --- void specialization ---
+// --- void specializations ---
 
-template <typename U> constexpr MemSpan<void>::MemSpan(MemSpan<U> const &that) : _ptr(that._ptr), _size(that.size()) {}
+template <typename U> constexpr MemSpan<void const>::MemSpan(MemSpan<U> const &that) : _ptr(that._ptr), _size(that.size()) {}
+template <typename U> constexpr MemSpan<void>::MemSpan(MemSpan<U> const &that) : super_type(that) { static_assert(!std::is_const_v<U>, "MemSpan<void> does not support constant memory."); }
 
-inline constexpr MemSpan<void>::MemSpan(value_type *ptr, size_t n) : _ptr{ptr}, _size{n} {}
+inline constexpr MemSpan<void const>::MemSpan(value_type *ptr, size_t n) : _ptr{const_cast<void*>(ptr)}, _size{n} {}
+inline constexpr MemSpan<void>::MemSpan(value_type *ptr, size_t n) : super_type(ptr, n) {}
 
-inline MemSpan<void>::MemSpan(value_type *first, value_type *last) : _ptr{first}, _size{detail::ptr_distance(first, last)} {}
+inline MemSpan<void const>::MemSpan(value_type *first, value_type *last) : _ptr{const_cast<void*>(first)}, _size{detail::ptr_distance(first, last)} {}
+inline MemSpan<void >::MemSpan(value_type *first, value_type *last) : super_type(first, last) {}
 
+inline constexpr MemSpan<void const>::MemSpan(std::nullptr_t) {}
 inline constexpr MemSpan<void>::MemSpan(std::nullptr_t) {}
 
-inline MemSpan<void> &
-MemSpan<void>::assign(value_type *ptr, size_t n) {
-  _ptr  = ptr;
+inline bool
+MemSpan<void const>::is_same(self_type const &that) const {
+  return _ptr == that._ptr && _size == that._size;
+}
+
+inline bool
+MemSpan<void const>::operator==(self_type const &that) const {
+  return _size == that._size && (_ptr == that._ptr || 0 == memcmp(_ptr, that._ptr, _size));
+}
+
+inline bool
+MemSpan<void const>::operator!=(self_type const &that) const {
+  return !(*this == that);
+}
+
+inline MemSpan<void const>::operator bool() const {
+  return _size != 0;
+}
+
+inline bool
+MemSpan<void const>::operator!() const {
+  return _size == 0;
+}
+
+inline bool
+MemSpan<void const>::empty() const {
+  return _size == 0;
+}
+
+template <typename U>
+auto
+MemSpan<void const>::operator=(MemSpan<U> const &that) -> self_type & {
+  _ptr  = that._ptr;
+  _size = that.size();
+  return *this;
+}
+
+template <typename U>
+auto
+MemSpan<void>::operator=(MemSpan<U> const &that) -> self_type & {
+  static_assert(! std::is_const_v<U>, "Cannot assign constant pointer to MemSpan<void>");
+  this->super_type::operator=(that);
+  return *this;
+}
+
+inline auto
+MemSpan<void const>::assign(value_type *ptr, size_t n) -> self_type & {
+  _ptr  = const_cast<void*>(ptr);
   _size = n;
   return *this;
 }
 
-inline MemSpan<void> &
-MemSpan<void>::assign(value_type *first, value_type const *last) {
-  _ptr  = first;
+inline auto
+MemSpan<void>::assign(value_type * ptr, size_t n) -> self_type & {
+  super_type::assign(ptr, n);
+  return *this;
+}
+
+inline auto
+MemSpan<void const>::assign(value_type *first, value_type const *last) -> self_type & {
+  _ptr  = const_cast<void*>(first);
   _size = detail::ptr_distance(first, last);
   return *this;
 }
 
-inline MemSpan<void> &
-MemSpan<void>::clear() {
+inline auto
+MemSpan<void>::assign(value_type *first, value_type const *last) -> self_type & {
+  super_type::assign(first, last);
+  return *this;
+}
+
+inline auto
+MemSpan<void const>::clear() -> self_type & {
   _ptr  = nullptr;
   _size = 0;
   return *this;
 }
 
-inline bool
-MemSpan<void>::is_same(self_type const &that) const {
-  return _ptr == that._ptr && _size == that._size;
+inline auto
+MemSpan<void>::clear() -> self_type & {
+  super_type::clear();
+  return *this;
 }
 
-inline bool
-MemSpan<void>::operator==(self_type const &that) const {
-  return _size == that._size && (_ptr == that._ptr || 0 == memcmp(_ptr, that._ptr, _size));
-}
-
-inline bool
-MemSpan<void>::operator!=(self_type const &that) const {
-  return !(*this == that);
-}
-
-inline bool
-MemSpan<void>::operator!() const {
-  return _size == 0;
-}
-
-inline MemSpan<void>::operator bool() const {
-  return _size != 0;
-}
-
-inline bool
-MemSpan<void>::empty() const {
-  return _size == 0;
+inline constexpr void const *
+MemSpan<void const>::data() const {
+  return _ptr;
 }
 
 inline constexpr void *
 MemSpan<void>::data() const {
   return _ptr;
+}
+
+inline void const *
+MemSpan<void const>::data_end() const {
+  return detail::ptr_add(_ptr, _size);
 }
 
 inline void *
@@ -959,79 +1163,119 @@ MemSpan<void>::data_end() const {
 }
 
 inline size_t
-MemSpan<void>::size() const {
+MemSpan<void const>::size() const {
   return _size;
 }
 
-template <typename U>
-auto
-MemSpan<void>::operator=(MemSpan<U> const &that) -> self_type & {
-  _ptr  = that._ptr;
-  _size = that.size();
-  return *this;
-}
-
-inline constexpr MemSpan<void>
-MemSpan<void>::subspan(size_t offset, size_t count) const {
-  return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(count, _size - offset)} : self_type{};
-}
-
 inline bool
-MemSpan<void>::contains(value_type const *ptr) const {
+MemSpan<void const>::contains(value_type const *ptr) const {
   return _ptr <= ptr && ptr < this->data_end();
 }
 
-inline MemSpan<void>
-MemSpan<void>::prefix(size_t n) const {
+inline auto
+MemSpan<void const>::prefix(size_t n) const -> self_type {
   return {_ptr, std::min(n, _size)};
 }
 
-inline MemSpan<void> &
-MemSpan<void>::remove_prefix(size_t n) {
+inline auto
+MemSpan<void>::prefix(size_t n) const -> self_type {
+  return {_ptr, std::min(n, _size)};
+}
+
+inline auto
+MemSpan<void const>::remove_prefix(size_t n) -> self_type & {
   n = std::min(_size, n);
   _size -= n;
-  _ptr = static_cast<char *>(_ptr) + n;
+  _ptr = detail::ptr_add(_ptr, n);
   return *this;
 }
 
-inline MemSpan<void>
-MemSpan<void>::suffix(size_t count) const {
-  count = std::min(count, _size);
-  return {static_cast<char *>(this->data_end()) - count, count};
+inline auto
+MemSpan<void>::remove_prefix(size_t n) -> self_type & {
+  super_type::remove_prefix(n);
+  return *this;
 }
 
-inline MemSpan<void> &
-MemSpan<void>::remove_suffix(size_t count) {
+inline auto
+MemSpan<void const>::suffix(size_t count) const -> self_type {
+  count = std::min(count, _size);
+  return {detail::ptr_add(this->data_end(), -count), count};
+}
+
+inline auto
+MemSpan<void>::suffix(size_t count) const -> self_type {
+  count = std::min(count, _size);
+  return {detail::ptr_add(this->data_end(), -count), count};
+}
+
+inline auto
+MemSpan<void const>::remove_suffix(size_t count) -> self_type & {
   _size -= std::min(count, _size);
   return *this;
 }
 
-template <typename T>
-MemSpan<void>::self_type
-MemSpan<void>::align() const { return this->align(alignof(T)); }
+inline auto
+MemSpan<void>::remove_suffix(size_t count) -> self_type & {
+  this->super_type::remove_suffix(count);
+  return *this;
+}
 
-inline MemSpan<void>::self_type
-MemSpan<void>::align(size_t n) const {
+inline constexpr auto
+MemSpan<void const>::subspan(size_t offset, size_t count) const -> self_type {
+  return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(count, _size - offset)} : self_type{};
+}
+
+inline constexpr auto
+MemSpan<void>::subspan(size_t offset, size_t count) const -> self_type {
+  return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(count, _size - offset)} : self_type{};
+}
+
+template <typename T> auto
+MemSpan<void const>::align() const -> self_type { return this->align(alignof(T)); }
+
+template <typename T> auto
+MemSpan<void>::align() const -> self_type { return this->align(alignof(T)); }
+
+inline auto
+MemSpan<void const>::align(size_t n) const -> self_type {
   auto p = uintptr_t(_ptr);
   auto padding = p & (n - 1);
   return { reinterpret_cast<void*>(p + padding), _size - std::min<uintptr_t>(_size, padding) };
 }
 
-template <typename U>
-MemSpan<U>
+inline auto
+MemSpan<void>::align(size_t n) const -> self_type {
+  auto p = uintptr_t(_ptr);
+  auto padding = p & (n - 1);
+  return { reinterpret_cast<void*>(p + padding), _size - std::min<uintptr_t>(_size, padding) };
+}
+
+template < typename U > MemSpan<U>
+MemSpan<void const>::rebind() const {
+  static_assert(std::is_const_v<U>, "Cannot rebind MemSpan<const void> to non-const type.");
+  return {static_cast<U *>(_ptr), detail::is_span_compatible<value_type, U>::count(_size)};
+}
+
+template < typename U > MemSpan<U>
 MemSpan<void>::rebind() const {
-  return {static_cast<U *>(_ptr), detail::is_span_compatible<void, U>::count(_size)};
+  return {static_cast<U *>(_ptr), detail::is_span_compatible<value_type, U>::count(_size)};
 }
 
 // Specialize so that @c void -> @c void rebinding compiles and works as expected.
 template <>
-inline MemSpan<void>
-MemSpan<void>::rebind() const {
+inline auto
+MemSpan<void const>::rebind() const -> self_type {
+  return *this;
+}
+
+template <>
+inline auto
+MemSpan<void>::rebind() const -> self_type {
   return *this;
 }
 
 inline std::string_view
-MemSpan<void>::view() const {
+MemSpan<void const>::view() const {
   return {static_cast<char const *>(_ptr), _size};
 }
 

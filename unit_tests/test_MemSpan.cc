@@ -5,11 +5,15 @@
 
 */
 
-#include <iostream>
-#include "swoc/MemSpan.h"
 #include "catch.hpp"
 
+#include <iostream>
+
+#include "swoc/MemSpan.h"
+#include "swoc/TextView.h"
+
 using swoc::MemSpan;
+using swoc::TextView;
 
 TEST_CASE("MemSpan", "[libswoc][MemSpan]")
 {
@@ -81,9 +85,17 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
 
 TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
 {
+  TextView tv = "bike shed";
   char buff[1024];
 
   MemSpan<void> span(buff, sizeof(buff));
+  MemSpan<void const> cspan(span);
+  MemSpan<void const> ccspan(tv.data(), tv.size());
+  CHECK_FALSE(cspan.is_same(ccspan));
+  ccspan = span;
+
+//  auto bad_span = ccspan.rebind<uint8_t>(); // should not compile.
+
   auto left = span.prefix(512);
   REQUIRE(left.size() == 512);
   REQUIRE(span.size() == 1024);
