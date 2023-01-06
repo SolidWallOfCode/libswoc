@@ -47,6 +47,11 @@ public:
   /// @code
   ///     MemArena::unique_ptr arena(nullptr, MemArena::destroyer);
   /// @endcode
+  /// To create the arena on demand
+  /// @code
+  ///    arena.reset(MemArena::construct_self_contained());
+  /// @endcode
+  /// If the unique pointer is to be initialized with an arena, it should probably be a direct member isntead.
   using unique_ptr = std::unique_ptr<self_type, void (*)(self_type *)>;
 
   /// Simple internal arena block of memory. Maintains the underlying memory.

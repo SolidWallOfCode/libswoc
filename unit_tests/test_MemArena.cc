@@ -324,6 +324,11 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
   }
 
   {
+    MemArena *arena = MemArena::construct_self_contained();
+    MemArena::destroyer(arena);
+  }
+
+  {
     std::unique_ptr<MemArena, void (*)(MemArena *)> arena(MemArena::construct_self_contained(),
                                                           [](MemArena *arena) -> void { arena->~MemArena(); });
     static constexpr unsigned MAX = 512;
@@ -339,9 +344,24 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
     // Really, at this point just make sure there's no memory corruption on destruction.
   }
 
-  { // as previouis but delay construction. Use internal functor instead of a lambda.
+  { // as previous but delay construction. Use internal functor instead of a lambda.
     std::unique_ptr<MemArena, void (*)(MemArena*)> arena(nullptr, MemArena::destroyer);
     arena.reset(MemArena::construct_self_contained());
+    static constexpr unsigned MAX = 512;
+    std::uniform_int_distribution<unsigned> length_gen{6, MAX};
+    char buffer[MAX];
+    for (unsigned i = 0; i < 50; ++i) {
+      auto n = length_gen(randu);
+      for (unsigned k = 0; k < n; ++k) {
+        buffer[k] = CHARS[char_gen(randu)];
+      }
+      localize(*arena, {buffer, n});
+    }
+    // Really, at this point just make sure there's no memory corruption on destruction.
+  }
+
+  { // Construct immediately in the unique pointer.
+    MemArena::unique_ptr arena(MemArena::construct_self_contained(), MemArena::destroyer);
     static constexpr unsigned MAX = 512;
     std::uniform_int_distribution<unsigned> length_gen{6, MAX};
     char buffer[MAX];

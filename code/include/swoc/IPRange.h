@@ -1101,6 +1101,108 @@ protected:
   }
 };
 
+/** An IPSpace that contains only addresses.
+ *
+ * This is to @c IPSpace as @c std::set is to @c std::map. The @c value_type is removed from the API
+ * and only the keys are visible. This suits use cases where the goal is to track the presence of
+ * addresses without any additional data.
+ *
+ * @note Because there is only one value stored, there is no difference between @c mark and @c fill.
+ */
+class IPRangeSet
+{
+  using self_type = IPRangeSet;
+
+public:
+  /// Default construct empty set.
+  IPRangeSet() = default;
+
+  /** Add addresses to the set.
+   *
+   * @param r Range of addresses to add.
+   * @return @a this
+   *
+   * Identical to @c fill.
+   */
+  self_type &mark(swoc::IPRange const &r);
+
+  /** Add addresses to the set.
+   *
+   * @param r Range of addresses to add.
+   * @return @a this
+   *
+   * Identical to @c mark.
+   */
+  self_type &fill(swoc::IPRange const &r);
+
+  /// @return @c true if @a addr is in the set.
+  bool contains(swoc::IPAddr const &addr) const;
+
+  /// @return Number of ranges in the set.
+  size_t count() const;
+
+  /// Remove all addresses in the set.
+  void clear();
+
+protected:
+  /// Empty struct to use for payload.
+  /// This declares the struct and defines the singleton instance used.
+  static inline constexpr struct Mark {
+    using self_type = Mark;
+    /// @internal @c IPSpace requires equality / inequality operators.
+    /// These make all instance equal to each other.
+    bool operator==(self_type const &that);
+    bool operator!=(self_type const &that);
+  } MARK{};
+
+  /// The address set.
+  swoc::IPSpace<Mark> _addrs;
+};
+
+inline auto
+IPRangeSet::mark(swoc::IPRange const &r) -> self_type &
+{
+  _addrs.mark(r, MARK);
+  return *this;
+}
+
+inline auto
+IPRangeSet::fill(swoc::IPRange const &r) -> self_type &
+{
+  _addrs.mark(r, MARK);
+  return *this;
+}
+
+inline bool
+IPRangeSet::contains(swoc::IPAddr const &addr) const
+{
+  return _addrs.find(addr) != _addrs.end();
+}
+
+inline size_t
+IPRangeSet::count() const
+{
+  return _addrs.count();
+}
+
+inline void
+IPRangeSet::clear()
+{
+  _addrs.clear();
+}
+
+inline bool
+IPRangeSet::Mark::operator==(IPRangeSet::Mark::self_type const &)
+{
+  return true;
+}
+
+inline bool
+IPRangeSet::Mark::operator!=(IPRangeSet::Mark::self_type const &)
+{
+  return false;
+}
+
 template <typename PAYLOAD>
 IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator const &iter4, typename IP6Space::iterator const &iter6)
 : _iter_4(iter4), _iter_6(iter6) {
