@@ -130,6 +130,8 @@ TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
 TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
 {
   std::array<int, 10> a1;
+  std::string_view sv{"Evil Dave"};
+  std::string str{sv};
   auto const & ra1 = a1;
   auto ms1 = MemSpan<int>(a1); // construct from array
   [[maybe_unused]] auto ms2 = MemSpan(a1); // construct from array, deduction guide
@@ -141,4 +143,17 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
   MemSpan<const int> ms6 { a1 };
 
   [[maybe_unused]] MemSpan<int const> c1 = ms1; // Conversion from T to T const.
+
+  MemSpan<char const> c2{sv.data(), sv.size()};
+  [[maybe_unused]] MemSpan<void const> vc2{c2};
+  // Generic construction from STL containers.
+  MemSpan<char const> c3{sv};
+  [[maybe_unused]] MemSpan<char> c7{str};
+  [[maybe_unused]] MemSpan<void> c4{str};
+  auto const & cstr { str};
+  [[maybe_unused]] MemSpan<char const> c8{cstr};
+  // [[maybe_unused]] MemSpan<char> c9{cstr}; // should not compile, const container to non-const span.
+
+  [[maybe_unused]] MemSpan<void const> c5{str};
+  [[maybe_unused]] MemSpan<void const> c6{sv};
 }

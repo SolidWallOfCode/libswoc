@@ -125,6 +125,28 @@ public:
    constexpr MemSpan(MemSpan<U> const& that) : _ptr(that.data()), _count(that.count()) {}
 
 
+  /** Construct from any vector like container.
+   *
+   * @tparam C Container type.
+   * @param c container
+   *
+   * The container type must have the methods @c data and @c size which must return values convertible
+   * to the pointer type for @a T and @c size_t respectively.
+   *
+   * @note If the container is constant then the span type must also be constant.
+   *
+   * @internal constness is a bit funky, because it can come from the container type or the
+   * element type, i.e. passing a container as @c const& means the span must be @c const ).
+   * If the argument is constant, that gets baked in to @a C.
+   */
+  template < typename C
+            , typename = std::enable_if_t<
+              std::is_convertible_v<decltype(std::declval<C>().data()), T *> &&
+                std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
+              , void
+              >
+            > constexpr MemSpan(C & c);
+
   /** Construct from nullptr.
       This implicitly makes the length 0.
   */
@@ -360,6 +382,21 @@ public:
    */
   MemSpan(value_type *start, value_type *last);
 
+  /** Construct from any vector like container.
+   *
+   * @tparam C Container type.
+   * @param c container
+   *
+   * The container type must have the methods @c data and @c size which must return values convertible
+   * to @c void* and @c size_t respectively.
+   */
+  template < typename C
+            , typename = std::enable_if_t<
+                std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
+              , void
+              >
+            > constexpr MemSpan(C const& c);
+
   /** Construct from nullptr.
       This implicitly makes the length 0.
   */
@@ -562,6 +599,22 @@ public:
   /// Assignment - the span is copied, not the content.
   /// Any type of @c MemSpan can be assigned to @c MemSpan<void>.
   template <typename U> self_type &operator=(MemSpan<U> const &that);
+
+  /** Construct from any vector like container.
+   *
+   * @tparam C Container type.
+   * @param c container
+   *
+   * The container type must have the methods @c data and @c size which must return values convertible
+   * to @c void* and @c size_t respectively.
+   */
+  template < typename C
+            , typename = std::enable_if_t<
+              ! std::is_const_v<decltype(std::declval<C>().data()[0])> &&
+                std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
+              , void
+              >
+            > constexpr MemSpan(C const& c);
 
   /** Update the span.
    *
@@ -852,6 +905,7 @@ template <typename T> constexpr MemSpan<T>::MemSpan(std::nullptr_t) {}
 
 template <typename T> template <auto N, typename U, typename META> constexpr MemSpan<T>::MemSpan(std::array<U,N> const& a) : _ptr{a.data()} , _count{a.size()} {}
 template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(std::array<T,N> & a) : _ptr{a.data()} , _count{a.size()} {}
+template <typename T> template <typename C, typename> constexpr MemSpan<T>::MemSpan(C &c) : _ptr(c.data()), _count(c.size()) {}
 
 template <typename T>
 MemSpan<T> &
@@ -1046,7 +1100,7 @@ MemSpan<T>::view() const {
 
 // --- void specializations ---
 
-template <typename U> constexpr MemSpan<void const>::MemSpan(MemSpan<U> const &that) : _ptr(that._ptr), _size(that.size()) {}
+template <typename U> constexpr MemSpan<void const>::MemSpan(MemSpan<U> const &that) : _ptr(const_cast<std::remove_const_t<U> *>(that._ptr)), _size(that.size()) {}
 template <typename U> constexpr MemSpan<void>::MemSpan(MemSpan<U> const &that) : super_type(that) { static_assert(!std::is_const_v<U>, "MemSpan<void> does not support constant memory."); }
 
 inline constexpr MemSpan<void const>::MemSpan(value_type *ptr, size_t n) : _ptr{const_cast<void*>(ptr)}, _size{n} {}
@@ -1054,6 +1108,12 @@ inline constexpr MemSpan<void>::MemSpan(value_type *ptr, size_t n) : super_type(
 
 inline MemSpan<void const>::MemSpan(value_type *first, value_type *last) : _ptr{const_cast<void*>(first)}, _size{detail::ptr_distance(first, last)} {}
 inline MemSpan<void >::MemSpan(value_type *first, value_type *last) : super_type(first, last) {}
+
+template <typename C, typename>
+constexpr MemSpan<void const>::MemSpan(C const &c)
+  : _ptr(const_cast<std::remove_const_t<std::remove_reference_t<decltype(*(std::declval<C>().data()))>> *>(c.data())), _size(c.size()) {}
+template <typename C, typename>
+constexpr MemSpan<void>::MemSpan(C const &c) : super_type(c.data(), c.size()) {}
 
 inline constexpr MemSpan<void const>::MemSpan(std::nullptr_t) {}
 inline constexpr MemSpan<void>::MemSpan(std::nullptr_t) {}
