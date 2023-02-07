@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <limits>
+#include <iostream>
 
 #include "swoc/TextView.h"
 #include "swoc/swoc_ip.h"

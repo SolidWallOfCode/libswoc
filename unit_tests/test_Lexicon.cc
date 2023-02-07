@@ -5,6 +5,8 @@
     Lexicon unit tests.
 */
 
+#include <iostream>
+
 #include "swoc/Lexicon.h"
 #include "catch.hpp"
 

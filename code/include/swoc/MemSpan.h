@@ -10,15 +10,17 @@
 #pragma once
 
 #include <cstring>
-#include <iosfwd>
-#include <iostream>
+//#include <iosfwd>
 #include <cstddef>
-#include <array>
-#include <string_view>
 #include <type_traits>
 #include <ratio>
 #include <tuple>
 #include <exception>
+
+/// For template deduction guides
+#include <array>
+#include <vector>
+#include <string_view>
 
 #include "swoc/swoc_version.h"
 #include "swoc/Scalar.h"
@@ -530,13 +532,25 @@ public:
 
   /** Force memory alignment.
    *
-   * @param n Alignment size (must be power of 2).
+   * @param alignment Alignment size (must be power of 2).
    * @return An aligned span.
    *
    * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
    * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty).
    */
-  self_type align(size_t n) const;
+  self_type align(size_t alignment) const;
+
+  /** Force memory alignment.
+   *
+   * @param alignment Alignment size (must be power of 2).
+   * @param obj_size Size of instances requiring alignment.
+   * @return An aligned span.
+   *
+   * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
+   * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty). Trailing space
+   * is discarded such that the resulting memory space is a multiple of @a size.
+   */
+  self_type align(size_t alignment, size_t obj_size) const;
 
   /** Return a view of the memory.
    *
@@ -680,13 +694,25 @@ public:
 
   /** Force memory alignment.
    *
-   * @param n Alignment size (must be power of 2).
+   * @param alignment Alignment size (must be power of 2).
    * @return An aligned span.
    *
    * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
    * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty).
    */
-  self_type align(size_t n) const;
+  self_type align(size_t alignment) const;
+
+  /** Force memory alignment.
+   *
+   * @param alignment Alignment size (must be power of 2).
+   * @param obj_size Size of instances requiring alignment.
+   * @return An aligned span.
+   *
+   * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
+   * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty). Trailing space
+   * is discarded such that the resulting memory space is a multiple of @a size.
+   */
+  self_type align(size_t alignment, size_t obj_size) const;
 
   /** Create a new span for a different type @a V on the same memory.
    *
@@ -1291,23 +1317,43 @@ MemSpan<void>::subspan(size_t offset, size_t count) const -> self_type {
 }
 
 template <typename T> auto
-MemSpan<void const>::align() const -> self_type { return this->align(alignof(T)); }
+MemSpan<void const>::align() const -> self_type { return this->align(alignof(T), sizeof(T)); }
 
 template <typename T> auto
-MemSpan<void>::align() const -> self_type { return this->align(alignof(T)); }
+MemSpan<void>::align() const -> self_type { return this->align(alignof(T), sizeof(T)); }
 
 inline auto
-MemSpan<void const>::align(size_t n) const -> self_type {
+MemSpan<void const>::align(size_t alignment) const -> self_type {
   auto p = uintptr_t(_ptr);
-  auto padding = p & (n - 1);
-  return { reinterpret_cast<void*>(p + padding), _size - std::min<uintptr_t>(_size, padding) };
+  auto padding = p & (alignment - 1);
+  size_t size = 0;
+  if (_size > padding) { // if there's not enough to pad, result is zero size.
+    size = _size - padding;
+  }
+  return { reinterpret_cast<void*>(p + padding), size };
 }
 
 inline auto
-MemSpan<void>::align(size_t n) const -> self_type {
+MemSpan<void>::align(size_t alignment) const -> self_type {
+  auto && [ ptr, size ] = super_type::align(alignment);
+  return { ptr, size };
+}
+
+inline auto
+MemSpan<void const>::align(size_t alignment, size_t obj_size) const -> self_type {
   auto p = uintptr_t(_ptr);
-  auto padding = p & (n - 1);
-  return { reinterpret_cast<void*>(p + padding), _size - std::min<uintptr_t>(_size, padding) };
+  auto padding = p & (alignment - 1);
+  size_t size = 0;
+  if (_size > padding) { // if there's not enough to pad, result is zero size.
+    size = ((_size - padding) / obj_size ) * obj_size;
+  }
+  return { reinterpret_cast<void*>(p + padding), size };
+}
+
+inline auto
+MemSpan<void>::align(size_t alignment, size_t obj_size) const -> self_type {
+  auto && [ ptr, n ] = super_type::align(alignment, obj_size);
+  return { ptr, n };
 }
 
 template < typename U > MemSpan<U>
@@ -1339,9 +1385,14 @@ MemSpan<void const>::view() const {
   return {static_cast<char const *>(_ptr), _size};
 }
 
-/// Deduction guide for constructing from a @c std::array.
+/// Deduction guides
 template<typename T, size_t N> MemSpan(std::array<T,N> &) -> MemSpan<T>;
 template<typename T, size_t N> MemSpan(std::array<T,N> const &) -> MemSpan<T const>;
+template<typename T> MemSpan(std::vector<T> &) -> MemSpan<T>;
+template<typename T> MemSpan(std::vector<T> const&) -> MemSpan<T const>;
+MemSpan(std::string_view const&) -> MemSpan<char const>;
+MemSpan(std::string &) -> MemSpan<char>;
+MemSpan(std::string const&) -> MemSpan<char const>;
 
 }} // namespace swoc::SWOC_VERSION_NS
 
