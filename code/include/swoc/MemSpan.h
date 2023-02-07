@@ -71,14 +71,14 @@ public:
    * @param start First element.
    * @param count Total number of elements.
    */
-  constexpr MemSpan(value_type *start, size_t count);
+  constexpr MemSpan(value_type *ptr, size_t count);
 
   /** Construct from a half open range [start, last).
    *
-   * @param start Start of range.
-   * @param last Past end of range.
+   * @param begin Start of range.
+   * @param end Past end of range.
    */
-  constexpr MemSpan(value_type *start, value_type *last);
+  constexpr MemSpan(value_type *begin, value_type *end);
 
   /** Construct to cover an array.
    *
@@ -375,14 +375,14 @@ public:
    * @param start Start of the span.
    * @param n # of bytes in the span.
    */
-  constexpr MemSpan(value_type *start, size_t n);
+  constexpr MemSpan(value_type *ptr, size_t n);
 
   /** Construct from a half open range of [start, last).
    *
    * @param start Start of the range.
    * @param last Past end of range.
    */
-  MemSpan(value_type *start, value_type *last);
+  MemSpan(value_type *begin, value_type *end);
 
   /** Construct from any vector like container.
    *
@@ -492,7 +492,7 @@ public:
    * @param count The number of elements to remove.
    * @return @c *this
    */
-  self_type &remove_prefix(size_t count);
+  self_type &remove_prefix(size_t n);
 
   /** Get the trailing segment of @a n bytes.
    *
@@ -511,14 +511,14 @@ public:
   /** Return a sub span of @a this span.
    *
    * @param offset Offset (index) of first element.
-   * @param count Number of elements.
+   * @param n Number of elements.
    * @return The span starting at @a offset for @a count elements in @a this.
    *
    * The result is clipped by @a this - if @a offset is out of range an empty span is returned. Otherwise @c count is clipped by the
    * number of elements available in @a this. In effect the intersection of the span described by ( @a offset , @a count ) and @a
    * this span is returned, which may be the empty span.
    */
-  constexpr self_type subspan(size_t offset, size_t count) const;
+  constexpr self_type subspan(size_t offset, size_t n) const;
 
   /** Align span for a type.
    *
@@ -549,6 +549,8 @@ public:
    * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
    * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty). Trailing space
    * is discarded such that the resulting memory space is a multiple of @a size.
+   *
+   * @note @a obj_size should be a multiple of @a alignment. This happens naturally if @c sizeof is used.
    */
   self_type align(size_t alignment, size_t obj_size) const;
 
@@ -594,10 +596,10 @@ public:
 
   /** Construct from a half open range of [start, last).
    *
-   * @param start Start of the range.
-   * @param last Past end of range.
+   * @param begin Start of the range.
+   * @param end Past end of range.
    */
-  MemSpan(value_type *start, value_type *last);
+  MemSpan(value_type *begin, value_type *end);
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -673,14 +675,14 @@ public:
   /** Return a sub span of @a this span.
    *
    * @param offset Offset (index) of first element.
-   * @param count Number of elements.
+   * @param n Number of elements.
    * @return The span starting at @a offset for @a count elements in @a this.
    *
    * The result is clipped by @a this - if @a offset is out of range an empty span is returned. Otherwise @c count is clipped by the
    * number of elements available in @a this. In effect the intersection of the span described by ( @a offset , @a count ) and @a
    * this span is returned, which may be the empty span.
    */
-  constexpr self_type subspan(size_t offset, size_t count) const;
+  constexpr self_type subspan(size_t offset, size_t n) const;
 
   /** Align span for a type.
    *
@@ -711,6 +713,8 @@ public:
    * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
    * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty). Trailing space
    * is discarded such that the resulting memory space is a multiple of @a size.
+   *
+   * @note @a obj_size should be a multiple of @a alignment. This happens naturally if @c sizeof is used.
    */
   self_type align(size_t alignment, size_t obj_size) const;
 
@@ -923,7 +927,7 @@ using std::memset;
 
 template <typename T> constexpr MemSpan<T>::MemSpan(T *ptr, size_t count) : _ptr{ptr}, _count{count} {}
 
-template <typename T> constexpr MemSpan<T>::MemSpan(T *first, T *last) : _ptr{first}, _count{detail::ptr_distance(first, last)} {}
+template <typename T> constexpr MemSpan<T>::MemSpan(T *begin, T *end) : _ptr{begin}, _count{detail::ptr_distance(begin, end)} {}
 
 template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {}
 
@@ -1132,8 +1136,8 @@ template <typename U> constexpr MemSpan<void>::MemSpan(MemSpan<U> const &that) :
 inline constexpr MemSpan<void const>::MemSpan(value_type *ptr, size_t n) : _ptr{const_cast<void*>(ptr)}, _size{n} {}
 inline constexpr MemSpan<void>::MemSpan(value_type *ptr, size_t n) : super_type(ptr, n) {}
 
-inline MemSpan<void const>::MemSpan(value_type *first, value_type *last) : _ptr{const_cast<void*>(first)}, _size{detail::ptr_distance(first, last)} {}
-inline MemSpan<void >::MemSpan(value_type *first, value_type *last) : super_type(first, last) {}
+inline MemSpan<void const>::MemSpan(value_type *begin, value_type *end) : _ptr{const_cast<void*>(begin)}, _size{detail::ptr_distance(begin, end)} {}
+inline MemSpan<void >::MemSpan(value_type *begin, value_type *end) : super_type(begin, end) {}
 
 template <typename C, typename>
 constexpr MemSpan<void const>::MemSpan(C const &c)
@@ -1283,37 +1287,37 @@ MemSpan<void>::remove_prefix(size_t n) -> self_type & {
 }
 
 inline auto
-MemSpan<void const>::suffix(size_t count) const -> self_type {
-  count = std::min(count, _size);
-  return {detail::ptr_add(this->data_end(), -count), count};
+MemSpan<void const>::suffix(size_t n) const -> self_type {
+  n = std::min(n, _size);
+  return {detail::ptr_add(this->data_end(), -n), n};
 }
 
 inline auto
-MemSpan<void>::suffix(size_t count) const -> self_type {
-  count = std::min(count, _size);
-  return {detail::ptr_add(this->data_end(), -count), count};
+MemSpan<void>::suffix(size_t n) const -> self_type {
+  n = std::min(n, _size);
+  return {detail::ptr_add(this->data_end(), -n), n};
 }
 
 inline auto
-MemSpan<void const>::remove_suffix(size_t count) -> self_type & {
-  _size -= std::min(count, _size);
+MemSpan<void const>::remove_suffix(size_t n) -> self_type & {
+  _size -= std::min(n, _size);
   return *this;
 }
 
 inline auto
-MemSpan<void>::remove_suffix(size_t count) -> self_type & {
-  this->super_type::remove_suffix(count);
+MemSpan<void>::remove_suffix(size_t n) -> self_type & {
+  this->super_type::remove_suffix(n);
   return *this;
 }
 
 inline constexpr auto
-MemSpan<void const>::subspan(size_t offset, size_t count) const -> self_type {
-  return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(count, _size - offset)} : self_type{};
+MemSpan<void const>::subspan(size_t offset, size_t n) const -> self_type {
+  return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(n, _size - offset)} : self_type{};
 }
 
 inline constexpr auto
-MemSpan<void>::subspan(size_t offset, size_t count) const -> self_type {
-  return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(count, _size - offset)} : self_type{};
+MemSpan<void>::subspan(size_t offset, size_t n) const -> self_type {
+  return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(n, _size - offset)} : self_type{};
 }
 
 template <typename T> auto
