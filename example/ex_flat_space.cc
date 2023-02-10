@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <iostream>
 
 #include "swoc/TextView.h"
 #include "swoc/swoc_ip.h"

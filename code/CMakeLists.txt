@@ -3,11 +3,14 @@ cmake_minimum_required(VERSION 3.11)
 project(Lib-SWOC CXX)
 set(LIBSWOC_VERSION "1.4.2")
 set(CMAKE_CXX_STANDARD 17)
+cmake_policy(SET CMP0087 NEW)
+# override "lib64" to be "lib" unless the user explicitly sets it.
+set(CMAKE_INSTALL_LIBDIR "lib" CACHE STRING "directory for libraries" FORCE)
 include(GNUInstallDirs)
 
 cmake_dependent_option(LIBSWOC_INSTALL
     "Enable generation of libswoc install targets" ON
-    "CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR" OFF)
+    "NOT CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT" OFF)
 
 set(HEADER_FILES
     include/swoc/swoc_version.h
@@ -55,14 +58,26 @@ set(CC_FILES
     src/string_view_util.cc
     )
 
-add_library(libswoc STATIC ${CC_FILES})
-set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc-static)
+add_library(libswoc SHARED ${CC_FILES})
+set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc-${LIBSWOC_VERSION})
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(libswoc PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
 endif()
 
+add_library(libswoc-static STATIC ${CC_FILES})
+set_target_properties(libswoc-static PROPERTIES OUTPUT_NAME swoc-static-${LIBSWOC_VERSION})
+if (CMAKE_COMPILER_IS_GNUCXX)
+    target_compile_options(libswoc-static PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
+endif()
+
 # Not quite sure how this works, but I think it generates one of two paths depending on the context.
 # That is, the generator functions return non-empty strings only in the corresponding context.
+target_include_directories(libswoc-static
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    )
+
 target_include_directories(libswoc
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -71,21 +86,41 @@ target_include_directories(libswoc
 
 if (LIBSWOC_INSTALL)
     # These install target variables are created by GNUInstallDirs.
+    install(TARGETS libswoc-static
+        EXPORT libswoc-static-config
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # seems to have no effect.
+        )
     install(TARGETS libswoc
         EXPORT libswoc-config
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # seems to have no effect.
         )
     install(DIRECTORY include/swoc DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+    set(link-target libswoc.so)
+    set(link-src $<TARGET_FILE_NAME:libswoc>)
+    install(CODE
+        "execute_process(COMMAND bash -c \"echo Linking ${link-src} to ${link-target};cd ${CMAKE_INSTALL_FULL_LIBDIR} && (rm -f ${link-target};ln -s ${link-src} ${link-target})
+        \")"
+    )
+
+    install(EXPORT libswoc-static-config
+        NAMESPACE libswoc::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libswoc
+        )
+
     install(EXPORT libswoc-config
         NAMESPACE libswoc::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libswoc
         )
 
-
-    set(PKG_CONFIG_FILE ${CMAKE_INSTALL_LIBDIR}/libswoc.pc)
-    configure_file("libswoc.pc.cmake" ${PKG_CONFIG_FILE} @ONLY)
-    install(FILES ${PKG_CONFIG_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+#    set(PKG_CONFIG_FILE libswoc.pc)
+#    set(PKG_STATIC_CONFIG_FILE libswoc-static.pc)
+#    configure_file("libswoc.pc.cmake" ${PKG_CONFIG_FILE} @ONLY)
+    #
+    configure_file("libswoc.pc.cmake" libswoc.pc @ONLY)
+    configure_file("libswoc-static.pc.cmake" libswoc-static.pc @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libswoc.pc ${CMAKE_CURRENT_BINARY_DIR}/libswoc-static.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+#    install(FILES ${PKG_STATIC_CONFIG_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
 
 # Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.
@@ -94,4 +129,4 @@ endif()
 
 set(CLANG_DIRS )
 
-set_target_properties(libswoc PROPERTIES CLANG_FORMAT_DIRS "${PROJECT_SOURCE_DIR}/src;${PROJECT_SOURCE_DIR}/include")
+set_target_properties(libswoc-static PROPERTIES CLANG_FORMAT_DIRS "${PROJECT_SOURCE_DIR}/src;${PROJECT_SOURCE_DIR}/include")

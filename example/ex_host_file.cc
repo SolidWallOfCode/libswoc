@@ -7,6 +7,7 @@
 */
 
 #include <ios>
+#include <iostream>
 
 #include "swoc/TextView.h"
 #include "swoc/swoc_ip.h"
