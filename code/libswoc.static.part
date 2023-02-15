@@ -29,11 +29,18 @@ def source(env):
     env.InstallLib(out)
 
     # Export the package config.
-    pc_file = env.Substfile("libswoc.static.pc", "libswoc.static.pc.in"
+    sdk_pc_file = env.Substfile("libswoc.static.pc", "libswoc.static.pc.in"
+        , SUBST_DICT = {
+            "pkg_prefix": env.Dir("$SDK_ROOT").abspath
+        , "pkg_version": "$PART_VERSION"
+        })
+
+    pc_file = env.Substfile("_install_/libswoc.static.pc", "libswoc.static.pc.in"
         , SUBST_DICT = {
             "pkg_prefix": env.Dir("$INSTALL_ROOT").abspath
         , "pkg_version": "$PART_VERSION"
         })
 
 
-    env.InstallPkgConfig(pc_file)
+    env.SdkPkgConfig(sdk_pc_file)
+    env.InstallPkgConfig(pc_file,create_sdk=False)
