@@ -36,13 +36,13 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   REQUIRE(left.size() + span.size() == 1024);
 
   MemSpan<int32_t> idx_span(idx);
-  REQUIRE(idx_span.count() == 11);
-  REQUIRE(idx_span.size() == sizeof(idx));
+  REQUIRE(idx_span.size() == 11);
+  REQUIRE(idx_span.data_size() == sizeof(idx));
   REQUIRE(idx_span.data() == idx);
 
   auto sp2 = idx_span.rebind<int16_t>();
-  REQUIRE(sp2.size() == idx_span.size());
-  REQUIRE(sp2.count() == 2 * idx_span.count());
+  REQUIRE(sp2.data_size() == idx_span.data_size());
+  REQUIRE(sp2.size() == 2 * idx_span.size());
   REQUIRE(sp2[0] == 0);
   REQUIRE(sp2[1] == 0);
   // exactly one of { le, be } must be true.
@@ -54,8 +54,8 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
 
   // Verify attempts to rebind on non-integral sized arrays fails.
   span.assign(buff, 1022);
+  REQUIRE(span.data_size() == 1022);
   REQUIRE(span.size() == 1022);
-  REQUIRE(span.count() == 1022);
   auto vs = span.rebind<void>();
   REQUIRE_THROWS_AS(span.rebind<uint32_t>(), std::invalid_argument);
   REQUIRE_THROWS_AS(vs.rebind<uint32_t>(), std::invalid_argument);
@@ -75,11 +75,11 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   REQUIRE(a.data() == buff);
   float floats[] = {1.1, 2.2, 3.3, 4.4, 5.5};
   MemSpan<float> fspan{floats};
-  REQUIRE(fspan.count() == 5);
+  REQUIRE(fspan.size() == 5);
   REQUIRE(fspan[3] == 4.4f);
   MemSpan<float> f2span{floats, floats + 5};
   REQUIRE(fspan.data() == f2span.data());
-  REQUIRE(fspan.count() == f2span.count());
+  REQUIRE(fspan.size() == f2span.size());
   REQUIRE(fspan.is_same(f2span));
 };
 
@@ -124,7 +124,7 @@ TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
 
   b = a.suffix(a.size() - 2).align(alignof(int));
   REQUIRE(b.data() == i.data() + 1);
-  REQUIRE(b.rebind<int>().count() == i.count() - 1);
+  REQUIRE(b.rebind<int>().size() == i.size() - 1);
 };
 
 TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
@@ -135,11 +135,14 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
   std::string str{sv};
   auto const & ra1 = a1;
   auto ms1 = MemSpan<int>(a1); // construct from array
-  [[maybe_unused]] auto ms2 = MemSpan(a1); // construct from array, deduction guide
-  [[maybe_unused]] auto ms3 = MemSpan<int const>(ra1); // construct from const array
+  auto ms2 = MemSpan(a1); // construct from array, deduction guide
+  REQUIRE(ms2.size() == a1.size());
+  auto ms3 = MemSpan<int const>(ra1); // construct from const array
+  REQUIRE(ms3.size() == ra1.size());
   [[maybe_unused]] auto ms4 = MemSpan(ra1); // construct from const array, deduction guided.
   // Construct a span of constant from a const ref to an array with non-const type.
   MemSpan<int const> ms5 { ra1 };
+  REQUIRE(ms5.size() == ra1.size());
   // Construct a span of constant from a ref to an array with non-const type.
   MemSpan<int const> ms6 { a1 };
 
@@ -152,7 +155,8 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
   [[maybe_unused]] MemSpan<char> c7{str};
   [[maybe_unused]] MemSpan<void> c4{str};
   auto const & cstr {str};
-  [[maybe_unused]] MemSpan<char const> c8{cstr};
+  MemSpan<char const> c8{cstr};
+  REQUIRE(c8.size() == cstr.size());
   // [[maybe_unused]] MemSpan<char> c9{cstr}; // should not compile, const container to non-const span.
 
   [[maybe_unused]] MemSpan<void const> c5{str};
@@ -160,4 +164,10 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
 
   [[maybe_unused]] MemSpan c10{sv};
   [[maybe_unused]] MemSpan c11{tv};
+
+  char const * args[] = { "alpha" , "bravo" , "charlie", "delta"};
+  MemSpan<char const *> span_args { args };
+  MemSpan<char const *> span2_args { span_args };
+  REQUIRE(span_args.size() == 4);
+  REQUIRE(span2_args.size() == 4);
 }

@@ -65,6 +65,8 @@ public:
 
   /// Copy constructor.
   constexpr MemSpan(self_type const &that) = default;
+  /// Copy constructor.
+  constexpr MemSpan(self_type & that) = default;
 
   /** Construct from a first element @a start and a @a count of elements.
    *
@@ -203,10 +205,10 @@ public:
   constexpr T *end() const;
 
   /// Number of elements in the span
-  constexpr size_t count() const;
+  constexpr size_t size() const;
 
   /// Number of bytes in the span.
-  size_t size() const;
+  size_t data_size() const;
 
   /// @return Pointer to memory in the span.
   T * data() const;
@@ -1027,13 +1029,13 @@ MemSpan<T>::operator[](size_t idx) const {
 
 template <typename T> constexpr
 size_t
-MemSpan<T>::count() const {
+MemSpan<T>::size() const {
   return _count;
 }
 
 template <typename T>
 size_t
-MemSpan<T>::size() const {
+MemSpan<T>::data_size() const {
   return _count * sizeof(T);
 }
 
@@ -1119,7 +1121,7 @@ MemSpan<T>::rebind() const {
   static_assert(detail::is_span_compatible<T, U>::value,
                 "MemSpan only allows rebinding between types where the sizes are such that one is an integral multiple of the other.");
   using VOID_PTR = std::conditional_t<std::is_const_v<U>, const void *, void*>;
-  return {static_cast<U *>(static_cast<VOID_PTR>(_ptr)), detail::is_span_compatible<T, U>::count(this->size())};
+  return {static_cast<U *>(static_cast<VOID_PTR>(_ptr)), detail::is_span_compatible<T, U>::count(this->data_size())};
 }
 
 template <typename T>
