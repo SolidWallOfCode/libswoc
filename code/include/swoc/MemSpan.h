@@ -207,6 +207,13 @@ public:
   /// Number of elements in the span
   constexpr size_t size() const;
 
+  /// Number of elements in the span
+  /// @note Deprecate for 1.5.0.
+  constexpr size_t count() const;
+
+  /// Number of elements in the span
+  constexpr size_t length() const;
+
   /// Number of bytes in the span.
   size_t data_size() const;
 
@@ -441,8 +448,19 @@ public:
   /// @see operator bool
   bool empty() const;
 
-  /// Number of bytes in the span.
+  /// @return Number of bytes in the span.
   size_t size() const;
+
+  /// @return Number of bytes in the span.
+  /// @note Template compatibility.
+  size_t count() const;
+
+  /// @return Number of bytes in the span.
+  /// @note Template compatibility.
+  size_t length() const;
+
+  /// Number of bytes in the span.
+  size_t data_size() const;
 
   /// Pointer to memory in the span.
   constexpr value_type *data() const;
@@ -1033,6 +1051,18 @@ MemSpan<T>::size() const {
   return _count;
 }
 
+template <typename T> constexpr
+  size_t
+  MemSpan<T>::count() const {
+  return _count;
+}
+
+template <typename T> constexpr
+  size_t
+  MemSpan<T>::length() const {
+  return _count;
+}
+
 template <typename T>
 size_t
 MemSpan<T>::data_size() const {
@@ -1256,6 +1286,21 @@ MemSpan<void>::data_end() const {
 
 inline size_t
 MemSpan<void const>::size() const {
+  return _size;
+}
+
+inline size_t
+MemSpan<void const>::count() const {
+  return _size;
+}
+
+inline size_t
+MemSpan<void const>::length() const {
+  return _size;
+}
+
+inline size_t
+MemSpan<void const>::data_size() const {
   return _size;
 }
 
