@@ -113,14 +113,9 @@ if (LIBSWOC_INSTALL)
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libswoc
         )
 
-#    set(PKG_CONFIG_FILE libswoc.pc)
-#    set(PKG_STATIC_CONFIG_FILE libswoc-static.pc)
-#    configure_file("libswoc.pc.cmake" ${PKG_CONFIG_FILE} @ONLY)
-    #
     configure_file("libswoc.pc.cmake" libswoc.pc @ONLY)
     configure_file("libswoc-static.pc.cmake" libswoc-static.pc @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libswoc.pc ${CMAKE_CURRENT_BINARY_DIR}/libswoc-static.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-#    install(FILES ${PKG_STATIC_CONFIG_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
 
 # Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.
