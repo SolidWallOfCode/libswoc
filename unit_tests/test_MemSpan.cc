@@ -8,9 +8,11 @@
 #include "catch.hpp"
 
 #include <iostream>
+#include <vector>
 
 #include "swoc/MemSpan.h"
 #include "swoc/TextView.h"
+#include "swoc/MemArena.h"
 
 using swoc::MemSpan;
 using swoc::TextView;
@@ -146,6 +148,11 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
   // Construct a span of constant from a ref to an array with non-const type.
   MemSpan<int const> ms6 { a1 };
 
+  MemSpan<void> va1{a1};
+  REQUIRE(va1.size() == a1.size() * sizeof(*(a1.data())));
+  MemSpan<void const> cva1{a1};
+  REQUIRE(cva1.size() == a1.size() * sizeof(*(a1.data())));
+
   [[maybe_unused]] MemSpan<int const> c1 = ms1; // Conversion from T to T const.
 
   MemSpan<char const> c2{sv.data(), sv.size()};
@@ -170,4 +177,23 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
   MemSpan<char const *> span2_args { span_args };
   REQUIRE(span_args.size() == 4);
   REQUIRE(span2_args.size() == 4);
+}
+
+TEST_CASE("MemSpan arena", "[libswoc][MemSpan]") {
+  swoc::MemArena a;
+
+  struct Thing {
+    size_t _n = 0;
+    void * _ptr = nullptr;
+  };
+
+  auto span = a.alloc(sizeof(Thing)).rebind<Thing>();
+  MemSpan<void> raw = span;
+  REQUIRE(raw.size() == sizeof(Thing));
+  MemSpan<void const> craw = raw;
+  REQUIRE(raw.size() == craw.size());
+  craw = span;
+  REQUIRE(raw.size() == craw.size());
+
+  REQUIRE(raw.rebind<Thing>().length() == 1);
 }

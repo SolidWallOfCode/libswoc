@@ -369,6 +369,9 @@ public:
   /// Copy assignment
   constexpr self_type & operator = (self_type const& that) = default;
 
+  /// Special constructor for @c void
+  constexpr MemSpan(MemSpan<void> const& that);
+
   /** Cross type copy constructor.
    *
    * @tparam U Type for source span.
@@ -446,27 +449,30 @@ public:
 
   /// Check for empty span (no content).
   /// @see operator bool
-  bool empty() const;
+  constexpr bool empty() const;
 
   /// @return Number of bytes in the span.
-  size_t size() const;
-
-  /// @return Number of bytes in the span.
-  /// @note Template compatibility.
-  size_t count() const;
+  constexpr size_t size() const;
 
   /// @return Number of bytes in the span.
   /// @note Template compatibility.
-  size_t length() const;
+  constexpr size_t count() const;
+
+  /// @return Number of bytes in the span.
+  /// @note Template compatibility.
+  constexpr size_t length() const;
 
   /// Number of bytes in the span.
-  size_t data_size() const;
+  constexpr size_t data_size() const;
 
   /// Pointer to memory in the span.
   constexpr value_type *data() const;
 
   /// Pointer to just after memory in the span.
   value_type *data_end() const;
+
+  /// Assignment - special handling for @c void.
+  constexpr self_type &operator=(MemSpan<void> const &that);
 
   /// Assignment - the span is copied, not the content.
   /// Any type of @c MemSpan can be assigned to @c MemSpan<void>.
@@ -826,7 +832,7 @@ template <typename T> struct is_span_compatible<T, void> {
 template <typename T>
 size_t
 is_span_compatible<T, void>::count(size_t size) {
-  return size;
+  return sizeof(T) * size;
 }
 
 template <typename T> struct is_span_compatible<T, void const> {
@@ -837,7 +843,7 @@ template <typename T> struct is_span_compatible<T, void const> {
 template <typename T>
 size_t
 is_span_compatible<T, void const>::count(size_t size) {
-  return size;
+  return sizeof(T) * size;
 }
 /// @endcond
 
@@ -1162,8 +1168,10 @@ MemSpan<T>::view() const {
 
 // --- void specializations ---
 
-template <typename U> constexpr MemSpan<void const>::MemSpan(MemSpan<U> const &that) : _ptr(const_cast<std::remove_const_t<U> *>(that._ptr)), _size(that.size()) {}
+template <typename U> constexpr MemSpan<void const>::MemSpan(MemSpan<U> const &that) : _ptr(const_cast<std::remove_const_t<U> *>(that._ptr)), _size(sizeof(U) * that.size()) {}
 template <typename U> constexpr MemSpan<void>::MemSpan(MemSpan<U> const &that) : super_type(that) { static_assert(!std::is_const_v<U>, "MemSpan<void> does not support constant memory."); }
+
+inline constexpr MemSpan<void const>::MemSpan(MemSpan<void> const &that) : _ptr(that._ptr), _size(that.size()) {}
 
 inline constexpr MemSpan<void const>::MemSpan(value_type *ptr, size_t n) : _ptr{const_cast<void*>(ptr)}, _size{n} {}
 inline constexpr MemSpan<void>::MemSpan(value_type *ptr, size_t n) : super_type(ptr, n) {}
@@ -1173,9 +1181,10 @@ inline MemSpan<void >::MemSpan(value_type *begin, value_type *end) : super_type(
 
 template <typename C, typename>
 constexpr MemSpan<void const>::MemSpan(C const &c)
-  : _ptr(const_cast<std::remove_const_t<std::remove_reference_t<decltype(*(std::declval<C>().data()))>> *>(c.data())), _size(c.size()) {}
+  : _ptr(const_cast<std::remove_const_t<std::remove_reference_t<decltype(*(std::declval<C>().data()))>> *>(c.data()))
+    , _size(c.size() * sizeof(*(std::declval<C>().data()))) {}
 template <typename C, typename>
-constexpr MemSpan<void>::MemSpan(C const &c) : super_type(c.data(), c.size()) {}
+constexpr MemSpan<void>::MemSpan(C const &c) : super_type(c) {}
 
 inline constexpr MemSpan<void const>::MemSpan(std::nullptr_t) {}
 inline constexpr MemSpan<void>::MemSpan(std::nullptr_t) {}
@@ -1204,7 +1213,7 @@ MemSpan<void const>::operator!() const {
   return _size == 0;
 }
 
-inline bool
+inline constexpr bool
 MemSpan<void const>::empty() const {
   return _size == 0;
 }
@@ -1212,6 +1221,13 @@ MemSpan<void const>::empty() const {
 template <typename U>
 auto
 MemSpan<void const>::operator=(MemSpan<U> const &that) -> self_type & {
+  _ptr  = that._ptr;
+  _size = sizeof(U) * that.size();
+  return *this;
+}
+
+inline constexpr auto
+MemSpan<void const>::operator=(MemSpan<void> const &that) -> self_type & {
   _ptr  = that._ptr;
   _size = that.size();
   return *this;
@@ -1284,22 +1300,22 @@ MemSpan<void>::data_end() const {
   return detail::ptr_add(_ptr, _size);
 }
 
-inline size_t
+inline constexpr size_t
 MemSpan<void const>::size() const {
   return _size;
 }
 
-inline size_t
+inline constexpr size_t
 MemSpan<void const>::count() const {
   return _size;
 }
 
-inline size_t
+inline constexpr size_t
 MemSpan<void const>::length() const {
   return _size;
 }
 
-inline size_t
+inline constexpr size_t
 MemSpan<void const>::data_size() const {
   return _size;
 }
