@@ -336,8 +336,9 @@ public:
   IPRange(string_view const &text);
 
   /// Equality
-  bool
-  operator==(self_type const &that) const;
+  bool operator==(self_type const &that) const;
+  /// Inequality
+  bool operator!=(self_type const& that) const;
 
   /// @return @c true if this is an IPv4 range, @c false if not.
   bool
@@ -909,7 +910,7 @@ public:
    * The value type is a tuple of the IP address range and the @a PAYLOAD. The range is constant
    * and the @a PAYLOAD is a reference. This can be used to update the @a PAYLOAD for this range.
    *
-   * @note Range merges are not trigged by modifications of the @a PAYLOAD via an iterator.
+   * @note Range merges are not triggered by modifications of the @a PAYLOAD via an iterator.
    */
   class iterator : public const_iterator {
     using self_type  = iterator;
@@ -1386,6 +1387,11 @@ IPRange::networks() const -> NetSource {
 inline bool
 IPRange::is(sa_family_t family) const {
   return family == _family;
+}
+
+inline bool
+IPRange::operator!=(const self_type &that) const {
+  return ! (*this == that);
 }
 
 // +++ IPNet +++

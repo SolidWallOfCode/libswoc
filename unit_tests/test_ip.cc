@@ -294,9 +294,11 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   ep.set_to_any(AF_INET);
   REQUIRE(ep.is_loopback() == false);
   REQUIRE(ep.is_any() == true);
+  REQUIRE(ep.raw_addr().length() == sizeof(in_addr_t));
   ep.set_to_loopback(AF_INET6);
   REQUIRE(ep.is_loopback() == true);
   REQUIRE(ep.is_any() == false);
+  REQUIRE(ep.raw_addr().length() == sizeof(in6_addr));
   ep.set_to_any(AF_INET6);
   REQUIRE(ep.is_loopback() == false);
   REQUIRE(ep.is_any() == true);
@@ -1002,7 +1004,7 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
           , {"100.0.1.0-100.0.1.255", make_bits({30})}
       }};
 
-  std::array<std::initializer_list<unsigned>, 7> results = {{
+  static constexpr std::array<std::initializer_list<unsigned>, 7> results = {{
                                                                 {0, 31}
                                                                 , {1, 30}
                                                                 , {2}
@@ -1021,11 +1023,19 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   // Check iteration - verify forward and reverse iteration yield the correct number of ranges
   // and the range payloads match what is expected.
   REQUIRE(space.count() == results.size());
+
   unsigned idx;
 
   idx = 0;
-  for (auto const&[range, bits] : space) {
+  for (auto spot = space.begin() ; spot != space.end() && idx < results.size() ; ++spot) {
+    auto const& [ range, bits ] { *spot };
     REQUIRE(idx < results.size());
+    CHECK(bits == make_bits(results[idx]));
+    ++idx;
+  }
+
+  idx = 0;
+  for (auto const& [range, bits] : space) {
     CHECK(bits == make_bits(results[idx]));
     ++idx;
   }
@@ -1043,12 +1053,10 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   Space::iterator iter;
   IPRange range;
   PAYLOAD bits;
-  for (auto spot = space.begin(); spot != space.end() ; ++spot) {
+  for (auto spot = space.begin(); spot != space.end() ; ++spot, ++idx) {
     iter = spot;
     std::tie(range, bits) = *iter;
-    REQUIRE(idx < results.size());
     CHECK(bits == make_bits(results[idx]));
-    ++idx;
   }
 
   // This blend should change only existing ranges, not add range.

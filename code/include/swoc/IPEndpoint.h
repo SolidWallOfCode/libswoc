@@ -12,6 +12,7 @@
 #include <stdexcept>
 
 #include "swoc/swoc_version.h"
+#include "swoc/MemSpan.h"
 #include "swoc/TextView.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
@@ -169,6 +170,14 @@ union IPEndpoint {
   /// Automatic conversion to @c sockaddr.
   operator sockaddr const *() const { return &sa; }
 
+  /** The address as a byte sequence.
+   *
+   * @return Span of the address memory.
+   *
+   * This is raw access. If the contained data is not a valid address family an empty span is returned.
+   */
+  swoc::MemSpan<void const> raw_addr() const;
+
   /// The string name of the address family.
   static string_view family_name(sa_family_t family);
 };
@@ -271,6 +280,15 @@ IPEndpoint::port(sockaddr const *sa) {
 inline in_port_t
 IPEndpoint::host_order_port(sockaddr const *sa) {
   return ntohs(self_type::port(sa));
+}
+
+inline swoc::MemSpan<void const>
+IPEndpoint::raw_addr() const {
+  switch (sa.sa_family) {
+  case AF_INET: return { &sa4.sin_addr , sizeof(sa4.sin_addr) };
+  case AF_INET6: return { &sa6.sin6_addr, sizeof(sa6.sin6_addr) };
+  }
+  return {};
 }
 
 }} // namespace swoc::SWOC_VERSION_NS
