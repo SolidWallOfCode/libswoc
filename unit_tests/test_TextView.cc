@@ -157,7 +157,9 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   TextView prefix{tv1.prefix(10)};
 
   REQUIRE("0123456789" == prefix);
+  REQUIRE("90" == tv1.suffix(2));
   REQUIRE("67890" == tv1.suffix(5));
+  REQUIRE("4567890" == tv1.suffix(7));
   REQUIRE(tv1 == tv1.prefix(9999));
   REQUIRE(tv1 == tv1.suffix(9999));
 
@@ -194,6 +196,7 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   TextView addr1{"[fe80::fc54:ff:fe60:d886]"};
   TextView addr2{"[fe80::fc54:ff:fe60:d886]:956"};
   TextView addr3{"192.168.1.1:5050"};
+  TextView host{"evil.dave.rulz"};
 
   TextView t = addr1;
   ++t;
@@ -239,6 +242,9 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   s = t.take_suffix_at('Q');
   REQUIRE(s == addr3);
   REQUIRE(t.empty());
+
+  REQUIRE(host.suffix_at('.') == "rulz");
+  REQUIRE(true == host.suffix_at(':').empty());
 
   auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
   TextView token;
