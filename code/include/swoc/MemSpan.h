@@ -258,13 +258,13 @@ public:
                     size_t count ///< # of elements.
   );
 
-  /// Set the span.
-  /// This is faster but equivalent to constructing a new span with the same
-  /// arguments and assigning it.
-  /// @return @c this.
-  self_type &assign(T *first,     ///< First valid element.
-                    T const *last ///< First invalid element.
-  );
+  /** Adjust the span.
+   *
+   * @param first Starting point of the span.
+   * @param last Past the end of the span.
+   * @return @a this
+   */
+  self_type &assign(T *first, T const *last);
 
   /// Clear the span (become an empty span).
   self_type &clear();
@@ -332,6 +332,17 @@ public:
    * @return A @c string_view covering the span contents.
    */
   std::string_view view() const;
+
+  /** Construct all elements in the span.
+   *
+   * For each element in the span, construct an instance of the span type using the @a args. If the
+   * instances need destruction this must be done explicitly.
+   */
+  template <typename... Args> self_type & make(Args &&... args);
+
+  /// Destruct all elements in the span.
+  void destroy();
+
 
   template <typename U> friend class MemSpan;
 };
@@ -1164,6 +1175,24 @@ template <typename T>
 std::string_view
 MemSpan<T>::view() const {
   return {static_cast<const char *>(_ptr), this->size()};
+}
+
+template <typename T>
+template <typename... Args>
+auto
+MemSpan<T>::make(Args &&...args) -> self_type & {
+  for ( T * elt = this->data(), * limit = this->data_end() ; elt < limit ; ++elt ) {
+    new (elt) T(std::forward<Args>(args)...);
+  }
+  return *this;
+}
+
+template <typename T>
+void
+MemSpan<T>::destroy() {
+  for ( T * elt = this->data(), * limit = this->data_end() ; elt < limit ; ++elt ) {
+    std::destroy_at(elt);
+  }
 }
 
 // --- void specializations ---

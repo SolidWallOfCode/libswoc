@@ -16,6 +16,7 @@
 
 using swoc::MemSpan;
 using swoc::TextView;
+using namespace swoc::literals;
 
 TEST_CASE("MemSpan", "[libswoc][MemSpan]")
 {
@@ -84,6 +85,31 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   REQUIRE(fspan.size() == f2span.size());
   REQUIRE(fspan.is_same(f2span));
 };
+
+TEST_CASE("MemSpan construct", "[libswoc][MemSpan]") {
+  static unsigned counter = 0;
+  struct Thing {
+    Thing(TextView s) : _s(s) {
+      ++counter;
+    }
+    ~Thing() {
+      --counter;
+    }
+
+    unsigned _n = 56;
+    std::string _s;
+  };
+
+  char buff[sizeof(Thing) * 7];
+  auto span{MemSpan(buff).rebind<Thing>()};
+
+  span.make("default"_tv);
+  REQUIRE(counter == span.length());
+  REQUIRE(span[2]._s == "default");
+  REQUIRE(span[4]._n == 56);
+  span.destroy();
+  REQUIRE(counter == 0);
+}
 
 TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
 {
