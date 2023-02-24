@@ -512,6 +512,15 @@ public:
    */
   template <typename U> MemSpan<U> rebind() const;
 
+  /** Cast the span as a the instance of a type.
+   *
+   * @tparam U Target type.
+   * @return A pointer to the span as a constant instance of @a U.
+   *
+   * @note This throws if the size is not a match for @a U.
+   */
+  template <typename U> U const * as_ptr() const;
+
   /// Clear the span (become an empty span).
   self_type &clear();
 
@@ -761,6 +770,15 @@ public:
    * @return A @c MemSpan which contains the same memory as instances of @a V.
    */
   template <typename U> MemSpan<U> rebind() const;
+
+  /** Cast the span as a the instance of a type.
+   *
+   * @tparam U Target type.
+   * @return A pointer to the span as a constant instance of @a U.
+   *
+   * @note This throws if the size is not a match for @a U.
+   */
+  template <typename U> U * as_ptr() const;
 
   /// Clear the span (become an empty span).
   self_type &clear();
@@ -1474,6 +1492,22 @@ template <>
 inline auto
 MemSpan<void>::rebind() const -> self_type {
   return *this;
+}
+
+template <typename U> U *
+MemSpan<void>::as_ptr() const {
+  if (_size != sizeof(U)) {
+    throw std::invalid_argument("MemSpan::as size is not compatible with target type.");
+  }
+  return static_cast<U *>(_ptr);
+}
+
+template <typename U> U const *
+MemSpan<void const>::as_ptr() const {
+  if (_size != sizeof(U)) {
+    throw std::invalid_argument("MemSpan::as size is not compatible with target type.");
+  }
+  return static_cast<U const *>(_ptr);
 }
 
 inline std::string_view
