@@ -67,7 +67,7 @@ endif()
 add_library(libswoc-static STATIC ${CC_FILES})
 set_target_properties(libswoc-static PROPERTIES OUTPUT_NAME swoc-static-${LIBSWOC_VERSION})
 if (CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(libswoc-static PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
+    target_compile_options(libswoc-static PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic -Wshadow)
 endif()
 
 # Not quite sure how this works, but I think it generates one of two paths depending on the context.

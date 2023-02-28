@@ -1543,16 +1543,16 @@ template <typename Stream>
 Stream &
 TextView::stream_write(Stream &os, const TextView &b) const {
   // Local function, avoids extra template work.
-  static const auto stream_fill = [](Stream &os, size_t n) -> Stream & {
+  static const auto stream_fill = [](Stream &ostream, size_t n) -> Stream & {
     static constexpr size_t pad_size = 8;
     typename Stream::char_type padding[pad_size];
 
-    std::fill_n(padding, pad_size, os.fill());
-    for (; n >= pad_size && os.good(); n -= pad_size)
-      os.write(padding, pad_size);
-    if (n > 0 && os.good())
-      os.write(padding, n);
-    return os;
+    std::fill_n(padding, pad_size, ostream.fill());
+    for (; n >= pad_size && ostream.good(); n -= pad_size)
+      ostream.write(padding, pad_size);
+    if (n > 0 && ostream.good())
+      ostream.write(padding, n);
+    return ostream;
   };
 
   const std::size_t w = os.width();

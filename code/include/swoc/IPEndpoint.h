@@ -190,8 +190,8 @@ inline IPEndpoint::IPEndpoint(IPAddr const &addr) {
   this->assign(addr);
 }
 
-inline IPEndpoint::IPEndpoint(sockaddr const *sa) {
-  this->assign(sa);
+inline IPEndpoint::IPEndpoint(sockaddr const *socketaddr) {
+  this->assign(socketaddr);
 }
 
 inline IPEndpoint::IPEndpoint(IPEndpoint::self_type const &that) : self_type(&that.sa) {}
