@@ -39,11 +39,17 @@ public:
   using value_type = uintmax_t; ///< Integral type returned.
   using Units = swoc::Lexicon<value_type>; ///< Unit definition type.
 
+  /// Symbolic name for setting whether units are required.
+  static constexpr bool UNITS_REQUIRED = true;
+  /// Symbolic name for setting whether units are required.
+  static constexpr bool UNITS_NOT_REQUIRED = false;
+
   /** Constructor.
    *
    * @param units A @c Lexicon of unit definitions.
+   * @param unit_required_p Whether valid input requires units on all values.
    */
-  UnitParser(Units && units) noexcept;
+  UnitParser(Units && units, bool unit_required_p = true) noexcept;
 
   /** Set whether a unit is required.
    *
@@ -63,7 +69,7 @@ protected:
   Units _units; ///< Unit definitions.
 };
 
-UnitParser::UnitParser(UnitParser::Units&& units) noexcept : _units(std::move(units)) {
+UnitParser::UnitParser(UnitParser::Units&& units, bool unit_required_p) noexcept : _unit_required_p(unit_required_p), _units(std::move(units)) {
   _units.set_default(value_type{0}); // Used to check for bad unit names.
 }
 
@@ -116,8 +122,8 @@ TEST_CASE("UnitParser Bytes", "[Lexicon][UnitParser]") {
       , {1 << 30, {"G", "GB", "giga", "gigabyte", "gigabytes"}}
       }
     }
+    , UnitParser::UNITS_NOT_REQUIRED
   };
-  bytes.unit_required(false);
 
   REQUIRE(bytes("56 bytes") == 56);
   REQUIRE(bytes("3 kb") == 3 * (1 << 10));
@@ -168,4 +174,13 @@ TEST_CASE("UnitParser Time", "[Lexicon][UnitParser]") {
   auto result = time("1h30m10");
   REQUIRE(result.is_ok() == false);
   REQUIRE(result.errata().front().text() == "Required unit not found at offset 7");
+}
+
+TEST_CASE("UnitParser Eggs", "[Lexicon][UnitParser]") {
+  const UnitParser eggs{UnitParser::Units{{ {1, { "egg", "eggs"}}, {12, {"dozen"} }, {12 * 12, { "gross" }}}}, UnitParser::UNITS_NOT_REQUIRED};
+
+  REQUIRE(eggs("1") == 1);
+  REQUIRE(eggs("6") == 6);
+  REQUIRE(eggs("1 dozen") == 12);
+  REQUIRE(eggs("2 gross 6 dozen 10 eggs") == 370);
 }
