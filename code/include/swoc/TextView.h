@@ -537,7 +537,7 @@ public:
 
   /** Get a view of the last @a n bytes.
    *
-   * @param n Number of chars in the prefix.
+   * @param n Number of chars in the suffix.
    * @return A view of the last @a n characters in @a this, bounded by the size of @a this.
    */
   constexpr self_type suffix(size_t n) const noexcept;
@@ -600,6 +600,8 @@ public:
    * @tparam F Predicate function type.
    * @param pred The predicate instance.
    * @return @a this.
+   *
+   * If predicate is never true the view is cleared.
    */
   template <typename F> self_type &remove_suffix_if(F const &pred);
 
@@ -1263,26 +1265,26 @@ TextView::remove_suffix(size_t n) -> self_type & {
 inline TextView &
 TextView::remove_suffix_at(char c) {
   if (auto n = this->rfind(c); n != npos) {
-    this->remove_suffix(this->size() - n);
+    return this->remove_suffix(this->size() - n);
   }
-  return *this;
+  return this->clear();
 }
 
 inline TextView &
 TextView::remove_suffix_at(std::string_view const &delimiters) {
   if (auto n = this->find_last_of(delimiters); n != npos) {
-    this->remove_suffix(this->size() - n);
+    return this->remove_suffix(this->size() - n);
   }
-  return *this;
+  return this->clear();
 }
 
 template <typename F>
 TextView::self_type &
 TextView::remove_suffix_if(F const &pred) {
   if (auto n = this->rfind_if(pred); n != npos) {
-    this->remove_suffix(this->size() - n);
+    return this->remove_suffix(this->size() - n);
   }
-  return *this;
+  return this->clear();
 }
 
 inline TextView

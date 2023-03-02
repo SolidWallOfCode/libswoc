@@ -286,6 +286,22 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   elt = TextView{fqdn}.take_suffix_at('.');
   REQUIRE(elt.empty());
 
+  // Do it again, TextView stle.
+  t = "bob.ne1.corp.ngeo.com";
+  REQUIRE(t.rtrim('.').take_suffix_at('.') == "com"_tv);
+  REQUIRE(t.rtrim('.').take_suffix_at('.') == "ngeo"_tv);
+  REQUIRE(t.rtrim('.').take_suffix_at('.') == "corp"_tv);
+  REQUIRE(t.take_suffix_at('.') == "ne1"_tv);
+  REQUIRE(t.take_suffix_at('.') == "bob"_tv);
+  REQUIRE(t.size() == 0);
+
+  t = "bob.ne1.corp.ngeo.com";
+  REQUIRE(t.remove_suffix_at('.') == "bob.ne1.corp.ngeo"_tv);
+  REQUIRE(t.remove_suffix_at('.') == "bob.ne1.corp"_tv);
+  REQUIRE(t.remove_suffix_at('.') == "bob.ne1"_tv);
+  REQUIRE(t.remove_suffix_at('.') == "bob"_tv);
+  REQUIRE(t.remove_suffix_at('.').size() == 0);
+
   // Check some edge cases.
   fqdn  = "."sv;
   token = TextView{fqdn}.take_suffix_at('.');
@@ -353,7 +369,7 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   s.remove_prefix_if(is_not_alnum);
   REQUIRE(s == "cc.org.123");
   s.remove_suffix_at('!');
-  REQUIRE(s == "cc.org.123");
+  REQUIRE(s.empty());
   s = "file.cc.org";
   s.remove_prefix_at('!');
   REQUIRE(s == "file.cc.org");
