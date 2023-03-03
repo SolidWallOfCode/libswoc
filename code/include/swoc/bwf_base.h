@@ -972,6 +972,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::nullptr_t) {
   return bwformat(w, spec, static_cast<void *>(nullptr));
 }
 
+// Char pointer formatting
 inline BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, const char *v) {
   if (spec._type == 'x' || spec._type == 'X' || spec._type == 'p' || spec._type == 'P') {
@@ -983,6 +984,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, const char *v) {
   }
   return w;
 }
+// doc end
 
 inline BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, std::string const &s) {
@@ -1005,7 +1007,8 @@ bwformat(BufferWriter &w, bwf::Spec const &, TransformView<X, V> &&view) {
 template <typename F>
 auto
 bwformat(BufferWriter &w, bwf::Spec const &spec, F &&f) ->
-  typename std::enable_if<std::is_floating_point<typename std::remove_reference<F>::type>::value, BufferWriter &>::type {
+  typename std::enable_if<std::is_floating_point_v<typename std::remove_reference_t<F>>, BufferWriter &>::type
+{
   return f < 0 ? bwf::Format_Float(w, spec, -f, true) : bwf::Format_Float(w, spec, f, false);
 }
 

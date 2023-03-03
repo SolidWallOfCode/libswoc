@@ -350,7 +350,23 @@ It is important to note a formatter can call another formatter. For example, the
 :code:`std::string` looks like
 
 .. literalinclude:: ../../code/include/swoc/bwf_base.h
-   :lines: 811-833
+   :lines: 987-990
+
+A more complex example of this which illustrates other mechanisms is formatting a character pointer.
+
+.. literalinclude:: ../../code/include/swoc/bwf_base.h
+   :start-after: // Char pointer formatting
+   :end-before: // doc end
+
+This checks the format and if it's a pointer or hex format, delegates to generic pointer formatting.
+Otherwise if it's not :code:`nullptr` then it's treated as a C-string and delegated to the :code:`string_view`
+formatter. If it is :code:`nullptr` then it's delegated to the formatter for :code:`nullptr_t`.
+
+The implementation for generic pointer formatting is
+
+.. literalinclude:: ../../code/src/bw_format.cc
+   :start-after: // Generic poiner formatting
+   :end-before: // doc end
 
 The code first copies the format specification and forces a leading radix. Next it does special
 handling for :code:`nullptr`. If the pointer is valid, the code checks if the type ``p`` or ``P``
