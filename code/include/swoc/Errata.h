@@ -1014,7 +1014,7 @@ Errata::note_sv(std::optional<Severity> severity, std::string_view fmt, std::tup
       span = this->alloc(bw.extent());
       FixedBufferWriter{span}.print_v(fmt, args);
     }
-    this->note_localized(span.view(), severity);
+    this->note_localized(TextView(span), severity);
   }
   return *this;
 }

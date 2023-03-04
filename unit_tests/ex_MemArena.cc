@@ -39,7 +39,7 @@ localize(MemArena &arena, TextView view)
 {
   auto span = arena.alloc(view.size()).rebind<char>();
   memcpy(span, view);
-  return span.view();
+  return span;
 }
 
 template <typename T> struct Destructor {
@@ -139,7 +139,7 @@ bw_localize(MemArena &arena, TextView const &fmt, Args &&... args)
   if (w.error()) {
     FixedBufferWriter(arena.require(w.extent()).remnant()).print_v(fmt, arg_tuple);
   }
-  return arena.alloc(w.extent()).rebind<char>().view();
+  return arena.alloc(w.extent()).rebind<char>();
 }
 
 TEST_CASE("MemArena example", "[libswoc][MemArena][example]")
@@ -205,7 +205,7 @@ TEST_CASE("MemArena example", "[libswoc][MemArena][example]")
     lw.print("Much ado about not much text");
   }
   auto span = arena.alloc(w.extent()).rebind<char>(); // commit the memory.
-  REQUIRE(span.view() == "Much ado about not much text");
+  REQUIRE(TextView(span) == "Much ado about not much text");
 
   auto tv1 = bw_localize(arena, "Text: {} - '{}'", 956, "Additional");
   REQUIRE(tv1 == "Text: 956 - 'Additional'");

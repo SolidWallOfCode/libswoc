@@ -538,9 +538,9 @@ template <typename F> NameMap<F>::NameMap(std::initializer_list<std::tuple<std::
 template <typename F>
 std::string_view
 NameMap<F>::localize(std::string_view const &name) {
-  auto span = _arena.alloc(name.size());
+  auto span = _arena.alloc(name.size()).rebind<char>();
   memcpy(span, name);
-  return span.view();
+  return std::string_view(span.data(), span.size());
 }
 
 template <typename F>

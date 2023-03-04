@@ -331,7 +331,7 @@ TEST_CASE("ArenaWriter write", "[BW][ArenaWriter]")
   REQUIRE(0 == memcmp(span.data(), aw.data(), span.size()));
 
   bool valid_p      = true;
-  swoc::TextView tv = span.view();
+  auto tv = swoc::TextView(span.rebind<char>());
   try {
     for (char c = 'a'; c <= 'z'; ++c) {
       for (size_t i = 0; i < buffer.size(); ++i) {
@@ -371,7 +371,7 @@ TEST_CASE("ArenaWriter print", "[BW][ArenaWriter]")
   REQUIRE(0 == memcmp(span.data(), aw.data(), span.size()));
 
   bool valid_p      = true;
-  swoc::TextView tv = span.view();
+  auto tv = swoc::TextView(span);
   try {
     for (char c = 'a'; c <= 'z'; ++c) {
       for (size_t i = 0; i < buffer.size(); ++i) {

@@ -47,7 +47,7 @@ localize(MemArena &arena, TextView const &view)
 {
   auto span = arena.alloc(view.size()).rebind<char>();
   memcpy(span, view);
-  return span.view();
+  return span;
 }
 } // namespace
 

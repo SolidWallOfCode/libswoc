@@ -343,7 +343,7 @@ P * Table::add_column(std::unique_ptr<P> &&col) {
 TextView Table::localize(TextView const&src) {
   auto span = _arena.alloc(src.size()).rebind<char>();
   memcpy(span, src);
-  return span.view();
+  return span;
 }
 
 TextView Table::token(TextView & line) {

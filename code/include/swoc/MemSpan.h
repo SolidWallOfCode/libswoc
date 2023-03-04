@@ -10,7 +10,6 @@
 #pragma once
 
 #include <cstring>
-//#include <iosfwd>
 #include <cstddef>
 #include <type_traits>
 #include <ratio>
@@ -327,12 +326,6 @@ public:
    */
   constexpr self_type subspan(size_t offset, size_t count) const;
 
-  /** Return a view of the memory.
-   *
-   * @return A @c string_view covering the span contents.
-   */
-  std::string_view view() const;
-
   /** Construct all elements in the span.
    *
    * For each element in the span, construct an instance of the span type using the @a args. If the
@@ -599,12 +592,6 @@ public:
    * @note @a obj_size should be a multiple of @a alignment. This happens naturally if @c sizeof is used.
    */
   self_type align(size_t alignment, size_t obj_size) const;
-
-  /** Return a view of the memory.
-   *
-   * @return A @c string_view covering the span contents.
-   */
-  std::string_view view() const;
 };
 
 template <> class MemSpan<void> : public MemSpan<void const> {
@@ -1190,12 +1177,6 @@ MemSpan<T>::rebind() const {
 }
 
 template <typename T>
-std::string_view
-MemSpan<T>::view() const {
-  return {static_cast<const char *>(_ptr), this->size()};
-}
-
-template <typename T>
 template <typename... Args>
 auto
 MemSpan<T>::make(Args &&...args) -> self_type & {
@@ -1508,11 +1489,6 @@ MemSpan<void const>::as_ptr() const {
     throw std::invalid_argument("MemSpan::as size is not compatible with target type.");
   }
   return static_cast<U const *>(_ptr);
-}
-
-inline std::string_view
-MemSpan<void const>::view() const {
-  return {static_cast<char const *>(_ptr), _size};
 }
 
 /// Deduction guides
