@@ -215,7 +215,7 @@ public:
   constexpr size_t length() const;
 
   /// Number of bytes in the span.
-  size_t data_size() const;
+  constexpr size_t data_size() const;
 
   /// @return Pointer to memory in the span.
   T * data() const;
@@ -1099,7 +1099,7 @@ template <typename T> constexpr
 }
 
 template <typename T>
-size_t
+constexpr size_t
 MemSpan<T>::data_size() const {
   return _count * sizeof(T);
 }
