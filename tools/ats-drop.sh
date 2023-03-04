@@ -23,8 +23,11 @@ else
   mkdir -p ${TARGET_SRC_DIR}
 fi
 
+cp code/CMakeLists.txt ${TARGET_BASE_DIR}/swoc
+(cd ${ATS}/${BASE_PATH}/swoc ; sed -i -e '/^if (LIBSWOC_INSTALL)/,/^endif/d' CMakeLists.txt ; git add CMakeLists.txt)
+
 cp code/src/*.cc ${TARGET_SRC_DIR}
-(cd ${ATS}; git add ${SRC_PATH}/*.cc)
+(cd ${ATS}; git add ${BASE_PATH}/swoc/CMakeLists.txt ; git add ${SRC_PATH}/*.cc)
 
 INC_PATH="${BASE_PATH}/swoc/include/swoc"
 TARGET_INC_DIR="${ATS}/${INC_PATH}"
