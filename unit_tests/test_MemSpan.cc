@@ -25,6 +25,7 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
 
   MemSpan<char> span(buff, sizeof(buff));
   MemSpan<char> left = span.prefix(512);
+  memset(span, ' ');
   REQUIRE(left.size() == 512);
   REQUIRE(span.size() == 1024);
   span.remove_prefix(512);
@@ -84,6 +85,23 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   REQUIRE(fspan.data() == f2span.data());
   REQUIRE(fspan.size() == f2span.size());
   REQUIRE(fspan.is_same(f2span));
+
+  unsigned char ucb[512];
+  MemSpan ucspan{ucb};
+  memset(ucspan, 0);
+  REQUIRE(ucspan[0] == 0);
+  REQUIRE(ucspan[511] == 0);
+  REQUIRE(ucspan[111] == 0);
+  REQUIRE(ucb[0] == 0);
+  REQUIRE(ucb[511] == 0);
+  ucspan.remove_suffix(1);
+  ucspan.remove_prefix(1);
+  memset(ucspan, '@');
+  REQUIRE(ucspan[0] == '@');
+  REQUIRE(ucspan[509] == '@');
+  REQUIRE(ucb[0] == 0);
+  REQUIRE(ucb[511] == 0);
+  REQUIRE(ucb[510] == '@');
 };
 
 TEST_CASE("MemSpan construct", "[libswoc][MemSpan]") {

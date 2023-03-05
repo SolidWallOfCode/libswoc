@@ -61,7 +61,7 @@ set(CC_FILES
 add_library(libswoc SHARED ${CC_FILES})
 set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc-${LIBSWOC_VERSION})
 if (CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(libswoc PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
+    target_compile_options(libswoc PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic -Wshadow)
 endif()
 
 add_library(libswoc-static STATIC ${CC_FILES})
