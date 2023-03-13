@@ -105,6 +105,29 @@ Range                   Compact
 10.4.1.1-10.4.1.1       10.4.1.1
 ======================= =======================
 
+Conversions
+===========
+
+Most conversions between types should be straight forward but in some cases there is some indirection
+in order to avoid bad conversions due to differences in address families.
+
+Conversion from :libswoc:`swoc::IPEndpoint` to :libswoc:`swoc::IPAddr` is direct as the latter can
+be explicitly constructed from the former. For :libswoc:`swoc::IP6Addr` and :libswoc:`swoc::IP4Addr`
+the family must be checked first. The expected way to do this is ::
+
+   if ( auto sa = ep.ip4() ; sa ) {
+      IP4Addr addr(sa);
+      // ....
+   }
+
+This is intended to be similar to how dynamic casts are handled when it is not guaranteed the generic
+type contains an instance of the more specific type.
+
+Conversion from address types to socket addresses can be done by constructing an :code:`IPEndpoint` or,
+if the socket address structure already exists, using the :code:`copy_to` methods on the address types,
+such as :libswoc:`swoc::IP4Addr::copy_to`. Note converting an address types sets only the family and
+address. Converting a service type also sets the port.
+
 .. _ip-space:
 
 IPSpace

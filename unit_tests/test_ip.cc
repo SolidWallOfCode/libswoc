@@ -14,7 +14,6 @@
 #include "swoc/swoc_ip.h"
 #include "swoc/bwf_ip.h"
 #include "swoc/bwf_std.h"
-#include "swoc/swoc_file.h"
 #include "swoc/Lexicon.h"
 
 using namespace std::literals;
@@ -46,6 +45,8 @@ template<typename P> void dump(IPSpace < P > const& space) {
 } // namespace
 
 TEST_CASE("Basic IP", "[libswoc][ip]") {
+  IPEndpoint ep;
+
   // Use TextView because string_view(nullptr) fails. Gah.
   struct ip_parse_spec {
     TextView hostspec;
@@ -182,6 +183,24 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(a6_3[14] == 0x1C);
   REQUIRE(a6_2[15] == 0x34);
 
+  a6_1.copy_to(&ep.sa);
+  REQUIRE(a6_1 == IP6Addr(ep.ip6()));
+  a6_2.copy_to(&ep.sa6);
+  REQUIRE(a6_2 == IP6Addr(&ep.sa6));
+  REQUIRE(a6_1 != IP6Addr(ep.ip6()));
+  in6_addr in6;
+  a6_1.network_order(in6);
+  REQUIRE(a6_1 == IP6Addr(in6));
+  a6_1.network_order(ep.sa6.sin6_addr);
+  REQUIRE(a6_1 == IP6Addr(ep.ip6()));
+  in6 = a6_2.network_order();
+  REQUIRE(a6_2 == IP6Addr(in6));
+  a6_2.host_order(in6);
+  REQUIRE(in6.s6_addr[0] == 0x34);
+  REQUIRE(in6.s6_addr[6] == 0xff);
+  REQUIRE(in6.s6_addr[13] == 0x88);
+
+
   // Little bit of IP4 address arithmetic / comparison testing.
   IP4Addr a4_null;
   IP4Addr a4_1{"172.28.56.33"};
@@ -290,7 +309,6 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   CHECK_FALSE(r6.load("2.2.2.2-fe80:20c::29ff:feae:5587::1c33"));
   CHECK_FALSE(r.load("2.2.2.2-fe80:20c::29ff:feae:5587::1c33"));
 
-  IPEndpoint ep;
   ep.set_to_any(AF_INET);
   REQUIRE(ep.is_loopback() == false);
   REQUIRE(ep.is_any() == true);
@@ -299,13 +317,20 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(ep.is_loopback() == true);
   REQUIRE(ep.is_any() == false);
   REQUIRE(ep.raw_addr().length() == sizeof(in6_addr));
+
   ep.set_to_any(AF_INET6);
   REQUIRE(ep.is_loopback() == false);
   REQUIRE(ep.is_any() == true);
+  CHECK(ep.ip4() == nullptr);
+  IP6Addr a6{ep.ip6()};
+  REQUIRE(a6.is_loopback() == false);
+  REQUIRE(a6.is_any() == true);
+
   ep.set_to_loopback(AF_INET);
   REQUIRE(ep.is_loopback() == true);
   REQUIRE(ep.is_any() == false);
-  IP4Addr a4 { &ep.sa4 };
+  CHECK(ep.ip6() == nullptr);
+  IP4Addr a4 { ep.ip4() };
   REQUIRE(a4.is_loopback() == true);
   REQUIRE(a4.is_any() == false);
 
@@ -485,8 +510,8 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
   swoc::IP6Range r_5{
       "2001:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv};
 
-  CHECK(true == r_0.empty());
-  CHECK(false == r_1.empty());
+  CHECK(r_0.empty());
+  CHECK_FALSE(r_1.empty());
 
   swoc::IPMask mask{127};
   CHECK(r_5.min() == (r_5.min() | swoc::IPMask(128)));
@@ -495,6 +520,16 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
 
   swoc::IP6Addr aa_1{"2001:1f2d:c587:24c4::"};
   CHECK(aa_1 == (aa_1 & swoc::IPMask{62}));
+
+  // Verify a family specific range only works with the same family range.
+  TextView r4_txt{"10.33.45.19-10.33.45.76"};
+  TextView r6_txt{"2001:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"};
+  IP4Range rr4;
+  IP6Range rr6;
+  CHECK(rr4.load(r4_txt));
+  CHECK_FALSE(rr4.load(r6_txt));
+  CHECK_FALSE(rr6.load(r4_txt));
+  CHECK(rr6.load(r6_txt));
 
   std::array<swoc::IP4Net, 7> r_4_nets =
       {{
