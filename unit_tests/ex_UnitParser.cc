@@ -174,6 +174,9 @@ TEST_CASE("UnitParser Time", "[Lexicon][UnitParser]") {
   auto result = time("1h30m10");
   REQUIRE(result.is_ok() == false);
   REQUIRE(result.errata().front().text() == "Required unit not found at offset 7");
+
+  auto duration = nanoseconds(time("30 minutes 12h"));
+  REQUIRE(minutes(750) == duration);
 }
 
 TEST_CASE("UnitParser Eggs", "[Lexicon][UnitParser]") {
