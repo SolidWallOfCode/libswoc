@@ -4,6 +4,9 @@
 *.swp
 *.cbp
 
+# Pkg-config files
+*.pc
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
@@ -17,7 +20,10 @@
 *.exe
 *.out
 *.app
+example/ex_diskstats
 example/ex_flat_space
+example/ex_host_file
+example/ex_lru_cache
 example/ex_netcompact
 example/ex_netdb
 unit_tests/test_libswoc

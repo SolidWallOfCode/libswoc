@@ -30,14 +30,18 @@ endif()
 
 add_executable(ex_lru_cache ex_lru_cache.cc)
 target_link_libraries(ex_lru_cache PUBLIC libswoc-static)
+
+set(THREADS_PREFER_PTHREAD_FLAG ON) # Without this flag CMake may resort to just '-lpthread'
+find_package(Threads)
+
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ex_lru_cache PRIVATE -Wall -Wextra -Werror)
-    target_link_options(ex_lru_cache PRIVATE -lpthread)
+    target_link_libraries(ex_lru_cache PRIVATE Threads::Threads)
 endif()
 
 add_executable(ex_host_file ex_host_file.cc)
 target_link_libraries(ex_host_file PUBLIC libswoc-static)
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ex_host_file PRIVATE -Wall -Wextra -Werror)
-    target_link_options(ex_host_file PRIVATE -lpthread)
+    target_link_libraries(ex_host_file PRIVATE Threads::Threads)
 endif()
