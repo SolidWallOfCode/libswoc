@@ -322,13 +322,50 @@ public:
   /// Default constructor - construct invalid range.
   IPRange() = default;
 
+  /** Construct an inclusive range.
+   *
+   * @param min Minimum range value.
+   * @param max Maximum range value.
+   */
   IPRange(IPAddr const &min, IPAddr const &max);
+
+  /** Construct an inclusive range.
+   *
+   * @param min Minimum range value.
+   * @param max Maximum range value.
+   */
+  IPRange(IP4Addr const &min, IP4Addr const &max);
+  /** Construct an inclusive range.
+   *
+   * @param min Minimum range value.
+   * @param max Maximum range value.
+   */
+  IPRange(IP6Addr const &min, IP6Addr const &max);
+
+  /** Construct a singleton range.
+   *
+   * @param addr Address of range.
+   */
+
+  IPRange(IPAddr const& addr) : IPRange(addr, addr) {}
+  /** Construct a singleton range.
+   *
+   * @param addr Address of range.
+   */
+  IPRange(IP4Addr addr) : IPRange(addr, addr) {}
+
+  /** Construct a singleton range.
+   *
+   * @param addr Address of range.
+   */
+  IPRange(IP6Addr const & addr) : IPRange(addr, addr) {}
 
   /// Construct from an IPv4 @a range.
   IPRange(IP4Range const &range);
 
   /// Construct from an IPv6 @a range.
   IPRange(IP6Range const &range);
+
 
   /** Construct from a string format.
    *
@@ -337,6 +374,9 @@ public:
    * The string can be a single address, two addresses separated by a dash '-' or a CIDR network.
    */
   IPRange(string_view const &text);
+
+  self_type & assign(IP4Addr const& min, IP4Addr const& max);
+  self_type & assign(IP6Addr const& min, IP6Addr const& max);
 
   /// Equality
   bool operator==(self_type const &that) const;
@@ -1151,6 +1191,7 @@ public:
 protected:
   /// Empty struct to use for payload.
   /// This declares the struct and defines the singleton instance used.
+  /// @internal For some reason @c std::monostate didn't work, but I don't remember why.
   static inline constexpr struct Mark {
     using self_type = Mark;
     /// @internal @c IPSpace requires equality / inequality operators.
@@ -1378,8 +1419,30 @@ inline IPRange::IPRange(IP6Range const &range) : _family(AF_INET6) {
   _range._ip6 = range;
 }
 
+inline IPRange::IPRange(IP4Addr const &min, IP4Addr const &max) {
+  this->assign(min, max);
+}
+
+inline IPRange::IPRange(IP6Addr const &min, IP6Addr const &max) {
+  this->assign(min, max);
+}
+
 inline IPRange::IPRange(string_view const &text) {
   this->load(text);
+}
+
+inline auto
+IPRange::assign(IP4Addr const &min, IP4Addr const &max) -> self_type & {
+  _range._ip4.assign(min, max);
+  _family = AF_INET;
+  return *this;
+}
+
+inline auto
+IPRange::assign(IP6Addr const &min, IP6Addr const &max) -> self_type & {
+  _range._ip6.assign(min, max);
+  _family = AF_INET6;
+  return *this;
 }
 
 inline auto
