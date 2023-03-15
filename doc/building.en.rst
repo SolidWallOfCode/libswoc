@@ -60,3 +60,8 @@ to build ::
    target_link_libraries(plugin PRIVATE libswoc)
    target_include_directories(plugin PRIVATE libswoc)
 
+To build from the command line ::
+
+   cmake .
+   cmake --build .
+   cmake --install . --prefix /install/dir

@@ -98,9 +98,14 @@ if (LIBSWOC_INSTALL)
 
     set(link-target libswoc.so)
     set(link-src $<TARGET_FILE_NAME:libswoc>)
+    # Magic escapes so the prefix is evaluated at install time, not makefile creation time.
     install(CODE
-        "execute_process(COMMAND bash -c \"echo Linking ${link-src} to ${link-target};cd ${CMAKE_INSTALL_FULL_LIBDIR} && (rm -f ${link-target};ln -s ${link-src} ${link-target})
-        \")"
+        "execute_process(COMMAND bash -c
+          \"
+            echo Linking ${link-src} to ${link-target} in [\${CMAKE_INSTALL_PREFIX}:${CMAKE_INSTALL_LIBDIR}];
+            cd \${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} && (rm -f ${link-target};ln -s ${link-src} ${link-target})
+          \"
+        )"
     )
 
     install(EXPORT libswoc-static-config

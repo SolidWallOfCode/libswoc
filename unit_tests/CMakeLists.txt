@@ -34,4 +34,4 @@ set_target_properties(test_libswoc PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(test_libswoc PRIVATE -Wall -Wextra -Werror -Wno-unused-parameter -Wno-format-truncation -Wno-stringop-overflow -Wno-invalid-offsetof)
 endif()
-#add_definitions(-DVERBOSE_EXAMPLE_OUTPUT=1)
+
