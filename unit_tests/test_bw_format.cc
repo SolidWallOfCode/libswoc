@@ -20,7 +20,7 @@
 using namespace std::literals;
 using namespace swoc::literals;
 using swoc::TextView;
-using swoc::bwprint;
+using swoc::bwprint, swoc::bwappend;
 
 TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]") {
   swoc::LocalBufferWriter<50> bw;
@@ -228,7 +228,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]") {
   REQUIRE(bw.view() == "Byte '97'");
 }
 
-TEST_CASE("bwstring", "[bwprint][bwstring]") {
+TEST_CASE("bwstring", "[bwprint][bwappend][bwstring]") {
   std::string s;
   swoc::TextView fmt("{} -- {}");
   std::string_view text{"e99a18c428cb38d5f260853678922e03"};
@@ -281,6 +281,19 @@ TEST_CASE("bwstring", "[bwprint][bwstring]") {
   REQUIRE(s == "Null 0X0.");
   bwprint(s, "Null {0:p}.{0:P}.{0:s}.{0:S}", null_string);
   REQUIRE(s == "Null 0x0.0X0.null.NULL");
+
+  {
+    std::string x;
+    bwappend(x, "Phil");
+    REQUIRE(x == "Phil");
+    bwappend(x, " is {} most of the time", "correct"_tv);
+    REQUIRE(x == "Phil is correct most of the time");
+    x.resize(0); // try it with already sufficient capacity.
+    bwappend(x, "Dave");
+    REQUIRE(x == "Dave");
+    bwappend(x, " is {} some of the time", "correct"_tv);
+    REQUIRE(x == "Dave is correct some of the time");
+  }
 }
 
 TEST_CASE("BWFormat integral", "[bwprint][bwformat]") {
