@@ -286,6 +286,7 @@ IP4Addr::load(std::string_view const &text) {
   _addr = INADDR_ANY; // clear to zero.
 
   // empty or trailing dot or empty brackets or unmatched brackets.
+  src.trim_if(&isspace);
   if (src.empty() || src.back() == '.' || ('[' == *src && ((++src).empty() || src.back() != ']'))) {
     return false;
   }
@@ -403,6 +404,7 @@ IP6Addr::load(std::string_view const &str) {
   int empty_idx = -1;
   auto quad     = _addr._quad.data();
 
+  src.trim_if(&isspace);
   if (src && '[' == *src) {
     ++src;
     if (src.empty() || src.back() != ']') {

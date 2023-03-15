@@ -473,6 +473,9 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   std::string_view r_2{"10.2.0.1-10.2.0.127"}; // not a network - bad start
   std::string_view r_3{"10.3.0.0-10.3.0.126"}; // not a network - bad end
   std::string_view r_4{"10.4.1.1-10.4.1.1"}; // singleton
+  std::string_view r_5{"10.20.30.40- 50.60.70.80"};
+  std::string_view r_6{"10.20.30.40 -50.60.70.80"};
+  std::string_view r_7{"10.20.30.40 - 50.60.70.80"};
 
   IPRange r;
 
@@ -499,6 +502,10 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(w.view() == r_4);
   w.clear().print("{::c}", r);
   REQUIRE(w.view() == "10.4.1.1");
+
+  REQUIRE(r.load(r_5));
+  REQUIRE(r.load(r_6));
+  REQUIRE(r.load(r_7));
 }
 
 TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {

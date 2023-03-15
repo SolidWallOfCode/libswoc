@@ -105,11 +105,13 @@ public:
   /// @return The address in host order.
   in_addr_t host_order() const;
 
-  /** Parse @a text as IPv4 address.
-      The address resulting from the parse is copied to this object if the conversion is successful,
-      otherwise this object is invalidated.
-
-      @return @c true on success, @c false otherwise.
+  /** Parse IPv4 address.
+   *
+   * @param text Text to parse.
+   *
+   * @return @c true if @a text is a valid IPv4 address, @c false otherwise.
+   *
+   * Whitespace is trimmed from @text before parsing. If the parse fails @a this is set to @c INADDR_ANY.
   */
   bool load(string_view const &text);
 
