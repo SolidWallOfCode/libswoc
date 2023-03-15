@@ -1,9 +1,9 @@
 
 all:
-	(cd code; make)
+	$(MAKE) -C code all
 
 install:
-	(cd code; make install)
+	$(MAKE) -C code install
 
 clean:
-	(cd code; make clean)
+	$(MAKE) -C code clean
