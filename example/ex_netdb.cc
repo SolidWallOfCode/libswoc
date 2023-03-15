@@ -163,7 +163,7 @@ swoc::MemArena Storage;
 TextView store(TextView const& text) {
   auto span = Storage.alloc(text.size()).rebind<char>();
   memcpy(span, text);
-  return span.view();
+  return span;
 }
 
 /// Process the @a content of a file in to @a space.
