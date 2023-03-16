@@ -8,12 +8,20 @@ set_target_properties(ex_netdb PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_SOUR
 
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ex_netdb PRIVATE -Wall -Wextra -Werror)
+     # stop the compiler from complaining about unused variable in structured binding
+    if (GCC_VERSION VERSION_LESS 8.0)
+        target_compile_options(ex_netdb PRIVATE -Wno-unused-variable)
+    endif ()
 endif()
 
 add_executable(ex_netcompact ex_netcompact.cc)
 target_link_libraries(ex_netcompact PUBLIC libswoc-static)
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ex_netcompact PRIVATE -Wall -Wextra -Werror)
+     # stop the compiler from complaining about unused variable in structured binding
+    if (GCC_VERSION VERSION_LESS 8.0)
+        target_compile_options(ex_netcompact PRIVATE -Wno-unused-variable)
+    endif ()
 endif()
 
 add_executable(ex_flat_space ex_flat_space.cc)

@@ -33,5 +33,9 @@ target_link_libraries(test_libswoc PUBLIC libswoc)
 set_target_properties(test_libswoc PROPERTIES CLANG_FORMAT_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(test_libswoc PRIVATE -Wall -Wextra -Werror -Wno-unused-parameter -Wno-format-truncation -Wno-stringop-overflow -Wno-invalid-offsetof)
+    # stop the compiler from complaining about unused variable in structured binding
+    if (GCC_VERSION VERSION_LESS 8.0)
+        target_compile_options(test_libswoc PRIVATE -Wno-unused-variable)
+    endif ()
 endif()
 
