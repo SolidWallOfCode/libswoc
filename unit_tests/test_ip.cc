@@ -33,6 +33,7 @@ using swoc::IPRange;
 using swoc::IPMask;
 
 using swoc::IPSpace;
+using swoc::IPRangeSet;
 
 using W = swoc::LocalBufferWriter<256>;
 
@@ -2002,4 +2003,29 @@ TEST_CASE("IPSrv", "[libswoc][IPSrv]") {
   CHECK(s.load("ffee:1f2d:c587:24c3:9128:3349:3cee:143"));
   REQUIRE(s == aa1);
   REQUIRE(s.host_order_port() == 0);
+}
+
+TEST_CASE("IPRangeSet", "[libswoc][iprangeset]") {
+  std::array<TextView, 6> ranges = {"172.28.56.12-172.28.56.99"_tv,
+                                    "10.10.35.0/24"_tv,
+                                    "192.168.56.0/25"_tv,
+                                    "1337::ded:beef-1337::ded:ceef"_tv,
+                                    "ffee:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv,
+                                    "10.12.148.0/23"_tv};
+
+  IPRangeSet addrs;
+
+  for ( auto rtxt : ranges ) {
+    IPRange r{rtxt};
+    addrs.mark(r);
+  }
+
+  unsigned n = 0;
+  bool valid_p = true;
+  for ( auto r : addrs ) {
+    valid_p = valid_p && ! r.empty();
+    ++n;
+  }
+  REQUIRE(n == addrs.count());
+  REQUIRE(valid_p);
 }

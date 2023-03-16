@@ -922,6 +922,8 @@ public:
     /// @return A pointer to the referent.
     value_type const *operator->() const;
 
+    IPRange const& range() const;
+
     /// Equality
     bool operator==(self_type const &that) const;
 
@@ -1018,6 +1020,7 @@ public:
     /// Dereference.
     /// @return A pointer to the referent.
     value_type const *operator->() const;
+
   };
 
   /** Find the payload for an @a addr.
@@ -1143,6 +1146,8 @@ protected:
   iterator iterator_at(typename IP6Space::iterator const& spot) {
     return iterator(_ip4.end(), spot);
   }
+
+  friend class IPRangeSet;
 };
 
 /** An IPSpace that contains only addresses.
@@ -1156,6 +1161,20 @@ protected:
 class IPRangeSet
 {
   using self_type = IPRangeSet;
+
+  /// Empty struct to use for payload.
+  /// This declares the struct and defines the singleton instance used.
+  /// @internal For some reason @c std::monostate didn't work, but I don't remember why.
+  static inline constexpr struct Mark {
+    using self_type = Mark;
+    /// @internal @c IPSpace requires equality / inequality operators.
+    /// These make all instance equal to each other.
+    bool operator==(self_type const &that);
+    bool operator!=(self_type const &that);
+  } MARK{};
+
+  /// Range set type.
+  using Space = swoc::IPSpace<Mark>;
 
 public:
   /// Default construct empty set.
@@ -1188,20 +1207,80 @@ public:
   /// Remove all addresses in the set.
   void clear();
 
-protected:
-  /// Empty struct to use for payload.
-  /// This declares the struct and defines the singleton instance used.
-  /// @internal For some reason @c std::monostate didn't work, but I don't remember why.
-  static inline constexpr struct Mark {
-    using self_type = Mark;
-    /// @internal @c IPSpace requires equality / inequality operators.
-    /// These make all instance equal to each other.
-    bool operator==(self_type const &that);
-    bool operator!=(self_type const &that);
-  } MARK{};
+  /// Constant iterator for iteration over ranges.
+  class const_iterator {
+    using self_type = const_iterator; ///< Self reference type.
+    using super_type = Space::const_iterator;
+    friend class IPRangeSet;
 
+  public:
+    using value_type = IPRange const;
+    // STL algorithm compliance.
+    using iterator_category = std::bidirectional_iterator_tag;
+    using pointer           = value_type *;
+    using reference         = value_type &;
+    using const_reference   = value_type const &;
+    using difference_type   = int;
+
+    /// Default constructor.
+    const_iterator() = default;
+
+    /// Copy constructor.
+    const_iterator(self_type const &that) = default;
+
+    /// Assignment.
+    self_type &operator=(self_type const &that) = default;
+
+    /// Pre-increment.
+    /// Move to the next element in the list.
+    /// @return The iterator.
+    self_type &operator++();
+
+    /// Pre-decrement.
+    /// Move to the previous element in the list.
+    /// @return The iterator.
+    self_type &operator--();
+
+    /// Post-increment.
+    /// Move to the next element in the list.
+    /// @return The iterator value before the increment.
+    self_type operator++(int);
+
+    /// Post-decrement.
+    /// Move to the previous element in the list.
+    /// @return The iterator value before the decrement.
+    self_type operator--(int);
+
+    /// Dereference.
+    /// @return A reference to the referent.
+    value_type const& operator*() const;
+
+    /// Dereference.
+    /// @return A pointer to the referent.
+    value_type const *operator->() const;
+
+    /// Equality
+    bool operator==(self_type const &that) const;
+
+    /// Inequality
+    bool operator!=(self_type const &that) const;
+
+  protected:
+    const_iterator(super_type const& spot) : _iter(spot) {}
+
+    super_type _iter; ///< Underlying iterator.
+  };
+
+  using iterator = const_iterator;
+
+  /// @return Iterator to first range.
+  const_iterator begin() const { return _addrs.begin(); }
+  /// @return Iterator past last range.
+  const_iterator end() const { return _addrs.end(); }
+
+protected:
   /// The address set.
-  swoc::IPSpace<Mark> _addrs;
+  Space _addrs;
 };
 
 inline auto
@@ -1335,9 +1414,13 @@ IPSpace<PAYLOAD>::const_iterator::operator->() const -> value_type const * {
   return &_value;
 }
 
+template <typename PAYLOAD>
+IPRange const &
+IPSpace<PAYLOAD>::const_iterator::range() const { return std::get<0>(_value); }
+
 /* Bit of subtlety with equality - although it seems that if @a _iter_4 is valid, it doesn't matter
  * where @a _iter6 is (because it is really the iterator location that's being checked), it's
- * neccesary to do the @a _iter_4 validity on both iterators to avoid the case of a false positive
+ * necessary to do the @a _iter_4 validity on both iterators to avoid the case of a false positive
  * where different internal iterators are valid. However, in practice the other (non-active)
  * iterator won't have an arbitrary value, it will be either @c begin or @c end in step with the
  * active iterator therefore it's effective and cheaper to just check both values.
@@ -1978,6 +2061,52 @@ template <typename PAYLOAD>
 size_t
 IPSpace<PAYLOAD>::count(sa_family_t f) const {
   return IP4Addr::AF_value == f ? _ip4.count() : IP6Addr::AF_value == f ? _ip6.count() : 0;
+}
+
+inline auto
+IPRangeSet::const_iterator::operator++() -> self_type & {
+  ++_iter;
+  return *this;
+}
+
+inline auto
+IPRangeSet::const_iterator::operator--() -> self_type & {
+  --_iter;
+  return *this;
+}
+
+inline auto
+IPRangeSet::const_iterator::operator++(int) -> self_type {
+  self_type zret{*this};
+  ++_iter;
+  return zret;
+}
+
+inline auto
+IPRangeSet::const_iterator::operator--(int) -> self_type {
+  self_type zret{*this};
+  --_iter;
+  return zret;
+}
+
+inline auto
+IPRangeSet::const_iterator::operator*() const -> value_type const& {
+  return _iter.range();
+}
+
+inline auto
+IPRangeSet::const_iterator::operator->() const -> value_type const * {
+  return &(_iter.range());
+}
+
+inline bool
+IPRangeSet::const_iterator::operator==(IPRangeSet::const_iterator::self_type const &that) const {
+  return _iter == that._iter;
+}
+
+inline bool
+IPRangeSet::const_iterator::operator!=(IPRangeSet::const_iterator::self_type const &that) const {
+  return _iter != that._iter;
 }
 
 }} // namespace swoc::SWOC_VERSION_NS
