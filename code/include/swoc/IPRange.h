@@ -836,21 +836,23 @@ public:
     blend(IP6Range const &range, U const &color, F &&blender);
 
   /// @return The number of distinct ranges.
-  size_t
-  count() const {
-    return _ip4.count() + _ip6.count();
-  }
+  size_t count() const;
 
-  size_t
-  count_ip4() const {
-    return _ip4.count();
-  }
-  size_t
-  count_ip6() const {
-    return _ip6.count();
-  }
+  /// @return The number of IPv4 ranges.
+  size_t count_ip4() const;
 
+  /// @return The number of IPv6 ranges.
+  size_t count_ip6() const;
+
+  /** Number of rnages for a specific address family.
+   *
+   * @param f Address family.
+   * @return The number of ranges of @a family.
+   */
   size_t count(sa_family_t f) const;
+
+  /// @return @c true if there are no ranges in the space, @c false otherwise.
+  bool empty() const;
 
   /// Remove all ranges.
   void clear();
@@ -1204,6 +1206,8 @@ public:
   /// @return Number of ranges in the set.
   size_t count() const;
 
+  bool empty() const;
+
   /// Remove all addresses in the set.
   void clear();
 
@@ -1307,6 +1311,11 @@ inline size_t
 IPRangeSet::count() const
 {
   return _addrs.count();
+}
+
+inline bool
+IPRangeSet::empty() const {
+  return _addrs.empty();
 }
 
 inline void
@@ -2059,8 +2068,32 @@ IPSpace<PAYLOAD>::end(sa_family_t family) const -> const_iterator {
 
 template <typename PAYLOAD>
 size_t
+IPSpace<PAYLOAD>::count_ip4() const {
+  return _ip4.count();
+}
+
+template <typename PAYLOAD>
+size_t
+IPSpace<PAYLOAD>::count_ip6() const {
+  return _ip6.count();
+}
+
+template <typename PAYLOAD>
+size_t
+IPSpace<PAYLOAD>::count() const {
+  return _ip4.count() + _ip6.count();
+}
+
+template <typename PAYLOAD>
+size_t
 IPSpace<PAYLOAD>::count(sa_family_t f) const {
   return IP4Addr::AF_value == f ? _ip4.count() : IP6Addr::AF_value == f ? _ip6.count() : 0;
+}
+
+template <typename PAYLOAD>
+bool
+IPSpace<PAYLOAD>::empty() const {
+  return _ip4.empty() && _ip6.empty();
 }
 
 inline auto
