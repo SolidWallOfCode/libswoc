@@ -307,3 +307,35 @@ TEST_CASE("Errata local severity", "[libswoc][Errata]") {
   REQUIRE(base.length() == 3);
   REQUIRE(base.severity() == ERRATA_WARN);
 }
+
+TEST_CASE("Errata glue", "[libswoc][Errata]") {
+  std::string s;
+  Errata errata;
+
+  errata.note(ERRATA_ERROR, "First");
+  errata.note(ERRATA_WARN, "Second");
+  errata.note(ERRATA_INFO, "Third");
+  errata.assign_severity_glue_text(":\n");
+  bwprint(s, "{}", errata);
+  REQUIRE("Error:\nError: First\nWarn: Second\nInfo: Third\n" == s);
+  errata.assign_annotation_glue_text("\n"); // check for no trailing newline
+  bwprint(s, "{}", errata);
+  REQUIRE("Error:\nError: First\nWarn: Second\nInfo: Third" == s);
+  errata.assign_annotation_glue_text("\n", true); // check for trailing newline
+  bwprint(s, "{}", errata);
+  REQUIRE("Error:\nError: First\nWarn: Second\nInfo: Third\n" == s);
+
+  errata.assign_annotation_glue_text(", ");
+  bwprint(s, "{}", errata);
+  REQUIRE("Error:\nError: First, Warn: Second, Info: Third" == s);
+
+  errata.clear();
+  errata.note("First");
+  errata.note("Second");
+  errata.note("Third");
+  errata.assign(ERRATA_ERROR);
+  errata.assign_severity_glue_text(" -> ");
+  errata.assign_annotation_glue_text(", ");
+  bwprint(s, "{}", errata);
+  REQUIRE("Error -> First, Second, Third" == s);
+}
