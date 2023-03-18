@@ -1211,7 +1211,7 @@ public:
   /// Remove all addresses in the set.
   void clear();
 
-  /// Constant iterator for iteration over ranges.
+  /// Bidirectional constant iterator for iteration over ranges.
   class const_iterator {
     using self_type = const_iterator; ///< Self reference type.
     using super_type = Space::const_iterator;
