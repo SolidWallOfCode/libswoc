@@ -135,11 +135,10 @@ public:
    * The container type must have the methods @c data and @c size which must return values convertible
    * to the pointer type for @a T and @c size_t respectively.
    *
-   * @note If the container is constant then the span type must also be constant.
-   *
-   * @internal constness is a bit funky, because it can come from the container type or the
-   * element type, i.e. passing a container as @c const& means the span must be @c const ).
-   * If the argument is constant, that gets baked in to @a C.
+   * @internal A non-const variant of this is needed because passing by CR means imposing constness
+   * on the container which can then undesirably propagate that to the element type. Best example -
+   * consstructing from @c std::string. Without this variant it's not possible to construct a @c char
+   * span vs. a @c char @c const.
    */
   template < typename C
             , typename = std::enable_if_t<
@@ -148,6 +147,25 @@ public:
               , void
               >
             > constexpr MemSpan(C & c);
+
+  /** Construct from any vector like container.
+   *
+   * @tparam C Container type.
+   * @param c container
+   *
+   * The container type must have the methods @c data and @c size which must return values convertible
+   * to the pointer type for @a T and @c size_t respectively.
+   *
+   * @note Because the container is passed as a constant reference, this may cause the span type to
+   * also be a constant element type.
+   */
+  template < typename C
+            , typename = std::enable_if_t<
+              std::is_convertible_v<decltype(std::declval<C>().data()), T *> &&
+                std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
+              , void
+              >
+            > constexpr MemSpan(C const & c);
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -982,7 +1000,8 @@ template <typename T> constexpr MemSpan<T>::MemSpan(std::nullptr_t) {}
 
 template <typename T> template <auto N, typename U, typename META> constexpr MemSpan<T>::MemSpan(std::array<U,N> const& a) : _ptr{a.data()} , _count{a.size()} {}
 template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(std::array<T,N> & a) : _ptr{a.data()} , _count{a.size()} {}
-template <typename T> template <typename C, typename> constexpr MemSpan<T>::MemSpan(C &c) : _ptr(c.data()), _count(c.size()) {}
+template <typename T> template <typename C, typename> constexpr MemSpan<T>::MemSpan(C & c) : _ptr(c.data()), _count(c.size()) {}
+template <typename T> template <typename C, typename> constexpr MemSpan<T>::MemSpan(C const& c) : _ptr(c.data()), _count(c.size()) {}
 
 template <typename T>
 MemSpan<T> &

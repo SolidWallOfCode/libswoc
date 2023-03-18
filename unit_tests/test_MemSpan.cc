@@ -221,6 +221,11 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
   MemSpan<char const *> span2_args { span_args };
   REQUIRE(span_args.size() == 4);
   REQUIRE(span2_args.size() == 4);
+
+  auto f = [&]() -> TextView { return sv; };
+  MemSpan fs1{f()};
+  auto fc = [&]() -> TextView const { return sv; };
+  MemSpan fs2{fc()};
 }
 
 TEST_CASE("MemSpan arena", "[libswoc][MemSpan]") {

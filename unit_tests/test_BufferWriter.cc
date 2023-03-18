@@ -19,10 +19,15 @@
  */
 
 #include <cstring>
+#include "swoc/MemSpan.h"
+#include "swoc/TextView.h"
 #include "swoc/MemArena.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/ArenaWriter.h"
 #include "catch.hpp"
+
+using swoc::TextView;
+using swoc::MemSpan;
 
 namespace
 {
@@ -305,6 +310,22 @@ TEST_CASE("LocalBufferWriter discard/restore", "[BWD]")
   bw.restore(4);
   bw.commit(static_cast<size_t>(snprintf(bw.aux_data(), bw.remaining(), "ccc")));
   REQUIRE(bw.view() == "aaabbbccc");
+}
+
+TEST_CASE("Writing", "[BW]") {
+  swoc::LocalBufferWriter<1024> bw;
+
+  // Test run length encoding.
+  TextView s1 = "Delain";
+  TextView s2 = "Nightwish";
+  uint8_t const r[] = { uint8_t(s1.size()), 'D', 'e', 'l', 'a', 'i', 'n'
+                 , uint8_t(s2.size()), 'N', 'i', 'g', 'h', 't', 'w','i','s','h' };
+
+  bw.print("{}{}{}{}", char(s1.size()), s1, char(s2.size()), s2);
+  auto result{swoc::MemSpan{bw.view()}.rebind<uint8_t const>()};
+  REQUIRE(result[0] == s1.size());
+  REQUIRE(result[s1.size() + 1] == s2.size());
+  REQUIRE(MemSpan(r) == result);
 }
 
 TEST_CASE("ArenaWriter write", "[BW][ArenaWriter]")
