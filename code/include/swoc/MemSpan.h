@@ -353,6 +353,11 @@ public:
   /// Destruct all elements in the span.
   void destroy();
 
+  /** Return a view of the memory.
+   *
+   * @return A @c string_view covering the span contents.
+   */
+  [[deprecated]] std::string_view view() const;
 
   template <typename U> friend class MemSpan;
 };
@@ -609,6 +614,13 @@ public:
    * @note @a obj_size should be a multiple of @a alignment. This happens naturally if @c sizeof is used.
    */
   self_type align(size_t alignment, size_t obj_size) const;
+
+  /** Return a view of the memory.
+   *
+   * @return A @c string_view covering the span contents.
+   */
+  [[deprecated]] std::string_view view() const;
+
 };
 
 template <> class MemSpan<void> : public MemSpan<void const> {
@@ -1218,6 +1230,11 @@ MemSpan<T>::destroy() {
   }
 }
 
+template <typename T>
+std::string_view
+MemSpan<T>::view() const {
+  return {reinterpret_cast<const char *>(_ptr), this->data_size()};
+}
 // --- void specializations ---
 
 template <typename U> constexpr MemSpan<void const>::MemSpan(MemSpan<U> const &that) : _ptr(const_cast<std::remove_const_t<U> *>(that._ptr)), _size(sizeof(U) * that.size()) {}
@@ -1515,6 +1532,10 @@ MemSpan<void const>::as_ptr() const {
   return static_cast<U const *>(_ptr);
 }
 
+inline std::string_view
+MemSpan<void const>::view() const {
+  return {static_cast<char const *>(_ptr), _size};
+}
 /// Deduction guides
 template<typename T, size_t N> MemSpan(std::array<T,N> &) -> MemSpan<T>;
 template<typename T, size_t N> MemSpan(std::array<T,N> const &) -> MemSpan<T const>;
