@@ -7,5 +7,5 @@ Name: LibSWOC++
 Description: A collection of solid C++ utilities and classes.
 Version: @LIBSWOC_VERSION@
 Requires:
-Libs: -L${libdir} -lswoc
+Libs: -L${libdir} -lswoc-static-@LIBSWOC_VERSION@
 Cflags: -I${includedir}
