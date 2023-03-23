@@ -19,6 +19,14 @@
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 namespace file {
+
+enum class file_type : signed char {
+  none = 0, not_found = -1, regular = 1, directory = 2, symlink = 3,
+  block = 4, character = 5, fifo = 6, socket = 7, unknown = 8
+};
+
+
+
 /** Utility class for file system paths.
  */
 class path {
@@ -42,7 +50,6 @@ public:
 
   /// Construct from a string view.
   path(std::string_view src);
-  //  template < typename ... Args > explicit path(std::string_view base, Args... rest);
 
   /// Move from an existing string
   path(std::string &&that);
@@ -105,16 +112,22 @@ protected:
 class file_status {
   using self_type = file_status;
 
+  file_type type() const;
+
 protected:
   struct ::stat _stat; ///< File information.
+  file_type _type = file_type::none;
+
+  void init();
 
   friend self_type status(const path &file, std::error_code &ec) noexcept;
   friend int file_type(const self_type &);
   friend off_t file_size(const self_type &);
-  friend bool is_regular_file(const file_status &);
-  friend bool is_dir(const file_status &);
-  friend bool is_char_device(const file_status &);
-  friend bool is_block_device(const file_status &);
+  friend bool is_regular_file(const self_type &);
+  friend bool is_dir(const self_type &);
+  friend bool is_char_device(const self_type &);
+  friend bool is_block_device(const self_type &);
+  friend bool exists(const self_type &);
   friend std::chrono::system_clock::time_point modify_time(file_status const &fs);
   friend std::chrono::system_clock::time_point access_time(file_status const &fs);
   friend std::chrono::system_clock::time_point status_time(file_status const &fs);
@@ -132,7 +145,7 @@ file_status status(const path &file, std::error_code &ec) noexcept;
 // These are separate because they are not part of std::filesystem::path.
 
 /// Return the file type value.
-int file_type(const file_status &fs);
+[[deprecated("Use file_status::type")]] int file_type(const file_status &fs);
 
 /// Check if the path is to a regular file.
 bool is_regular_file(const file_status &fs);
@@ -151,6 +164,12 @@ off_t file_size(const file_status &fs);
 
 /// Check if file is readable.
 bool is_readable(const path &s);
+
+/// Check if path exists.
+bool exists(const path &p);
+
+/// Check if path exists.
+bool exists(const file_status &fs);
 
 /** Convert to absolute path.
  *
@@ -280,6 +299,37 @@ operator/(const path &lhs, std::string_view rhs) {
 inline path
 operator/(path &&lhs, std::string_view rhs) {
   return path(std::move(lhs)) /= rhs;
+}
+
+// Can remove "enum" after the function @c file_type is removed.
+inline enum file_type
+file_status::type() const {
+  return _type;
+}
+
+inline bool
+is_char_device(const file_status &fs) {
+  return fs._type == file_type::character;
+}
+
+inline bool
+is_block_device(const file_status &fs) {
+  return fs._type == file_type::block;
+}
+
+inline bool
+is_regular_file(const file_status &fs) {
+  return fs._type == file_type::regular;
+}
+
+inline bool
+is_dir(const file_status &fs) {
+  return fs._type == file_type::directory;
+}
+
+inline bool
+exists(const file_status &fs) {
+  return fs._type != file_type::none && fs._type != file_type::not_found;
 }
 
 } // namespace file

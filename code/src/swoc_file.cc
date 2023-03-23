@@ -39,13 +39,30 @@ path::operator/=(std::string_view that) {
   return *this;
 }
 
+void file_status::init() {
+  switch (_stat.st_mode & S_IFMT) {
+  case S_IFREG : _type = file_type::regular; break;
+  case S_IFDIR : _type = file_type::directory; break;
+  case S_IFLNK : _type = file_type::symlink; break;
+  case S_IFBLK : _type = file_type::block; break;
+  case S_IFCHR : _type = file_type::character; break;
+  case S_IFIFO : _type = file_type::fifo; break;
+  case S_IFSOCK : _type = file_type::socket; break;
+  default: _type = file_type::unknown; break;
+  }
+}
+
 file_status
 status(path const &file, std::error_code &ec) noexcept {
   file_status zret;
   if (::stat(file.c_str(), &zret._stat) >= 0) {
     ec.clear();
+    zret.init();
   } else {
     ec = std::error_code(errno, std::system_category());
+    if (errno == ENOENT) {
+      zret._type = file_type::not_found;
+    }
   }
   return zret;
 }
@@ -61,23 +78,10 @@ file_size(const file_status &fs) {
 }
 
 bool
-is_char_device(const file_status &fs) {
-  return file_type(fs) == S_IFCHR;
-}
-
-bool
-is_block_device(const file_status &fs) {
-  return file_type(fs) == S_IFBLK;
-}
-
-bool
-is_regular_file(const file_status &fs) {
-  return file_type(fs) == S_IFREG;
-}
-
-bool
-is_dir(const file_status &fs) {
-  return file_type(fs) == S_IFDIR;
+exists(const path &p) {
+  std::error_code ec;
+  auto fs = status(p, ec);
+  return exists(fs);
 }
 
 path
