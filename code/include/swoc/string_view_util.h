@@ -11,6 +11,7 @@
 #include <memory.h>
 #include <string>
 #include <string_view>
+#include <memory>
 #include <limits>
 
 /** Compare views with ordering, ignoring case.
@@ -85,3 +86,14 @@ inline void *
 memcpy(void *dst, const std::string_view &src) {
   return memcpy(dst, src.data(), src.size());
 }
+
+namespace swoc { inline namespace SWOC_VERSION_NS {
+namespace detail {
+struct malloc_liberator {
+  void operator()(void * ptr) { ::free(ptr); }
+};
+} // namespace detail.
+
+/// A variant of @c unique_ptr that handles memory from @c malloc.
+template<typename T> using unique_malloc = std::unique_ptr<T, detail::malloc_liberator>;
+}} // namespace swoc
