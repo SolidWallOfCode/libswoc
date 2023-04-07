@@ -171,7 +171,7 @@ c_time(S const &s, meta::CaseTag<1>) -> decltype(S::st_ctimespec) {
 } // namespace
 
 file_time_type
-modify_time(file_status const &fs) {
+last_write_time(file_status const &fs) {
   return chrono_cast(m_time(fs._stat, meta::CaseArg));
 }
 
@@ -183,6 +183,15 @@ access_time(file_status const &fs) {
 file_time_type
 status_time(file_status const &fs) {
   return chrono_cast(c_time(fs._stat, meta::CaseArg));
+}
+
+file_time_type
+last_write_time(path& p, std::error_code &ec) {
+  auto fs = status(p, ec);
+  if (ec) {
+    return file_time_type::min();
+  }
+  return last_write_time(fs);
 }
 
 bool

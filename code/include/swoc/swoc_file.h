@@ -193,7 +193,7 @@ protected:
   friend bool is_char_device(const self_type &);
   friend bool is_block_device(const self_type &);
   friend bool exists(const self_type &);
-  friend file_time_type modify_time(file_status const &fs);
+  friend file_time_type last_write_time(file_status const &fs);
   friend file_time_type access_time(file_status const &fs);
   friend file_time_type status_time(file_status const &fs);
 };
@@ -307,7 +307,17 @@ bool remove(const path &path, std::error_code &ec);
 uintmax_t remove_all(const path &path, std::error_code &ec);
 
 /// @return The modified time for @a fs.
-file_time_type modify_time(file_status const &fs);
+[[deprecated("See last_write_time")]] file_time_type modify_time(file_status const &fs);
+/// @return The modified time for @a fs.
+file_time_type last_write_time(file_status const &fs);
+
+/** Modification time.
+ *
+ * @param p Path to target.
+ * @return Time of last modification, or @c file_time_type::min() on error.
+ */
+file_time_type last_write_time(path const& p, std::error_code &ec);
+
 /// @return The access time for @a fs.
 file_time_type access_time(file_status const &fs);
 /// @return The status change time for @a fs.
@@ -460,6 +470,10 @@ exists(const file_status &fs) {
   return fs._type != file_type::none && fs._type != file_type::not_found;
 }
 
+inline file_time_type
+modify_time(file_status const &fs) {
+  return last_write_time(fs);
+}
 } // namespace file
 
 class BufferWriter;
