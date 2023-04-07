@@ -134,6 +134,9 @@ TEST_CASE("path::filename", "[libswoc][file]")
   CHECK(file::path("..").filename() == file::path(".."));
   CHECK(file::path("/").filename() == file::path(""));
   CHECK(file::path("//host").filename() == file::path("host"));
+
+  CHECK(file::path("/alpha/bravo").relative_path() == file::path("alpha/bravo"));
+  CHECK(file::path("alpha/bravo").relative_path() == file::path("alpha/bravo"));
 }
 
 TEST_CASE("swoc::file::temp_directory_path", "[libswoc][swoc_file]")
