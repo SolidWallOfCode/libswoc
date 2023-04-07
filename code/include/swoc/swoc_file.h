@@ -21,6 +21,8 @@
 namespace swoc { inline namespace SWOC_VERSION_NS {
 namespace file {
 
+using file_time_type = std::chrono::system_clock::time_point;
+
 enum class file_type : signed char {
   none = 0, not_found = -1, regular = 1, directory = 2, symlink = 3,
   block = 4, character = 5, fifo = 6, socket = 7, unknown = 8
@@ -29,7 +31,7 @@ enum class file_type : signed char {
 /// Invalid file descriptor.
 static constexpr int NO_FD = -1;
 
-/// Scoped container for a file dsscriptor.
+/// Scoped container for a file descriptor.
 struct unique_fd {
   using self_type = unique_fd; ///< Self reference type.
 
@@ -136,6 +138,9 @@ public:
   /// Path of the parent.
   self_type parent_path() const;
 
+  /// @return Path excluding the root path, if nay.
+  self_type relative_path() const;
+
   /** Filename part of the path.
    *
    * @param p Path.
@@ -188,9 +193,9 @@ protected:
   friend bool is_char_device(const self_type &);
   friend bool is_block_device(const self_type &);
   friend bool exists(const self_type &);
-  friend std::chrono::system_clock::time_point modify_time(file_status const &fs);
-  friend std::chrono::system_clock::time_point access_time(file_status const &fs);
-  friend std::chrono::system_clock::time_point status_time(file_status const &fs);
+  friend file_time_type modify_time(file_status const &fs);
+  friend file_time_type access_time(file_status const &fs);
+  friend file_time_type status_time(file_status const &fs);
 };
 
 /** Get the status of the file at @a p.
@@ -302,11 +307,11 @@ bool remove(const path &path, std::error_code &ec);
 uintmax_t remove_all(const path &path, std::error_code &ec);
 
 /// @return The modified time for @a fs.
-std::chrono::system_clock::time_point modify_time(file_status const &fs);
+file_time_type modify_time(file_status const &fs);
 /// @return The access time for @a fs.
-std::chrono::system_clock::time_point access_time(file_status const &fs);
+file_time_type access_time(file_status const &fs);
 /// @return The status change time for @a fs.
-std::chrono::system_clock::time_point status_time(file_status const &fs);
+file_time_type status_time(file_status const &fs);
 
 /** Load the file at @a p into a @c std::string.
  *

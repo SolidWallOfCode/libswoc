@@ -16,11 +16,20 @@ using namespace swoc::literals;
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 namespace file {
+
 path
 path::parent_path() const {
   TextView parent{_path};
   parent.split_suffix_at(SEPARATOR);
   return parent ? parent : "/"_tv;
+}
+
+path
+path::relative_path() const {
+  if (!_path.empty() && _path.front() == SEPARATOR) {
+    return _path.substr(1);
+  }
+  return *this;
 }
 
 auto path::filename() const -> self_type {
@@ -115,8 +124,8 @@ absolute(path const &src, std::error_code &ec) {
 }
 
 namespace {
-inline std::chrono::system_clock::time_point
-chrono_cast(timespec const &ts) {
+
+inline file_time_type chrono_cast(timespec const &ts) {
   using namespace std::chrono;
   return system_clock::time_point{duration_cast<system_clock::duration>(seconds{ts.tv_sec} + nanoseconds{ts.tv_nsec})};
 }
@@ -161,17 +170,17 @@ c_time(S const &s, meta::CaseTag<1>) -> decltype(S::st_ctimespec) {
 
 } // namespace
 
-std::chrono::system_clock::time_point
+file_time_type
 modify_time(file_status const &fs) {
   return chrono_cast(m_time(fs._stat, meta::CaseArg));
 }
 
-std::chrono::system_clock::time_point
+file_time_type
 access_time(file_status const &fs) {
   return chrono_cast(a_time(fs._stat, meta::CaseArg));
 }
 
-std::chrono::system_clock::time_point
+file_time_type
 status_time(file_status const &fs) {
   return chrono_cast(c_time(fs._stat, meta::CaseArg));
 }
