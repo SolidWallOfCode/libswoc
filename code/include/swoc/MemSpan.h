@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstring>
+#include <memory>
 #include <type_traits>
 #include <ratio>
 #include <tuple>
@@ -1545,6 +1546,14 @@ MemSpan(std::string_view const&) -> MemSpan<char const>;
 MemSpan(std::string &) -> MemSpan<char>;
 MemSpan(std::string const&) -> MemSpan<char const>;
 
+namespace detail {
+struct malloc_liberator {
+  void operator()(void * ptr) { ::free(ptr); }
+};
+} // namespace detail.
+
+/// A variant of @c unique_ptr that handles memory from @c malloc.
+template<typename T> using unique_malloc = std::unique_ptr<T, detail::malloc_liberator>;
 }} // namespace swoc::SWOC_VERSION_NS
 
 /// @cond NO_DOXYGEN
