@@ -187,7 +187,7 @@ protected:
 
   friend self_type status(const path &file, std::error_code &ec) noexcept;
   friend int file_type(const self_type &);
-  friend off_t file_size(const self_type &);
+  friend uintmax_t file_size(const self_type &);
   friend bool is_regular_file(const self_type &);
   friend bool is_dir(const self_type &);
   friend bool is_char_device(const self_type &);
@@ -225,7 +225,7 @@ bool is_char_device(const file_status &fs);
 bool is_block_device(const file_status &fs);
 
 /// Size of the file or block device.
-off_t file_size(const file_status &fs);
+uintmax_t file_size(const file_status &fs);
 
 /// Check if file is readable.
 bool is_readable(const path &s);

@@ -6,6 +6,8 @@
     Minimalist version of std::filesystem.
  */
 
+#include <variant>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -88,7 +90,7 @@ file_type(const file_status &fs) {
   return fs._stat.st_mode & S_IFMT;
 }
 
-off_t
+uintmax_t
 file_size(const file_status &fs) {
   return fs._stat.st_size;
 }
@@ -186,7 +188,7 @@ status_time(file_status const &fs) {
 }
 
 file_time_type
-last_write_time(path& p, std::error_code &ec) {
+last_write_time(path const& p, std::error_code &ec) {
   auto fs = status(p, ec);
   if (ec) {
     return file_time_type::min();
@@ -219,10 +221,11 @@ current_path()
   char buff[PATH_MAX+1];
   if (auto p = ::getcwd(buff, sizeof(buff)) ; p) {
     return path{buff};
-  }
-  if (ENAMETOOLONG == errno) {
+#if !__FreeBSD__ && ! __APPLE__ // Freakin' Apple and FreeBSD.
+  } else if (ERANGE == errno) {
     swoc::unique_malloc<char> raw{::get_current_dir_name()};
-    return path{raw.get()};
+    return path{ raw.get() };
+#endif
   }
   return {};
 }
