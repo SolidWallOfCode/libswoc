@@ -180,7 +180,7 @@ TEST_CASE("UnitParser Time", "[Lexicon][UnitParser]") {
 }
 
 TEST_CASE("UnitParser Eggs", "[Lexicon][UnitParser]") {
-  const UnitParser eggs{UnitParser::Units{{ {1, { "egg", "eggs"}}, {12, {"dozen"} }, {12 * 12, { "gross" }}}}, UnitParser::UNITS_NOT_REQUIRED};
+  const UnitParser eggs{UnitParser::Units{UnitParser::Units::with_multi{ {1, { "egg", "eggs"}}, {12, {"dozen"} }, {12 * 12, { "gross" }}}}, UnitParser::UNITS_NOT_REQUIRED};
 
   REQUIRE(eggs("1") == 1);
   REQUIRE(eggs("6") == 6);
