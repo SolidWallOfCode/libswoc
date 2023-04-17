@@ -132,9 +132,13 @@ protected:
  * support any parser that can deliver literals and @c Spec instances.
  */
 class Format {
+  using self_type = Format;
 public:
   /// Construct from a format string @a fmt.
   Format(TextView fmt);
+
+  /// Move constructor.
+  Format(self_type && that) = default;
 
   /// Extraction support for TextView.
   struct TextViewExtractor {
@@ -170,7 +174,7 @@ public:
 
   /// Extraction support for pre-parsed format strings.
   struct FormatExtractor {
-    const std::vector<Spec> &_fmt; ///< Parsed format string.
+    MemSpan<Spec const> _fmt; ///< Parsed format string.
     int _idx = 0;                  ///< Element index.
     /// @return @c true if more format string, @c false if none.
     explicit operator bool() const;
