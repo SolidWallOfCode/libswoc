@@ -839,9 +839,27 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, Lexicon<E> const &lex) {
   return w;
 }
 
+}} // namespace swoc
+
+namespace std {
+
+template <size_t IDX, typename E> class tuple_element<IDX, swoc::detail::lexicon_pair_type<E>> {
+  static_assert("swoc::Lexicon::Pair tuple index out of range");
+};
+
+template <typename E> class tuple_element<0, swoc::detail::lexicon_pair_type<E>> {
+public:
+  using type = E;
+};
+
+template <typename E> class tuple_element<1, swoc::detail::lexicon_pair_type<E>> {
+public:
+  using type = swoc::TextView;
+};
+
 template <size_t IDX, typename E>
 auto
-get(detail::lexicon_pair_type<E> const &p) -> typename std::tuple_element<IDX, detail::lexicon_pair_type<E>>::type {
+get(swoc::detail::lexicon_pair_type<E> const &p) -> typename std::tuple_element<IDX, swoc::detail::lexicon_pair_type<E>>::type {
   if constexpr (IDX == 0) {
     return p._value;
   } else if constexpr (IDX == 1) {
@@ -849,18 +867,5 @@ get(detail::lexicon_pair_type<E> const &p) -> typename std::tuple_element<IDX, d
   }
 }
 
-}} // namespace swoc
-
-template <size_t IDX, typename E> class std::tuple_element { static_assert("swoc::Lexicon::Pair tuple index out of range"); };
-
-template <typename E> class std::tuple_element<0, swoc::detail::lexicon_pair_type<E>> {
-public:
-  using type = E;
-};
-
-template <typename E> class std::tuple_element<1, swoc::detail::lexicon_pair_type<E>> {
-public:
-  using type = swoc::TextView;
-};
-
+} // namespace std
 
