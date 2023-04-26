@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-License-Identifier: Apache-2.0
 // Copyright Apache Software Foundation 2019
+
 /** @file
 
     Formatted output for BufferWriter.
@@ -27,7 +27,9 @@ swoc::bwf::ExternalNames swoc::bwf::Global_Names;
 using swoc::svto_radix;
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
+
 namespace bwf {
+
 const Spec Spec::DEFAULT;
 
 const Spec::Property Spec::_prop;
@@ -625,7 +627,18 @@ Format::Format(TextView fmt) {
   }
 }
 
+bool
+Format::is_literal() const {
+  for (auto const& spec : _items) {
+    if (Spec::LITERAL_TYPE != spec._type) {
+      return false;
+    }
+  }
+  return true;
+}
+
 NameBinding::~NameBinding() {}
+
 } // namespace bwf
 
 BufferWriter &

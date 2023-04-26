@@ -8,11 +8,13 @@
 #include <errno.h>
 #include "swoc/Errata.h"
 #include "swoc/bwf_std.h"
+#include "swoc/bwf_ex.h"
 #include "swoc/swoc_file.h"
 #include "catch.hpp"
 
 using swoc::Errata;
 using swoc::Rv;
+using swoc::TextView;
 using Severity = swoc::Errata::Severity;
 using namespace std::literals;
 using namespace swoc::literals;
@@ -338,4 +340,41 @@ TEST_CASE("Errata glue", "[libswoc][Errata]") {
   errata.assign_annotation_glue_text(", ");
   bwprint(s, "{}", errata);
   REQUIRE("Error -> First, Second, Third" == s);
+}
+
+template < typename ... Args >
+Errata errata_errno(int err, Errata::Severity s, swoc::TextView fmt, Args && ... args) {
+  return Errata(std::error_code(err, std::system_category()), s, "{} - {}", swoc::bwf::SubText(fmt, std::forward_as_tuple<Args...>(args...)), swoc::bwf::Errno(err));
+}
+
+template < typename ... Args >
+Errata errata_errno(Errata::Severity s, swoc::TextView fmt, Args && ... args) {
+  return errata_errno(errno, s, fmt, std::forward<Args>(args)...);
+}
+
+TEST_CASE("Errata Wrapper", "[libswoc][errata]") {
+  TextView tv1 = "itchi";
+  TextView tv2 = "ni";
+
+  SECTION("no args") {
+    errno = EPERM;
+    auto errata = errata_errno(ERRATA_ERROR, "no args");
+    REQUIRE(errata.front().text().starts_with("no args - EPERM"));
+  }
+
+  SECTION("one arg, explcit") {
+    auto errata = errata_errno(EPERM, ERRATA_ERROR, "no args");
+    REQUIRE(errata.front().text().starts_with("no args - EPERM"));
+  }
+
+  SECTION("args, explcit") {
+    auto errata = errata_errno(EBADF, ERRATA_ERROR, "{} {}", tv1, tv2);
+    REQUIRE(errata.front().text().starts_with("itchi ni - EBADF"));
+  }
+
+  SECTION("args") {
+    errno = EINVAL;
+    auto errata = errata_errno(ERRATA_ERROR, "{} {}", tv2, tv1);
+    REQUIRE(errata.front().text().starts_with("ni itchi - EINVAL"));
+  }
 }

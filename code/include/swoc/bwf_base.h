@@ -129,7 +129,7 @@ protected:
  * When used by the print formatting logic, there is an abstraction layer, "extraction", which
  * performs the equivalent of the @c parse method. This allows the formatting to treat
  * pre-compiled or immediately parsed format strings the same. It also enables formatted print
- * support any parser that can deliver literals and @c Spec instances.
+ * support for any parser that can deliver literals and @c Spec instances.
  */
 class Format {
   using self_type = Format;
@@ -139,6 +139,8 @@ public:
 
   /// Move constructor.
   Format(self_type && that) = default;
+  /// No copy
+  Format(self_type const&) = delete;
 
   /// Extraction support for TextView.
   struct TextViewExtractor {
@@ -190,6 +192,9 @@ public:
 
   /// Wrap the format instance in an extractor.
   FormatExtractor bind() const;
+
+  /// @return @c true if all specifiers are literal.
+  bool is_literal() const;
 
 protected:
   /// Default constructor for use by subclasses with alternate formatting.
