@@ -131,9 +131,9 @@ protected:
  * pre-compiled or immediately parsed format strings the same. It also enables formatted print
  * support for any parser that can deliver literals and @c Spec instances.
  */
-class Format {
-  using self_type = Format;
-public:
+struct Format {
+  using self_type = Format; ///< Self reference type.
+
   /// Construct from a format string @a fmt.
   Format(TextView fmt);
 
