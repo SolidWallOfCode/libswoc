@@ -216,7 +216,6 @@ TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
 
 };
 
-#if 0
 TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")
 {
   // Check the various construction cases
@@ -239,4 +238,3 @@ TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")
   REQUIRE(v5["q"] == INVALID);
   REQUIRE(v5[C] == "Invalid");
 }
-#endif
