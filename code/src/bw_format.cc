@@ -960,16 +960,8 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
   return w;
 }
 
-}} // namespace swoc::SWOC_VERSION_NS
-
-namespace std {
-ostream &
-operator<<(ostream &s, swoc::FixedBufferWriter &w) {
-  return s << w.view();
-}
-
 swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec) {
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, std::error_code const &ec) {
   static const auto GENERIC_CATEGORY = &std::generic_category();
   static const auto SYSTEM_CATEGORY  = &std::system_category();
 
@@ -990,6 +982,14 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &e
     }
   }
   return w;
+}
+
+}} // namespace swoc::SWOC_VERSION_NS
+
+namespace std {
+ostream &
+operator<<(ostream &s, swoc::FixedBufferWriter &w) {
+  return s << w.view();
 }
 
 } // namespace std
