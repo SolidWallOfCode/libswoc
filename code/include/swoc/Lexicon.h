@@ -257,7 +257,7 @@ protected:
     bool operator!=(self_type const &that) const;
 
   protected:
-    base_iterator(Item const * item) : _item(item) {}
+    explicit base_iterator(Item const * item) : _item(item) {}
 
     const Item *_item{nullptr};                      ///< Current location in the container.
   };

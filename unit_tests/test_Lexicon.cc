@@ -182,15 +182,15 @@ TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")
 {
   // Check the various construction cases
   // No defaults, value default, name default, both, both the other way.
-  const HexLexicon v1({{A, {"A", "ten"}}, {B, {"B", "eleven"}}});
+  const HexLexicon v1(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}});
 
-  const HexLexicon v2({{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID);
+  const HexLexicon v2(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID);
 
-  const HexLexicon v3({{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, "Invalid");
+  const HexLexicon v3(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, "Invalid");
 
-  const HexLexicon v4({{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, "Invalid", INVALID);
+  const HexLexicon v4(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, "Invalid", INVALID);
 
-  const HexLexicon v5{{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID, "Invalid"};
+  const HexLexicon v5{HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID, "Invalid"};
 
   REQUIRE(v1["a"] == A);
   REQUIRE(v2["q"] == INVALID);
