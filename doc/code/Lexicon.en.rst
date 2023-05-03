@@ -109,10 +109,10 @@ and :code:`end` methods which return name iterators. This makes container iterat
 Constructing
 ============
 
-To make the class more flexible it can be constructed in a variety of ways. For static the entire
+To make the class more flexible it can be constructed in a variety of ways. For a static instance the entire
 class can be initialized in the constructor. For dynamic use any subset can be initialized. In
 the previous example, the instance was initialized with all of the defined values and a default
-for missing names. Because this fully constructs it, it can be marked ``const`` to prevent
+for missing names. Because this fully constructs the Lexicon, it can be marked ``const`` to prevent
 accidental changes. It could also have been constructed with a default name:
 
 .. literalinclude:: ../../unit_tests/ex_Lexicon.cc
@@ -120,7 +120,7 @@ accidental changes. It could also have been constructed with a default name:
    :end-before: doc.ctor.1.end
 
 Note the default name was put before the default value. Because they are distinct types, the
-defaults can be added in either order, but must always follow the field defintions. The defaults can
+defaults can be added in either order, but must always follow the field definitions. The defaults can
 also be omitted entirely, which is common if the Lexicon is used for output and not parsing, where
 the enumeration is always valid because all enumeration values are in the Lexicon.
 
@@ -128,7 +128,7 @@ the enumeration is always valid because all enumeration values are in the Lexico
    :start-after: doc.ctor.2.begin
    :end-before: doc.ctor.2.end
 
-For dynamic use, it is common to have just the defaults, and not any of the fields, although of course
+For dynamic use, it is common to have just the defaults in the constructor, and not any of the fields, although of course
 if some "built in" names and values are needed those can be added as in the previous examples.
 
 .. literalinclude:: ../../unit_tests/ex_Lexicon.cc
@@ -153,6 +153,49 @@ are the first elements in the list of names. This is fine for any debugging or d
 because only the ``true`` and ``false`` values would be stored, ``INVALID`` indicates a parsing
 error. The enumeration values were chosen so casting from ``bool`` to ``BoolTag`` yields the
 appropriate string.
+
+C++20 Notes
+-----------
+
+Due to changes in the language some initializations that compile in C++17 become ambigous in C++20
+although I think this is due to a compiler bug in g++ (this problem has not occurred in Clang).
+To provide a work around, the type definitions :code:`with` and :code:`with_multi` are exported
+from `Lexicon` to force the field initialization list to be a specific type, avoiding the
+ambiguity.
+
+.. literalinclude:: ../../unit_tests/test_Lexicon.cc
+   :start-after: doc.cpp.20.alpha.start
+   :end-before: doc.cpp.20.alpha.end
+
+This issue only arises if none of the multiple name lists are longer than two elements. For instance
+this example doesn't require :code:`with_multi` because the first list of names has three elements.
+
+.. literalinclude:: ../../unit_tests/test_Lexicon.cc
+   :start-after: doc.cpp.20.alpha.start
+   :end-before: doc.cpp.20.alpha.end
+
+.. note:: Techno-babble
+
+   The base issue is the code:`std::string_view` constructor, new in C++20, that takes two iterators
+   and constructs the view in the standard STL half open way. This makes the following ambiguous for
+   the argument types :code:`std::string_view` and :code:`std::initializer_list<std::string_view>` ::
+
+      { "alpha", "bravo" }
+
+   This can be read as ::
+
+      std::string_view{char const*, char const*)
+
+   which satisfies the two iterator constructor. In C++17 such a list would never satisfy a
+   :code:`std::string_view` constructor and so was unambiguously a list of names and not a single
+   name. The internal fix was to use :libswoc:`TextView` which has that constructor and mark that
+   constructor :code:`explicit`. This doesn't fully work for g++ which still thinks the list is
+   ambigous even though *explicitly* using the single name structure :code:`Lexicon::Pair` doesn't
+   compile. That is, it only compiles in the g++ compiler's imagination, not in actual code.
+
+   As for the idea of using variadic templates to pick off the field definitions one by one, that doesn't
+   work because the compiler needs to decide the type of all the arguments before picking the
+   constructor, but it can't do that until after it's already picked the variadic constructor.
 
 Examples
 ========

@@ -118,7 +118,11 @@ struct Context {
                          {"Connection", "keep-alive"},
                          {"Age", "956"},
                          {"ETag", "1337beef"}}};
-  Fields cookie_fields = {{{"A", "alpha"}, {"B", "bravo"}}};
+  static inline std::string A{"A"};
+  static inline std::string alpha{"alpha"};
+  static inline std::string B{"B"};
+  static inline std::string bravo{"bravo"};
+  Fields cookie_fields = {{{A, alpha}, {B, bravo}}};
 };
 
 } // namespace

@@ -78,8 +78,10 @@ public:
    * @param last End of half open range.
    *
    * The character at @a first will be in the view, but the character at @a last will not.
+   *
+   * @note @c explicit to avoid interpreting a string initializer list as a view.
    */
-  constexpr TextView(char const *first, char const *last) noexcept;
+  explicit constexpr TextView(char const *first, char const *last) noexcept;
 
   /** Construct from any character container following STL standards.
    *
