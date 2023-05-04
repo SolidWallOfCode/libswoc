@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <limits>
+#include <type_traits>
 
 #include "swoc/swoc_version.h"
 #include "swoc/string_view_util.h"
@@ -80,8 +81,21 @@ public:
    * The character at @a first will be in the view, but the character at @a last will not.
    *
    * @note @c explicit to avoid interpreting a string initializer list as a view.
+   *
+   * @internal For the love of Turing, WHY DID YOU DO THIS?
+   *
+   * Well, estemed reader, because the C++ standard doesn't have a better way to support overloads
+   * that handle character pointers and literal strings differently. If the parameters were simply
+   * <tt>(char const *, char const *)</tt> then a cosntruct like <tt>{ "really", "broken" }</tt> can
+   * be interpreted as a @c TextView because the elements implicitly convert to <tt>char const
+   * *</tt>. This makes no sense and creates some @b very annoying ambiguities for lists of strings
+   * if there are exactly two in the list. See @c Lexicon for an example.
+   *
+   * The template itself does the check to make sure it's a character @b pointer and not an array. Arrays
+   * are handled by a different constructor so this only disables constructing from two char arrays
+   * which IMHO makes no sense and should be forbidden.
    */
-  explicit constexpr TextView(char const *first, char const *last) noexcept;
+  template < typename T > explicit TextView(T first, std::enable_if_t<!std::is_array_v<T> && std::is_pointer_v<T> && std::is_same_v<std::remove_const_t<std::remove_pointer_t<T>>, char>, T> last) noexcept : super_type(first, last - first) {}
 
   /** Construct from any character container following STL standards.
    *
@@ -976,7 +990,6 @@ double svtod(swoc::TextView text, swoc::TextView *parsed = nullptr);
 // Doxygen doesn't match these up well due to various type and template issues.
 inline constexpr TextView::TextView(const char *ptr, size_t n) noexcept
   : super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n) {}
-inline constexpr TextView::TextView(char const *first, char const *last) noexcept : super_type(first, last - first) {}
 inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) noexcept : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) noexcept : super_type(that) {}

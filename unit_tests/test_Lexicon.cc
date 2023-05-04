@@ -36,10 +36,10 @@ namespace
 };
 // doc.cpp.20.bravo.end
 
-// C++20: g++ - Without the extra name, must use @cwith_multi.
+// Verify not using @c with_multi isn't ambiguous.
 // doc.cpp.20.alpha.start
 [[maybe_unused]] ExampleNames Static_Names_Multi{
-  ExampleNames::with_multi{
+  {
     {Example::Value_0, {"zero", "0"}},
     {Example::Value_1, {"one", "1"}},
     {Example::Value_2, {"two", "2"}},
