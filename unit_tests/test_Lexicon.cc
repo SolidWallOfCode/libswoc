@@ -237,4 +237,9 @@ TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")
   REQUIRE(v4[C] == "Invalid");
   REQUIRE(v5["q"] == INVALID);
   REQUIRE(v5[C] == "Invalid");
+
+  // Y! usages.
+  static constexpr unsigned INVALID_LOCATION = std::numeric_limits<unsigned>::max();
+  [[maybe_unused]] swoc::Lexicon<unsigned> _locations1 {INVALID_LOCATION};
+  [[maybe_unused]] swoc::Lexicon<unsigned> _locations2 {{INVALID_LOCATION}};
 }

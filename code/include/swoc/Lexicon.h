@@ -42,8 +42,13 @@ what(std::string_view const &fmt, Args &&...args) {
 // which is required for tuple support. This should be remove next time there is a API changing
 // release because tuple access is being deprecated.
 template < typename E > struct lexicon_pair_type {
-  E _value; ///<
+  E _value;
   TextView _name;
+
+  /// Constructor.
+  /// @internal Required to make the @c Lexicon constructors work as intended by forbidding
+  /// construction of this type with only a value.
+  lexicon_pair_type(E value, TextView name) : _value(value), _name(name) {}
 };
 
 } // namespace detail
