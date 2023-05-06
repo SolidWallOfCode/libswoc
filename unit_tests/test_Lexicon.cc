@@ -230,6 +230,8 @@ TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")
 
   const HexLexicon v5{HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID, "Invalid"};
 
+  const HexLexicon v6(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, {INVALID});
+
   REQUIRE(v1["a"] == A);
   REQUIRE(v2["q"] == INVALID);
   REQUIRE(v3[C] == "Invalid");

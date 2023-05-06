@@ -95,7 +95,7 @@ public:
    * are handled by a different constructor so this only disables constructing from two char arrays
    * which IMHO makes no sense and should be forbidden.
    */
-  template < typename T > explicit TextView(T first, std::enable_if_t<!std::is_array_v<T> && std::is_pointer_v<T> && std::is_same_v<std::remove_const_t<std::remove_pointer_t<T>>, char>, T> last) noexcept : super_type(first, last - first) {}
+  template < typename T > explicit TextView(T first, std::enable_if_t<!std::is_array_v<T> && std::is_pointer_v<T> && std::is_convertible_v<T, char const *>, T> last) noexcept : super_type(first, last - first) {}
 
   /** Construct from any character container following STL standards.
    *
@@ -863,14 +863,25 @@ public:
     }
   };
 
-  /** Get a pointer to past the last byte.
+  /** A pointer to the first byte.
    *
-   * @return The first byte past the end of the view.
+   * @return Address of the first byte of the view.
+   *
+   * @internal This fixes an error in @c std::string_view where this method is declared to return
+   * a template parameter instead of the correct @c value_type. The effect is @c string_view::data
+   * is not considered by the compiler to return <tt>char const *</tt> which makes meta-programming
+   * painful.
+   */
+  constexpr value_type const *data() const noexcept;
+
+  /** A pointer to past the last byte.
+   *
+   * @return Address of the first byte past the end of the view.
    *
    * This is effectively @c std::string_view::end() except it explicit returns a pointer and not
    * (potentially) an iterator class, to match up with @c data().
    */
-  constexpr char const *data_end() const noexcept;
+  constexpr value_type const *data_end() const noexcept;
 
   /// Specialized stream operator implementation.
   /// @note Use the standard stream operator unless there is a specific need for this, which is unlikely.
@@ -1486,8 +1497,13 @@ TextView::trim_if(F const &pred) {
   return this->ltrim_if(pred).rtrim_if(pred);
 }
 
-constexpr inline char const *
-TextView::data_end() const noexcept {
+constexpr inline auto
+TextView::data() const noexcept -> value_type const* {
+  return super_type::data();
+}
+
+constexpr inline auto
+TextView::data_end() const noexcept -> value_type const* {
   return this->data() + this->size();
 }
 
