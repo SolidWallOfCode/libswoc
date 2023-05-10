@@ -1138,7 +1138,9 @@ inline IP4Addr
 IPMask::as_ip4() const {
   static constexpr auto MASK = ~in_addr_t{0};
   in_addr_t addr             = MASK;
-  if (_cidr < IP4Addr::WIDTH) {
+  if (0 == _cidr) {
+    addr = in_addr_t(0);
+  } else if (_cidr < IP4Addr::WIDTH) {
     addr <<= IP4Addr::WIDTH - _cidr;
   }
   return IP4Addr{addr};

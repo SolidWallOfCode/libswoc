@@ -343,6 +343,34 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   CHECK(IP6Addr(a4_2).is_mapped_ip4());
 };
 
+TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
+  SECTION("IPv4 Mask") {
+    IP4Addr a24{"255.255.255.0"};
+    REQUIRE(IP4Addr::MAX == IPMask(32).as_ip4());
+    REQUIRE(IP4Addr::MIN == IPMask(0).as_ip4());
+    REQUIRE(IPMask(24).as_ip4() == a24);
+  }
+  SECTION("IPv4 Half") {
+    swoc::IP4Net n4{IP4Addr{in_addr_t{0}}, IPMask{1}};
+    auto nr4 = n4.as_range();
+    REQUIRE(nr4.min() == IP4Addr::MIN);
+    REQUIRE(nr4.max() == IP4Addr{"127.255.255.255"});
+  }
+  SECTION("IPv4 Singleton") {
+    IP4Addr a{"8.8.8.8"};
+    swoc::IP4Net n4{a, IPMask{32}};
+    auto nr4 = n4.as_range();
+    REQUIRE(nr4.min() == a);
+    REQUIRE(nr4.max() == a);
+  }
+  SECTION("IPv4 Max") {
+    swoc::IP4Net n4{IP4Addr{in_addr_t{0}}, IPMask{0}};
+    auto nr4 = n4.as_range();
+    REQUIRE(nr4.min() == IP4Addr::MIN);
+    REQUIRE(nr4.max() == IP4Addr::MAX);
+  }
+}
+
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   IPEndpoint ep;
   std::string_view addr_1{"[ffee::24c3:3349:3cee:143]:8080"};
