@@ -53,3 +53,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ex_host_file PRIVATE -Wall -Wextra -Werror)
     target_link_libraries(ex_host_file PRIVATE Threads::Threads)
 endif()
+
+install(TARGETS ex_netdb ex_netcompact ex_flat_space ex_diskstats ex_lru_cache ex_host_file
+        EXCLUDE_FROM_ALL
+        COMPONENT "example")

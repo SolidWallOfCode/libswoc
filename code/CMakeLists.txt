@@ -87,10 +87,12 @@ target_include_directories(libswoc
 if (LIBSWOC_INSTALL)
     # These install target variables are created by GNUInstallDirs.
     install(TARGETS libswoc-static
+        COMPONENT LIB
         EXPORT libswoc-static-config
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # seems to have no effect.
         )
     install(TARGETS libswoc
+        COMPONENT LIB
         EXPORT libswoc-config
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # seems to have no effect.
         )
@@ -106,21 +108,27 @@ if (LIBSWOC_INSTALL)
             cd \${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} && (rm -f ${link-target};ln -s ${link-src} ${link-target})
           \"
         )"
+        COMPONENT LIB
     )
 
     install(EXPORT libswoc-static-config
+        COMPONENT LIB
         NAMESPACE libswoc::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libswoc
         )
 
     install(EXPORT libswoc-config
+        COMPONENT LIB
         NAMESPACE libswoc::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libswoc
         )
 
     configure_file("libswoc.pc.cmake" libswoc.pc @ONLY)
     configure_file("libswoc-static.pc.cmake" libswoc-static.pc @ONLY)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libswoc.pc ${CMAKE_CURRENT_BINARY_DIR}/libswoc-static.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+    install(
+        COMPONENT LIB
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/libswoc.pc ${CMAKE_CURRENT_BINARY_DIR}/libswoc-static.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
 
 # Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.

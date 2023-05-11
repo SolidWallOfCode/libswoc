@@ -86,7 +86,7 @@ enum class PodType {
 };
 
 /// Mapping of names and property flags.
-swoc::Lexicon<Flag> FlagNames {{
+swoc::Lexicon<Flag> FlagNames {decltype(FlagNames)::with_multi{
                                    {Flag::NONE, {"-", "NONE"}}
                                    , {Flag::INTERNAL, { "internal" }}
                                    , {Flag::PROD, {"prod"}}
@@ -95,7 +95,7 @@ swoc::Lexicon<Flag> FlagNames {{
                                }, Flag::INVALID};
 
 /// Mapping of names and pod types.
-swoc::Lexicon<PodType> PodTypeNames {{
+swoc::Lexicon<PodType> PodTypeNames {decltype(PodTypeNames)::with{
                                    {PodType::YAHOO, "yahoo"}
                                    , {PodType::PARTNER, "partner"}
                                }, PodType::INVALID};
