@@ -32,6 +32,9 @@ using swoc::IPRange;
 
 using swoc::IPMask;
 
+using swoc::IP4Net;
+using swoc::IP6Net;
+
 using swoc::IPSpace;
 using swoc::IPRangeSet;
 
@@ -374,6 +377,21 @@ TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
     REQUIRE(a6 == (a6 | IPMask(0)));
     REQUIRE(IP6Addr::MAX == (a6 | IPMask(IP6Addr::WIDTH)));
     REQUIRE(IP6Addr::MIN == (a6 & IPMask(0)));
+
+    IP6Addr a6_2{"2001:1f2d:c587:24c3:9128:3349:3cee:143"_tv};
+    swoc::IPMask mask{127};
+    CHECK(a6_2 == (a6_2 | mask));
+    CHECK(a6_2 != (a6_2 & mask));
+    CHECK(a6_2 == (a6_2 & swoc::IPMask(128))); // should always be a no-op.
+
+    IP6Net n6_1{a6_2, IPMask(96)};
+    CHECK(n6_1.min() == IP6Addr("2001:1f2d:c587:24c3:9128:3349::"));
+
+    swoc::IP6Addr a6_3{"2001:1f2d:c587:24c4::"};
+    CHECK(a6_3 == (a6_3 & swoc::IPMask{64}));
+    CHECK(a6_3 == (a6_3 & swoc::IPMask{62}));
+    CHECK(a6_3 != (a6_3 & swoc::IPMask{61}));
+
 }
 
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
@@ -549,18 +567,10 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
   swoc::IP4Range r_3{"1.1.0.0-1.2.0.0"};
   swoc::IP4Range r_4{"10.33.45.19-10.33.45.76"};
   swoc::IP6Range r_5{
-      "2001:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv};
+    "2001:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv};
 
   CHECK(r_0.empty());
   CHECK_FALSE(r_1.empty());
-
-  swoc::IPMask mask{127};
-  CHECK(r_5.min() == (r_5.min() & swoc::IPMask(128)));
-  CHECK(r_5.min() == (r_5.min() | mask));
-  CHECK(r_5.min() != (r_5.min() & mask));
-
-  swoc::IP6Addr aa_1{"2001:1f2d:c587:24c4::"};
-  CHECK(aa_1 == (aa_1 & swoc::IPMask{62}));
 
   // Verify a family specific range only works with the same family range.
   TextView r4_txt{"10.33.45.19-10.33.45.76"};
