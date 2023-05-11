@@ -126,9 +126,10 @@ if (LIBSWOC_INSTALL)
     configure_file("libswoc.pc.cmake" libswoc.pc @ONLY)
     configure_file("libswoc-static.pc.cmake" libswoc-static.pc @ONLY)
     install(
-        COMPONENT LIB
         FILES ${CMAKE_CURRENT_BINARY_DIR}/libswoc.pc ${CMAKE_CURRENT_BINARY_DIR}/libswoc-static.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+        COMPONENT LIB
+    )
 endif()
 
 # Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.
