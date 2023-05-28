@@ -463,6 +463,11 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   REQUIRE(w.view() == "172. 17. 99.231");
   w.clear().print("{::=a}", ep);
   REQUIRE(w.view() == "172.017.099.231");
+  w.clear().print("{:x:a}", ep);
+  REQUIRE(w.view() == "ac.11.63.e7");
+  auto a4 = IP4Addr(ep.ip4());
+  w.clear().print("{:x}", a4);
+  REQUIRE(w.view() == "ac.11.63.e7");
 
   REQUIRE(ep.parse(addr_3) == true);
   w.clear().print("{::a}", ep);
