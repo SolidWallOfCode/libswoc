@@ -15,6 +15,7 @@ add_executable(test_libswoc
     test_MemSpan.cc
     test_MemArena.cc
     test_meta.cc
+    test_range.cc
     test_TextView.cc
     test_Scalar.cc
     test_swoc_file.cc

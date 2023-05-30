@@ -127,7 +127,7 @@ enum class DiscreteRangeEdgeRelation : uint8_t {
    - have value semantics
    - have minimum and maximum values either
      - members @c MIN and @c MAX that define static instances
-     - support @c std::numeric_limits<T>
+     - @c std::numeric_limits<T> support.
 
    The interval is always an inclusive (closed) contiguous interval,
    defined by the minimum and maximum values contained in the interval.
@@ -147,7 +147,7 @@ public:
   using EdgeRelation = DiscreteRangeEdgeRelation; ///< Import type for convenience.
 
   /** Default constructor.
-      An invalid (empty) range is constructed.
+   * An invalid (empty) range is constructed.
    */
   constexpr DiscreteRange() : _min(detail::maximum<T>()), _max(detail::minimum<T>()) {}
 
@@ -322,13 +322,7 @@ public:
    * - OVLP: @a that left edge is inside @a this.
    * - NONE: @a that left edge is left of @a this.
    */
-  EdgeRelation
-  left_edge_relationship(self_type const &that) const {
-    if (_max < that._max) {
-      return ++metric_type(_max) < that._max ? EdgeRelation::GAP : EdgeRelation::ADJ;
-    }
-    return _min >= that._min ? EdgeRelation::NONE : EdgeRelation::OVLP;
-  }
+  EdgeRelation left_edge_relationship(self_type const &that) const;
 
   /** Convex hull.
    * @return The smallest interval that is a superset of @c this and @a that.
@@ -456,8 +450,17 @@ DiscreteRange<T>::hull(DiscreteRange::self_type const &that) const {
 }
 
 template <typename T>
-typename DiscreteRange<T>::Relation
-DiscreteRange<T>::relationship(self_type const &that) const {
+auto
+DiscreteRange<T>::left_edge_relationship(self_type const &that) const -> EdgeRelation {
+  if (_max < that._max) {
+    return ++metric_type(_max) < that._max ? EdgeRelation::GAP : EdgeRelation::ADJ;
+  }
+  return _min >= that._min ? EdgeRelation::NONE : EdgeRelation::OVLP;
+}
+
+template <typename T>
+auto
+DiscreteRange<T>::relationship(self_type const &that) const -> Relation{
   Relation retval = Relation::NONE;
   if (this->has_intersection(that)) {
     if (*this == that)
@@ -600,7 +603,8 @@ DiscreteRange<T>::is_left_adjacent_to(DiscreteRange::self_type const &that) cons
    * T has a modulus and not depend on ++t > t always being true. However, we know that if t1 >
    * t0 then ++t0 > t0.
    */
-  return _max < that._min && ++metric_type(_max) == that._min;
+  metric_type max(_max); // some built in integer types don't support increment on rvalues.
+  return _max < that._min && ++max == that._min;
 }
 
 template <typename T>
@@ -609,10 +613,6 @@ DiscreteRange<T>::intersection(DiscreteRange::self_type const &that) const {
   return {std::max(_min, that._min), std::min(_max, that._max)};
 }
 
-/** Equality.
-    Two intervals are equal if their min and max values are equal.
-    @relates DiscreteRange
- */
 template <typename T>
 bool
 operator==(DiscreteRange<T> const &lhs, DiscreteRange<T> const &rhs) {
