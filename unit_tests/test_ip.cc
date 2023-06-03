@@ -392,6 +392,9 @@ TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
     CHECK(a6_3 == (a6_3 & swoc::IPMask{62}));
     CHECK(a6_3 != (a6_3 & swoc::IPMask{61}));
 
+    REQUIRE(IPMask(1) == IPMask::mask_for(IP4Addr("0x80.0.0.0")));
+    REQUIRE(IPMask(2) == IPMask::mask_for(IP4Addr("0xC0.0.0.0")));
+    REQUIRE(IPMask(27) == IPMask::mask_for(IP4Addr("0xFF.0xFF.0xFF.0xE0")));
 }
 
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
@@ -1095,15 +1098,15 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
           , {"100.0.1.0-100.0.1.255", make_bits({30})}
       }};
 
-  static constexpr std::array<std::initializer_list<unsigned>, 7> results = {{
-                                                                {0, 31}
-                                                                , {1, 30}
-                                                                , {2}
-                                                                , {3}
-                                                                , {4}
-                                                                , {5}
-                                                                , {6}
-                                                            }};
+  static const std::array<PAYLOAD, 7> results = {
+                                                  make_bits({0, 31})
+                                                , make_bits({1, 30})
+                                                , make_bits({2})
+                                                , make_bits({3})
+                                                , make_bits({4})
+                                                , make_bits({5})
+                                                , make_bits({6})
+                                                };
 
   Space space;
 
@@ -1121,13 +1124,13 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   for (auto spot = space.begin() ; spot != space.end() && idx < results.size() ; ++spot) {
     auto const& [ range, bits ] { *spot };
     REQUIRE(idx < results.size());
-    CHECK(bits == make_bits(results[idx]));
+    CHECK(bits == results[idx]);
     ++idx;
   }
 
   idx = 0;
   for (auto const& [range, bits] : space) {
-    CHECK(bits == make_bits(results[idx]));
+    CHECK(bits == results[idx]);
     ++idx;
   }
 
@@ -1136,7 +1139,7 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
     auto const&[range, bits]{*--spot};
     REQUIRE(idx > 0);
     --idx;
-    CHECK(bits == make_bits(results[idx]));
+    CHECK(bits == results[idx]);
   }
 
   // Check iterator copying.
@@ -1147,7 +1150,7 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   for (auto spot = space.begin(); spot != space.end() ; ++spot, ++idx) {
     iter = spot;
     std::tie(range, bits) = *iter;
-    CHECK(bits == make_bits(results[idx]));
+    CHECK(bits == results[idx]);
   }
 
   // This blend should change only existing ranges, not add range.

@@ -676,11 +676,11 @@ auto
 IPMask::mask_for_quad(IP6Addr::quad_type q) -> raw_type {
   raw_type cidr = IP6Addr::QUAD_WIDTH;
   if (q != 0) {
-    auto mask = IP6Addr::QUAD_MASK;
+    IP6Addr::quad_type mask = IP6Addr::QUAD_MASK;
     do {
       mask <<= 1;
       --cidr;
-    } while ((q | ~mask) == q);
+    } while ((q & mask) == q);
     ++cidr; // loop goes exactly 1 too far.
   }
   return cidr;
