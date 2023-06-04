@@ -38,12 +38,13 @@ using swoc::IP6Net;
 using swoc::IPSpace;
 using swoc::IPRangeSet;
 
-using W = swoc::LocalBufferWriter<256>;
 
 namespace {
+std::string bws;
+
 template<typename P> void dump(IPSpace < P > const& space) {
   for ( auto && [ r, p ] : space ) {
-    std::cout << W().print("{} : {}\n", r, p).view();
+    std::cout << bwprint(bws, "{} : {}\n", r, p);
   }
 }
 } // namespace
@@ -347,54 +348,56 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
 };
 
 TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
-    IP4Addr a24{"255.255.255.0"};
-    REQUIRE(IP4Addr::MAX == IPMask(32).as_ip4());
-    REQUIRE(IP4Addr::MIN == IPMask(0).as_ip4());
-    REQUIRE(IPMask(24).as_ip4() == a24);
+  IP4Addr a24{"255.255.255.0"};
+  REQUIRE(IP4Addr::MAX == IPMask(32).as_ip4());
+  REQUIRE(IP4Addr::MIN == IPMask(0).as_ip4());
+  REQUIRE(IPMask(24).as_ip4() == a24);
 
-    swoc::IP4Net n1{"0/1"};
-    auto nr1 = n1.as_range();
-    REQUIRE(nr1.min() == IP4Addr::MIN);
-    REQUIRE(nr1.max() == IP4Addr("127.255.255.255"));
+  swoc::IP4Net n1{"0/1"};
+  auto nr1 = n1.as_range();
+  REQUIRE(nr1.min() == IP4Addr::MIN);
+  REQUIRE(nr1.max() == IP4Addr("127.255.255.255"));
 
-    IP4Addr a{"8.8.8.8"};
-    swoc::IP4Net n4{a, IPMask{32}};
-    auto nr4 = n4.as_range();
-    REQUIRE(nr4.min() == a);
-    REQUIRE(nr4.max() == a);
+  IP4Addr a{"8.8.8.8"};
+  swoc::IP4Net n4{a, IPMask{32}};
+  auto nr4 = n4.as_range();
+  REQUIRE(nr4.min() == a);
+  REQUIRE(nr4.max() == a);
 
-    swoc::IP4Net n0{"0/0"};
-    auto nr0 = n0.as_range();
-    REQUIRE(nr0.min() == IP4Addr::MIN);
-    REQUIRE(nr0.max() == IP4Addr::MAX);
+  swoc::IP4Net n0{"0/0"};
+  auto nr0 = n0.as_range();
+  REQUIRE(nr0.min() == IP4Addr::MIN);
+  REQUIRE(nr0.max() == IP4Addr::MAX);
 
-    swoc::IPMask m128{128};
-    REQUIRE(m128.as_ip6() == IP6Addr::MAX);
-    swoc::IPMask m0{0};
-    REQUIRE(m0.as_ip6() == IP6Addr::MIN);
+  swoc::IPMask m128{128};
+  REQUIRE(m128.as_ip6() == IP6Addr::MAX);
+  swoc::IPMask m0{0};
+  REQUIRE(m0.as_ip6() == IP6Addr::MIN);
 
-    IP6Addr a6{"12:34:56:78:9A:BC:DE:FF"};
-    REQUIRE(a6 == (a6 | IPMask(0)));
-    REQUIRE(IP6Addr::MAX == (a6 | IPMask(IP6Addr::WIDTH)));
-    REQUIRE(IP6Addr::MIN == (a6 & IPMask(0)));
+  IP6Addr a6{"12:34:56:78:9A:BC:DE:FF"};
+  REQUIRE(a6 == (a6 | IPMask(0)));
+  REQUIRE(IP6Addr::MAX == (a6 | IPMask(IP6Addr::WIDTH)));
+  REQUIRE(IP6Addr::MIN == (a6 & IPMask(0)));
 
-    IP6Addr a6_2{"2001:1f2d:c587:24c3:9128:3349:3cee:143"_tv};
-    swoc::IPMask mask{127};
-    CHECK(a6_2 == (a6_2 | mask));
-    CHECK(a6_2 != (a6_2 & mask));
-    CHECK(a6_2 == (a6_2 & swoc::IPMask(128))); // should always be a no-op.
+  IP6Addr a6_2{"2001:1f2d:c587:24c3:9128:3349:3cee:143"_tv};
+  swoc::IPMask mask{127};
+  CHECK(a6_2 == (a6_2 | mask));
+  CHECK(a6_2 != (a6_2 & mask));
+  CHECK(a6_2 == (a6_2 & swoc::IPMask(128))); // should always be a no-op.
 
-    IP6Net n6_1{a6_2, IPMask(96)};
-    CHECK(n6_1.min() == IP6Addr("2001:1f2d:c587:24c3:9128:3349::"));
+  IP6Net n6_1{a6_2, IPMask(96)};
+  CHECK(n6_1.min() == IP6Addr("2001:1f2d:c587:24c3:9128:3349::"));
 
-    swoc::IP6Addr a6_3{"2001:1f2d:c587:24c4::"};
-    CHECK(a6_3 == (a6_3 & swoc::IPMask{64}));
-    CHECK(a6_3 == (a6_3 & swoc::IPMask{62}));
-    CHECK(a6_3 != (a6_3 & swoc::IPMask{61}));
+  swoc::IP6Addr a6_3{"2001:1f2d:c587:24c4::"};
+  CHECK(a6_3 == (a6_3 & swoc::IPMask{64}));
+  CHECK(a6_3 == (a6_3 & swoc::IPMask{62}));
+  CHECK(a6_3 != (a6_3 & swoc::IPMask{61}));
 
-    REQUIRE(IPMask(1) == IPMask::mask_for(IP4Addr("0x80.0.0.0")));
-    REQUIRE(IPMask(2) == IPMask::mask_for(IP4Addr("0xC0.0.0.0")));
-    REQUIRE(IPMask(27) == IPMask::mask_for(IP4Addr("0xFF.0xFF.0xFF.0xE0")));
+  REQUIRE(IPMask(1) == IPMask::mask_for(IP4Addr("0x80.0.0.0")));
+  REQUIRE(IPMask(2) == IPMask::mask_for(IP4Addr("0xC0.0.0.0")));
+  REQUIRE(IPMask(27) == IPMask::mask_for(IP4Addr("0xFF.0xFF.0xFF.0xE0")));
+  REQUIRE(IPMask(55) == IPMask::mask_for(IP6Addr("1337:dead:beef:CA00::")));
+  REQUIRE(IPMask(91) == IPMask::mask_for(IP6Addr("1337:dead:beef:CA00:24c3:3ce0::")));
 }
 
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
@@ -1121,15 +1124,14 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   unsigned idx;
 
   idx = 0;
-  for (auto spot = space.begin() ; spot != space.end() && idx < results.size() ; ++spot) {
-    auto const& [ range, bits ] { *spot };
-    REQUIRE(idx < results.size());
+  for (auto const& [range, bits] : space) {
     CHECK(bits == results[idx]);
     ++idx;
   }
 
   idx = 0;
-  for (auto const& [range, bits] : space) {
+  for (auto spot = space.begin() ; spot != space.end() && idx < results.size() ; ++spot ) {
+    auto const& [ range, bits ] { *spot };
     CHECK(bits == results[idx]);
     ++idx;
   }
@@ -1166,6 +1168,40 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   // Color in empty range - should not add range.
   space.blend(IPRange{"100.8.10.25"}, 27, additive);
   REQUIRE(space.count() == results.size() + 1);
+}
+
+TEST_CASE("IPSpace Edge", "[libswoc][ipspace][edge]") {
+  struct Thing {
+    unsigned _n;
+    Thing(Thing const&) = delete; // No copy.
+    Thing & operator = (Thing const&) = delete; // No self assignment.
+  };
+  using Space = IPSpace<Thing>;
+  Space space;
+
+  IP4Addr a1{"192.168.99.99"};
+
+  if (auto && [ r, p ] = *(space.find(a1)) ; ! r.empty()) {
+    REQUIRE(false); // Checking this syntax doesn't copy the payload.
+  }
+  if (auto [ r, p ] = *(space.find(a1)) ; ! r.empty()) {
+    REQUIRE(false); // Checking this syntax doesn't copy the payload.
+  }
+
+  auto const & cspace = space;
+  if (auto const& [ r, p ] = *(cspace.find(a1)) ; ! r.empty()) {
+    Thing const & cp = p;
+    static_assert(std::is_const_v<typeof(cp)>, "Payload was expected to be const.");
+    REQUIRE(false); // Checking this syntax doesn't copy the payload.
+  }
+  if (auto const& [ r, p ] = *(cspace.find(a1)) ; ! r.empty()) {
+    static_assert(std::is_const_v<typeof(p)>, "Payload was expected to be const.");
+    REQUIRE(false); // Checking this syntax doesn't copy the payload.
+  }
+
+  auto spot = cspace.find(a1);
+  auto & v1 = *spot;
+  auto & p1 = get<1>(v1);
 }
 
 TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
