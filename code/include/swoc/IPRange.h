@@ -8,21 +8,18 @@
 
 #include <string_view>
 #include <variant> // for std::monostate
+#include <tuple>
 
 #include <swoc/DiscreteRange.h>
 #include <swoc/IPAddr.h>
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
-using ::std::string_view;
+using std::string_view;
 
 class IP4Net;
 class IP6Net;
 class IPNet;
-
-namespace detail {
-extern void *const pseudo_nullptr;
-}
 
 /** An inclusive range of IPv4 addresses.
  */
@@ -335,6 +332,7 @@ public:
    * @param max Maximum range value.
    */
   IPRange(IP4Addr const &min, IP4Addr const &max);
+
   /** Construct an inclusive range.
    *
    * @param min Minimum range value.
@@ -346,8 +344,8 @@ public:
    *
    * @param addr Address of range.
    */
-
   IPRange(IPAddr const& addr) : IPRange(addr, addr) {}
+
   /** Construct a singleton range.
    *
    * @param addr Address of range.
@@ -366,7 +364,6 @@ public:
   /// Construct from an IPv6 @a range.
   IPRange(IP6Range const &range);
 
-
   /** Construct from a string format.
    *
    * @param text Text form of range.
@@ -384,16 +381,10 @@ public:
   bool operator!=(self_type const& that) const;
 
   /// @return @c true if this is an IPv4 range, @c false if not.
-  bool
-  is_ip4() const {
-    return AF_INET == _family;
-  }
+  bool is_ip4() const;
 
   /// @return @c true if this is an IPv6 range, @c false if not.
-  bool
-  is_ip6() const {
-    return AF_INET6 == _family;
-  }
+  bool is_ip6() const;
 
   /** Check if @a this range is the IP address @a family.
    *
@@ -421,6 +412,9 @@ public:
   /// @return @c true if there are no addresses in the range.
   bool empty() const;
 
+  /// Make the range empty / invalid.
+  self_type & clear();
+
   /// @return The IPv4 range.
   IP4Range const & ip4() const { return _range._ip4; }
 
@@ -438,6 +432,7 @@ public:
    */
   IPMask network_mask() const;
 
+  /// Container for remaining range for network generation.
   class NetSource;
 
   /** Generate a list of networks covering @a this range.
@@ -473,6 +468,7 @@ protected:
     IP4Range _ip4;       ///< IPv4 range.
     IP6Range _ip6;       ///< IPv6 range.
   } _range{std::monostate{}};
+
   /// Family of @a _range.
   sa_family_t _family{AF_UNSPEC};
 };
@@ -533,6 +529,7 @@ protected:
     IP4Range::NetSource _ip4; ///< IPv4 addresses.
     IP6Range::NetSource _ip6; ///< IPv6 addresses.
   };
+
   sa_family_t _family = AF_UNSPEC; ///< Mark for union content.
 };
 
@@ -730,21 +727,20 @@ public:
   /// @return A range that exactly covers the network.
   IPRange as_range() const;
 
+  /// @return @c true if network is IPv4.
   bool is_ip4() const { return _addr.is_ip4(); }
 
+  /// @return @c true if network is IPv6.
   bool is_ip6() const { return _addr.is_ip6(); }
 
+  /// Address family of network.
   sa_family_t family() const { return _addr.family(); }
 
-  IP4Net
-  ip4() const {
-    return IP4Net{_addr.ip4(), _mask};
-  }
+  /// @return The network as explicitly IPv4.
+  IP4Net ip4() const;
 
-  IP6Net
-  ip6() const {
-    return IP6Net{_addr.ip6(), _mask};
-  }
+  /// @return The network as explicitly IPv6.
+  IP6Net ip6() const;
 
   /** Assign an @a addr and @a mask to @a this.
    *
@@ -755,11 +751,7 @@ public:
   self_type &assign(IPAddr const &addr, IPMask const &mask);
 
   /// Reset network to invalid state.
-  self_type &
-  clear() {
-    _mask.clear();
-    return *this;
-  }
+  self_type & clear();
 
   /// Equality.
   bool operator==(self_type const &that) const;
@@ -773,6 +765,105 @@ protected:
 };
 
 // --------------------------------------------------------------------------
+namespace detail {
+/** Value type for @c IPSpace.
+ *
+ * @tparam PAYLOAD User data type to be stored.
+ *
+ * @internal Exported because inner classes in template classes cannot be used in partial
+ * specialization which is required for tuple support. This should be removed next API incompatible
+ * change release because tuple access is being deprecated.
+ *
+ * @note The @c assign methods are used to update iterators.
+ *
+ * @see IPSpace
+ */
+template < typename PAYLOAD > struct ip_space_value_type {
+  using self_type = ip_space_value_type;
+
+  swoc::IPRange _range; ///< Address range.
+  PAYLOAD * _payload = nullptr; ///< Payload for @a _range.
+
+  /// @return The address range.
+  swoc::IPRange const & range() const { return _range; }
+  /// @return A reference to the payload (user content).
+  PAYLOAD const & payload() const { return *_payload; }
+  /// @return A reference to the payload (user content).
+  PAYLOAD & payload() { return *_payload; }
+
+  /// Reset to default constructed state.
+  self_type & clear();
+
+  /** Update the internal state.
+   *
+   * @param r Range.
+   * @param payload Payload.
+   * @return @a this.
+   */
+  self_type & assign(swoc::IP4Range const& r, PAYLOAD & payload);
+
+  /** Update the internal state.
+   *
+   * @param r Range.
+   * @param payload Payload.
+   * @return @a this.
+   */
+  self_type & assign(swoc::IP6Range const& r, PAYLOAD & payload);
+
+  /** Update from another instance.
+   *
+   * @param that Other instance.
+   * @return @a this.
+   */
+  self_type & assign(self_type const& that);
+
+  /// Support assignemnt to @c std::tie.
+  operator std::tuple<swoc::IPRange &, PAYLOAD &> () { return { _range, *_payload }; }
+
+  /// Equality against an equivalent tuple.
+  bool operator == (std::tuple<swoc::IPRange, PAYLOAD> const& t) const;
+};
+
+template <typename PAYLOAD>
+auto
+ip_space_value_type<PAYLOAD>::clear() -> self_type & {
+  _range.clear();
+  _payload = nullptr;
+  return *this;
+}
+
+template <typename PAYLOAD>
+auto
+ip_space_value_type<PAYLOAD>::assign(IP4Range const &r, PAYLOAD &payload) -> self_type &{
+  _range = r;
+  _payload = &payload;
+  return *this;
+}
+
+template <typename PAYLOAD>
+auto
+ip_space_value_type<PAYLOAD>::assign(IP6Range const &r, PAYLOAD &payload) -> self_type & {
+  _range = r;
+  _payload = &payload;
+  return *this;
+}
+
+template <typename PAYLOAD>
+auto
+ip_space_value_type<PAYLOAD>::assign(ip_space_value_type::self_type const &that) -> self_type & {
+  _range = that._range;
+  _payload = that._payload;
+  return *this;
+}
+
+template <typename PAYLOAD>
+bool
+ip_space_value_type<PAYLOAD>::operator==(std::tuple<swoc::IPRange, PAYLOAD> const &t) const {
+  return _range == std::get<0>(t) && std::get<1>(t) == *_payload;
+}
+
+} // namespace detail
+
 /** Coloring of IP address space.
  *
  * @tparam PAYLOAD The color class.
@@ -793,7 +884,8 @@ template <typename PAYLOAD> class IPSpace {
 
 public:
   using payload_t  = PAYLOAD; ///< Export payload type.
-  using value_type = std::tuple<IPRange const, PAYLOAD &>;
+  /// Iterator value, a range and payload.
+  using value_type = detail::ip_space_value_type<PAYLOAD>;
 
   /// Construct an empty space.
   IPSpace() = default;
@@ -850,8 +942,7 @@ public:
     self_type & blend(IP4Range const &range, U const &color, F &&blender);
 
   template <typename F, typename U = PAYLOAD>
-    self_type &
-    blend(IP6Range const &range, U const &color, F &&blender);
+    self_type & blend(IP6Range const &range, U const &color, F &&blender);
 
   /// @return The number of distinct ranges.
   size_t count() const;
@@ -898,7 +989,7 @@ public:
     friend class IPSpace;
 
   public:
-    using value_type = std::tuple<IPRange const, PAYLOAD const &>; /// Import for API compliance.
+    using value_type = IPSpace::value_type const; /// Import for API compliance.
     // STL algorithm compliance.
     using iterator_category = std::bidirectional_iterator_tag;
     using pointer           = value_type *;
@@ -936,31 +1027,11 @@ public:
 
     /// Dereference.
     /// @return A reference to the referent.
-    value_type operator*() const;
+    value_type & operator*() const;
 
     /// Dereference.
     /// @return A pointer to the referent.
-    value_type const *operator->() const;
-
-    /** The range for the iterator.
-     *
-     * @return Iterator range.
-     *
-     * @note If the iterator is not valid the returned range will be empty.
-     */
-    IPRange const& range() const;
-
-    /** The payload for the iterator.
-     *
-     * @return The payload.
-     *
-     * @note This yields undetermined results for invalid iterators. Always check for validity befure
-     * using this method.
-     *
-     * @note It is not possible to retrieve a modifiable payload because that can break the internal
-     * invariant that adjcent ranges always have different payloads.
-     */
-    PAYLOAD const& payload() const;
+    value_type * operator->() const;
 
     /// Equality
     bool operator==(self_type const &that) const;
@@ -977,7 +1048,7 @@ public:
     typename IP4Space::iterator _iter_4; ///< IPv4 sub-space iterator.
     typename IP6Space::iterator _iter_6; ///< IPv6 sub-space iterator.
     /// Current value.
-    value_type _value{IPRange{}, *static_cast<PAYLOAD *>(detail::pseudo_nullptr)};
+    IPSpace::value_type _value;
 
     /** Internal constructor.
      *
@@ -1008,7 +1079,7 @@ public:
     iterator(const_iterator const& that) : const_iterator(that) {}
   public:
     /// Value type of iteration.
-    using value_type = std::tuple<IPRange const, PAYLOAD &>;
+    using value_type = IPSpace::value_type;
     using pointer    = value_type *;
     using reference  = value_type &;
 
@@ -1034,30 +1105,20 @@ public:
     /// Post-increment.
     /// Move to the next element in the list.
     /// @return The iterator value before the increment.
-    self_type
-    operator++(int) {
-      self_type zret{*this};
-      ++*this;
-      return zret;
-    }
+    self_type operator++(int);
 
     /// Post-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator value before the decrement.
-    self_type
-    operator--(int) {
-      self_type zret{*this};
-      --*this;
-      return zret;
-    }
+    self_type operator--(int);
 
     /// Dereference.
     /// @return A reference to the referent.
-    value_type operator*() const;
+    reference operator*() const;
 
     /// Dereference.
     /// @return A pointer to the referent.
-    value_type const *operator->() const;
+    pointer operator->() const;
 
   };
 
@@ -1376,9 +1437,9 @@ template <typename PAYLOAD>
 IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator const &iter4, typename IP6Space::iterator const &iter6)
 : _iter_4(iter4), _iter_6(iter6) {
   if (_iter_4.has_next()) {
-    new (&_value) value_type{_iter_4->range(), _iter_4->payload()};
+    _value.assign(_iter_4->range(), _iter_4->payload());
   } else if (_iter_6.has_next()) {
-    new (&_value) value_type{_iter_6->range(), _iter_6->payload()};
+    _value.assign(_iter_6->range(), _iter_6->payload());
   }
 }
 
@@ -1387,7 +1448,7 @@ auto
 IPSpace<PAYLOAD>::const_iterator::operator=(self_type const &that) -> self_type & {
   _iter_4 = that._iter_4;
   _iter_6 = that._iter_6;
-  new (&_value) value_type{that._value};
+  _value.assign(that._value);
   return *this;
 }
 
@@ -1399,18 +1460,18 @@ IPSpace<PAYLOAD>::const_iterator::operator++() -> self_type & {
     ++_iter_4;
     incr_p = true;
     if (_iter_4.has_next()) {
-      new (&_value) value_type{_iter_4->range(), _iter_4->payload()};
+      _value.assign(_iter_4->range(), _iter_4->payload());
       return *this;
     }
   }
 
   if (_iter_6.has_next()) {
     if (incr_p || (++_iter_6).has_next()) {
-      new (&_value) value_type{_iter_6->range(), _iter_6->payload()};
+      _value.assign(_iter_6->range(), _iter_6->payload());
       return *this;
     }
   }
-  new (&_value) value_type{IPRange{}, *static_cast<PAYLOAD *>(detail::pseudo_nullptr)};
+  _value.clear();
   return *this;
 }
 
@@ -1427,15 +1488,15 @@ auto
 IPSpace<PAYLOAD>::const_iterator::operator--() -> self_type & {
   if (_iter_6.has_prev()) {
     --_iter_6;
-    new (&_value) value_type{_iter_6->range(), _iter_6->payload()};
+    _value.assign(_iter_6->range(), _iter_6->payload());
     return *this;
   }
   if (_iter_4.has_prev()) {
     --_iter_4;
-    new (&_value) value_type{_iter_4->range(), _iter_4->payload()};
+    _value.assign(_iter_4->range(), _iter_4->payload());
     return *this;
   }
-  new (&_value) value_type{IPRange{}, *static_cast<PAYLOAD *>(detail::pseudo_nullptr)};
+  _value.clear();
   return *this;
 }
 
@@ -1449,7 +1510,7 @@ IPSpace<PAYLOAD>::const_iterator::operator--(int) -> self_type {
 
 template <typename PAYLOAD>
 auto
-IPSpace<PAYLOAD>::const_iterator::operator*() const -> value_type {
+IPSpace<PAYLOAD>::const_iterator::operator*() const -> value_type & {
   return _value;
 }
 
@@ -1458,14 +1519,6 @@ auto
 IPSpace<PAYLOAD>::const_iterator::operator->() const -> value_type const * {
   return &_value;
 }
-
-template <typename PAYLOAD>
-IPRange const &
-IPSpace<PAYLOAD>::const_iterator::range() const { return std::get<0>(_value); }
-
-template <typename PAYLOAD>
-PAYLOAD const &
-IPSpace<PAYLOAD>::const_iterator::payload() const { return std::get<1>(_value); }
 
 /* Bit of subtlety with equality - although it seems that if @a _iter_4 is valid, it doesn't matter
  * where @a _iter6 is (because it is really the iterator location that's being checked), it's
@@ -1496,14 +1549,14 @@ IPSpace<PAYLOAD>::iterator::operator=(self_type const &that) -> self_type & {
 
 template <typename PAYLOAD>
 auto
-IPSpace<PAYLOAD>::iterator::operator->() const -> value_type const * {
-  return static_cast<value_type *>(&super_type::_value);
+IPSpace<PAYLOAD>::iterator::operator->() const -> pointer {
+  return & const_cast<self_type*>(this)->_value;
 }
 
 template <typename PAYLOAD>
 auto
-IPSpace<PAYLOAD>::iterator::operator*() const -> value_type {
-  return reinterpret_cast<value_type const &>(super_type::_value);
+IPSpace<PAYLOAD>::iterator::operator*() const -> reference {
+  return const_cast<self_type*>(this)->_value;
 }
 
 template <typename PAYLOAD>
@@ -1515,12 +1568,27 @@ IPSpace<PAYLOAD>::iterator::operator++() -> self_type & {
 
 template <typename PAYLOAD>
 auto
+IPSpace<PAYLOAD>::iterator::operator++(int) -> self_type {
+  self_type zret{*this};
+  ++*this;
+  return zret;
+}
+
+template <typename PAYLOAD>
+auto
 IPSpace<PAYLOAD>::iterator::operator--() -> self_type & {
   this->super_type::operator--();
   return *this;
 }
 
-// --------------------------------------------------------------------------
+template <typename PAYLOAD>
+auto
+IPSpace<PAYLOAD>::iterator::operator--(int) -> self_type {
+  self_type zret{*this};
+  --*this;
+  return zret;
+}
+
 /// ------------------------------------------------------------------------------------
 
 // +++ IPRange +++
@@ -1578,6 +1646,12 @@ IPRange::assign(IP6Addr const &min, IP6Addr const &max) -> self_type & {
 }
 
 inline auto
+IPRange::clear() -> self_type & {
+  _family = AF_UNSPEC;
+  return *this;
+}
+
+inline auto
 IPRange::networks() const -> NetSource {
   return {NetSource{*this}};
 }
@@ -1590,6 +1664,15 @@ IPRange::is(sa_family_t family) const {
 inline bool
 IPRange::operator!=(const self_type &that) const {
   return ! (*this == that);
+}
+
+inline bool
+IPRange::is_ip4() const {
+  return AF_INET == _family;
+}
+
+inline bool IPRange::is_ip6() const {
+  return AF_INET6 == _family;
 }
 
 // +++ IPNet +++
@@ -1769,6 +1852,22 @@ operator==(IPNet const &lhs, IP6Net const &rhs) {
 inline bool
 operator==(IP6Net const &lhs, IPNet const &rhs) {
   return rhs.is_ip6() && rhs.ip6() == lhs;
+}
+
+inline IP4Net
+IPNet::ip4() const {
+  return IP4Net{_addr.ip4(), _mask};
+}
+
+inline IP6Net
+IPNet::ip6() const {
+  return IP6Net{_addr.ip6(), _mask};
+}
+
+inline auto
+IPNet::clear() -> self_type & {
+  _mask.clear();
+  return *this;
 }
 
 // +++ Range -> Network classes +++
@@ -2180,12 +2279,12 @@ IPRangeSet::const_iterator::operator--(int) -> self_type {
 
 inline auto
 IPRangeSet::const_iterator::operator*() const -> value_type const& {
-  return _iter.range();
+  return _iter->range();
 }
 
 inline auto
 IPRangeSet::const_iterator::operator->() const -> value_type const * {
-  return &(_iter.range());
+  return &(_iter->range());
 }
 
 inline bool
@@ -2284,3 +2383,49 @@ get(swoc::IPNet const &net) {
 /// @endcond
 
 }} // namespace swoc::SWOC_VERSION_NS
+
+// Tuple support for IPSpace values.
+/// @cond NOT_DOCUMENTED
+
+namespace std {
+
+template <typename P> class tuple_size<swoc::detail::ip_space_value_type<P>> : public integral_constant<size_t, 2> {};
+
+template <size_t IDX, typename P> class tuple_element<IDX, swoc::detail::ip_space_value_type<P>> {
+  static_assert("swoc::IPSpace::value_type tuple index out of range");
+};
+
+template <typename P> class tuple_element<0, swoc::detail::ip_space_value_type<P>> {
+public:
+  using type = swoc::IPRange const &;
+};
+
+template <typename P> class tuple_element<1, swoc::detail::ip_space_value_type<P>> {
+public:
+  using type = P &;
+};
+
+} // namespace std
+
+namespace swoc { inline namespace SWOC_VERSION_NS { namespace detail {
+template <size_t IDX, typename P>
+auto
+get(ip_space_value_type<P> const &p) -> typename std::tuple_element<IDX, ip_space_value_type<P>>::type {
+  if constexpr (IDX == 0) {
+    return p._range;
+  } else if constexpr (IDX == 1) {
+    // Apparently some compilers complain because this can be @c nullptr but that's a valid state.
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+    return *(p._payload);
+    #pragma GCC diagnostic pop
+  }
+}
+}}} // namespace swoc::detail
+
+// Support unqualified @c get because ADL doesn't seem to work.
+using swoc::detail::get;
+// Support @c std::get
+namespace std { using swoc::detail::get; }
+
+/// @endcond
