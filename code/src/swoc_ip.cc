@@ -1212,4 +1212,30 @@ IP6Range::NetSource::search_narrower() {
   }
 }
 
+bool
+IPRangeView::operator==(IPRange const &r) const {
+  if (_family == r.family()) {
+    if (AF_INET == _family) {
+      return *_raw._4 == r.ip4();
+    } else if (AF_INET6 == _family) {
+      return *_raw._6 == r.ip6();
+    }
+    return true;
+  }
+  return false;
+}
+
+bool
+IPRangeView::operator==(IPRangeView::self_type const &that) const {
+  if (_family == that._family) { // different families are not equal
+    if (AF_INET == _family) {
+      return (_raw._4 == that._raw._4) || (*_raw._4 == *that._raw._4);
+    } else if (AF_INET6 == _family) {
+      return (_raw._6 == that._raw._6) || (*_raw._6 == *that._raw._6);
+    }
+    return true;
+  }
+  return false;
+}
+
 }} // namespace swoc::SWOC_VERSION_NS

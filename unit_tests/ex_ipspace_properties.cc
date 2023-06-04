@@ -58,7 +58,7 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   auto dump = [](Space&space) -> void {
     if (Verbose_p) {
       std::cout << W().print("{} ranges\n", space.count());
-      for (auto &&[r, payload] : space) {
+      for (auto && [r, payload] : space) {
         std::cout << W().print("{:25} : {}\n", r, payload);
       }
     }
@@ -411,7 +411,7 @@ bool Table::parse(TextView src) {
 
 auto Table::find(IPAddr const &addr) -> Row * {
   auto spot = _space.find(addr);
-  return spot == _space.end() ? nullptr : &std::get<1>(*spot);
+  return spot == _space.end() ? nullptr : &(spot->payload());
 }
 
 bool operator == (Table::Row const&, Table::Row const&) { return false; }

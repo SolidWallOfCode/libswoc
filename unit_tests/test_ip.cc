@@ -38,12 +38,13 @@ using swoc::IP6Net;
 using swoc::IPSpace;
 using swoc::IPRangeSet;
 
-using W = swoc::LocalBufferWriter<256>;
 
 namespace {
+std::string bws;
+
 template<typename P> void dump(IPSpace < P > const& space) {
   for ( auto && [ r, p ] : space ) {
-    std::cout << W().print("{} : {}\n", r, p).view();
+    std::cout << bwprint(bws, "{} : {}\n", r, p);
   }
 }
 } // namespace
@@ -347,54 +348,56 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
 };
 
 TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
-    IP4Addr a24{"255.255.255.0"};
-    REQUIRE(IP4Addr::MAX == IPMask(32).as_ip4());
-    REQUIRE(IP4Addr::MIN == IPMask(0).as_ip4());
-    REQUIRE(IPMask(24).as_ip4() == a24);
+  IP4Addr a24{"255.255.255.0"};
+  REQUIRE(IP4Addr::MAX == IPMask(32).as_ip4());
+  REQUIRE(IP4Addr::MIN == IPMask(0).as_ip4());
+  REQUIRE(IPMask(24).as_ip4() == a24);
 
-    swoc::IP4Net n1{"0/1"};
-    auto nr1 = n1.as_range();
-    REQUIRE(nr1.min() == IP4Addr::MIN);
-    REQUIRE(nr1.max() == IP4Addr("127.255.255.255"));
+  swoc::IP4Net n1{"0/1"};
+  auto nr1 = n1.as_range();
+  REQUIRE(nr1.min() == IP4Addr::MIN);
+  REQUIRE(nr1.max() == IP4Addr("127.255.255.255"));
 
-    IP4Addr a{"8.8.8.8"};
-    swoc::IP4Net n4{a, IPMask{32}};
-    auto nr4 = n4.as_range();
-    REQUIRE(nr4.min() == a);
-    REQUIRE(nr4.max() == a);
+  IP4Addr a{"8.8.8.8"};
+  swoc::IP4Net n4{a, IPMask{32}};
+  auto nr4 = n4.as_range();
+  REQUIRE(nr4.min() == a);
+  REQUIRE(nr4.max() == a);
 
-    swoc::IP4Net n0{"0/0"};
-    auto nr0 = n0.as_range();
-    REQUIRE(nr0.min() == IP4Addr::MIN);
-    REQUIRE(nr0.max() == IP4Addr::MAX);
+  swoc::IP4Net n0{"0/0"};
+  auto nr0 = n0.as_range();
+  REQUIRE(nr0.min() == IP4Addr::MIN);
+  REQUIRE(nr0.max() == IP4Addr::MAX);
 
-    swoc::IPMask m128{128};
-    REQUIRE(m128.as_ip6() == IP6Addr::MAX);
-    swoc::IPMask m0{0};
-    REQUIRE(m0.as_ip6() == IP6Addr::MIN);
+  swoc::IPMask m128{128};
+  REQUIRE(m128.as_ip6() == IP6Addr::MAX);
+  swoc::IPMask m0{0};
+  REQUIRE(m0.as_ip6() == IP6Addr::MIN);
 
-    IP6Addr a6{"12:34:56:78:9A:BC:DE:FF"};
-    REQUIRE(a6 == (a6 | IPMask(0)));
-    REQUIRE(IP6Addr::MAX == (a6 | IPMask(IP6Addr::WIDTH)));
-    REQUIRE(IP6Addr::MIN == (a6 & IPMask(0)));
+  IP6Addr a6{"12:34:56:78:9A:BC:DE:FF"};
+  REQUIRE(a6 == (a6 | IPMask(0)));
+  REQUIRE(IP6Addr::MAX == (a6 | IPMask(IP6Addr::WIDTH)));
+  REQUIRE(IP6Addr::MIN == (a6 & IPMask(0)));
 
-    IP6Addr a6_2{"2001:1f2d:c587:24c3:9128:3349:3cee:143"_tv};
-    swoc::IPMask mask{127};
-    CHECK(a6_2 == (a6_2 | mask));
-    CHECK(a6_2 != (a6_2 & mask));
-    CHECK(a6_2 == (a6_2 & swoc::IPMask(128))); // should always be a no-op.
+  IP6Addr a6_2{"2001:1f2d:c587:24c3:9128:3349:3cee:143"_tv};
+  swoc::IPMask mask{127};
+  CHECK(a6_2 == (a6_2 | mask));
+  CHECK(a6_2 != (a6_2 & mask));
+  CHECK(a6_2 == (a6_2 & swoc::IPMask(128))); // should always be a no-op.
 
-    IP6Net n6_1{a6_2, IPMask(96)};
-    CHECK(n6_1.min() == IP6Addr("2001:1f2d:c587:24c3:9128:3349::"));
+  IP6Net n6_1{a6_2, IPMask(96)};
+  CHECK(n6_1.min() == IP6Addr("2001:1f2d:c587:24c3:9128:3349::"));
 
-    swoc::IP6Addr a6_3{"2001:1f2d:c587:24c4::"};
-    CHECK(a6_3 == (a6_3 & swoc::IPMask{64}));
-    CHECK(a6_3 == (a6_3 & swoc::IPMask{62}));
-    CHECK(a6_3 != (a6_3 & swoc::IPMask{61}));
+  swoc::IP6Addr a6_3{"2001:1f2d:c587:24c4::"};
+  CHECK(a6_3 == (a6_3 & swoc::IPMask{64}));
+  CHECK(a6_3 == (a6_3 & swoc::IPMask{62}));
+  CHECK(a6_3 != (a6_3 & swoc::IPMask{61}));
 
-    REQUIRE(IPMask(1) == IPMask::mask_for(IP4Addr("0x80.0.0.0")));
-    REQUIRE(IPMask(2) == IPMask::mask_for(IP4Addr("0xC0.0.0.0")));
-    REQUIRE(IPMask(27) == IPMask::mask_for(IP4Addr("0xFF.0xFF.0xFF.0xE0")));
+  REQUIRE(IPMask(1) == IPMask::mask_for(IP4Addr("0x80.0.0.0")));
+  REQUIRE(IPMask(2) == IPMask::mask_for(IP4Addr("0xC0.0.0.0")));
+  REQUIRE(IPMask(27) == IPMask::mask_for(IP4Addr("0xFF.0xFF.0xFF.0xE0")));
+  REQUIRE(IPMask(55) == IPMask::mask_for(IP6Addr("1337:dead:beef:CA00::")));
+  REQUIRE(IPMask(91) == IPMask::mask_for(IP6Addr("1337:dead:beef:CA00:24c3:3ce0::")));
 }
 
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
@@ -1018,13 +1021,14 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
 
   // Check some syntax.
   {
-    auto && [ r, p ] = *space.find(IPAddr{"2001:4998:58:400::1E"});
-    REQUIRE(false == r.empty());
+    auto a = IPAddr{"2001:4998:58:400::1E"};
+    auto [ r, p ] = *space.find(a);
+    REQUIRE_FALSE(r.empty());
     REQUIRE(p == 1);
   }
   {
-    auto && [ r, p ] = *space.find(IPAddr{"2001:4997:58:400::1E"});
-    REQUIRE(true == r.empty());
+    auto [ r, p ] = *space.find(IPAddr{"2001:4997:58:400::1E"});
+    REQUIRE(r.empty());
   }
 }
 
@@ -1054,9 +1058,9 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
   REQUIRE(space.count() == ranges.size());
 
   // Check that if an IPv4 lookup misses, it doesn't pass on to the first IPv6
-  auto && [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
+  auto [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
   REQUIRE(true == r1.empty());
-  auto && [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.100"}));
+  auto [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.100"}));
   REQUIRE(true == r2.empty());
 }
 
@@ -1121,15 +1125,14 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   unsigned idx;
 
   idx = 0;
-  for (auto spot = space.begin() ; spot != space.end() && idx < results.size() ; ++spot) {
-    auto const& [ range, bits ] { *spot };
-    REQUIRE(idx < results.size());
+  for (auto const& [range, bits] : space) {
     CHECK(bits == results[idx]);
     ++idx;
   }
 
   idx = 0;
-  for (auto const& [range, bits] : space) {
+  for (auto spot = space.begin() ; spot != space.end() && idx < results.size() ; ++spot ) {
+    auto const& [ range, bits ] { *spot };
     CHECK(bits == results[idx]);
     ++idx;
   }
@@ -1148,8 +1151,7 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   IPRange range;
   PAYLOAD bits;
   for (auto spot = space.begin(); spot != space.end() ; ++spot, ++idx) {
-    iter = spot;
-    std::tie(range, bits) = *iter;
+    std::tie(range, bits) = spot->tuple();
     CHECK(bits == results[idx]);
   }
 
@@ -1166,6 +1168,37 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   // Color in empty range - should not add range.
   space.blend(IPRange{"100.8.10.25"}, 27, additive);
   REQUIRE(space.count() == results.size() + 1);
+}
+
+TEST_CASE("IPSpace Edge", "[libswoc][ipspace][edge]") {
+  struct Thing {
+    unsigned _n;
+    Thing(Thing const&) = delete; // No copy.
+    Thing & operator = (Thing const&) = delete; // No self assignment.
+    bool operator == (Thing const& that) const { return _n == that._n; }
+  };
+  using Space = IPSpace<Thing>;
+  Space space;
+
+  IP4Addr a1{"192.168.99.99"};
+  if (auto [ r, p ] = *(space.find(a1)) ; ! r.empty()) {
+    REQUIRE(false); // Checking this syntax doesn't copy the payload.
+  }
+
+  auto const & cspace = space;
+  if (auto [ r, p ] = *(cspace.find(a1)) ; ! r.empty()) {
+    Thing const & cp = p;
+    static_assert(std::is_const_v<typeof(cp)>, "Payload was expected to be const.");
+    REQUIRE(false); // Checking this syntax doesn't copy the payload.
+  }
+  if (auto [ r, p ] = *(cspace.find(a1)) ; ! r.empty()) {
+    static_assert(std::is_const_v<typeof(p)>, "Payload was expected to be const.");
+    REQUIRE(false); // Checking this syntax doesn't copy the payload.
+  }
+
+  auto spot = cspace.find(a1);
+  auto & v1 = *spot;
+  auto & p1 = get<1>(v1);
 }
 
 TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
@@ -1866,10 +1899,10 @@ TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
   }
   REQUIRE(space.count() == ranges.size());
 
-  auto && [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
-  REQUIRE(true == r1.empty());
-  auto && [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.87"}));
-  REQUIRE(false == r2.empty());
+  auto [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
+  REQUIRE(r1.empty());
+  auto [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.87"}));
+  REQUIRE_FALSE(r2.empty());
 
   space.fill(IPRange{"10.0.0.0/8"} , 7);
   REQUIRE(space.count() == ranges.size() + 3);
@@ -1877,25 +1910,25 @@ TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
   REQUIRE(space.count() == ranges.size() + 3);
 
   {
-    auto &&[r, p] = *(space.find(IPAddr{"10.99.88.77"}));
+    auto [r, p] = *(space.find(IPAddr{"10.99.88.77"}));
     REQUIRE(false == r.empty());
     REQUIRE(p == 7);
   }
 
   {
-    auto &&[r, p] = *(space.find(IPAddr{"10.10.35.35"}));
+    auto [r, p] = *(space.find(IPAddr{"10.10.35.35"}));
     REQUIRE(false == r.empty());
     REQUIRE(p == 2);
   }
 
   {
-    auto &&[r, p] = *(space.find(IPAddr{"192.168.56.56"}));
+    auto [r, p] = *(space.find(IPAddr{"192.168.56.56"}));
     REQUIRE(false == r.empty());
     REQUIRE(p == 3);
   }
 
   {
-    auto &&[r, p] = *(space.find(IPAddr{"11.11.11.11"}));
+    auto [r, p] = *(space.find(IPAddr{"11.11.11.11"}));
     REQUIRE(false == r.empty());
     REQUIRE(p == 7);
   }
@@ -1903,23 +1936,23 @@ TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
   space.fill(IPRange{"192.168.56.0-192.168.56.199"}, 8);
   REQUIRE(space.count() == ranges.size() + 4);
   {
-    auto &&[r, p] = *(space.find(IPAddr{"192.168.55.255"}));
+    auto [r, p] = *(space.find(IPAddr{"192.168.55.255"}));
     REQUIRE(true == r.empty());
   }
   {
-    auto &&[r, p] = *(space.find(IPAddr{"192.168.56.0"}));
+    auto [r, p] = *(space.find(IPAddr{"192.168.56.0"}));
     REQUIRE(false == r.empty());
     REQUIRE(p == 3);
   }
   {
-    auto &&[r, p] = *(space.find(IPAddr{"192.168.56.128"}));
+    auto [r, p] = *(space.find(IPAddr{"192.168.56.128"}));
     REQUIRE(false == r.empty());
     REQUIRE(p == 8);
   }
 
   space.fill(IPRange{"0.0.0.0/0"}, 0);
   {
-    auto &&[r, p] = *(space.find(IPAddr{"192.168.55.255"}));
+    auto [r, p] = *(space.find(IPAddr{"192.168.55.255"}));
     REQUIRE(false == r.empty());
     REQUIRE(p == 0);
   }

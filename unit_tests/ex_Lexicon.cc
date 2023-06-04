@@ -86,9 +86,10 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]") {
 
   for ( auto const& [ addr, bits ] : AddrList ) {
     // doc.lookup.begin
-    auto && [ range, flags ] = *space.find(addr);
+    auto [ range, flags ] = *space.find(addr);
     // doc.lookup.end
-    REQUIRE(flags == bits);
+    REQUIRE_FALSE(range.empty());
+    CHECK(flags == bits);
   }
   // doc.lookup.end
 }
@@ -100,7 +101,7 @@ swoc::Lexicon<NetType> const Example1 {
   {NetType::PROD, "prod"},
   {NetType::SECURE, "secure"},
   {NetType::EDGE, "edge"}},
-"*invalid*", // default name for undefined values
+  "*invalid*", // default name for undefined values
   NetType::INVALID // default value for undefined name
 };
 // doc.ctor.1.end
