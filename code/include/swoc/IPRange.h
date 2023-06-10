@@ -665,12 +665,6 @@ public:
   /// @return The largest address in the network.
   IP4Addr max() const;
 
-  /// @return Network address.
-  [[deprecated]] IP4Addr lower_bound() const;
-
-  /// @return The largest address in the network.
-  [[deprecated]] IP4Addr upper_bound() const;
-
   /// @return The mask for the network.
   IPMask const &mask() const;
 
@@ -733,12 +727,6 @@ public:
   /// @return Largest address in the network.
   IP6Addr max() const;
 
-  /// @return THh smallest address in the network.
-  [[deprecated]] IP6Addr lower_bound() const;
-
-  /// @return The largest address in the network.
-  [[deprecated]] IP6Addr upper_bound() const;
-
   /// @return The mask for the network.
   IPMask const &mask() const;
 
@@ -791,6 +779,13 @@ public:
    */
   IPNet(IPAddr const &addr, IPMask const &mask);
 
+  /** Construct from string.
+   *
+   * @param text Network description.
+   *
+   * The format must be "addr/mask" where "addr" is a valid address and mask is either a single
+   * number for the mask width (CIDR) or a mask in address notation.
+   */
   IPNet(TextView text);
 
   /** Parse network as @a text.
@@ -809,12 +804,7 @@ public:
   /// @return Largest address in the network.
   IPAddr max() const;
 
-  /// @return THh smallest address in the network.
-  [[deprecated]] IPAddr lower_bound() const;
-
-  /// @return The largest address in the network.
-  [[deprecated]] IPAddr upper_bound() const;
-
+  /// @return The number of bits in the mask.
   IPMask::raw_type width() const;
 
   /// @return The mask for the network.
@@ -1911,16 +1901,6 @@ IP4Net::max() const {
   return _addr | _mask;
 }
 
-inline IP4Addr
-IP4Net::lower_bound() const {
-  return this->min();
-}
-
-inline IP4Addr
-IP4Net::upper_bound() const {
-  return this->max();
-}
-
 inline IP4Range
 IP4Net::as_range() const {
   return {this->min(), this->max()};
@@ -1965,9 +1945,6 @@ IP6Net::max() const {
   return _addr | _mask;
 }
 
-inline IP6Addr IP6Net::lower_bound() const { return this->min(); }
-inline IP6Addr IP6Net::upper_bound() const { return this->max(); }
-
 inline IP6Range
 IP6Net::as_range() const {
   return {this->min(), this->max()};
@@ -2010,9 +1987,6 @@ inline IPAddr
 IPNet::max() const {
   return _addr | _mask;
 }
-
-inline IPAddr IPNet::lower_bound() const { return this->min(); }
-inline IPAddr IPNet::upper_bound() const { return this->max(); }
 
 inline IPMask::raw_type
 IPNet::width() const {

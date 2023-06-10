@@ -358,6 +358,14 @@ TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
   REQUIRE(nr1.min() == IP4Addr::MIN);
   REQUIRE(nr1.max() == IP4Addr("127.255.255.255"));
 
+#if 0
+  swoc::IP4Net n2{"10.0.0.0/255.255.0.0"};
+  REQUIRE(n2.mask().width() == 16);
+
+  swoc::IPNet n3{"10.0.0.0/255.255.0.0"};
+  REQUIRE(n3.mask().width() == 16);
+#endif
+
   IP4Addr a{"8.8.8.8"};
   swoc::IP4Net n4{a, IPMask{32}};
   auto nr4 = n4.as_range();
