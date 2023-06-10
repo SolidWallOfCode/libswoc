@@ -353,18 +353,31 @@ TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
   REQUIRE(IP4Addr::MIN == IPMask(0).as_ip4());
   REQUIRE(IPMask(24).as_ip4() == a24);
 
+  SECTION("addr as mask") {
+    swoc::IP4Net n1{"10.0.0.0/255.255.0.0"};
+    CHECK_FALSE(n1.empty());
+    REQUIRE(n1.mask().width() == 16);
+
+    swoc::IP6Net n2{"BEEF:1337:dead::/FFFF:FFFF:FFFF:C000::"};
+    CHECK_FALSE(n2.empty());
+    REQUIRE(n2.mask().width() == 50);
+
+    swoc::IPNet n3{"10.0.0.0/255.255.0.0"};
+    CHECK_FALSE(n3.empty());
+    REQUIRE(n3.mask().width() == 16);
+
+    swoc::IPNet n4{"BEEF:1337:dead::/FFFF:FFFF:FFFF:C000::"};
+    CHECK_FALSE(n4.empty());
+    REQUIRE(n4.mask().width() == 50);
+
+    swoc::IPNet n5{"BEEF:1337:dead::/FFFF:FFFF:FFFF:000C::"};
+    REQUIRE(n5.empty()); // mask address isn't a valid mask.
+  }
+
   swoc::IP4Net n1{"0/1"};
   auto nr1 = n1.as_range();
   REQUIRE(nr1.min() == IP4Addr::MIN);
   REQUIRE(nr1.max() == IP4Addr("127.255.255.255"));
-
-#if 0
-  swoc::IP4Net n2{"10.0.0.0/255.255.0.0"};
-  REQUIRE(n2.mask().width() == 16);
-
-  swoc::IPNet n3{"10.0.0.0/255.255.0.0"};
-  REQUIRE(n3.mask().width() == 16);
-#endif
 
   IP4Addr a{"8.8.8.8"};
   swoc::IP4Net n4{a, IPMask{32}};

@@ -656,8 +656,8 @@ public:
    */
   bool load(swoc::TextView text);
 
-  /// @return @c true if the network is valid, @c false if not.
-  bool is_valid() const;
+  /// @return @c true if the network contains no addresses (is invalid).
+  bool empty() const;
 
   /// @return Network address - smallest address in the network.
   IP4Addr min() const;
@@ -711,6 +711,15 @@ public:
    */
   IP6Net(IP6Addr addr, IPMask mask);
 
+  /** Construct from text.
+   *
+   * @param text Network description.
+   *
+   * The format must be "addr/mask" where "addr" is a valid address and mask is either a single
+   * number for the mask width (CIDR) or a mask in address notation.
+   */
+  IP6Net(TextView text) { this->load(text); }
+
   /** Parse network as @a text.
    *
    * @param text String describing the network in CIDR format.
@@ -718,8 +727,8 @@ public:
    */
   bool load(swoc::TextView text);
 
-  /// @return @c true if the network is valid, @c false if not.
-  bool is_valid() const;
+  /// @return @c true if the network contains no addresses (is invalid).
+  bool empty() const;
 
   /// @return Network address - smallest address in the network.
   IP6Addr min() const;
@@ -779,7 +788,7 @@ public:
    */
   IPNet(IPAddr const &addr, IPMask const &mask);
 
-  /** Construct from string.
+  /** Construct from text.
    *
    * @param text Network description.
    *
@@ -795,8 +804,8 @@ public:
    */
   bool load(swoc::TextView text);
 
-  /// @return @c true if the network is valid, @c false if not.
-  bool is_valid() const;
+  /// @return @c true if the network contains no addresses (is invalid).
+  bool empty() const;
 
   /// @return Network address - smallest address in the network.
   IPAddr min() const;
@@ -1887,8 +1896,8 @@ IP4Net::mask() const {
 }
 
 inline bool
-IP4Net::is_valid() const {
-  return _mask.is_valid();
+IP4Net::empty() const {
+  return ! _mask.is_valid();
 }
 
 inline IP4Addr
@@ -1931,8 +1940,8 @@ IP6Net::mask() const {
 }
 
 inline bool
-IP6Net::is_valid() const {
-  return _mask.is_valid();
+IP6Net::empty() const {
+  return ! _mask.is_valid();
 }
 
 inline IP6Addr
@@ -1974,8 +1983,8 @@ inline IPNet::IPNet(TextView text) {
 }
 
 inline bool
-IPNet::is_valid() const {
-  return _mask.is_valid();
+IPNet::empty() const {
+  return ! _mask.is_valid();
 }
 
 inline IPAddr
