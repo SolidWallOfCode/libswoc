@@ -509,6 +509,9 @@ public:
   /// Construct from @a range.
   explicit NetSource(range_type const &range);
 
+  /// Construct from view.
+  explicit NetSource(IPRangeView const& rv);
+
   /// Copy constructor.
   NetSource(self_type const &that) = default;
 
@@ -608,6 +611,12 @@ public:
   /// @return @c true if this is an IPv6 range.
   bool is_ip6() const;
 
+  /// @return Reference to the viewed IPv4 range.
+  IP4Range const& ip4() const;
+
+  /// @return Reference to the viewd IPv6 range.
+  IP6Range const& ip6() const;
+
   /// @{
   /// Forwarding methods.
 
@@ -622,6 +631,15 @@ public:
 
   /// Inequality.
   bool operator != (self_type const& that) const;
+
+  /** Generate a list of networks covering @a this range.
+   *
+   * @return A network generator.
+   *
+   * @see IPRange::networks
+   */
+  IPRange::NetSource networks() const { return IPRange::NetSource(*this); }
+
   /// @}
 
 // protected:
@@ -1848,11 +1866,13 @@ IPRangeView::empty() const {
                                : true;
 }
 
-inline bool
-IPRangeView::is_ip4() const { return AF_INET == _family; }
+inline bool IPRangeView::is_ip4() const { return AF_INET == _family; }
 
-inline bool
-IPRangeView::is_ip6() const { return AF_INET6 == _family; }
+inline bool IPRangeView::is_ip6() const { return AF_INET6 == _family; }
+
+inline IP4Range const & IPRangeView::ip4() const { return *_raw._4; }
+
+inline IP6Range const & IPRangeView::ip6() const { return *_raw._6; }
 
 inline bool
 IPRangeView::valid() const { return AF_INET == _family || AF_INET6 == _family; }
@@ -2173,6 +2193,16 @@ inline IPRange::NetSource::NetSource(IPRange::NetSource::range_type const &range
     _family = AF_INET;
   } else if (range.is_ip6()) {
     new (&_ip6) decltype(_ip6)(range.ip6());
+    _family = AF_INET6;
+  }
+}
+
+inline IPRange::NetSource::NetSource(IPRangeView const &rv) {
+  if (rv.is_ip4()) {
+    new (&_ip4) decltype(_ip4)(rv.ip4());
+    _family = AF_INET;
+  } else if (rv.is_ip6()) {
+    new (&_ip6) decltype(_ip6)(rv.ip6());
     _family = AF_INET6;
   }
 }
