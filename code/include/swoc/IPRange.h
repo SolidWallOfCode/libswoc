@@ -2623,15 +2623,7 @@ get(ip_space_const_value_type<P> const& p) -> typename std::tuple_element<IDX, i
   if constexpr (IDX == 0) {
     return p._rv;
   } else if constexpr (IDX == 1) {
-    // Apparently some compilers complain because this can be @c nullptr but that's a valid state.
-    // There are also complaints about a dangling pointer but that points at data in the container
-    // and is independent of the iterator lifetime. It should be complaining about @a _range instead.
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wuninitialized"
-    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-    #pragma GCC diagnostic ignored "-Wdangling-pointer"
     return *(p._payload);
-    #pragma GCC diagnostic pop
   }
 }
 
@@ -2641,15 +2633,7 @@ get(ip_space_value_type<P> const& p) -> typename std::tuple_element<IDX, ip_spac
   if constexpr (IDX == 0) {
     return p._rv;
   } else if constexpr (IDX == 1) {
-    // Apparently some compilers complain because this can be @c nullptr but that's a valid state.
-    // There are also complaints about a dangling pointer but that points at data in the container
-    // and is independent of the iterator lifetime. It should be complaining about @a _range instead.
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wuninitialized"
-    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-    #pragma GCC diagnostic ignored "-Wdangling-pointer"
     return *(p._payload);
-    #pragma GCC diagnostic pop
   }
 }
 }}} // namespace swoc::detail

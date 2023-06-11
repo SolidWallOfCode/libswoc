@@ -23,12 +23,13 @@ network operations.
 IPEndpoint
 ==========
 
-:libswoc:`swoc::IPEndpoint` is a wrapper around :code:`sockaddr` and provides a number of utilities.
-It enables constructing an instance from the string representation of an address, supporting IPv4
-and IPv6. It will also parse and store the port if that is part of the string. Some of the internal
-logic is exposed via :libswoc:`swoc::IPEndpoint::tokenize` which finds and returns the elements of
-an address string, the host (address), port, and any trailing remnants. This is useful for doing
-syntax checks or more specialized processing of the address string.
+:libswoc:`swoc::IPEndpoint` is a wrapper around :code:`sockaddr` and related structures while
+providing a number of utilities. It enables constructing an instance from the string representation
+of an address, supporting IPv4 and IPv6. It will also parse and store the port if that is part of
+the string. Some of the internal logic is exposed via :libswoc:`swoc::IPEndpoint::tokenize` which
+finds and returns the elements of an address string, the host (address), port, and any trailing
+remnants. This is useful for doing syntax checks or more specialized processing of the address
+string.
 
 IPAddr
 ======
@@ -38,7 +39,8 @@ to hold IP addresses. :code:`IP4Addr` and :code:`IP6Addr` are family specific an
 (respectively) IPv4 and IPv6 addresses. :code:`IPAddr` acts as a union of these two types along with
 an IP family specifier that indicates the type of address contained. The type specific classes
 provide performance and storage benefits when the type of the address is known or forced, while
-:code:`IPAddr` provides a generic type useful for interfaces.
+:code:`IPAddr` provides a generic type useful for interfaces. An :code:`IPAddr` can be in an invalid
+state but the family specific classes cannot, as every possible bit pattern is a valid address.
 
 These classes provide support for parsing and formatting IP addresses. The constructor can take
 a string and, if a valid address, will initialize the instance to that address. The downside is
@@ -53,7 +55,7 @@ will conform to the family of the address in the :code:`sockaddr`.
 IPSrv
 =====
 
-A container for an address and a port. There is no really good name for this therefore I used the
+Storage for an address and a port. There is no really good name for this therefore I used the
 DNS term for such an object. This consists of the usual triplet of classes, :swoc:`IP4Srv`, :swoc:`IP6Srv`,
 and :swoc:`IPSrv`. The first two are protocol family specific and the third holds an instance of
 either an :code:`IP4Srv` or an `IP6Srv`. The address and port can be manipulated separately.
@@ -67,7 +69,10 @@ hold (respectively) IPv4 and IPv6 addresses. :code:`IPAddr` acts as a union of t
 with an IP family specifier that indicates the type of address contained. The type specific classes
 provide performance and storage benefits when the type of the address is known or forced, while
 :code:`IPRange` provides a generic type useful for interfaces. Note that an :code:`IPRange` holds a
-range of addresses of a single family, it can never hold a range that is of mixed families.
+range of addresses of a single family, it can never hold a range that is of mixed families. In addition
+is the class :libswoc:`swoc::IPRangeView` which is a view to a family specific range wrapped in a
+family agnostic class. The purpose is to decrease copying by delaying and therefore in some cases
+avoiding.
 
 These classes provide support for parsing and formatting ranges of IP adddresses. The parsing logic
 accepts three forms of a range. In all cases the lower and upper limits of the range must be the
@@ -105,6 +110,33 @@ Range                   Compact
 10.4.1.1-10.4.1.1       10.4.1.1
 ======================= =======================
 
+IPNet
+=====
+
+Address networks are supported by the usual triplet of classes
+
+* :libswoc:`swoc::IPNet` - generic network.
+* :libswoc:`swoc::IP4Net` - IPv4 network.
+* :libswoc:`sowc::IP6net` - IPv6 network.
+
+In addition the class :libswoc:`sowc::IPMask` is used to store a network mask. There are no
+family specific variants as a mask is really a CIDR based bit count along with utilty methods.
+
+String parsing requires a "/" separator with a leading network address followed by either a CIDR
+count or an address that is a valid network mask. In the latter case the mask address must be of the
+same family as the network address. A valid network mask must be a sequence of '1' bits followed by all
+'0' bits.
+
+Networks are treated as specialized ranges and can always be converted to an instance of a range
+class. Conversely a range class can be converted to a sequence of networks. For any range there is
+exactly one sequence of networks that contains the same addresses and is of minimal length. Range
+class suport generating this sequence which results in a sequence of instances of a network class.
+
+A mask can be converted to the corresponding address. E.g. the IPv6 address for a 85 bit mask
+could be generated with ::
+
+   IPMask(85).as_ip6() // yields an IP6Addr instance.
+
 Conversions
 ===========
 
@@ -115,12 +147,13 @@ Conversion from :libswoc:`swoc::IPEndpoint` to :libswoc:`swoc::IPAddr` is direct
 be explicitly constructed from the former. For :libswoc:`swoc::IP6Addr` and :libswoc:`swoc::IP4Addr`
 the family must be checked first. The expected way to do this is ::
 
-   if ( auto sa = ep.ip4() ; sa ) {
+   if ( auto * sa = ep.ip4() ; sa ) {
       IP4Addr addr(sa);
       // ....
    }
 
-This is intended to be similar to how dynamic casts are handled when it is not guaranteed the generic
+Note the `ip4()` and `ip6()` methods return a pointer to the appropriate family specific type (:code:`sockaddr_in*' and :code:`sockaddr_in6*`) if
+the family matches and a :code:`nullptr` if not. This is intended to be similar to how dynamic casts are handled when it is not guaranteed the generic
 type contains an instance of the more specific type.
 
 Conversion from address types to socket addresses can be done by constructing an :code:`IPEndpoint` or,
