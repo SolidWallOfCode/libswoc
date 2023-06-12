@@ -1519,6 +1519,8 @@ MemSpan<void const>::as_ptr() const {
 /// Deduction guides
 template<typename T, size_t N> MemSpan(std::array<T,N> &) -> MemSpan<T>;
 template<typename T, size_t N> MemSpan(std::array<T,N> const &) -> MemSpan<T const>;
+template<size_t N> MemSpan(char (&)[N]) -> MemSpan<char>;
+template<size_t N> MemSpan(char const (&)[N]) -> MemSpan<char const>;
 template<typename T> MemSpan(std::vector<T> &) -> MemSpan<T>;
 template<typename T> MemSpan(std::vector<T> const&) -> MemSpan<T const>;
 MemSpan(std::string_view const&) -> MemSpan<char const>;

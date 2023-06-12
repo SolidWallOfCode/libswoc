@@ -73,7 +73,7 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   vs = span;
   REQUIRE(vs.size() == 1022);
 
-  // Test array constructors.
+  // Test C array constructors.
   MemSpan<char> a{buff};
   REQUIRE(a.size() == sizeof(buff));
   REQUIRE(a.data() == buff);
@@ -85,6 +85,11 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   REQUIRE(fspan.data() == f2span.data());
   REQUIRE(fspan.size() == f2span.size());
   REQUIRE(fspan.is_same(f2span));
+
+  // Deduction guides for char because of there being so many choices.
+  MemSpan da{buff};
+  REQUIRE(a.size() == sizeof(buff));
+  REQUIRE(a.data() == buff);
 
   unsigned char ucb[512];
   MemSpan ucspan{ucb};
