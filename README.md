@@ -4,6 +4,6 @@ Solid Wall of C++ Library.
 
 # Versioning
 
-* Point release - client code should recompile and work.
-* Minor release - API changes that require client code changes that are straight forward (e.g. method name changes).
-* Major release - Semantic changes that require significant restructuring or redesign of client code.
+* Point release - Backwards compatible change that requires only a recompilation.
+* Minor release - Backwards compatible change that requires trivial / obvious code changes to preserve the same functionality / semantics. E.g. a method name change.
+* Major release - Semantic changes that require restructuring or redesign of client code.
