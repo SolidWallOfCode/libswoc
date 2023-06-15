@@ -396,8 +396,8 @@ TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
   REQUIRE(m0.as_ip6() == IP6Addr::MIN);
 
   IP6Addr a6{"12:34:56:78:9A:BC:DE:FF"};
-  REQUIRE(a6 == (a6 | IPMask(0)));
-  REQUIRE(IP6Addr::MAX == (a6 | IPMask(IP6Addr::WIDTH)));
+  REQUIRE(a6 == (a6 | IPMask(128))); // Host network, should be unchanged.
+  REQUIRE(IP6Addr::MAX == (a6 | IPMask(0)));
   REQUIRE(IP6Addr::MIN == (a6 & IPMask(0)));
 
   IP6Addr a6_2{"2001:1f2d:c587:24c3:9128:3349:3cee:143"_tv};
@@ -419,6 +419,38 @@ TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
   REQUIRE(IPMask(27) == IPMask::mask_for(IP4Addr("0xFF.0xFF.0xFF.0xE0")));
   REQUIRE(IPMask(55) == IPMask::mask_for(IP6Addr("1337:dead:beef:CA00::")));
   REQUIRE(IPMask(91) == IPMask::mask_for(IP6Addr("1337:dead:beef:CA00:24c3:3ce0::")));
+
+  IP4Addr b1 { "192.168.56.24" };
+  REQUIRE((b1 & IPMask(24)) == IP4Addr("192.168.56.0"));
+  IP6Addr b2 { "1337:dead:beef:CA00:24c3:3ce0:9120:143" };
+  REQUIRE((b2 & IPMask(32)) == IP6Addr("1337:dead::"));
+  REQUIRE((b2 & IPMask(64)) == IP6Addr("1337:dead:beef:CA00::"));
+  REQUIRE((b2 & IPMask(96)) == IP6Addr("1337:dead:beef:CA00:24c3:3ce0::"));
+  // do it again with generic address.
+  IPAddr b3 { "192.168.56.24" };
+  REQUIRE((b3 & IPMask(24)) == IP4Addr("192.168.56.0"));
+  IPAddr b4 { "1337:dead:beef:CA00:24c3:3ce0:9120:143" };
+  REQUIRE((b4 & IPMask(32)) == IP6Addr("1337:dead::"));
+  REQUIRE((b4 & IPMask(64)) == IP6Addr("1337:dead:beef:CA00::"));
+  REQUIRE((b4 & IPMask(96)) == IP6Addr("1337:dead:beef:CA00:24c3:3ce0::"));
+
+  IP4Addr c1 { "192.168.56.24" };
+  REQUIRE((c1 | IPMask(24)) == IP4Addr("192.168.56.255"));
+  REQUIRE((c1 | IPMask(15)) == IP4Addr("192.169.255.255"));
+  REQUIRE((c1 | IPMask(7)) == IP4Addr("193.255.255.255"));
+  IP6Addr c2 { "1337:dead:beef:CA00:24c3:3ce0:9120:143" };
+  REQUIRE((c2 | IPMask(96)) == IP6Addr("1337:dead:beef:CA00:24c3:3ce0:FFFF:FFFF"));
+  REQUIRE((c2 | IPMask(64)) == IP6Addr("1337:dead:beef:CA00:FFFF:FFFF:FFFF:FFFF"));
+  REQUIRE((c2 | IPMask(32)) == IP6Addr("1337:dead:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF"));
+  // do it again with generic address.
+  IPAddr c3 { "192.168.56.24" };
+  REQUIRE((c3 | IPMask(24)) == IP4Addr("192.168.56.255"));
+  REQUIRE((c3 | IPMask(15)) == IP4Addr("192.169.255.255"));
+  REQUIRE((c3 | IPMask(7)) == IP4Addr("193.255.255.255"));
+  IPAddr c4 { "1337:dead:beef:CA00:24c3:3ce0:9120:143" };
+  REQUIRE((c4 | IPMask(96)) == IP6Addr("1337:dead:beef:CA00:24c3:3ce0:FFFF:FFFF"));
+  REQUIRE((c4 | IPMask(64)) == IP6Addr("1337:dead:beef:CA00:FFFF:FFFF:FFFF:FFFF"));
+  REQUIRE((c4 | IPMask(32)) == IP6Addr("1337:dead:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF"));
 }
 
 TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
