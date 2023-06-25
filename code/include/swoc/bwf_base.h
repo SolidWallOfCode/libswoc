@@ -1280,4 +1280,16 @@ As_Hex(T const &t) {
  */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex);
 
+/** Format a buffer writer.
+ *
+ * @param w Output buffer,
+ * @param spec Format specifier.
+ * @param ww Input buffer
+ * @return @a w
+ *
+ * This treats @a ww as a view and prints it as text.
+ */
+inline BufferWriter &bwformat(BufferWriter &w, bwf::Spec const& spec, BufferWriter const& ww) {
+  return bwformat(w, spec, TextView(ww));
+}
 }} // namespace swoc::SWOC_VERSION_NS
