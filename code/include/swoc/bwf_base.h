@@ -969,7 +969,10 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr);
  * The format is by default "N:ptr" where N is the size and ptr is a hex formatter pointer. If the
  * format is "x" or "X" the span content is dumped as contiguous hex.
  */
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void const> const &span);
+inline BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span) {
+  return bwformat(w, spec, MemSpan<void const>(span));
+}
 
 template <typename T>
 BufferWriter &
@@ -980,7 +983,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<T> const &span) {
   if (spec._prec <= 0) {
     s._prec = sizeof(T);
   }
-  return bwformat(w, s, span.template rebind<void>());
+  return bwformat(w, s, span.template rebind<void const>());
 }
 
 template <size_t N>
