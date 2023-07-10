@@ -73,6 +73,33 @@ public:
    */
   constexpr TextView(char const *ptr, size_t n) noexcept;
 
+  /** Construct from pointer and size.
+   *
+   * @param ptr Pointer to first character.
+   * @param n Number of characters.
+   */
+  constexpr TextView(char const *ptr, unsigned n) noexcept;
+
+  /** Construct from pointer and size.
+   *
+   * @param ptr Pointer to first character.
+   * @param n Number of characters.
+   *
+   * If @a n is negative then @c ptr is presumed to be a C string and checked for length. If @c ptr
+   * is @c nullptr the length is 0. Otherwise @c strlen is used to calculate the length.
+   */
+  constexpr TextView(char const *ptr, ssize_t n) noexcept;
+
+  /** Construct from pointer and size.
+   *
+   * @param ptr Pointer to first character.
+   * @param n Number of characters.
+   *
+   * If @a n is negative then @c ptr is presumed to be a C string and checked for length. If @c ptr
+   * is @c nullptr the length is 0. Otherwise @c strlen is used to calculate the length.
+   */
+  constexpr TextView(char const *ptr, int n) noexcept;
+
   /** Construct from a half open range [first, last).
    *
    * @param first Start of half open range.
@@ -999,8 +1026,16 @@ double svtod(swoc::TextView text, swoc::TextView *parsed = nullptr);
 // === TextView Implementation ===
 /// @cond TextView_INTERNAL
 // Doxygen doesn't match these up well due to various type and template issues.
+// @internal If there is more than one overload for numeric types, it's easy to get ambiguity. The only
+// fix, unfortunately, is lots of overloads to cover the ambiguous cases.
 inline constexpr TextView::TextView(const char *ptr, size_t n) noexcept
   : super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n) {}
+inline constexpr TextView::TextView(const char *ptr, unsigned n) noexcept
+  : super_type(ptr, ptr ? ::strlen(ptr) : n) {}
+inline constexpr TextView::TextView(const char *ptr, ssize_t n) noexcept
+  : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : n) {}
+inline constexpr TextView::TextView(const char *ptr, int n) noexcept
+  : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : n) {}
 inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) noexcept : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) noexcept : super_type(that) {}
