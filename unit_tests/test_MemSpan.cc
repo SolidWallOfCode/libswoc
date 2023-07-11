@@ -68,6 +68,8 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   // Check for defaulting to a void rebind.
   vs = span.rebind();
   REQUIRE(vs.size() == 1022);
+  auto vsc = vs.rebind<void const>();
+  REQUIRE(vsc.size() == 1022);
 
   // Check for assignment to void.
   vs = span;

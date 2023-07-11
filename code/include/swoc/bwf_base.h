@@ -970,8 +970,22 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr);
  * format is "x" or "X" the span content is dumped as contiguous hex.
  */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void const> const &span);
+
+/** Format a generic (void) memory span.
+ *
+ * @param w Output
+ * @param spec Format specifier.
+ * @param span Span to format.
+ * @return @a w
+ *
+ * The format is by default "N:ptr" where N is the size and ptr is a hex formatter pointer. If the
+ * format is "x" or "X" the span content is dumped as contiguous hex.
+ *
+ * @internal Overload to avoid unfortunate ambiguities when constructing the span from other spans.
+ * in particular @c MemSpan<char> vs. @c TextView.
+ */
 inline BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span) {
-  return bwformat(w, spec, MemSpan<void const>(span));
+  return bwformat(w, spec, span.rebind<void const>());
 }
 
 template <typename T>
