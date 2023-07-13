@@ -372,6 +372,7 @@ remove_all(const path &p, std::error_code &ec)
     ec = std::error_code(errno, std::system_category());
     return zret;
   } else if (S_ISREG(s.st_mode)) { // regular file, try to remove it!
+    //coverity[toctou : SUPPRESS]
     if (unlink(p.c_str()) != 0) {
       ec = std::error_code(errno, std::system_category());
     } else {
@@ -422,6 +423,7 @@ bool remove(path const& p, std::error_code &ec) {
       ec = std::error_code(errno, std::system_category());
     }
   } else if (S_ISDIR(fs.st_mode)) { // not a directory
+    //coverity[toctou : SUPPRESS]
     if (rmdir(p.c_str()) != 0) {
       ec = std::error_code(errno, std::system_category());
     }
