@@ -911,11 +911,12 @@ public:
     }
   };
 
+  /// Support for containers that need case insensitive comparisons between views.
   struct CaselessEqual {
-    /// @return @c true if the strings are the same sans case.
+    /// @return @c true if the view contants are equal when compared without regard to case.
     bool
     operator()(self_type const& lhs, self_type const& rhs) const noexcept {
-
+      return lhs.size() == rhs.size() && 0 == strcasecmp(lhs, rhs);
     }
   };
 
