@@ -250,7 +250,7 @@ Blending Bitsets
 
    Some details are omitted for brevity and because they aren't directly relevant. The full
    implementation, which is run as a unit test to verify its correctness,
-   `is available here <https://github.com/SolidWallOfCode/libswoc/blob/1.5.2/unit_tests/ex_ipspace_properties.cc>`__.
+   `is available here <https://github.com/SolidWallOfCode/libswoc/blob/1.5.3/unit_tests/ex_ipspace_properties.cc>`__.
    You can compile and step through the code to see how it works in more detail, or experiment
    with changing some of the example data.
 
