@@ -24,6 +24,14 @@
 #include "swoc/swoc_version.h"
 #include "swoc/string_view_util.h"
 
+// For no apparent reason, g++ 11 complains about array bound violations with either suffix_at or
+// assign, the error message is too vague for me to be sure - it doesn't even provide the location of
+// the method invocation. I've been using g++ 12 for development and I don't see that error.
+#if __GNUC__ == 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
 class TextView;
@@ -900,6 +908,14 @@ public:
     bool
     operator()(self_type const &lhs, self_type const &rhs) const noexcept {
       return -1 == strcasecmp(lhs, rhs);
+    }
+  };
+
+  struct CaselessEqual {
+    /// @return @c true if the strings are the same sans case.
+    bool
+    operator()(self_type const& lhs, self_type const& rhs) const noexcept {
+
     }
   };
 
@@ -2036,3 +2052,7 @@ template <> struct hash<swoc::TextView> {
 /// @endcond
 
 } // namespace std
+
+#if __GNUC__ == 11
+#  pragma GCC diagnostic pop
+#endif
