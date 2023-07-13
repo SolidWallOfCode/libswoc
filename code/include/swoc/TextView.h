@@ -215,7 +215,14 @@ public:
    */
   self_type &assign(char const * & c_str);
 
-  /// Explicitly set the start @a ptr and size @a n of the view.
+  /** Assign from a pointer and size.
+   *
+   * @param ptr Pointer to first character of the view.
+   * @param n Length of the view.
+   * @return @a this
+   *
+   * if @a n is @a npos then @c strlen is used determine the size of the view.
+   */
   self_type &assign(char const *ptr, size_t n);
 
   /** Assign the half open view [ @a b , @a e ) to @a this
@@ -576,6 +583,9 @@ public:
    *
    * The returned prefix is removed from @a this. That prefix may be empty if the first character
    * does not satisfy @a pred.
+   *
+   * @note This is very similar to @c ltrim_if but returns the removed text instead of the modified
+   * view.
    */
   template <typename F> self_type clip_prefix_of(F const &pred);
 
@@ -758,6 +768,9 @@ public:
    *
    * The returned suffix is removed from @a this. That suffix may be empty if the last character
    * does not satisfy @a pred.
+   *
+   * @note This is very similar to @c rtrim_if but returns the removed text instead of the modified
+   * view.
    */
   template <typename F> self_type clip_suffix_of(F const &pred);
 
@@ -977,7 +990,7 @@ uintmax_t svtou(TextView src, TextView *parsed = nullptr, int base = 0);
  */
 template <int RADIX>
 uintmax_t
-svto_radix(swoc::TextView &src) {
+svto_radix(TextView &src) {
   static_assert(0 < RADIX && RADIX <= 36, "Radix must be in the range 1..36");
   static constexpr auto MAX = std::numeric_limits<uintmax_t>::max();
   static constexpr auto OVERFLOW_LIMIT = MAX / RADIX;
@@ -999,7 +1012,7 @@ svto_radix(swoc::TextView &src) {
 /// @see svto_radix(swoc::TextView &src)
 template <int N>
 uintmax_t
-svto_radix(swoc::TextView &&src) {
+svto_radix(TextView &&src) {
   return svto_radix<N>(src);
 }
 
@@ -1016,7 +1029,7 @@ svto_radix(swoc::TextView &&src) {
  * the closest epsilon. It's more than sufficient for use in configurations, but possibly
  * not for high precision work.
  */
-double svtod(swoc::TextView text, swoc::TextView *parsed = nullptr);
+double svtod(TextView text, TextView *parsed = nullptr);
 // ----------------------------------------------------------
 // Inline implementations.
 // Note: Why, you may ask, do I use @c TextView::self_type for return type instead of the
@@ -1030,12 +1043,11 @@ double svtod(swoc::TextView text, swoc::TextView *parsed = nullptr);
 // fix, unfortunately, is lots of overloads to cover the ambiguous cases.
 inline constexpr TextView::TextView(const char *ptr, size_t n) noexcept
   : super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n) {}
-inline constexpr TextView::TextView(const char *ptr, unsigned n) noexcept
-  : super_type(ptr, ptr ? ::strlen(ptr) : n) {}
+inline constexpr TextView::TextView(const char *ptr, unsigned n) noexcept : super_type(ptr, size_t(n)) {}
 inline constexpr TextView::TextView(const char *ptr, ssize_t n) noexcept
-  : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : n) {}
+  : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : size_t(n)) {}
 inline constexpr TextView::TextView(const char *ptr, int n) noexcept
-  : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : n) {}
+  : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : size_t(n)) {}
 inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) noexcept : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) noexcept : super_type(that) {}
@@ -1136,7 +1148,7 @@ TextView::assign(const std::string &s) -> self_type & {
 
 inline TextView &
 TextView::assign(char const *ptr, size_t n) {
-  *this = super_type(ptr, n);
+  *this = super_type(ptr, n == npos ? ( ptr ? ::strlen(ptr) : 0) : n);
   return *this;
 }
 
