@@ -359,6 +359,7 @@ copy(const path &from, const path &to, std::error_code &ec)
 uintmax_t
 remove_all(const path &p, std::error_code &ec)
 {
+  // coverity TOCTOU - issue is doing stat before doing operation. Stupid complaint, ignore.
   DIR *dir;
   struct dirent *entry;
   std::error_code err;
@@ -412,6 +413,7 @@ remove_all(const path &p, std::error_code &ec)
 }
 
 bool remove(path const& p, std::error_code &ec) {
+  // coverity TOCTOU - issue is doing stat before doing operation. Stupid complaint, ignore.
   struct ::stat fs;
   if (p.empty()) {
     ec = std::error_code(EINVAL, std::system_category());
