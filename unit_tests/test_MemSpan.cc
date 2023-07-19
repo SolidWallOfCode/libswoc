@@ -63,13 +63,20 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   auto vs = span.rebind<void>();
   REQUIRE_THROWS_AS(span.rebind<uint32_t>(), std::invalid_argument);
   REQUIRE_THROWS_AS(vs.rebind<uint32_t>(), std::invalid_argument);
-  vs.rebind<void>(); // check for void -> void rebinding.
+  vs.rebind<void>(); // check for void -> void rebind compiling.
+  REQUIRE_FALSE(std::is_const_v<decltype(vs)::value_type>);
 
   // Check for defaulting to a void rebind.
-  vs = span.rebind();
-  REQUIRE(vs.size() == 1022);
-  auto vsc = vs.rebind<void const>();
-  REQUIRE(vsc.size() == 1022);
+  auto vsv = span.rebind();
+  REQUIRE(vsv.size() == 1022);
+  // default rebind of non-const type should be non-const (i.e. void).
+  REQUIRE_FALSE(std::is_const_v<decltype(vs)::value_type>);
+  auto vcs = vs.rebind<void const>();
+  REQUIRE(vcs.size() == 1022);
+  REQUIRE(std::is_const_v<decltype(vcs)::value_type>);
+  MemSpan<char const> char_cv{buff, 64};
+  auto void_cv = char_cv.rebind();
+  REQUIRE(std::is_const_v<decltype(void_cv)::value_type>);
 
   // Check for assignment to void.
   vs = span;

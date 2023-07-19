@@ -264,8 +264,11 @@ public:
    *
    * @tparam U Type for the created span.
    * @return A @c MemSpan which contains the same memory as instances of @a U.
+   *
+   * if no type is specified, the default is @c void or @c void @c const according to whether
+   * @a value_type is @c const.
    */
-  template <typename U = void> MemSpan<U> rebind() const;
+  template <typename U = std::conditional_t<std::is_const_v<T>, void const, void> > MemSpan<U> rebind() const;
 
   /// Set the span.
   /// This is faster but equivalent to constructing a new span with the same
