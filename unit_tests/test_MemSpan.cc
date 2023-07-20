@@ -141,6 +141,9 @@ TEST_CASE("MemSpan construct", "[libswoc][MemSpan]") {
   REQUIRE(span[4]._n == 56);
   span.destroy();
   REQUIRE(counter == 0);
+
+  MemSpan<void const> vc_span { "Evil Dave Rulz"};
+  // MemSpan<void> v_span { "Evil Dave Rulz" }; // This should not compile.
 }
 
 TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")

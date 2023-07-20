@@ -347,6 +347,15 @@ public:
    */
   constexpr self_type subspan(size_t offset, size_t count) const;
 
+  /** Limit the size of the span.
+   *
+   * @param n Maximum number of elements.
+   * @return @a this
+   *
+   * If the number of elements is greater than @a n, the size is changed to @a n.
+   */
+  constexpr self_type & limit_to(size_t n);
+
   /** Construct all elements in the span.
    *
    * For each element in the span, construct an instance of the span type using the @a args. If the
@@ -392,6 +401,13 @@ public:
 
   /// Copy assignment
   constexpr self_type & operator = (self_type const& that) = default;
+
+  /** Construct to cover an array.
+   *
+   * @tparam N Number of elements in the array.
+   * @param a The array.
+   */
+  template <auto N, typename U> constexpr MemSpan(U (&a)[N]);
 
   /// Special constructor for @c void
   constexpr MemSpan(MemSpan<void> const& that);
@@ -654,6 +670,13 @@ public:
    * @param end Past end of range.
    */
   MemSpan(value_type *begin, value_type *end);
+
+  /** Construct to cover an array.
+   *
+   * @tparam N Number of elements in the array.
+   * @param a The array.
+   */
+  template <auto N, typename U> constexpr MemSpan(U (&a)[N]);
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -1235,6 +1258,12 @@ inline constexpr MemSpan<void>::MemSpan(value_type *ptr, size_t n) : super_type(
 inline MemSpan<void const>::MemSpan(value_type *begin, value_type *end) : _ptr{const_cast<void*>(begin)}, _size{detail::ptr_distance(begin, end)} {}
 inline MemSpan<void >::MemSpan(value_type *begin, value_type *end) : super_type(begin, end) {}
 
+template <auto N, typename U>
+constexpr MemSpan<void>::MemSpan(U (&a)[N]) : super_type(value_type(a), N * sizeof(U)) {}
+
+template <auto N, typename U>
+constexpr MemSpan<void const>::MemSpan(U (&a)[N]) : _ptr(const_cast<std::remove_const_t<U>*>(a)), _size(N * sizeof(U)) {}
+
 template <typename C, typename>
 constexpr MemSpan<void const>::MemSpan(C const &c)
   : _ptr(const_cast<std::remove_const_t<std::remove_reference_t<decltype(*(std::declval<C>().data()))>> *>(c.data()))
@@ -1437,6 +1466,13 @@ MemSpan<void const>::subspan(size_t offset, size_t n) const -> self_type {
 inline constexpr auto
 MemSpan<void>::subspan(size_t offset, size_t n) const -> self_type {
   return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(n, _size - offset)} : self_type{};
+}
+
+template <typename T>
+constexpr auto
+MemSpan<T>::limit_to(size_t n) -> self_type & {
+  _count = std::min(_count, n);
+  return *this;
 }
 
 template <typename T> auto
