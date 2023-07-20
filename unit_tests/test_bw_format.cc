@@ -116,6 +116,11 @@ TEST_CASE("bwprint basics", "[bwprint]") {
   // Check leading space printing.
   bw.clear().print(" {}", fmt1);
   REQUIRE(bw.view() == " Some text");
+
+  std::string_view fmt_sv = "Answer: \"{}\" Surprise!";
+  std::string_view answer = "Evil Dave";
+  bw.clear().print(fmt_sv, answer);
+  REQUIRE(bw.view().size() == fmt_sv.size() + answer.size() - 2);
 }
 
 TEST_CASE("BWFormat numerics", "[bwprint][bwformat]") {

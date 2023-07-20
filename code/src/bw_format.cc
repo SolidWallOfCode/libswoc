@@ -899,7 +899,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e) {
       if (short_p) {
         w.write(": ");
       }
-      w.write(strerror(e._e));
+      w.write(TextView(strerror(e._e), TextView::npos));
     }
     if (spec._type != 's' && spec._type != 'S') {
       w.write(' ');
