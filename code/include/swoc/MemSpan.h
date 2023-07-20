@@ -354,7 +354,7 @@ public:
    *
    * If the number of elements is greater than @a n, the size is changed to @a n.
    */
-  constexpr self_type & limit_to(size_t n);
+  constexpr self_type &restrict(size_t n);
 
   /** Construct all elements in the span.
    *
@@ -1470,7 +1470,7 @@ MemSpan<void>::subspan(size_t offset, size_t n) const -> self_type {
 
 template <typename T>
 constexpr auto
-MemSpan<T>::limit_to(size_t n) -> self_type & {
+MemSpan<T>::restrict(size_t n) -> self_type & {
   _count = std::min(_count, n);
   return *this;
 }
