@@ -53,24 +53,6 @@ public:
    */
   virtual BufferWriter &write(void const *data, size_t length);
 
-  /** Write C-string.
-   *
-   * @param s String pointer.
-   * @return @a this
-   *
-   * @a s is presumed to ba nul terminated.
-   */
-  BufferWriter & write(char const *s) { return this->write(s, strlen(s)); }
-
-  /** Write C-string.
-   *
-   * @param s String pointer.
-   * @return @a this
-   *
-   * @a s is presumed to ba nul terminated.
-   */
-  BufferWriter & write(char *s) { return this->write(s, strlen(s)); }
-
   /** Write data to the buffer.
    *
    * @param span Data source.
