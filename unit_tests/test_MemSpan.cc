@@ -118,6 +118,60 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
   REQUIRE(ucb[510] == '@');
 };
 
+TEST_CASE("MemSpan modifiers", "[libswoc][MemSpan]") {
+  std::string text{"Evil Dave Rulz"};
+  char * pre = text.data();
+  char * post = text.data() + text.size();
+
+  SECTION("Typed") {
+    MemSpan span{text};
+
+    REQUIRE(0 == memcmp(span.clip_prefix(5), MemSpan(pre, 5)));
+    REQUIRE(0 == memcmp(span, MemSpan(pre+5, text.size() -5)));
+    span.assign(text.data(), text.size());
+    REQUIRE(0 == memcmp(span.clip_suffix(5), MemSpan(post - 5, 5)));
+    REQUIRE(0 == memcmp(span, MemSpan(pre, text.size() - 5)));
+
+    MemSpan s1{"Evil Dave Rulz"};
+    REQUIRE(s1.size() == 14); // terminal nul is not in view.
+    uint8_t bytes[]{5,4,3,2,1,0};
+    MemSpan s2{bytes};
+    REQUIRE(s2.size() == sizeof(bytes)); // terminal nul is in view
+  }
+
+  SECTION("void") {
+    MemSpan<void> span{text};
+
+    REQUIRE(0 == memcmp(span.clip_prefix(5), MemSpan<void>(pre, 5)));
+    REQUIRE(0 == memcmp(span, MemSpan<void>(pre+5, text.size() -5)));
+    span.assign(text.data(), text.size());
+    REQUIRE(0 == memcmp(span.clip_suffix(5), MemSpan<void>(post - 5, 5)));
+    REQUIRE(0 == memcmp(span, MemSpan<void>(pre, text.size() - 5)));
+
+    MemSpan<void> s1{"Evil Dave Rulz"};
+    REQUIRE(s1.size() == 14); // terminal nul is not in view.
+    uint8_t bytes[]{5,4,3,2,1,0};
+    MemSpan<void> s2{bytes};
+    REQUIRE(s2.size() == sizeof(bytes)); // terminal nul is in view
+  }
+
+  SECTION("void const") {
+    MemSpan<void const> span{text};
+
+    REQUIRE(0 == memcmp(span.clip_prefix(5), MemSpan<void const>(pre, 5)));
+    REQUIRE(0 == memcmp(span, MemSpan<void const>(pre+5, text.size() -5)));
+    span.assign(text.data(), text.size());
+    REQUIRE(0 == memcmp(span.clip_suffix(5), MemSpan<void const>(post - 5, 5)));
+    REQUIRE(0 == memcmp(span, MemSpan<void const>(pre, text.size() - 5)));
+
+    MemSpan<void const> s1{"Evil Dave Rulz"};
+    REQUIRE(s1.size() == 14); // terminal nul is not in view.
+    uint8_t bytes[]{5,4,3,2,1,0};
+    MemSpan<void const> s2{bytes};
+    REQUIRE(s2.size() == sizeof(bytes)); // terminal nul is in view
+  }
+}
+
 TEST_CASE("MemSpan construct", "[libswoc][MemSpan]") {
   static unsigned counter = 0;
   struct Thing {
