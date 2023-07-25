@@ -138,7 +138,7 @@ public:
    *
    * @internal A non-const variant of this is needed because passing by CR means imposing constness
    * on the container which can then undesirably propagate that to the element type. Best example -
-   * consstructing from @c std::string. Without this variant it's not possible to construct a @c char
+   * constructing from @c std::string. Without this variant it's not possible to construct a @c char
    * span vs. a @c char @c const.
    */
   template < typename C
@@ -1369,7 +1369,9 @@ constexpr MemSpan<void const>::MemSpan(U (&a)[N]) : _ptr(const_cast<std::remove_
   }
 }
 template <auto N, typename U>
-constexpr MemSpan<void>::MemSpan(U (&a)[N]) : super_type(a) {}
+constexpr MemSpan<void>::MemSpan(U (&a)[N]) : super_type(a) {
+  static_assert(!std::is_const_v<U>, "Error: constructing non-constant view with constant data.");
+}
 
 template <typename C, typename>
 constexpr MemSpan<void const>::MemSpan(C const &c)

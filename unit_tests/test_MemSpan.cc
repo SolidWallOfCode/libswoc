@@ -148,8 +148,9 @@ TEST_CASE("MemSpan modifiers", "[libswoc][MemSpan]") {
     REQUIRE(0 == memcmp(span.clip_suffix(5), MemSpan<void>(post - 5, 5)));
     REQUIRE(0 == memcmp(span, MemSpan<void>(pre, text.size() - 5)));
 
-    MemSpan<void> s1{"Evil Dave Rulz"};
-    REQUIRE(s1.size() == 14); // terminal nul is not in view.
+    // By design, MemSpan<void> won't construct from a literal string because it's const.
+    // MemSpan<void> s1{"Evil Dave Rulz"}; // Should not compile.
+
     uint8_t bytes[]{5,4,3,2,1,0};
     MemSpan<void> s2{bytes};
     REQUIRE(s2.size() == sizeof(bytes)); // terminal nul is in view
@@ -195,9 +196,6 @@ TEST_CASE("MemSpan construct", "[libswoc][MemSpan]") {
   REQUIRE(span[4]._n == 56);
   span.destroy();
   REQUIRE(counter == 0);
-
-  MemSpan<void const> vc_span { "Evil Dave Rulz"};
-  // MemSpan<void> v_span { "Evil Dave Rulz" }; // This should not compile.
 }
 
 TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
