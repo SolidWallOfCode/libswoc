@@ -613,6 +613,12 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
   s2 = std::string_view{};
   w.clear().print("Clone?{}{}.", swoc::bwf::Optional(" #. {}", s2), swoc::bwf::Optional(" #. {}", s2.data()));
   REQUIRE(w.view() == "Clone?.");
+
+  SECTION("exception") {
+    std::runtime_error e("Sureness out of bounds");
+    w.clear().print("{}", e);
+    REQUIRE(w.view() == "Exception - Sureness out of bounds");
+  }
 };
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

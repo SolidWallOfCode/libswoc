@@ -962,8 +962,8 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
 
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, std::error_code const &ec) {
-  static const auto GENERIC_CATEGORY = &std::generic_category();
-  static const auto SYSTEM_CATEGORY  = &std::system_category();
+  static const auto G_CAT = &std::generic_category();
+  static const auto S_CAT  = &std::system_category();
 
   // This provides convenient safe access to the errno short name array.
   static const swoc::bwf::Format number_fmt{"[{}]"_sv}; // numeric value format.
@@ -971,14 +971,14 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, std::error_code con
     // if numeric type, print just the numeric part.
     bwformat(w, spec, ec.value());
   } else {
-    if ((&ec.category() == GENERIC_CATEGORY || &ec.category() == SYSTEM_CATEGORY) && swoc::ERRNO_RANGE.contains(ec.value())) {
+    if ((&ec.category() == G_CAT || &ec.category() == S_CAT) && swoc::ERRNO_RANGE.contains(ec.value())) {
       bwformat(w, spec, swoc::ERRNO_SHORT_NAME[ec.value()]);
     } else {
       w.write(ec.message());
     }
     if (spec._type != 's' && spec._type != 'S') {
-      w.write(' ');
-      w.print(number_fmt, ec.value());
+      bwformat(w, spec, ec.value());
+      w.write(' ').write('[').format(spec, ec.value()).write(']');
     }
   }
   return w;
