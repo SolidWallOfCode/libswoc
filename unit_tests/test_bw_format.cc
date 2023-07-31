@@ -231,6 +231,26 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]") {
   REQUIRE(bw.view() == "Char 'a'");
   bw.clear().print("Byte '{}'", uint8_t{'a'});
   REQUIRE(bw.view() == "Byte '97'");
+
+  SECTION("Hexadecimal buffers") {
+    swoc::MemSpan<void const> cvs{"Evil Dave Rulz"_tv}; // TextView intermediate keeps nul byte out.
+    TextView const edr_in_hex{"4576696c20446176652052756c7a"};
+    bw.clear().format(swoc::bwf::Spec(":x"), cvs);
+    REQUIRE(bw.view() == edr_in_hex);
+    bw.clear().format(swoc::bwf::Spec::DEFAULT, swoc::bwf::UnHex(edr_in_hex));
+    REQUIRE(bw.view() == "Evil Dave Rulz");
+    bw.clear().format(swoc::bwf::Spec::DEFAULT, swoc::bwf::UnHex("112233445566778800"));
+    REQUIRE(memcmp(bw.view(), "\x11\x22\x33\x44\x55\x66\x77\x88\x00"_tv) == 0);
+    // Check if max width in the spec works - should leave bytes from the previous.
+    bw.clear().format(swoc::bwf::Spec{":,2"}, swoc::bwf::UnHex("deadbeef"));
+    REQUIRE(memcmp(TextView(bw.data(), 4), "\xde\xad\x33\x44"_tv) == 0);
+    std::string text, hex;
+    bwprint(hex, "{:x}", cvs);
+    bwprint(text, "{}", swoc::bwf::UnHex(edr_in_hex));
+    REQUIRE(hex == edr_in_hex);
+    REQUIRE(text == TextView(cvs.rebind<char const>()));
+  }
+
 }
 
 TEST_CASE("bwstring", "[bwprint][bwappend][bwstring]") {

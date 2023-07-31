@@ -960,8 +960,8 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
   return w;
 }
 
-swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, std::error_code const &ec) {
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::error_code const &ec) {
   static const auto G_CAT = &std::generic_category();
   static const auto S_CAT  = &std::system_category();
 
@@ -980,6 +980,17 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, std::error_code con
       bwformat(w, spec, ec.value());
       w.write(' ').write('[').format(spec, ec.value()).write(']');
     }
+  }
+  return w;
+}
+
+BufferWriter&
+bwformat(BufferWriter &w, bwf::Spec const& spec, bwf::UnHex const& obj) {
+  auto span { obj._span };
+  size_t limit = spec._max;
+  while (span.size() >= 2 && limit--) {
+    auto b = svto_radix<16>(span.clip_prefix(2).rebind<char const>());
+    w.write(b);
   }
   return w;
 }
