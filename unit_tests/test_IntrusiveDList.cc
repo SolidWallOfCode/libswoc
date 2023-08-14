@@ -130,3 +130,13 @@ TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
   REQUIRE(list.count() == 4);
   REQUIRE(list.tail()->_payload == "trailer");
 }
+
+TEST_CASE("IntrusiveDList Extra", "[libswoc][IntrusiveDList]") {
+  struct S {
+    std::string name;
+    swoc::IntrusiveLinks<S> _links;
+  };
+
+  using S_List = swoc::IntrusiveDList<swoc::IntrusiveLinkDescriptor<S, &S::_links>>;
+  [[maybe_unused]] S_List s_list;
+}

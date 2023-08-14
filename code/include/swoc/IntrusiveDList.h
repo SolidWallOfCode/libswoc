@@ -457,6 +457,16 @@ IntrusiveLinkageRebind<T, L>::prev_ptr(T *thing) {
   return ptr_ref_cast<T>(L::prev_ptr(thing));
 }
 
+template < typename T > struct IntrusiveLinks {
+  T * _next = nullptr;
+  T * _prev = nullptr;
+};
+
+template < typename T, IntrusiveLinks<T> (T::* links) > struct IntrusiveLinkDescriptor {
+  static T *&next_ptr(T *thing); ///< Retrieve reference to next pointer.
+  static T *&prev_ptr(T *thing); ///< Retrive reference to previous pointer.
+};
+
 // --- Implementation ---
 
 template <typename L> IntrusiveDList<L>::const_iterator::const_iterator() {}
