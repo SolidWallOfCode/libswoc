@@ -26,10 +26,6 @@ class IPSrv;
 class IP4Srv;
 class IP6Srv;
 
-namespace detail {
-extern void *const pseudo_nullptr;
-}
-
 /** A union to hold @c sockaddr compliant IP address structures.
 
     This class contains a number of static methods to perform operations on external @c sockaddr
