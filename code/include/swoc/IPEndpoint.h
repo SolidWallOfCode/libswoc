@@ -207,6 +207,9 @@ union IPEndpoint {
   /// Port in host horder.
   in_port_t host_order_port() const;
 
+  /// Test for valid IP address from @a sockaddr.
+  static bool is_valid(sockaddr const *sa);
+
   /// Port in network order from @a sockaddr.
   static in_port_t &port(sockaddr *sa);
 
@@ -348,6 +351,11 @@ IPEndpoint::host_order_port() const {
   return ntohs(this->network_order_port());
 }
 
+inline bool
+IPEndpoint::is_valid(sockaddr const *sa) {
+  return sa && (sa->sa_family == AF_INET || sa->sa_family == AF_INET6);
+}
+
 inline in_port_t &
 IPEndpoint::port(sockaddr *sa) {
   switch (sa->sa_family) {
@@ -362,12 +370,12 @@ IPEndpoint::port(sockaddr *sa) {
 
 inline in_port_t
 IPEndpoint::port(sockaddr const *sa) {
-  return self_type::port(const_cast<sockaddr *>(sa));
+  return self_type::is_valid(sa) ? self_type::port(const_cast<sockaddr *>(sa)) : 0;
 }
 
 inline in_port_t
 IPEndpoint::host_order_port(sockaddr const *sa) {
-  return ntohs(self_type::port(sa));
+  return self_type::is_valid(sa) ? ntohs(self_type::port(sa)) : 0;
 }
 
 inline swoc::MemSpan<void const>
