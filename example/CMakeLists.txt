@@ -30,7 +30,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ex_flat_space PRIVATE -Wall -Wextra -Werror)
 endif()
 
-add_executable(ex_diskstats ex_diskstats.cc)
+add_executable(ex_diskstats ex_diskstats.cc ../image/include/swoc/IntrusiveDList.h)
 target_link_libraries(ex_diskstats PUBLIC libswoc-static)
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ex_diskstats PRIVATE -Wall -Wextra -Werror)
