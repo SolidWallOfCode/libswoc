@@ -875,6 +875,7 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
     CHECK(*r5_net == swoc::IPNet{a, m});
     ++r5_net;
   }
+
 }
 
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
@@ -1082,6 +1083,31 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   {
     auto [ r, p ] = *space.find(IPAddr{"2001:4997:58:400::1E"});
     REQUIRE(r.empty());
+  }
+
+  space.clear();
+  // Test a mix
+  unsigned idx = 0;
+  std::array<TextView, 6> mix_r { "1.1.1.1-1.1.1.111", "2.2.2.2-2.2.2.222", "3.3.3.3-3.255.255.255",
+                   "1:2:3:4:5:6:7:8-1:2:3:4:5:6:7:ffff",
+                   "11:2:3:4:5:6:7:8-11:2:3:4:5:6:7:ffff",
+                   "111:2:3:4:5:6:7:8-111:2:3:4:5:6:7:ffff"
+       };
+  for ( auto && r : mix_r) {
+    space.mark(IPRange(r), idx);
+    ++idx;
+  }
+
+  idx = 0;
+  std::string s;
+  for (auto [r,p] : space) {
+    REQUIRE(!r.empty());
+    REQUIRE(p == idx);
+    swoc::LocalBufferWriter<64> dbg;
+    bwformat(dbg, swoc::bwf::Spec::DEFAULT, r);
+    bwprint(s, "{}", r);
+    REQUIRE(s == mix_r[idx]);
+    ++idx;
   }
 }
 
