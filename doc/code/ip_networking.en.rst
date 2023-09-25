@@ -18,18 +18,21 @@ Usage
 *****
 
 This library is for storing and manipulating IP addresses as data. It has no support for actual
-network operations.
+network operations. The goal is to make handling IP networking data straight forward.
+
+Many of the classes are triplicated - a family independent type along with family specialized types.
+In general the generic type will act as a union of the family specific types.
 
 IPEndpoint
 ==========
 
-:libswoc:`swoc::IPEndpoint` is a wrapper around :code:`sockaddr` and related structures while
-providing a number of utilities. It enables constructing an instance from the string representation
-of an address, supporting IPv4 and IPv6. It will also parse and store the port if that is part of
-the string. Some of the internal logic is exposed via :libswoc:`swoc::IPEndpoint::tokenize` which
-finds and returns the elements of an address string, the host (address), port, and any trailing
-remnants. This is useful for doing syntax checks or more specialized processing of the address
-string.
+:libswoc:`swoc::IPEndpoint` is a wrapper around :code:`sockaddr` and related structures to provides
+a number of utilities such as
+
+*  Constructing instances from strings.
+*  Support for IPv4 and IPv6 in a single data type.
+*  Family independent access to common elements such as the port.
+*  Conversion to and from the more specialized classes.
 
 IPAddr
 ======
@@ -47,10 +50,18 @@ a string and, if a valid address, will initialize the instance to that address. 
 there is no indication of failure other than the instance initializing to the zero or "any"
 address. This can be reasonable in situations where those addresses are not valid either. However
 in general the :libswoc:`swoc::IPAddr::load` method should be used, which both initializes the
-instance and provides an indication of whether the input was valid.
+instance and provides an indication of whether the input was valid. This is also the expected to check
+a string for being a valid address.
 
 Conversions to and from :code:`sockaddr` are provided. This is handier with :code:`IPAddr` as it
-will conform to the family of the address in the :code:`sockaddr`.
+will conform to the family of the address in the :code:`sockaddr`. It ususally best to use :code:`IPEndpoint`
+instead of a raw :code:`sockaddr`.
+
+A variety of string formats are supported, primarily for legacy and convenience. The family specific types
+will only parse addresses of that family. To parse a string as either family use the generic type
+:code:`IPAddr`. An IPv4 address can be specified as a single numeric value, which is used primarily to
+parse "0" as an address (e.g. in the case of specifying a network as "0/0"). IPv4 octets can be specified
+in decminal (default), octal (leading 0), or hexadecimal (leading "0x").
 
 IPSrv
 =====
@@ -65,7 +76,7 @@ IPRange
 
 The classes :libswoc:`swoc::IPRange`, :libswoc:`swoc::IP4Range`, and :libswoc:`swoc::IP6Range` are
 used to hold ranges of IP addresses. :code:`IP4Range` and :code:`IP6Range` are family specific and
-hold (respectively) IPv4 and IPv6 addresses. :code:`IPAddr` acts as a union of these two types along
+hold (respectively) IPv4 and IPv6 addresses. :code:`IPRange` acts as a union of these two types along
 with an IP family specifier that indicates the type of address contained. The type specific classes
 provide performance and storage benefits when the type of the address is known or forced, while
 :code:`IPRange` provides a generic type useful for interfaces. Note that an :code:`IPRange` holds a
@@ -94,7 +105,7 @@ Singleton
 Such a string can be passed to the constructor, which will initialize to the corresponding range if
 properly formatted, otherwise the range will be default constructed to an invalid range. There is
 also the :libswoc:`swoc::IPRange::load` method which returns a :code:`bool` to indicate if the
-parsing was successful.
+parsing was successful. This is the expected mechanism for validating a string as a valid range.
 
 This class has formatting support in "bwf_ip.h". In addition to all of the formatting supported for
 :code:`sockaddr`, the additional extension code 'c' can be used to indicate compact range formatting.
@@ -120,7 +131,7 @@ Address networks are supported by the usual triplet of classes
 * :libswoc:`sowc::IP6net` - IPv6 network.
 
 In addition the class :libswoc:`sowc::IPMask` is used to store a network mask. There are no
-family specific variants as a mask is really a CIDR based bit count along with utilty methods.
+family specific variants as a mask is really a CIDR based bit count along with utility methods.
 
 String parsing requires a "/" separator with a leading network address followed by either a CIDR
 count or an address that is a valid network mask. In the latter case the mask address must be of the
@@ -130,7 +141,7 @@ same family as the network address. A valid network mask must be a sequence of '
 Networks are treated as specialized ranges and can always be converted to an instance of a range
 class. Conversely a range class can be converted to a sequence of networks. For any range there is
 exactly one sequence of networks that contains the same addresses and is of minimal length. Range
-class suport generating this sequence which results in a sequence of instances of a network class.
+class support generating this sequence which results in a sequence of instances of a network class.
 
 A mask can be converted to the corresponding address. E.g. the IPv6 address for a 85 bit mask
 could be generated with ::
@@ -209,9 +220,13 @@ that blends a :arg:`color` into a :code:`PAYLOAD` instances. The signature is ::
 
   bool blender(PAYLOAD & payload, U const& color)
 
-The type :code:`U` is that same as the template argument :code:`U` to the :code:`blend` method,
+The type :code:`U` is the same as the template argument :code:`U` to the :code:`blend` method,
 which must be compatible with the second argument to the :code:`blend` method. The argument passed
-to :code:`blender` is the second argument to :code:`blend`.
+as :code:`color` to the functor is the value passed as the second argument to :code:`blend`. The point of
+this indirection is to enable passing values of types distinct from the payload type. In practice
+blending rarely replaces or updates the entire payload, but only a part of it, and therefore the blend
+can be simpler and more performant by passing only the data needed for the update, and not an entire
+payload instance type.
 
 The method is modeled on C++ `compound assignment operators
 <https://en.cppreference.com/w/cpp/language/operator_assignment#Builtin_compound_assignment>`__. If
@@ -222,7 +237,7 @@ argument to the :code:`blend` method. The internal logic handles copying the pay
 needed.
 
 The return value of the blender indicates whether the combined result in :arg:`lhs` is a valid
-payload or not. If it is the method should return :code:`true`. In general most implementations will
+payload or not. If valid the method should return :code:`true`. In general most implementations will
 :code:`return true;` in all cases. If the method returns :code:`false` then the address(es) for the
 combined payload are removed from the container. This allows payloads to be "unblended", for one
 payload to cancel out another, or to do selective erasing of ranges.
