@@ -1450,7 +1450,7 @@ template <> struct hash<swoc::IP4Addr> {
 /// Standard hash support for @a IP6Addr.
 template <> struct hash<swoc::IP6Addr> {
   size_t operator()(swoc::IP6Addr const &addr) const {
-    // XOR the 64 chunks then XOR that down to 32 bits.
+    // XOR the 64 chunks
     auto words = addr.as_span<uint64_t>();
     return words[0] ^ words[1];
   }
