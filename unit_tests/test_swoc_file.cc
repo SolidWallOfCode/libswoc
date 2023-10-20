@@ -69,6 +69,13 @@ TEST_CASE("swoc_file", "[libswoc][swoc_file]")
   REQUIRE(p1 == p1);
   REQUIRE(p1 != p2);
 
+  // This is primarily to check working with std::string and file::path.
+  std::string s1 { "/home/evil/dave" };
+  file::path fp{s1};
+  std::error_code ec;
+  [[maybe_unused]] auto mtime = file::last_write_time(s1, ec);
+  REQUIRE(ec.value() != 0);
+
   // Verify path can be used as a hashed key for STL containers.
   [[maybe_unused]] std::unordered_map<file::path, std::string> container;
 }

@@ -94,6 +94,9 @@ public:
   /// Construct from a string view.
   path(std::string_view src);
 
+  /// Construct with a copy of @a p.
+  path(std::string const& p);
+
   /// Move from an existing string
   path(std::string &&that);
 
@@ -336,6 +339,8 @@ std::string load(const path &p, std::error_code &ec);
 inline path::path(char const *src) : _path(src) {}
 
 inline path::path(std::string_view base) : _path(base) {}
+
+inline path::path(std::string const &p) : _path(p) {}
 
 inline path::path(std::string &&that) : _path(std::move(that)) {}
 
