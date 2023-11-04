@@ -111,7 +111,7 @@ protected:
   static const struct Property {
     Property(); ///< Default constructor, creates initialized flag set.
     /// Flag storage, indexed by character value.
-    uint8_t _data[0x100];
+    uint8_t _data[0x100]{};
     /// Flag mask values.
     static constexpr uint8_t ALIGN_MASK        = 0x0F; ///< Alignment type.
     static constexpr uint8_t TYPE_CHAR         = 0x10; ///< A valid type character.

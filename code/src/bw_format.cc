@@ -11,6 +11,7 @@
 #include <chrono>
 #include <cmath>
 #include <ctime>
+#include <cmath>
 #include <sys/param.h>
 #include <unistd.h>
 
@@ -190,7 +191,7 @@ Spec::parse(TextView fmt) {
 /// @return @c true if a specifier was parsed, @c false if not.
 bool
 Format::TextViewExtractor::parse(TextView &fmt, std::string_view &literal, std::string_view &specifier) {
-  TextView::size_type off;
+  TextView::size_type off = 0;
 
   // Check for brace delimiters.
   off = fmt.find_if([](char c) { return '{' == c || '}' == c; });
@@ -524,13 +525,13 @@ Format_Float(BufferWriter &w, Spec const &spec, double f, bool negative_p) {
     return w;
   }
 
-  uint64_t whole_part = static_cast<uint64_t>(f);
+  auto whole_part = static_cast<uint64_t>(f);
   if (whole_part == f || spec._prec == 0) { // integral
     return Format_Integer(w, spec, whole_part, negative_p);
   }
 
   static constexpr char dec = '.';
-  double frac;
+  double frac = NAN;
   size_t l = 0;
   size_t r = 0;
   char whole[std::numeric_limits<double>::digits10 + 1];
@@ -549,7 +550,7 @@ Format_Float(BufferWriter &w, Spec const &spec, double f, bool negative_p) {
 
   // Shift the floating point based on the precision. Used to convert
   //  trailing fraction into an integer value.
-  uint64_t shift;
+  uint64_t shift = 0;
   if (precision < POWERS_OF_TEN.size()) {
     shift = POWERS_OF_TEN[precision];
   } else { // not precomputed.
@@ -559,7 +560,7 @@ Format_Float(BufferWriter &w, Spec const &spec, double f, bool negative_p) {
     }
   }
 
-  uint64_t frac_part = static_cast<uint64_t>(frac * shift + 0.5 /* rounding */);
+  auto frac_part = static_cast<uint64_t>(frac * shift + 0.5 /* rounding */);
 
   l = bwf::To_Radix<10>(whole_part, whole, sizeof(whole), bwf::LOWER_DIGITS);
   r = bwf::To_Radix<10>(frac_part, fraction, sizeof(fraction), bwf::LOWER_DIGITS);
@@ -637,7 +638,7 @@ Format::is_literal() const {
   return true;
 }
 
-NameBinding::~NameBinding() {}
+NameBinding::~NameBinding() = default;
 
 } // namespace bwf
 
@@ -716,8 +717,9 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void const> const &span
     TextView view{span.rebind<char const>()};
     bool space_p = false;
     while (view) {
-      if (space_p)
+      if (space_p) {
         w.write(' ');
+}
       space_p = true;
       if (spec._radix_lead_p) {
         w.write('0').write(digits[33]);
@@ -916,7 +918,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date) {
   if (spec.has_numeric_type()) {
     bwformat(w, spec, date._epoch);
   } else {
-    struct tm t;
+    struct tm t{};
     auto r = w.remaining();
     size_t n{0};
     // Verify @a fmt is null terminated, even outside the bounds of the view.
@@ -995,7 +997,8 @@ bwformat(BufferWriter &w, bwf::Spec const& spec, bwf::UnHex const& obj) {
   return w;
 }
 
-}} // namespace swoc::SWOC_VERSION_NS
+}  // namespace SWOC_VERSION_NS
+}  // namespace swoc
 
 namespace std {
 ostream &
