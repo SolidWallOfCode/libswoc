@@ -35,7 +35,7 @@ MemArena::MemArena(MemSpan<void> static_block) {
 // integral values in @a that.
 
 MemArena::MemArena(swoc::MemArena::self_type &&that)
-  : _active_allocated(that._active_allocated),
+ noexcept   : _active_allocated(that._active_allocated),
     _active_reserved(that._active_reserved),
     _frozen_allocated(that._frozen_allocated),
     _frozen_reserved(that._frozen_reserved),
@@ -57,7 +57,7 @@ MemArena::construct_self_contained(size_t n) {
 }
 
 MemArena &
-MemArena::operator=(swoc::MemArena::self_type &&that) {
+MemArena::operator=(swoc::MemArena::self_type &&that)  noexcept {
   this->clear();
   std::swap(_active_allocated, that._active_allocated);
   std::swap(_active_reserved, that._active_reserved);
@@ -155,10 +155,11 @@ MemArena::require(size_t n, size_t align) {
 
   // Search back through the list until a full block is hit, which is a miss.
   while (spot != _active.end() && !spot->satisfies(n, align)) {
-    if (spot->is_full())
+    if (spot->is_full()) {
       spot = _active.end();
-    else
+    } else {
       ++spot;
+}
   }
   if (spot == _active.end()) {   // no block has enough free space
     block = this->make_block(n); // assuming a new block is sufficiently aligned.
@@ -178,8 +179,9 @@ MemArena::destroy_active() {
   auto sb = _static_block; // C++20 nonsense - capture of @a this is incompatible with C++17.
   _active
     .apply([=](Block *b) {
-      if (b != sb)
+      if (b != sb) {
         delete b;
+}
     })
     .clear();
 }
@@ -189,8 +191,9 @@ MemArena::destroy_frozen() {
   auto sb = _static_block; // C++20 nonsense - capture of @a this is incompatible with C++17.
   _frozen
     .apply([=](Block *b) {
-      if (b != sb)
+      if (b != sb) {
         delete b;
+}
     })
     .clear();
 }
@@ -228,14 +231,16 @@ MemArena::~MemArena() {
   while (bf) {
     Block *b = bf;
     bf       = bf->_link._next;
-    if (b != sb)
+    if (b != sb) {
       delete b;
+}
   }
   while (ba) {
     Block *b = ba;
     ba       = ba->_link._next;
-    if (b != sb)
+    if (b != sb) {
       delete b;
+}
   }
 }
 
@@ -254,4 +259,5 @@ MemArena::do_is_equal(std::pmr::memory_resource const &that) const noexcept {
 }
 #endif
 
-}} // namespace swoc::SWOC_VERSION_NS
+}  // namespace SWOC_VERSION_NS
+}  // namespace swoc

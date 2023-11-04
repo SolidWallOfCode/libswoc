@@ -360,12 +360,12 @@ uintmax_t
 remove_all(const path &p, std::error_code &ec)
 {
   // coverity TOCTOU - issue is doing stat before doing operation. Stupid complaint, ignore.
-  DIR *dir;
-  struct dirent *entry;
+  DIR *dir = nullptr;
+  struct dirent *entry = nullptr;
   std::error_code err;
   uintmax_t zret = 0;
 
-  struct ::stat s;
+  struct ::stat s{};
   if (p.empty()) {
     ec = std::error_code(EINVAL, std::system_category());
     return zret;
@@ -414,7 +414,7 @@ remove_all(const path &p, std::error_code &ec)
 
 bool remove(path const& p, std::error_code &ec) {
   // coverity TOCTOU - issue is doing stat before doing operation. Stupid complaint, ignore.
-  struct ::stat fs;
+  struct ::stat fs{};
   if (p.empty()) {
     ec = std::error_code(EINVAL, std::system_category());
   } else if (::stat(p.c_str(), &fs) < 0) {
@@ -442,7 +442,7 @@ load(const path &p, std::error_code &ec) {
   if (unique_fd fd(::open(p.c_str(), O_RDONLY)) ; fd < 0) {
     ec = std::error_code(errno, std::system_category());
   } else {
-    struct stat info;
+    struct stat info{};
     if (0 != ::fstat(fd, &info)) {
       ec = std::error_code(errno, std::system_category());
     } else {
@@ -464,4 +464,5 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, file::path const &p) {
   return bwformat(w, spec, p.string());
 }
 
-}} // namespace swoc::SWOC_VERSION_NS
+}  // namespace SWOC_VERSION_NS
+}  // namespace swoc

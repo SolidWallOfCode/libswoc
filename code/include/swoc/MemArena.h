@@ -201,7 +201,7 @@ public:
   MemArena(self_type const &that) = delete;
 
   /// Allow moving the arena.
-  MemArena(self_type &&that);
+  MemArena(self_type &&that) noexcept;
 
   /// Destructor.
   ~MemArena();
@@ -210,7 +210,7 @@ public:
   self_type & operator=(self_type const & that) = delete;
 
   /// Move assignment.
-  self_type & operator=(self_type &&that);
+  self_type & operator=(self_type &&that) noexcept;
 
   /** Make a self-contained instance.
    *

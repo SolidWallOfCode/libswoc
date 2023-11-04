@@ -229,7 +229,7 @@ RBNode *
 RBNode::rebalance_after_remove(Color c,    //!< The color of the removed node
                                Direction d //!< Direction of removed node from its parent
 ) {
-  self_type *root;
+  self_type *root = nullptr;
 
   if (Color::BLACK == c) { // only rebalance if too much black
     self_type *n      = this;
@@ -341,10 +341,13 @@ RBNode::validate() {
 auto
 RBNode::left_most_descendant() const -> self_type * {
   const self_type *n = this;
-  while (n->_left)
+  while (n->_left) {
     n = n->_left;
+}
 
   return const_cast<self_type *>(n);
 }
 
-}}} // namespace swoc::SWOC_VERSION_NS::detail
+}  // namespace detail
+}  // namespace SWOC_VERSION_NS
+}  // namespace swoc

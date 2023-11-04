@@ -802,8 +802,8 @@ IPSrv::load(swoc::TextView text) {
 }
 
 
-IPSrv::IPSrv(IPAddr addr, in_port_t port) {
-  _family = addr.family();
+IPSrv::IPSrv(IPAddr addr, in_port_t port) : _family(addr.family()) {
+  
   if (addr.is_ip4()) {
     _srv._ip4.assign(addr.ip4(), port);
   } else if (addr.is_ip6()) {
@@ -1254,4 +1254,5 @@ IPRangeView::operator==(IPRangeView::self_type const &that) const {
   return false;
 }
 
-}} // namespace swoc::SWOC_VERSION_NS
+}  // namespace SWOC_VERSION_NS
+}  // namespace swoc

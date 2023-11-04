@@ -80,7 +80,7 @@ svtou(TextView src, TextView *out, int base) {
   }
   if (src.ltrim_if(&isspace).size()) {
     auto origin = src.data();
-    int8_t v;
+    int8_t v = 0;
     // If base is 0, it wasn't specified - check for standard base prefixes
     if (0 == base) {
       base = 10;
@@ -220,7 +220,8 @@ svtod(swoc::TextView text, swoc::TextView *parsed) {
 // Do the template instantiations.
 template std::ostream &TextView::stream_write(std::ostream &, const TextView &) const;
 
-}} // namespace swoc::SWOC_VERSION_NS
+}  // namespace SWOC_VERSION_NS
+}  // namespace swoc
 
 namespace std {
 ostream &

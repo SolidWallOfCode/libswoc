@@ -94,7 +94,7 @@ Errata::note_s(std::optional<Severity> severity, std::string_view text) {
 Errata &
 Errata::note_localized(std::string_view const &text, std::optional<Severity> severity) {
   auto d        = this->data();
-  Annotation *n = d->_arena.make<Annotation>(text, severity);
+  auto *n = d->_arena.make<Annotation>(text, severity);
   d->_notes.append(n);
   return *this;
 }
@@ -185,4 +185,5 @@ operator<<(std::ostream &os, Errata const &err) {
   return err.write(os);
 }
 
-}} // namespace swoc::SWOC_VERSION_NS
+}  // namespace SWOC_VERSION_NS
+}  // namespace swoc
