@@ -61,7 +61,8 @@ int memcmp(const std::string_view &lhs, const std::string_view &rhs);
  * @see memcmp
  */
 inline int
-strcmp(const std::string_view &lhs, const std::string_view &rhs) {
+strcmp(const std::string_view &lhs, const std::string_view &rhs)
+{
   return memcmp(lhs, rhs);
 }
 
@@ -83,6 +84,7 @@ strcmp(const std::string_view &lhs, const std::string_view &rhs) {
  *
  */
 inline void *
-memcpy(void *dst, const std::string_view &src) {
+memcpy(void *dst, const std::string_view &src)
+{
   return memcpy(dst, src.data(), src.size());
 }

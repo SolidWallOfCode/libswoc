@@ -26,8 +26,12 @@
 #define SWOC_VERSION_NS _1_5_6
 #endif
 
-namespace swoc { inline namespace SWOC_VERSION_NS {
-static constexpr unsigned MAJOR_VERSION = 1;
-static constexpr unsigned MINOR_VERSION = 5;
-static constexpr unsigned POINT_VERSION = 6;
-}} // namespace swoc::SWOC_VERSION_NS
+namespace swoc
+{
+inline namespace SWOC_VERSION_NS
+{
+  static constexpr unsigned MAJOR_VERSION = 1;
+  static constexpr unsigned MINOR_VERSION = 5;
+  static constexpr unsigned POINT_VERSION = 6;
+} // namespace SWOC_VERSION_NS
+} // namespace swoc

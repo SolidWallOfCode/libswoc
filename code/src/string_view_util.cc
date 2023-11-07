@@ -8,7 +8,8 @@
 #include "swoc/string_view_util.h"
 
 int
-memcmp(std::string_view const &lhs, std::string_view const &rhs) {
+memcmp(std::string_view const &lhs, std::string_view const &rhs)
+{
   int zret = 0;
   size_t n = rhs.size();
 
@@ -27,7 +28,8 @@ memcmp(std::string_view const &lhs, std::string_view const &rhs) {
 }
 
 int
-strcasecmp(const std::string_view &lhs, const std::string_view &rhs) {
+strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
+{
   int zret = 0;
   size_t n = rhs.size();
 
