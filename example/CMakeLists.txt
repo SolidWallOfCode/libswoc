@@ -37,7 +37,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 add_executable(ex_lru_cache ex_lru_cache.cc)
-target_link_libraries(ex_lru_cache PUBLIC libswoc-static)
+target_link_libraries(ex_lru_cache PUBLIC libswoc-static Threads::Threads)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON) # Without this flag CMake may resort to just '-lpthread'
 find_package(Threads)

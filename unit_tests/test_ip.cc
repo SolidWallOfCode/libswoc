@@ -1276,12 +1276,14 @@ TEST_CASE("IPSpace Edge", "[libswoc][ipspace][edge]") {
   }
 
   auto spot = cspace.find(a1);
+  static_assert(std::is_same_v<Space::const_iterator, decltype(spot)>);
   auto & v1 = *spot;
   auto & p1 = get<1>(v1);
 
   if (auto && [ r, p ] = *(cspace.find(a1)) ; ! r.empty() ) {
-    static_assert(std::is_same_v<swoc::IPRangeView const, decltype(r)>);
+    static_assert(std::is_same_v<swoc::IPRangeView const &, decltype(r)>);
     IPRange rr = r;
+    swoc::IPRangeView rvv{r};
     swoc::IPRangeView rv = r;
     REQUIRE(rv == rr);
   }

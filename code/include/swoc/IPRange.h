@@ -578,11 +578,19 @@ class IPRangeView {
   using self_type = IPRangeView;
   friend IPRange;
   /// Storage for the view pointer - union because only one can be valid.
-  using storage_type = union {
+  union storage_type {
     std::monostate _nil; ///< No data present.
     IP4Range const * _4; ///< IPv4 range.
     IP6Range const * _6; ///< IPv6 range.
+    void const * _void; ///< Used only for fast copy in construction and assignment.
+
+    // These constructors are needed to make the default construction / assignent methods work.
+    // Otherwise the compiler thinks the union isn't initialized.
+    storage_type() = default;
+    storage_type(std::monostate) {}
+    storage_type(storage_type const& that) : _void(that._void) {}
   };
+
 public:
   /// Default constructor - invalid view.
   IPRangeView() = default;
@@ -649,7 +657,7 @@ public:
 
   /// @}
 
-// protected:
+protected:
   storage_type _raw = { std::monostate() }; ///< Storage for the view pointer.
   sa_family_t _family = AF_UNSPEC; ///< Range address family.
 };
@@ -1207,10 +1215,10 @@ public:
      *
      * In practice, at most one iterator should be "internal", the other should be the beginning or end.
      */
-    const_iterator(typename IP4Space::iterator const &iter4, typename IP6Space::iterator const &iter6);
+    const_iterator(typename IP4Space::const_iterator const &iter4, typename IP6Space::const_iterator const &iter6);
 
-    // These are required because the actual range type is @c DiescreteRange<T> and returning as a
-    // range class creates a temporary which in turns causes some nasty side effects.
+    // These are required because the actual range type for the subspaces is @c DiscreteRange<T>
+    // and returning that type without a cast creates a temporary which causes some nasty side effects.
 
     /// @return Properly type cast range from iterator.
     IP4Range const& r4() { return static_cast<IP4Range const&>(_iter_4->range()); }
@@ -1400,10 +1408,10 @@ protected:
   IP4Space _ip4; ///< Sub-space containing IPv4 ranges.
   IP6Space _ip6; ///< sub-space containing IPv6 ranges.
 
-  iterator iterator_at(typename IP4Space::iterator const& spot) {
+  iterator iterator_at(typename IP4Space::const_iterator const& spot) {
     return iterator(spot, _ip6.begin());
   }
-  iterator iterator_at(typename IP6Space::iterator const& spot) {
+  iterator iterator_at(typename IP6Space::const_iterator const& spot) {
     return iterator(_ip4.end(), spot);
   }
 
@@ -1595,8 +1603,8 @@ IPRangeSet::Mark::operator!=(IPRangeSet::Mark::self_type const &)
 }
 
 template <typename PAYLOAD>
-IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator const &iter4, typename IP6Space::iterator const &iter6)
-: _iter_4(iter4), _iter_6(iter6) {
+IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::const_iterator const &iter4, typename IP6Space::const_iterator const &iter6)
+: _iter_4(static_cast<typename IP4Space::iterator const&>(iter4)), _iter_6(static_cast<typename IP6Space::iterator const&>(iter6)) {
   if (_iter_4.has_next()) {
     _value.assign(this->r4(), _iter_4->payload());
   } else if (_iter_6.has_next()) {
@@ -2409,7 +2417,12 @@ IPSpace<PAYLOAD>::find(IPAddr const &addr) -> iterator {
 
 template <typename PAYLOAD>
 auto IPSpace<PAYLOAD>::find(IPAddr const &addr) const -> const_iterator {
-  return const_cast<self_type *>(this)->find(addr);
+  if (addr.is_ip4()) {
+    return this->find(addr.ip4());
+  } else if (addr.is_ip6()) {
+    return this->find(addr.ip6());
+  }
+  return this->end();
 }
 
 template <typename PAYLOAD>
@@ -2424,14 +2437,17 @@ IPSpace<PAYLOAD>::find(IP4Addr const &addr) -> iterator {
 template <typename PAYLOAD>
 auto
 IPSpace<PAYLOAD>::find(IP4Addr const &addr) const -> const_iterator {
-  return const_cast<self_type *>(this)->find(addr);
+  if ( auto spot = _ip4.find(addr) ; spot != _ip4.end()) {
+    return { spot, _ip6.begin() };
+  }
+  return this->end();
 }
 
 template <typename PAYLOAD>
 auto IPSpace<PAYLOAD>::find(IP6Addr const &addr) -> iterator { return {_ip4.end(), _ip6.find(addr)}; }
 
 template <typename PAYLOAD>
-auto IPSpace<PAYLOAD>::find(IP6Addr const &addr) const -> const_iterator { return {_ip4.end(), _ip6.find(addr)}; }
+auto IPSpace<PAYLOAD>::find(IP6Addr const &addr) const -> const_iterator { return const_iterator{_ip4.end(), _ip6.find(addr)}; }
 
 template <typename PAYLOAD>
 auto
@@ -2635,7 +2651,7 @@ template <size_t IDX, typename P> class tuple_element<IDX, swoc::detail::ip_spac
 
 template <typename P> class tuple_element<0, swoc::detail::ip_space_value_type<P>> {
 public:
-  using type = swoc::IPRangeView;
+  using type = swoc::IPRangeView const &;
 };
 
 template <typename P> class tuple_element<1, swoc::detail::ip_space_value_type<P>> {
@@ -2645,7 +2661,7 @@ public:
 
 template <typename P> class tuple_element<0, swoc::detail::ip_space_const_value_type<P>> {
 public:
-  using type = swoc::IPRangeView;
+  using type = swoc::IPRangeView const &;
 };
 
 template <typename P> class tuple_element<1, swoc::detail::ip_space_const_value_type<P>> {
