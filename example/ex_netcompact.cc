@@ -39,11 +39,12 @@ using W = swoc::LocalBufferWriter<512>;
 /// IPSpace for mapping address. Treating it as a set so use a no-data payload.
 using Space = swoc::IPSpace<std::monostate>;
 
-void post_processing_performance_test(Space & space);
+void post_processing_performance_test(Space &space);
 
 /// Process the @a content of a file in to @a space.
-unsigned process(Space& space, TextView content) {
-  int line_no = 0; /// Track for error reporting.
+unsigned
+process(Space &space, TextView content) {
+  int line_no       = 0; /// Track for error reporting.
   unsigned n_ranges = 0;
 
   // For each line in @a content
@@ -67,7 +68,8 @@ unsigned process(Space& space, TextView content) {
   return n_ranges;
 }
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char *argv[]) {
   Space space;
 
   if (argc < 2) {
@@ -89,8 +91,8 @@ int main(int argc, char *argv[]) {
 
   // Dump the results.
   unsigned n_nets = 0;
-  for ( auto && [range, payload] : space ) {
-    for ( auto && net : range.networks() ) {
+  for (auto &&[range, payload] : space) {
+    for (auto &&net : range.networks()) {
       ++n_nets;
       std::cout << W().print("{}\n", net);
     }
@@ -98,21 +100,21 @@ int main(int argc, char *argv[]) {
 
   auto delta = std::chrono::system_clock::now() - t0;
 
-  std::cerr << W().print("{} ranges in, {} ranges condensed, {} networks out in {} ms\n"
-    , n_ranges, space.count(), n_nets
-    , std::chrono::duration_cast<std::chrono::milliseconds>(delta).count());
+  std::cerr << W().print("{} ranges in, {} ranges condensed, {} networks out in {} ms\n", n_ranges, space.count(), n_nets,
+                         std::chrono::duration_cast<std::chrono::milliseconds>(delta).count());
 
   post_processing_performance_test(space);
   return 0;
 }
 
-void post_processing_performance_test(Space & space) {
+void
+post_processing_performance_test(Space &space) {
   using swoc::IP4Addr;
   using swoc::IP6Addr;
 
   std::vector<IP4Addr> a4;
   std::vector<IP6Addr> a6;
-  for ( auto && [ r, p] : space) {
+  for (auto &&[r, p] : space) {
     if (r.is_ip4()) {
       IP4Addr a = r.min().ip4();
       a4.push_back(a);
@@ -134,7 +136,7 @@ void post_processing_performance_test(Space & space) {
     }
   }
 
-  if (! a4.empty()) {
+  if (!a4.empty()) {
     auto t0 = std::chrono::system_clock::now();
     for (auto const &addr : a4) {
       [[maybe_unused]] auto spot = space.find(addr);

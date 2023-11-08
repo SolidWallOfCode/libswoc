@@ -35,8 +35,7 @@ using swoc::FixedBufferWriter;
 using namespace std::literals;
 
 TextView
-localize(MemArena &arena, TextView view)
-{
+localize(MemArena &arena, TextView view) {
   auto span = arena.alloc(view.size()).rebind<char>();
   memcpy(span, view);
   return span;
@@ -44,20 +43,17 @@ localize(MemArena &arena, TextView view)
 
 template <typename T> struct Destructor {
   void
-  operator()(T *t)
-  {
+  operator()(T *t) {
     t->~T();
   }
 };
 
 void
-Destroy(MemArena *arena)
-{
+Destroy(MemArena *arena) {
   arena->~MemArena();
 }
 
-TEST_CASE("MemArena inversion", "[libswoc][MemArena][example][inversion]")
-{
+TEST_CASE("MemArena inversion", "[libswoc][MemArena][example][inversion]") {
   TextView tv{"You done messed up A-A-Ron"};
   TextView text{"SolidWallOfCode"};
 
@@ -131,8 +127,7 @@ TEST_CASE("MemArena inversion", "[libswoc][MemArena][example][inversion]")
 
 template <typename... Args>
 TextView
-bw_localize(MemArena &arena, TextView const &fmt, Args &&... args)
-{
+bw_localize(MemArena &arena, TextView const &fmt, Args &&...args) {
   FixedBufferWriter w(arena.remnant());
   auto arg_tuple{std::forward_as_tuple(args...)};
   w.print_v(fmt, arg_tuple);
@@ -142,8 +137,7 @@ bw_localize(MemArena &arena, TextView const &fmt, Args &&... args)
   return arena.alloc(w.extent()).rebind<char>();
 }
 
-TEST_CASE("MemArena example", "[libswoc][MemArena][example]")
-{
+TEST_CASE("MemArena example", "[libswoc][MemArena][example]") {
   struct Thing {
     using self_type = Thing;
 
@@ -165,20 +159,17 @@ TEST_CASE("MemArena example", "[libswoc][MemArena][example]")
 
     struct Linkage : swoc::IntrusiveLinkage<self_type> {
       static std::string_view
-      key_of(self_type *thing)
-      {
+      key_of(self_type *thing) {
         return thing->name;
       }
 
       static uint32_t
-      hash_of(std::string_view const &s)
-      {
+      hash_of(std::string_view const &s) {
         return swoc::Hash32FNV1a().hash_immediate(swoc::transform_view_of(&toupper, s));
       }
 
       static bool
-      equal(std::string_view const &lhs, std::string_view const &rhs)
-      {
+      equal(std::string_view const &lhs, std::string_view const &rhs) {
         return lhs == rhs;
       }
     };

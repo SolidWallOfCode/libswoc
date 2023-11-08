@@ -25,37 +25,33 @@ static constexpr swoc::Errata::Severity ERRATA_INFO{2};
 static constexpr swoc::Errata::Severity ERRATA_WARN{3};
 static constexpr swoc::Errata::Severity ERRATA_ERROR{4};
 
-std::array<swoc::TextView, 5> Severity_Names { {
-  "Debug", "Diag", "Info", "Warn", "Error"
-}};
+std::array<swoc::TextView, 5> Severity_Names{
+  {"Debug", "Diag", "Info", "Warn", "Error"}
+};
 
 std::string ErrataSinkText;
 
 // Call from unit test main before starting tests.
-void test_Errata_init() {
+void
+test_Errata_init() {
   swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
   swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
-  swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView const>(Severity_Names.data(), Severity_Names.size());
+  swoc::Errata::SEVERITY_NAMES   = swoc::MemSpan<swoc::TextView const>(Severity_Names.data(), Severity_Names.size());
 
-  swoc::Errata::register_sink([](swoc::Errata const& errata) ->void {
-    bwprint(ErrataSinkText, "{}", errata);
-  });
+  swoc::Errata::register_sink([](swoc::Errata const &errata) -> void { bwprint(ErrataSinkText, "{}", errata); });
 }
 
 Errata
-Noteworthy(std::string_view text)
-{
+Noteworthy(std::string_view text) {
   return Errata{ERRATA_INFO, text};
 }
 
 Errata
-cycle(Errata &erratum)
-{
+cycle(Errata &erratum) {
   return std::move(erratum.note("Note well, young one!"));
 }
 
-TEST_CASE("Errata copy", "[libswoc][Errata]")
-{
+TEST_CASE("Errata copy", "[libswoc][Errata]") {
   auto notes = Noteworthy("Evil Dave Rulz.");
   REQUIRE(notes.length() == 1);
   REQUIRE(notes.begin()->text() == "Evil Dave Rulz.");
@@ -88,8 +84,7 @@ TEST_CASE("Errata copy", "[libswoc][Errata]")
   REQUIRE(match_p);
 };
 
-TEST_CASE("Rv", "[libswoc][Errata]")
-{
+TEST_CASE("Rv", "[libswoc][Errata]") {
   Rv<int> zret;
   struct Thing {
     char const *s = "thing";
@@ -100,7 +95,7 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   zret = Errata(std::error_code(EINVAL, std::generic_category()), ERRATA_ERROR, "This is an error");
 
   {
-    auto & [result, erratum] = zret;
+    auto &[result, erratum] = zret;
 
     REQUIRE(erratum.length() == 1);
     REQUIRE(erratum.severity() == ERRATA_ERROR);
@@ -111,7 +106,7 @@ TEST_CASE("Rv", "[libswoc][Errata]")
   }
 
   {
-    auto && [result, erratum] = zret;
+    auto &&[result, erratum] = zret;
 
     REQUIRE(erratum.length() == 1);
     REQUIRE(erratum.severity() == ERRATA_ERROR);
@@ -134,7 +129,6 @@ TEST_CASE("Rv", "[libswoc][Errata]")
 
     test(ERRATA_ERROR, zret); // invoke it.
   }
-
 
   zret.clear();
   REQUIRE(zret.result() == 56);
@@ -184,7 +178,7 @@ TEST_CASE("Rv", "[libswoc][Errata]")
 
   handle->s = "other"; // mark it.
   thing_rv  = std::move(handle);
-  thing_rv = Errata(ERRATA_WARN, "This is a warning");
+  thing_rv  = Errata(ERRATA_WARN, "This is a warning");
 
   auto &&[tr1, te1]{thing_rv};
   REQUIRE(te1.length() == 1);
@@ -206,9 +200,9 @@ TEST_CASE("Rv", "[libswoc][Errata]")
 };
 
 // DOC -> NoteInfo
-template < typename ...Args >
-Errata&
-NoteInfo(Errata & errata, std::string_view fmt, Args ... args) {
+template <typename... Args>
+Errata &
+NoteInfo(Errata &errata, std::string_view fmt, Args... args) {
   return errata.note_v(ERRATA_INFO, fmt, std::forward_as_tuple(args...));
 }
 // DOC -< NoteInfo
@@ -230,20 +224,21 @@ TEST_CASE("Errata API", "[libswoc][Errata]") {
   // Check that if an int is expected from a function, it can be changed to
   // @c Rv<int> without change at the call site.
   int size = -7;
-  auto f = [&] () -> Rv<int> {
-    if (size > 0) return size;
-    return { -1, Errata(ERRATA_ERROR, "No size, doofus!")};
+  auto f   = [&]() -> Rv<int> {
+    if (size > 0)
+      return size;
+    return {-1, Errata(ERRATA_ERROR, "No size, doofus!")};
   };
 
   int r1 = f();
   REQUIRE(r1 == -1);
-  size = 10;
+  size   = 10;
   int r2 = f();
   REQUIRE(r2 == 10);
 }
 
 TEST_CASE("Errata sink", "[libswoc][Errata]") {
-  auto & s = ErrataSinkText;
+  auto &s = ErrataSinkText;
   {
     Errata errata{ERRATA_ERROR, "Nominal failure"};
     NoteInfo(errata, "Some");
@@ -342,13 +337,16 @@ TEST_CASE("Errata glue", "[libswoc][Errata]") {
   REQUIRE("Error -> First, Second, Third" == s);
 }
 
-template < typename ... Args >
-Errata errata_errno(int err, Errata::Severity s, swoc::TextView fmt, Args && ... args) {
-  return Errata(std::error_code(err, std::system_category()), s, "{} - {}", swoc::bwf::SubText(fmt, std::forward_as_tuple<Args...>(args...)), swoc::bwf::Errno(err));
+template <typename... Args>
+Errata
+errata_errno(int err, Errata::Severity s, swoc::TextView fmt, Args &&...args) {
+  return Errata(std::error_code(err, std::system_category()), s, "{} - {}",
+                swoc::bwf::SubText(fmt, std::forward_as_tuple<Args...>(args...)), swoc::bwf::Errno(err));
 }
 
-template < typename ... Args >
-Errata errata_errno(Errata::Severity s, swoc::TextView fmt, Args && ... args) {
+template <typename... Args>
+Errata
+errata_errno(Errata::Severity s, swoc::TextView fmt, Args &&...args) {
   return errata_errno(errno, s, fmt, std::forward<Args>(args)...);
 }
 
@@ -357,7 +355,7 @@ TEST_CASE("Errata Wrapper", "[libswoc][errata]") {
   TextView tv2 = "ni";
 
   SECTION("no args") {
-    errno = EPERM;
+    errno       = EPERM;
     auto errata = errata_errno(ERRATA_ERROR, "no args");
     REQUIRE(errata.front().text().starts_with("no args - EPERM"));
   }
@@ -373,7 +371,7 @@ TEST_CASE("Errata Wrapper", "[libswoc][errata]") {
   }
 
   SECTION("args") {
-    errno = EINVAL;
+    errno       = EINVAL;
     auto errata = errata_errno(ERRATA_ERROR, "{} {}", tv2, tv1);
     REQUIRE(errata.front().text().starts_with("ni itchi - EINVAL"));
   }

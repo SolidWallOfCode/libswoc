@@ -18,8 +18,7 @@ using swoc::MemSpan;
 using swoc::TextView;
 using namespace swoc::literals;
 
-TEST_CASE("MemSpan", "[libswoc][MemSpan]")
-{
+TEST_CASE("MemSpan", "[libswoc][MemSpan]") {
   int32_t idx[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   char buff[1024];
 
@@ -120,21 +119,21 @@ TEST_CASE("MemSpan", "[libswoc][MemSpan]")
 
 TEST_CASE("MemSpan modifiers", "[libswoc][MemSpan]") {
   std::string text{"Evil Dave Rulz"};
-  char * pre = text.data();
-  char * post = text.data() + text.size();
+  char *pre  = text.data();
+  char *post = text.data() + text.size();
 
   SECTION("Typed") {
     MemSpan span{text};
 
     REQUIRE(0 == memcmp(span.clip_prefix(5), MemSpan(pre, 5)));
-    REQUIRE(0 == memcmp(span, MemSpan(pre+5, text.size() -5)));
+    REQUIRE(0 == memcmp(span, MemSpan(pre + 5, text.size() - 5)));
     span.assign(text.data(), text.size());
     REQUIRE(0 == memcmp(span.clip_suffix(5), MemSpan(post - 5, 5)));
     REQUIRE(0 == memcmp(span, MemSpan(pre, text.size() - 5)));
 
     MemSpan s1{"Evil Dave Rulz"};
     REQUIRE(s1.size() == 14); // terminal nul is not in view.
-    uint8_t bytes[]{5,4,3,2,1,0};
+    uint8_t bytes[]{5, 4, 3, 2, 1, 0};
     MemSpan s2{bytes};
     REQUIRE(s2.size() == sizeof(bytes)); // terminal nul is in view
   }
@@ -143,7 +142,7 @@ TEST_CASE("MemSpan modifiers", "[libswoc][MemSpan]") {
     MemSpan<void> span{text};
 
     REQUIRE(0 == memcmp(span.clip_prefix(5), MemSpan<void>(pre, 5)));
-    REQUIRE(0 == memcmp(span, MemSpan<void>(pre+5, text.size() -5)));
+    REQUIRE(0 == memcmp(span, MemSpan<void>(pre + 5, text.size() - 5)));
     span.assign(text.data(), text.size());
     REQUIRE(0 == memcmp(span.clip_suffix(5), MemSpan<void>(post - 5, 5)));
     REQUIRE(0 == memcmp(span, MemSpan<void>(pre, text.size() - 5)));
@@ -151,7 +150,7 @@ TEST_CASE("MemSpan modifiers", "[libswoc][MemSpan]") {
     // By design, MemSpan<void> won't construct from a literal string because it's const.
     // MemSpan<void> s1{"Evil Dave Rulz"}; // Should not compile.
 
-    uint8_t bytes[]{5,4,3,2,1,0};
+    uint8_t bytes[]{5, 4, 3, 2, 1, 0};
     MemSpan<void> s2{bytes};
     REQUIRE(s2.size() == sizeof(bytes)); // terminal nul is in view
   }
@@ -160,14 +159,14 @@ TEST_CASE("MemSpan modifiers", "[libswoc][MemSpan]") {
     MemSpan<void const> span{text};
 
     REQUIRE(0 == memcmp(span.clip_prefix(5), MemSpan<void const>(pre, 5)));
-    REQUIRE(0 == memcmp(span, MemSpan<void const>(pre+5, text.size() -5)));
+    REQUIRE(0 == memcmp(span, MemSpan<void const>(pre + 5, text.size() - 5)));
     span.assign(text.data(), text.size());
     REQUIRE(0 == memcmp(span.clip_suffix(5), MemSpan<void const>(post - 5, 5)));
     REQUIRE(0 == memcmp(span, MemSpan<void const>(pre, text.size() - 5)));
 
     MemSpan<void const> s1{"Evil Dave Rulz"};
     REQUIRE(s1.size() == 14); // terminal nul is not in view.
-    uint8_t bytes[]{5,4,3,2,1,0};
+    uint8_t bytes[]{5, 4, 3, 2, 1, 0};
     MemSpan<void const> s2{bytes};
     REQUIRE(s2.size() == sizeof(bytes)); // terminal nul is in view
   }
@@ -176,12 +175,8 @@ TEST_CASE("MemSpan modifiers", "[libswoc][MemSpan]") {
 TEST_CASE("MemSpan construct", "[libswoc][MemSpan]") {
   static unsigned counter = 0;
   struct Thing {
-    Thing(TextView s) : _s(s) {
-      ++counter;
-    }
-    ~Thing() {
-      --counter;
-    }
+    Thing(TextView s) : _s(s) { ++counter; }
+    ~Thing() { --counter; }
 
     unsigned _n = 56;
     std::string _s;
@@ -198,8 +193,7 @@ TEST_CASE("MemSpan construct", "[libswoc][MemSpan]") {
   REQUIRE(counter == 0);
 }
 
-TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
-{
+TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]") {
   TextView tv = "bike shed";
   char buff[1024];
 
@@ -209,7 +203,7 @@ TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
   CHECK_FALSE(cspan.is_same(ccspan));
   ccspan = span;
 
-//  auto bad_span = ccspan.rebind<uint8_t>(); // should not compile.
+  //  auto bad_span = ccspan.rebind<uint8_t>(); // should not compile.
 
   auto left = span.prefix(512);
   REQUIRE(left.size() == 512);
@@ -242,24 +236,23 @@ TEST_CASE("MemSpan<void>", "[libswoc][MemSpan]")
   REQUIRE(b.rebind<int>().size() == i.size() - 1);
 };
 
-TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
-{
+TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]") {
   std::array<int, 10> a1;
   std::string_view sv{"Evil Dave"};
   swoc::TextView tv{sv};
   std::string str{sv};
-  auto const & ra1 = a1;
-  auto ms1 = MemSpan<int>(a1); // construct from array
-  auto ms2 = MemSpan(a1); // construct from array, deduction guide
+  auto const &ra1 = a1;
+  auto ms1        = MemSpan<int>(a1); // construct from array
+  auto ms2        = MemSpan(a1);      // construct from array, deduction guide
   REQUIRE(ms2.size() == a1.size());
   auto ms3 = MemSpan<int const>(ra1); // construct from const array
   REQUIRE(ms3.size() == ra1.size());
   [[maybe_unused]] auto ms4 = MemSpan(ra1); // construct from const array, deduction guided.
   // Construct a span of constant from a const ref to an array with non-const type.
-  MemSpan<int const> ms5 { ra1 };
+  MemSpan<int const> ms5{ra1};
   REQUIRE(ms5.size() == ra1.size());
   // Construct a span of constant from a ref to an array with non-const type.
-  MemSpan<int const> ms6 { a1 };
+  MemSpan<int const> ms6{a1};
 
   MemSpan<void> va1{a1};
   REQUIRE(va1.size() == a1.size() * sizeof(*(a1.data())));
@@ -274,7 +267,7 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
   MemSpan<char const> c3{sv};
   [[maybe_unused]] MemSpan<char> c7{str};
   [[maybe_unused]] MemSpan<void> c4{str};
-  auto const & cstr {str};
+  auto const &cstr{str};
   MemSpan<char const> c8{cstr};
   REQUIRE(c8.size() == cstr.size());
   // [[maybe_unused]] MemSpan<char> c9{cstr}; // should not compile, const container to non-const span.
@@ -285,9 +278,9 @@ TEST_CASE("MemSpan conversions", "[libswoc][MemSpan]")
   [[maybe_unused]] MemSpan c10{sv};
   [[maybe_unused]] MemSpan c11{tv};
 
-  char const * args[] = { "alpha" , "bravo" , "charlie", "delta"};
-  MemSpan<char const *> span_args { args };
-  MemSpan<char const *> span2_args { span_args };
+  char const *args[] = {"alpha", "bravo", "charlie", "delta"};
+  MemSpan<char const *> span_args{args};
+  MemSpan<char const *> span2_args{span_args};
   REQUIRE(span_args.size() == 4);
   REQUIRE(span2_args.size() == 4);
 
@@ -301,11 +294,11 @@ TEST_CASE("MemSpan arena", "[libswoc][MemSpan]") {
   swoc::MemArena a;
 
   struct Thing {
-    size_t _n = 0;
-    void * _ptr = nullptr;
+    size_t _n  = 0;
+    void *_ptr = nullptr;
   };
 
-  auto span = a.alloc(sizeof(Thing)).rebind<Thing>();
+  auto span         = a.alloc(sizeof(Thing)).rebind<Thing>();
   MemSpan<void> raw = span;
   REQUIRE(raw.size() == sizeof(Thing));
   MemSpan<void const> craw = raw;

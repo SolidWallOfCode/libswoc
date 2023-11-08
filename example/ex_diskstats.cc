@@ -30,19 +30,20 @@ struct DiskInfo {
   std::vector<unsigned> data;
 };
 
-int main(int, char *[]) {
+int
+main(int, char *[]) {
   std::vector<DiskInfo> info;
   char buffer[1024];
 
   // Unfortunately because this isn't a regular file, @c swoc::file doesn't work.
   // The input must be streamed.
-  FILE * f = fopen("/proc/diskstats", "r");
+  FILE *f = fopen("/proc/diskstats", "r");
 
   while (fgets(buffer, sizeof(buffer), f)) {
     DiskInfo item;
     TextView txt{buffer, strlen(buffer)};
-    item.id = svtou(txt.ltrim(' ').take_prefix_at(' '));
-    item.idx = svtou(txt.ltrim(' ').take_prefix_at(' '));
+    item.id   = svtou(txt.ltrim(' ').take_prefix_at(' '));
+    item.idx  = svtou(txt.ltrim(' ').take_prefix_at(' '));
     item.name = txt.ltrim(' ').take_prefix_at(' ');
     while (txt.ltrim(' ')) {
       item.data.push_back(svtou(txt.take_prefix_at(' ')));
@@ -52,18 +53,20 @@ int main(int, char *[]) {
 
   std::cout << '[';
   bool comma = false;
-  for ( auto const& item : info) {
+  for (auto const &item : info) {
     if (comma) {
       std::cout << ",";
     }
-    std::cout << std::endl << "  " << "{" << std::endl;
-    std::cout << R"(  "id": )" << item.id << ',' <<std::endl;
+    std::cout << std::endl
+              << "  "
+              << "{" << std::endl;
+    std::cout << R"(  "id": )" << item.id << ',' << std::endl;
     std::cout << R"(  "index": )" << item.idx << ',' << std::endl;
     std::cout << W.clear().print(R"(  "name": "{}",)", item.name).write('\n');
     bool first = true;
     if (!item.data.empty()) {
       std::cout << R"(  "values": [)";
-      for ( auto n : item.data) {
+      for (auto n : item.data) {
         if (!first) {
           std::cout << ",";
         }
@@ -72,7 +75,8 @@ int main(int, char *[]) {
       }
       std::cout << std::endl << "    ]" << std::endl;
     }
-    std::cout << "  " << "}";
+    std::cout << "  "
+              << "}";
     comma = true;
   }
   std::cout << std::endl << ']' << std::endl;

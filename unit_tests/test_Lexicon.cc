@@ -17,8 +17,7 @@ enum class Example { INVALID, Value_0, Value_1, Value_2, Value_3 };
 
 using ExampleNames = swoc::Lexicon<Example>;
 
-namespace
-{
+namespace {
 
 // C++20: This compiles because one of the lists has more than 2 elements.
 // I think it's a g++ bug - it compiles in clang. The @c TextView constructor being used
@@ -26,62 +25,57 @@ namespace
 // then it doesn't compile as intended. Therefore g++ is accepting a constructor that doesn't work.
 // doc.cpp.20.bravo.start
 [[maybe_unused]] ExampleNames Static_Names_Basic{
-  {
-    {Example::Value_0, {"zero", "0", "none"}},
-    {Example::Value_1, {"one", "1"}},
-    {Example::Value_2, {"two", "2"}},
-    {Example::Value_3, {"three", "3"}},
-    {Example::INVALID, {"INVALID"}}
-  }
+  {{Example::Value_0, {"zero", "0", "none"}},
+   {Example::Value_1, {"one", "1"}},
+   {Example::Value_2, {"two", "2"}},
+   {Example::Value_3, {"three", "3"}},
+   {Example::INVALID, {"INVALID"}}}
 };
 // doc.cpp.20.bravo.end
 
 // Verify not using @c with_multi isn't ambiguous.
 // doc.cpp.20.alpha.start
 [[maybe_unused]] ExampleNames Static_Names_Multi{
-  {
-    {Example::Value_0, {"zero", "0"}},
-    {Example::Value_1, {"one", "1"}},
-    {Example::Value_2, {"two", "2"}},
-    {Example::Value_3, {"three", "3"}},
-    {Example::INVALID, {"INVALID"}}
-  }
+  {{Example::Value_0, {"zero", "0"}},
+   {Example::Value_1, {"one", "1"}},
+   {Example::Value_2, {"two", "2"}},
+   {Example::Value_3, {"three", "3"}},
+   {Example::INVALID, {"INVALID"}}}
 };
 // doc.cpp.20.alpha.end
 
 // If the type isn't easily accessible.
 [[maybe_unused]] ExampleNames Static_Names_Decl{
-  decltype(Static_Names_Decl)::with_multi{
-    {Example::Value_0, {"zero", "0"}},
-    {Example::Value_1, {"one", "1"}},
-    {Example::Value_2, {"two", "2"}},
-    {Example::Value_3, {"three", "3"}},
-    {Example::INVALID, {"INVALID"}}
-  }
+  decltype(Static_Names_Decl)::with_multi{{Example::Value_0, {"zero", "0"}},
+                                          {Example::Value_1, {"one", "1"}},
+                                          {Example::Value_2, {"two", "2"}},
+                                          {Example::Value_3, {"three", "3"}},
+                                          {Example::INVALID, {"INVALID"}}}
 };
 } // namespace
 
-TEST_CASE("Lexicon", "[libts][Lexicon]")
-{
-  ExampleNames exnames{ExampleNames::with_multi{
-                       {Example::Value_0, {"zero", "0"}},
-                       {Example::Value_1, {"one", "1"}},
-                       {Example::Value_2, {"two", "2"}},
-                       {Example::Value_3, {"three", "3"}}},
-                       Example::INVALID, "INVALID"
-  };
-
-  ExampleNames exnames2{{{Example::Value_0, {"zero", "nil"}},
-                         {Example::Value_1, {"one", "single", "mono"}},
-                         {Example::Value_2, {"two", "double"}},
-                         {Example::Value_3, {"three", "triple", "3-tuple"}}},
+TEST_CASE("Lexicon", "[libts][Lexicon]") {
+  ExampleNames exnames{
+    ExampleNames::with_multi{{Example::Value_0, {"zero", "0"}},
+                             {Example::Value_1, {"one", "1"}},
+                             {Example::Value_2, {"two", "2"}},
+                             {Example::Value_3, {"three", "3"}}},
     Example::INVALID, "INVALID"
   };
 
+  ExampleNames exnames2{
+    {{Example::Value_0, {"zero", "nil"}},
+     {Example::Value_1, {"one", "single", "mono"}},
+     {Example::Value_2, {"two", "double"}},
+     {Example::Value_3, {"three", "triple", "3-tuple"}}},
+    Example::INVALID,
+    "INVALID"
+  };
+
   // Check constructing with just defaults.
-  ExampleNames def_names_1 { Example::INVALID };
-  ExampleNames def_names_2 { "INVALID" };
-  ExampleNames def_names_3 { Example::INVALID, "INVALID" };
+  ExampleNames def_names_1{Example::INVALID};
+  ExampleNames def_names_2{"INVALID"};
+  ExampleNames def_names_3{Example::INVALID, "INVALID"};
 
   exnames.set_default(Example::INVALID).set_default("INVALID");
 
@@ -104,11 +98,11 @@ TEST_CASE("Lexicon", "[libts][Lexicon]")
   enum class Radio { INVALID, ALPHA, BRAVO, CHARLIE, DELTA };
   using Lex = swoc::Lexicon<Radio>;
   Lex lex(Lex::with_multi{
-    {Radio::INVALID, {"Invalid"}},
-           {Radio::ALPHA, {"Alpha"}},
-           {Radio::BRAVO, {"Bravo", "Beta"}},
-           {Radio::CHARLIE, {"Charlie"}},
-           {Radio::DELTA, {"Delta"}}
+    {Radio::INVALID, {"Invalid"}      },
+    {Radio::ALPHA,   {"Alpha"}        },
+    {Radio::BRAVO,   {"Bravo", "Beta"}},
+    {Radio::CHARLIE, {"Charlie"}      },
+    {Radio::DELTA,   {"Delta"}        }
   });
 
   // test structured binding for iteration.
@@ -125,10 +119,11 @@ enum Hex { A, B, C, D, E, F, INVALID };
 using ValueLexicon = swoc::Lexicon<Values>;
 using HexLexicon   = swoc::Lexicon<Hex>;
 
-TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
-{
+TEST_CASE("Lexicon Constructor", "[libts][Lexicon]") {
   // Construct with a secondary name for NoValue
-  ValueLexicon vl{ValueLexicon::with_multi{{NoValue, {"NoValue", "garbage"}}, {LowValue, {"LowValue"}}}};
+  ValueLexicon vl{
+    ValueLexicon::with_multi{{NoValue, {"NoValue", "garbage"}}, {LowValue, {"LowValue"}}}
+  };
 
   REQUIRE("LowValue" == vl[LowValue]);                 // Primary name
   REQUIRE(NoValue == vl["NoValue"]);                   // Primary name
@@ -155,7 +150,12 @@ TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
   // Check default handlers.
   using LL         = swoc::Lexicon<Hex>;
   bool bad_value_p = false;
-  LL ll_1({{A, "A"}, {B, "B"}, {C, "C"}, {E, "E"}});
+  LL ll_1({
+    {A, "A"},
+    {B, "B"},
+    {C, "C"},
+    {E, "E"}
+  });
   ll_1.set_default([&bad_value_p](std::string_view name) mutable -> Hex {
     bad_value_p = true;
     return INVALID;
@@ -182,8 +182,11 @@ TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
   REQUIRE(INVALID == ll_1["INVALID"]);
   REQUIRE(bad_value_p == false);
 
-  ll_1.define({D, "D"});          // Pair style
-  ll_1.define(LL::Definition{F, {"F", "0xf"}}); // Definition style
+  ll_1.define({D, "D"}); // Pair style
+  ll_1.define(LL::Definition{
+    F,
+    {"F", "0xf"}
+  }); // Definition style
   REQUIRE(ll_1[D] == "D");
   REQUIRE(ll_1["0XF"] == F);
 
@@ -202,9 +205,9 @@ TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
   ValueLexicon v2(std::move(vl));
   REQUIRE(vl.count() == 0);
 
-  REQUIRE("LowValue" == v2[LowValue]);                 // Primary name
-  REQUIRE(NoValue == v2["NoValue"]);                   // Primary name
-  REQUIRE(NoValue == v2["garbage"]);                   // Secondary name
+  REQUIRE("LowValue" == v2[LowValue]); // Primary name
+  REQUIRE(NoValue == v2["NoValue"]);   // Primary name
+  REQUIRE(NoValue == v2["garbage"]);   // Secondary name
 
   REQUIRE(HighValue == v2["highVALUE"]);
   REQUIRE(HighValue == v2["HIGH_VALUE"]);
@@ -213,24 +216,48 @@ TEST_CASE("Lexicon Constructor", "[libts][Lexicon]")
   // A few more checks on primary/secondary.
   REQUIRE("Priceless" == v2[Priceless]);
   REQUIRE(Priceless == v2["unique"]);
-
 };
 
-TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")
-{
+TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]") {
   // Check the various construction cases
   // No defaults, value default, name default, both, both the other way.
-  const HexLexicon v1(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}});
+  const HexLexicon v1(HexLexicon::with_multi{
+    {A, {"A", "ten"}   },
+    {B, {"B", "eleven"}}
+  });
 
-  const HexLexicon v2(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID);
+  const HexLexicon v2(
+    HexLexicon::with_multi{
+      {A, {"A", "ten"}   },
+      {B, {"B", "eleven"}}
+  },
+    INVALID);
 
-  const HexLexicon v3(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, "Invalid");
+  const HexLexicon v3(
+    HexLexicon::with_multi{
+      {A, {"A", "ten"}   },
+      {B, {"B", "eleven"}}
+  },
+    "Invalid");
 
-  const HexLexicon v4(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, "Invalid", INVALID);
+  const HexLexicon v4(
+    HexLexicon::with_multi{
+      {A, {"A", "ten"}   },
+      {B, {"B", "eleven"}}
+  },
+    "Invalid", INVALID);
 
-  const HexLexicon v5{HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, INVALID, "Invalid"};
+  const HexLexicon v5{
+    HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}},
+    INVALID, "Invalid"
+  };
 
-  const HexLexicon v6(HexLexicon::with_multi{{A, {"A", "ten"}}, {B, {"B", "eleven"}}}, {INVALID});
+  const HexLexicon v6(
+    HexLexicon::with_multi{
+      {A, {"A", "ten"}   },
+      {B, {"B", "eleven"}}
+  },
+    {INVALID});
 
   REQUIRE(v1["a"] == A);
   REQUIRE(v2["q"] == INVALID);
@@ -242,6 +269,6 @@ TEST_CASE("Lexicon Constructor 2", "[libts][Lexicon]")
 
   // Y! usages.
   static constexpr unsigned INVALID_LOCATION = std::numeric_limits<unsigned>::max();
-  [[maybe_unused]] swoc::Lexicon<unsigned> _locations1 {INVALID_LOCATION};
-  [[maybe_unused]] swoc::Lexicon<unsigned> _locations2 {{INVALID_LOCATION}};
+  [[maybe_unused]] swoc::Lexicon<unsigned> _locations1{INVALID_LOCATION};
+  [[maybe_unused]] swoc::Lexicon<unsigned> _locations2{{INVALID_LOCATION}};
 }

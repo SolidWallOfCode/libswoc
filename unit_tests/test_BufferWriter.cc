@@ -29,15 +29,12 @@
 using swoc::TextView;
 using swoc::MemSpan;
 
-namespace
-{
+namespace {
 std::string_view three[] = {"a", "", "bcd"};
 }
 
-TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
-{
-  class X : public swoc::BufferWriter
-  {
+TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]") {
+  class X : public swoc::BufferWriter {
     size_t i, j;
 
   public:
@@ -46,8 +43,7 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     X() : i(0), j(0), good(true) {}
 
     X &
-    write(char c) override
-    {
+    write(char c) override {
       while (j == three[i].size()) {
         ++i;
         j = 0;
@@ -63,35 +59,42 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     }
 
     bool
-    error() const override
-    {
+    error() const override {
       return false;
     }
 
     // Dummies.
     const char *
-    data() const override
-    {
+    data() const override {
       return nullptr;
     }
     size_t
-    capacity() const override
-    {
+    capacity() const override {
       return 0;
     }
     size_t
-    extent() const override
-    {
+    extent() const override {
       return 0;
     }
     X &restrict(size_t) override { return *this; }
-    X &restore(size_t) override { return *this; }
-    bool commit(size_t) override { return true; }
-    X &discard(size_t) override { return *this; }
-    X &copy(size_t, size_t, size_t) override { return *this; }
+    X &
+    restore(size_t) override {
+      return *this;
+    }
+    bool
+    commit(size_t) override {
+      return true;
+    }
+    X &
+    discard(size_t) override {
+      return *this;
+    }
+    X &
+    copy(size_t, size_t, size_t) override {
+      return *this;
+    }
     std::ostream &
-    operator>>(std::ostream &stream) const override
-    {
+    operator>>(std::ostream &stream) const override {
       return stream;
     }
   };
@@ -103,13 +106,11 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
   REQUIRE(x.good);
 }
 
-namespace
-{
+namespace {
 template <size_t N> using LBW = swoc::LocalBufferWriter<N>;
 }
 
-TEST_CASE("Minimal Local Buffer Writer", "[BWLM]")
-{
+TEST_CASE("Minimal Local Buffer Writer", "[BWLM]") {
   LBW<1> bw;
 
   REQUIRE(!((bw.capacity() != 1) or (bw.size() != 0) or bw.error() or (bw.remaining() != 1)));
@@ -131,12 +132,10 @@ TEST_CASE("Minimal Local Buffer Writer", "[BWLM]")
   REQUIRE(bw.view() == "#");
 }
 
-namespace
-{
+namespace {
 template <class BWType>
 bool
-twice(BWType &bw)
-{
+twice(BWType &bw) {
   if ((bw.capacity() != 20) or (bw.size() != 0) or bw.error() or (bw.remaining() != 20)) {
     return false;
   }
@@ -250,8 +249,7 @@ twice(BWType &bw)
 
 } // end anonymous namespace
 
-TEST_CASE("Discard Buffer Writer", "[BWD]")
-{
+TEST_CASE("Discard Buffer Writer", "[BWD]") {
   char scratch[1] = {'!'};
   swoc::FixedBufferWriter bw(scratch, 0);
 
@@ -295,8 +293,7 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
   REQUIRE(scratch[0] == '!');
 }
 
-TEST_CASE("LocalBufferWriter discard/restore", "[BWD]")
-{
+TEST_CASE("LocalBufferWriter discard/restore", "[BWD]") {
   swoc::LocalBufferWriter<10> bw;
 
   bw.restrict(7);
@@ -316,10 +313,10 @@ TEST_CASE("Writing", "[BW]") {
   swoc::LocalBufferWriter<1024> bw;
 
   // Test run length encoding.
-  TextView s1 = "Delain";
-  TextView s2 = "Nightwish";
-  uint8_t const r[] = { uint8_t(s1.size()), 'D', 'e', 'l', 'a', 'i', 'n'
-                 , uint8_t(s2.size()), 'N', 'i', 'g', 'h', 't', 'w','i','s','h' };
+  TextView s1       = "Delain";
+  TextView s2       = "Nightwish";
+  uint8_t const r[] = {
+    uint8_t(s1.size()), 'D', 'e', 'l', 'a', 'i', 'n', uint8_t(s2.size()), 'N', 'i', 'g', 'h', 't', 'w', 'i', 's', 'h'};
 
   bw.print("{}{}{}{}", char(s1.size()), s1, char(s2.size()), s2);
   auto result{swoc::MemSpan{bw.view()}.rebind<uint8_t const>()};
@@ -328,8 +325,7 @@ TEST_CASE("Writing", "[BW]") {
   REQUIRE(MemSpan(r) == result);
 }
 
-TEST_CASE("ArenaWriter write", "[BW][ArenaWriter]")
-{
+TEST_CASE("ArenaWriter write", "[BW][ArenaWriter]") {
   swoc::MemArena arena{256};
   swoc::ArenaWriter aw{arena};
   std::array<char, 85> buffer;
@@ -351,8 +347,8 @@ TEST_CASE("ArenaWriter write", "[BW][ArenaWriter]")
   // The allocated data should be identical to that in the writer.
   REQUIRE(0 == memcmp(span.data(), aw.data(), span.size()));
 
-  bool valid_p      = true;
-  auto tv = swoc::TextView(span.rebind<char>());
+  bool valid_p = true;
+  auto tv      = swoc::TextView(span.rebind<char>());
   try {
     for (char c = 'a'; c <= 'z'; ++c) {
       for (size_t i = 0; i < buffer.size(); ++i) {
@@ -367,8 +363,7 @@ TEST_CASE("ArenaWriter write", "[BW][ArenaWriter]")
   REQUIRE(valid_p == true);
 }
 
-TEST_CASE("ArenaWriter print", "[BW][ArenaWriter]")
-{
+TEST_CASE("ArenaWriter print", "[BW][ArenaWriter]") {
   swoc::MemArena arena{256};
   swoc::ArenaWriter aw{arena};
   std::array<char, 85> buffer;
@@ -391,8 +386,8 @@ TEST_CASE("ArenaWriter print", "[BW][ArenaWriter]")
   // The allocated data should be identical to that in the writer.
   REQUIRE(0 == memcmp(span.data(), aw.data(), span.size()));
 
-  bool valid_p      = true;
-  auto tv = swoc::TextView(span);
+  bool valid_p = true;
+  auto tv      = swoc::TextView(span);
   try {
     for (char c = 'a'; c <= 'z'; ++c) {
       for (size_t i = 0; i < buffer.size(); ++i) {

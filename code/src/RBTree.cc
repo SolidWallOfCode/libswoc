@@ -343,11 +343,9 @@ RBNode::left_most_descendant() const -> self_type * {
   const self_type *n = this;
   while (n->_left) {
     n = n->_left;
-}
+  }
 
   return const_cast<self_type *>(n);
 }
 
-}  // namespace detail
-}  // namespace SWOC_VERSION_NS
-}  // namespace swoc
+}}} // namespace swoc::SWOC_VERSION_NS::detail

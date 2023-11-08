@@ -19,15 +19,15 @@ using swoc::TextView;
 using namespace swoc::literals;
 
 // CSV parsing.
-namespace
-{
+namespace {
 // Standard results array so these names can be used repeatedly.
-std::array<TextView, 6> alphabet{{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot"}};
+std::array<TextView, 6> alphabet{
+  {"alpha", "bravo", "charlie", "delta", "echo", "foxtrot"}
+};
 
 // -- doc csv start
 void
-parse_csv(TextView src, std::function<void(TextView)> const &f)
-{
+parse_csv(TextView src, std::function<void(TextView)> const &f) {
   while (src.ltrim_if(&isspace)) {
     TextView token{src.take_prefix_at(',').rtrim_if(&isspace)};
     if (token) { // skip empty tokens (double separators)
@@ -39,8 +39,7 @@ parse_csv(TextView src, std::function<void(TextView)> const &f)
 
 // -- doc csv non-empty start
 void
-parse_csv_non_empty(TextView src, std::function<void(TextView)> const &f)
-{
+parse_csv_non_empty(TextView src, std::function<void(TextView)> const &f) {
   TextView token;
   while ((token = src.take_prefix_at(',').trim_if(&isspace))) {
     f(token);
@@ -50,8 +49,7 @@ parse_csv_non_empty(TextView src, std::function<void(TextView)> const &f)
 
 // -- doc kv start
 void
-parse_kw(TextView src, std::function<void(TextView, TextView)> const &f)
-{
+parse_kw(TextView src, std::function<void(TextView, TextView)> const &f) {
   while (src) {
     TextView value{src.take_prefix_at(',').trim_if(&isspace)};
     if (value) {
@@ -65,18 +63,16 @@ parse_kw(TextView src, std::function<void(TextView, TextView)> const &f)
 
 } // namespace
 
-TEST_CASE("TextView Example CSV", "[libswoc][example][textview][csv]")
-{
-  char const *src = "alpha,bravo,  charlie,delta  ,  echo  ,, ,foxtrot";
+TEST_CASE("TextView Example CSV", "[libswoc][example][textview][csv]") {
+  char const *src           = "alpha,bravo,  charlie,delta  ,  echo  ,, ,foxtrot";
   char const *src_non_empty = "alpha,bravo,  charlie,   delta, echo  ,foxtrot";
-  int idx         = 0;
+  int idx                   = 0;
   parse_csv(src, [&](TextView tv) -> void { REQUIRE(tv == alphabet[idx++]); });
   idx = 0;
   parse_csv_non_empty(src_non_empty, [&](TextView tv) -> void { REQUIRE(tv == alphabet[idx++]); });
 };
 
-TEST_CASE("TextView Example KW", "[libswoc][example][textview][kw]")
-{
+TEST_CASE("TextView Example KW", "[libswoc][example][textview][kw]") {
   TextView src{"alpha=1, bravo= 2,charlie = 3,  delta =4  ,echo ,, ,foxtrot=6"};
   size_t idx = 0;
   parse_kw(src, [&](TextView key, TextView value) -> void {
@@ -91,8 +87,7 @@ TEST_CASE("TextView Example KW", "[libswoc][example][textview][kw]")
 
 // Example: streaming token parsing, with quote stripping.
 
-TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
-{
+TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]") {
   auto tokenizer = [](TextView &src, char sep, bool strip_quotes_p = true) -> TextView {
     TextView::size_type idx = 0;
     // Characters of interest in a null terminated string.
@@ -204,8 +199,7 @@ TEST_CASE("TextView Tokens", "[libswoc][example][textview][tokens]")
 
 // Example: line parsing from a file.
 
-TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
-{
+TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]") {
   swoc::file::path path{"doc/conf.py"};
   std::error_code ec;
 
@@ -227,8 +221,7 @@ TEST_CASE("TextView Lines", "[libswoc][example][textview][lines]")
 #include <set>
 #include "swoc/swoc_ip.h"
 
-TEST_CASE("TextView misc", "[libswoc][example][textview][misc]")
-{
+TEST_CASE("TextView misc", "[libswoc][example][textview][misc]") {
   TextView src = "  alpha.bravo.old:charlie.delta.old  :  echo.foxtrot.old  ";
   REQUIRE("alpha.bravo" == src.take_prefix_at(':').remove_suffix_at('.').ltrim_if(&isspace));
   REQUIRE("charlie.delta" == src.take_prefix_at(':').remove_suffix_at('.').ltrim_if(&isspace));
@@ -237,48 +230,43 @@ TEST_CASE("TextView misc", "[libswoc][example][textview][misc]")
 }
 
 TEST_CASE("TextView parsing", "[libswoc][example][text][parsing]") {
-  static const std::set<std::string_view> DC_TAGS {
-      "amb", "ata", "aue", "bga", "bra", "cha", "coa", "daa", "dca", "deb", "dnb", "esa", "fra", "frb"
-    , "hkb", "inc", "ir2", "jpa", "laa", "lob", "mib"
-    , "nya", "rob", "seb", "sgb", "sja", "swb", "tpb", "twb", "via", "waa"
-  };
+  static const std::set<std::string_view> DC_TAGS{"amb", "ata", "aue", "bga", "bra", "cha", "coa", "daa", "dca", "deb", "dnb",
+                                                  "esa", "fra", "frb", "hkb", "inc", "ir2", "jpa", "laa", "lob", "mib", "nya",
+                                                  "rob", "seb", "sgb", "sja", "swb", "tpb", "twb", "via", "waa"};
   TextView parsed;
   swoc::IP4Addr addr;
 
   std::error_code ec;
-  auto data { swoc::file::load("unit_tests/examples/resolver.txt"_tv, ec) };
+  auto data{swoc::file::load("unit_tests/examples/resolver.txt"_tv, ec)};
   REQUIRE(data.size() > 2); // if this fails, there's something wrong with the path or current directory.
 
-  TextView content { data };
+  TextView content{data};
   while (content) {
-    auto line { content.take_prefix_at('\n').trim_if(&isspace) }; // get the next line.
-    if (line.empty() || *line == '#') { // skip empty and lines starting with '#'
+    auto line{content.take_prefix_at('\n').trim_if(&isspace)}; // get the next line.
+    if (line.empty() || *line == '#') {                        // skip empty and lines starting with '#'
       continue;
     }
-    auto addr_txt = line.take_prefix_at(';');
-    auto conf_txt = line.ltrim_if(&isspace).take_prefix_if(&isspace);
+    auto addr_txt  = line.take_prefix_at(';');
+    auto conf_txt  = line.ltrim_if(&isspace).take_prefix_if(&isspace);
     auto dcnum_txt = line.ltrim_if(&isspace).take_prefix_if(&isspace);
-    auto dc_txt = line.ltrim_if(&isspace).take_prefix_if(&isspace);
+    auto dc_txt    = line.ltrim_if(&isspace).take_prefix_if(&isspace);
 
     // First element must be a valid IPv4 address.
     REQUIRE(addr.load(addr_txt) == true);
 
     // Confidence value must be an unsigned integer after the '='.
-    auto conf_value {conf_txt.split_suffix_at('=')};
+    auto conf_value{conf_txt.split_suffix_at('=')};
     swoc::svtou(conf_value, &parsed);
     REQUIRE(conf_value == parsed); // valid integer
 
     // Number of elements in @a dc_txt - verify it's an integer.
-    auto dcnum_value {dcnum_txt.split_suffix_at('=')};
+    auto dcnum_value{dcnum_txt.split_suffix_at('=')};
     auto dc_n = swoc::svtou(dcnum_value, &parsed);
     REQUIRE(dcnum_value == parsed); // valid integer
 
     // Verify the expected prefix for the DC list.
-    static constexpr TextView DC_PREFIX { "dc=[" };
-    if (!dc_txt.starts_with(DC_PREFIX) ||
-      dc_txt.remove_prefix(DC_PREFIX.size()).empty() ||
-      dc_txt.back() != ']'
-    ) {
+    static constexpr TextView DC_PREFIX{"dc=["};
+    if (!dc_txt.starts_with(DC_PREFIX) || dc_txt.remove_prefix(DC_PREFIX.size()).empty() || dc_txt.back() != ']') {
       continue;
     }
 
@@ -286,8 +274,8 @@ TEST_CASE("TextView parsing", "[libswoc][example][text][parsing]") {
     // walk the comma separated tokens
     unsigned dc_count = 0;
     while (dc_txt) {
-      auto key   = dc_txt.take_prefix_at(',');
-      auto value = key.take_suffix_at('=');
+      auto key                = dc_txt.take_prefix_at(',');
+      auto value              = key.take_suffix_at('=');
       [[maybe_unused]] auto n = swoc::svtou(value, &parsed);
       // Each element must be one of the known tags, followed by '=' and an integer.
       REQUIRE(parsed == value); // value integer.

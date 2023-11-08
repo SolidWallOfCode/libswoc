@@ -40,19 +40,16 @@ static constexpr std::string_view CHARS{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLM
 std::uniform_int_distribution<short> char_gen{0, short(CHARS.size() - 1)};
 std::minstd_rand randu;
 
-namespace
-{
+namespace {
 TextView
-localize(MemArena &arena, TextView const &view)
-{
+localize(MemArena &arena, TextView const &view) {
   auto span = arena.alloc(view.size()).rebind<char>();
   memcpy(span, view);
   return span;
 }
 } // namespace
 
-TEST_CASE("MemArena generic", "[libswoc][MemArena]")
-{
+TEST_CASE("MemArena generic", "[libswoc][MemArena]") {
   swoc::MemArena arena{64};
   REQUIRE(arena.size() == 0);
   REQUIRE(arena.reserved_size() == 0);
@@ -86,8 +83,7 @@ TEST_CASE("MemArena generic", "[libswoc][MemArena]")
   REQUIRE(span2.data() >= span1.data_end());
 }
 
-TEST_CASE("MemArena freeze and thaw", "[libswoc][MemArena]")
-{
+TEST_CASE("MemArena freeze and thaw", "[libswoc][MemArena]") {
   MemArena arena;
   MemSpan span1{arena.alloc(1024)};
   REQUIRE(span1.size() == 1024);
@@ -148,8 +144,7 @@ TEST_CASE("MemArena freeze and thaw", "[libswoc][MemArena]")
   REQUIRE(arena.reserved_size() < 2 * 32000);
 }
 
-TEST_CASE("MemArena helper", "[libswoc][MemArena]")
-{
+TEST_CASE("MemArena helper", "[libswoc][MemArena]") {
   struct Thing {
     int ten{10};
     std::string name{"name"};
@@ -212,8 +207,7 @@ TEST_CASE("MemArena helper", "[libswoc][MemArena]")
   REQUIRE(thing_one->name == "Persia");
 }
 
-TEST_CASE("MemArena large alloc", "[libswoc][MemArena]")
-{
+TEST_CASE("MemArena large alloc", "[libswoc][MemArena]") {
   swoc::MemArena arena;
   auto s = arena.alloc(4000);
   REQUIRE(s.size() == 4000);
@@ -239,8 +233,7 @@ TEST_CASE("MemArena large alloc", "[libswoc][MemArena]")
   }
 }
 
-TEST_CASE("MemArena block allocation", "[libswoc][MemArena]")
-{
+TEST_CASE("MemArena block allocation", "[libswoc][MemArena]") {
   swoc::MemArena arena{64};
   swoc::MemSpan s  = arena.alloc(32).rebind<char>();
   swoc::MemSpan s2 = arena.alloc(16).rebind<char>();
@@ -262,8 +255,7 @@ TEST_CASE("MemArena block allocation", "[libswoc][MemArena]")
   REQUIRE((char *)s.begin() + 64 == s3.end());
 }
 
-TEST_CASE("MemArena full blocks", "[libswoc][MemArena]")
-{
+TEST_CASE("MemArena full blocks", "[libswoc][MemArena]") {
   // couple of large allocations - should be exactly sized in the generation.
   size_t init_size = 32000;
   swoc::MemArena arena(init_size);
@@ -286,8 +278,7 @@ TEST_CASE("MemArena full blocks", "[libswoc][MemArena]")
   REQUIRE(std::all_of(m3.begin(), m3.end(), [](char c) { return 0x56 == c; }));
 }
 
-TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
-{
+TEST_CASE("MemArena esoterica", "[libswoc][MemArena]") {
   MemArena a1;
   MemSpan<char> span;
 
@@ -345,7 +336,7 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
   }
 
   { // as previous but delay construction. Use internal functor instead of a lambda.
-    std::unique_ptr<MemArena, void (*)(MemArena*)> arena(nullptr, MemArena::destroyer);
+    std::unique_ptr<MemArena, void (*)(MemArena *)> arena(nullptr, MemArena::destroyer);
     arena.reset(MemArena::construct_self_contained());
     static constexpr unsigned MAX = 512;
     std::uniform_int_distribution<unsigned> length_gen{6, MAX};
@@ -390,8 +381,7 @@ TEST_CASE("MemArena esoterica", "[libswoc][MemArena]")
 }
 
 // --- temporary allocation
-TEST_CASE("MemArena temporary", "[libswoc][MemArena][tmp]")
-{
+TEST_CASE("MemArena temporary", "[libswoc][MemArena][tmp]") {
   MemArena arena;
   std::vector<std::string_view> strings;
 
@@ -451,22 +441,22 @@ TEST_CASE("FixedArena", "[libswoc][FixedArena]") {
   MemArena arena;
   FixedArena<Thing> fa{arena};
 
-  [[maybe_unused]] Thing * one = fa.make();
-  Thing * two = fa.make();
-  two->x = 17;
-  two->name = "Bob";
+  [[maybe_unused]] Thing *one = fa.make();
+  Thing *two                  = fa.make();
+  two->x                      = 17;
+  two->name                   = "Bob";
   fa.destroy(two);
-  Thing * three = fa.make();
-  REQUIRE(three == two); // reused instance.
+  Thing *three = fa.make();
+  REQUIRE(three == two);  // reused instance.
   REQUIRE(three->x == 0); // but reconstructed.
   REQUIRE(three->name.empty() == true);
   fa.destroy(three);
-  std::array<Thing*, 17> things;
-  for ( auto & ptr : things ) {
+  std::array<Thing *, 17> things;
+  for (auto &ptr : things) {
     ptr = fa.make();
   }
   two = things[things.size() - 1];
-  for ( auto & ptr : things) {
+  for (auto &ptr : things) {
     fa.destroy(ptr);
   }
   three = fa.make();
@@ -478,19 +468,20 @@ TEST_CASE("FixedArena", "[libswoc][FixedArena]") {
 // toolsets, so if undefined that's OK.
 #if __has_include(<memory_resource>) && ( !defined(_GLIBCXX_USE_CXX11_ABI) || _GLIBCXX_USE_CXX11_ABI)
 struct PMR {
-  bool* _flag;
-  PMR(bool& flag) : _flag(&flag) {}
-  PMR(PMR && that) : _flag(that._flag) {
-    that._flag = nullptr;
+  bool *_flag;
+  PMR(bool &flag) : _flag(&flag) {}
+  PMR(PMR &&that) : _flag(that._flag) { that._flag = nullptr; }
+  ~PMR() {
+    if (_flag)
+      *_flag = true;
   }
-  ~PMR() { if (_flag) *_flag = true; }
 };
 
 // External container using a MemArena.
 TEST_CASE("PMR 1", "[libswoc][arena][pmr]") {
-  static const std::pmr::string BRAVO { "bravo bravo bravo bravo"}; // avoid small string opt.
-  using C = std::pmr::map<std::pmr::string, PMR>;
-  bool flags[3] = { false, false, false };
+  static const std::pmr::string BRAVO{"bravo bravo bravo bravo"}; // avoid small string opt.
+  using C       = std::pmr::map<std::pmr::string, PMR>;
+  bool flags[3] = {false, false, false};
   MemArena arena;
   {
     C c{&arena};
@@ -516,13 +507,13 @@ TEST_CASE("PMR 1", "[libswoc][arena][pmr]") {
 
 // Container inside MemArena, using the MemArena.
 TEST_CASE("PMR 2", "[libswoc][arena][pmr]") {
-  using C = std::pmr::map<std::pmr::string, PMR>;
-  bool flags[3] = { false, false, false };
+  using C       = std::pmr::map<std::pmr::string, PMR>;
+  bool flags[3] = {false, false, false};
   {
-    static const std::pmr::string BRAVO { "bravo bravo bravo bravo"}; // avoid small string opt.
+    static const std::pmr::string BRAVO{"bravo bravo bravo bravo"}; // avoid small string opt.
     MemArena arena;
     REQUIRE(arena.size() == 0);
-    C *c = arena.make<C>(&arena);
+    C *c      = arena.make<C>(&arena);
     auto base = arena.size();
     REQUIRE(base > 0);
 
@@ -548,7 +539,7 @@ TEST_CASE("PMR 3", "[libswoc][arena][pmr]") {
   using C = std::pmr::set<std::pmr::string>;
   MemArena arena;
   REQUIRE(arena.size() == 0);
-  C *c = arena.make<C>(&arena);
+  C *c      = arena.make<C>(&arena);
   auto base = arena.size();
   REQUIRE(base > 0);
 
@@ -569,8 +560,8 @@ TEST_CASE("PMR 3", "[libswoc][arena][pmr]") {
   auto pre = arena.allocated_size();
   arena.freeze();
   // Copy the set into the arena.
-  C *gc = arena.make<C>(&arena);
-  *gc = *c;
+  C *gc       = arena.make<C>(&arena);
+  *gc         = *c;
   auto frozen = arena.allocated_size();
   REQUIRE(frozen > pre);
   // Sparse set should be in the frozen memory, and discarded.
@@ -580,11 +571,12 @@ TEST_CASE("PMR 3", "[libswoc][arena][pmr]") {
   REQUIRE(pre > post);
 }
 
-TEST_CASE("MemArena static", "[libswoc][MemArena][static]")
-{
+TEST_CASE("MemArena static", "[libswoc][MemArena][static]") {
   static constexpr size_t SIZE = 2048;
   std::byte buffer[SIZE];
-  MemArena arena{{buffer, SIZE}};
+  MemArena arena{
+    {buffer, SIZE}
+  };
 
   REQUIRE(arena.remaining() > 0);
   REQUIRE(arena.remaining() < SIZE);

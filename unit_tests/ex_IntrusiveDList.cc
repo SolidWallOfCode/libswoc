@@ -34,8 +34,7 @@
 
 using swoc::IntrusiveDList;
 
-class Message
-{
+class Message {
   using self_type = Message; ///< Self reference type.
 
 public:
@@ -62,31 +61,27 @@ protected:
 };
 
 auto
-Message::Linkage::next_ptr(self_type *that) -> self_type *&
-{
+Message::Linkage::next_ptr(self_type *that) -> self_type *& {
   return that->_link._next;
 }
 auto
-Message::Linkage::prev_ptr(self_type *that) -> self_type *&
-{
+Message::Linkage::prev_ptr(self_type *that) -> self_type *& {
   return that->_link._prev;
 }
 
 bool
-Message::is_in_list() const
-{
+Message::is_in_list() const {
   return _link._next || _link._prev;
 }
 
-class Container
-{
+class Container {
   using self_type   = Container;
   using MessageList = IntrusiveDList<Message::Linkage>;
 
 public:
   ~Container();
 
-  template <typename... Args> self_type &debug(std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &debug(std::string_view fmt, Args &&...args);
 
   size_t count() const;
   self_type &clear();
@@ -97,14 +92,12 @@ protected:
   MessageList _msgs;
 };
 
-Container::~Container()
-{
+Container::~Container() {
   this->clear(); // clean up memory.
 }
 
 auto
-Container::clear() -> self_type &
-{
+Container::clear() -> self_type & {
   Message *msg;
   while (nullptr != (msg = _msgs.take_head())) {
     delete msg;
@@ -114,15 +107,13 @@ Container::clear() -> self_type &
 }
 
 size_t
-Container::count() const
-{
+Container::count() const {
   return _msgs.count();
 }
 
 template <typename... Args>
 auto
-Container::debug(std::string_view fmt, Args &&... args) -> self_type &
-{
+Container::debug(std::string_view fmt, Args &&...args) -> self_type & {
   Message *msg = new Message;
   swoc::bwprint_v(msg->_text, fmt, std::forward_as_tuple(args...));
   msg->_severity = Message::LVL_DEBUG;
@@ -131,23 +122,20 @@ Container::debug(std::string_view fmt, Args &&... args) -> self_type &
 }
 
 Message::Severity
-Container::max_severity() const
-{
+Container::max_severity() const {
   auto spot = std::max_element(_msgs.begin(), _msgs.end(),
                                [](Message const &lhs, Message const &rhs) { return lhs._severity < rhs._severity; });
   return spot == _msgs.end() ? Message::Severity::LVL_DEBUG : spot->_severity;
 }
 
 void
-Container::print() const
-{
+Container::print() const {
   for (auto &&elt : _msgs) {
     std::cout << static_cast<unsigned int>(elt._severity) << ": " << elt._text << std::endl;
   }
 }
 
-TEST_CASE("IntrusiveDList Example", "[libswoc][IntrusiveDList]")
-{
+TEST_CASE("IntrusiveDList Example", "[libswoc][IntrusiveDList]") {
   Container container;
 
   container.debug("This is message {}", 1);
@@ -165,8 +153,7 @@ struct Thing {
 };
 
 // Just for you, @maskit ! Demonstrating non-public links and subclassing.
-class PrivateThing : protected Thing
-{
+class PrivateThing : protected Thing {
   using self_type  = PrivateThing;
   using super_type = Thing;
 
@@ -175,26 +162,22 @@ public:
 
   struct Linkage {
     static self_type *&
-    next_ptr(self_type *t)
-    {
+    next_ptr(self_type *t) {
       return swoc::ptr_ref_cast<self_type>(t->_next);
     }
     static self_type *&
-    prev_ptr(self_type *t)
-    {
+    prev_ptr(self_type *t) {
       return swoc::ptr_ref_cast<self_type>(t->_prev);
     }
   };
 
   std::string const &
-  payload() const
-  {
+  payload() const {
     return _payload;
   }
 };
 
-class PrivateThing2 : protected Thing
-{
+class PrivateThing2 : protected Thing {
   using self_type  = PrivateThing2;
   using super_type = Thing;
 
@@ -204,14 +187,12 @@ public:
   friend Linkage;
 
   std::string const &
-  payload() const
-  {
+  payload() const {
     return _payload;
   }
 };
 
-TEST_CASE("IntrusiveDList Inheritance", "[libswoc][IntrusiveDList][example]")
-{
+TEST_CASE("IntrusiveDList Inheritance", "[libswoc][IntrusiveDList][example]") {
   IntrusiveDList<PrivateThing::Linkage> priv_list;
   for (size_t i = 1; i <= 23; ++i) {
     swoc::LocalBufferWriter<16> w;

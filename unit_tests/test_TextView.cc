@@ -18,10 +18,9 @@ using swoc::TextView;
 using namespace std::literals;
 using namespace swoc::literals;
 
-TEST_CASE("TextView Constructor", "[libswoc][TextView]")
-{
+TEST_CASE("TextView Constructor", "[libswoc][TextView]") {
   static const std::string base = "Evil Dave Rulez!";
-  unsigned ux             = base.size();
+  unsigned ux                   = base.size();
   TextView tv(base);
   TextView a{"Evil Dave Rulez"};
   TextView b{base.data(), base.size()};
@@ -48,9 +47,9 @@ TEST_CASE("TextView Constructor", "[libswoc][TextView]")
 
   tv = "Delain"; // assign literal.
   REQUIRE(tv.size() == 6);
-  tv = q; // Assign array.
-  REQUIRE(tv.size() == sizeof(q)-1); // trailing nul char dropped.
-  tv = qp; // Assign pointer.
+  tv = q;                              // Assign array.
+  REQUIRE(tv.size() == sizeof(q) - 1); // trailing nul char dropped.
+  tv = qp;                             // Assign pointer.
   REQUIRE(tv.data() == qp);
   tv = qcp; // Assign pointer to const.
   REQUIRE(tv.data() == qcp);
@@ -63,8 +62,7 @@ TEST_CASE("TextView Constructor", "[libswoc][TextView]")
   REQUIRE(TextView(qcp).size() == 0);
 };
 
-TEST_CASE("TextView Operations", "[libswoc][TextView]")
-{
+TEST_CASE("TextView Operations", "[libswoc][TextView]") {
   TextView tv{"Evil Dave Rulez"};
   TextView tv_lower{"evil dave rulez"};
   TextView nothing;
@@ -92,14 +90,20 @@ TEST_CASE("TextView Operations", "[libswoc][TextView]")
 
   // Check generic construction from a "string like" class.
   struct Stringy {
-    char const * data() const { return _data; }
-    size_t size() const { return _size; }
+    char const *
+    data() const {
+      return _data;
+    }
+    size_t
+    size() const {
+      return _size;
+    }
 
-    char const * _data = nullptr;
+    char const *_data = nullptr;
     size_t _size;
   };
 
-  char const * stringy_text = "Evil Dave Rulez";
+  char const *stringy_text = "Evil Dave Rulez";
   Stringy stringy{stringy_text, strlen(stringy_text)};
 
   // Can construct directly.
@@ -118,8 +122,7 @@ TEST_CASE("TextView Operations", "[libswoc][TextView]")
   REQUIRE(false == stringy_f(tv_lower));
 }
 
-TEST_CASE("TextView Trimming", "[libswoc][TextView]")
-{
+TEST_CASE("TextView Trimming", "[libswoc][TextView]") {
   TextView tv("  Evil Dave Rulz   ...");
   TextView tv2{"More Text1234567890"};
   REQUIRE("Evil Dave Rulz   ..." == TextView(tv).ltrim_if(&isspace));
@@ -141,8 +144,7 @@ TEST_CASE("TextView Trimming", "[libswoc][TextView]")
   REQUIRE(tv.size() == 0);
 }
 
-TEST_CASE("TextView Find", "[libswoc][TextView]")
-{
+TEST_CASE("TextView Find", "[libswoc][TextView]") {
   TextView addr{"172.29.145.87:5050"};
   REQUIRE(addr.find(':') == 13);
   REQUIRE(addr.rfind(':') == 13);
@@ -150,8 +152,7 @@ TEST_CASE("TextView Find", "[libswoc][TextView]")
   REQUIRE(addr.rfind('.') == 10);
 }
 
-TEST_CASE("TextView Affixes", "[libswoc][TextView]")
-{
+TEST_CASE("TextView Affixes", "[libswoc][TextView]") {
   TextView s; // scratch.
   TextView tv1("0123456789;01234567890");
   TextView prefix{tv1.prefix(10)};
@@ -330,19 +331,19 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   REQUIRE(s.size() == 1);
 
   // Check for subtle differences with trailing separator
-  token="one.ex";
+  token     = "one.ex";
   auto name = token.take_prefix_at('.');
   REQUIRE(name.size() > 0);
   REQUIRE(token.size() > 0);
 
-  token="one";
-  name = token.take_prefix_at('.');
+  token = "one";
+  name  = token.take_prefix_at('.');
   REQUIRE(name.size() > 0);
   REQUIRE(token.size() == 0);
   REQUIRE(token.data() == name.end());
 
-  token="one.";
-  name = token.take_prefix_at('.');
+  token = "one.";
+  name  = token.take_prefix_at('.');
   REQUIRE(name.size() > 0);
   REQUIRE(token.size() == 0);
   REQUIRE(token.data() == name.end() + 1);
@@ -401,17 +402,16 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]")
   REQUIRE(ctv_host == "delain.nl"_tv);
 
   // Checking that constexpr works for this constructor as long as npos isn't used.
-  static constexpr TextView ctv2 {"http://delain.nl/albums/Interlude.html", 38};
-  TextView ctv4 {"http://delain.nl/albums/Interlude.html", 38};
+  static constexpr TextView ctv2{"http://delain.nl/albums/Interlude.html", 38};
+  TextView ctv4{"http://delain.nl/albums/Interlude.html", 38};
   // This doesn't compile because it causes strlen to be called which isn't constexpr compatible.
-  //static constexpr TextView ctv3 {"http://delain.nl/albums/Interlude.html", TextView::npos};
+  // static constexpr TextView ctv3 {"http://delain.nl/albums/Interlude.html", TextView::npos};
   // This works because it's not constexpr.
-  TextView ctv3 {"http://delain.nl/albums/Interlude.html", TextView::npos};
+  TextView ctv3{"http://delain.nl/albums/Interlude.html", TextView::npos};
   REQUIRE(ctv2 == ctv3);
 };
 
-TEST_CASE("TextView Formatting", "[libswoc][TextView]")
-{
+TEST_CASE("TextView Formatting", "[libswoc][TextView]") {
   TextView a("01234567");
   {
     std::ostringstream buff;
@@ -450,8 +450,7 @@ TEST_CASE("TextView Formatting", "[libswoc][TextView]")
   }
 }
 
-TEST_CASE("TextView Conversions", "[libswoc][TextView]")
-{
+TEST_CASE("TextView Conversions", "[libswoc][TextView]") {
   TextView n  = "   956783";
   TextView n2 = n;
   TextView n3 = "031";
@@ -505,7 +504,7 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
 
   // One less than max.
   x.assign("18446744073709551614");
-  REQUIRE(MAX-1 == swoc::svto_radix<10>(x));
+  REQUIRE(MAX - 1 == swoc::svto_radix<10>(x));
   REQUIRE(x.size() == 0);
 
   // Exactly max.
@@ -531,8 +530,8 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
   // floating point is never exact, so "good enough" is all that is measureable. This checks the
   // value is within one epsilon (minimum change possible) of the compiler generated value.
   auto fcmp = [](double lhs, double rhs) {
-      double tolerance = std::max( { 1.0, std::fabs(lhs) , std::fabs(rhs) } ) * std::numeric_limits<double>::epsilon();
-      return std::fabs(lhs - rhs) <= tolerance ;
+    double tolerance = std::max({1.0, std::fabs(lhs), std::fabs(rhs)}) * std::numeric_limits<double>::epsilon();
+    return std::fabs(lhs - rhs) <= tolerance;
   };
 
   REQUIRE(1.0 == swoc::svtod("1.0"));
@@ -551,8 +550,7 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]")
   REQUIRE(true == fcmp(6.789e5, swoc::svtod("6.789E+5")));
 }
 
-TEST_CASE("TransformView", "[libswoc][TransformView]")
-{
+TEST_CASE("TransformView", "[libswoc][TransformView]") {
   std::string_view source{"Evil Dave Rulz"};
   std::string_view rot13("Rivy Qnir Ehym");
 
@@ -561,7 +559,8 @@ TEST_CASE("TransformView", "[libswoc][TransformView]")
   swoc::TransformView<decltype(&tolower), std::string_view> xv1(&tolower, source);
   auto xv2 = swoc::transform_view_of(&tolower, source);
   // Rot13 transform
-  auto rotter = swoc::transform_view_of([](char c){return isalpha(c) ? c > 'Z' ? ( 'a' + ((c - 'a' + 13 ) % 26 )) : ( 'A' + ((c - 'A' + 13 ) % 26 )) : c; }, source);
+  auto rotter = swoc::transform_view_of(
+    [](char c) { return isalpha(c) ? c > 'Z' ? ('a' + ((c - 'a' + 13) % 26)) : ('A' + ((c - 'A' + 13) % 26)) : c; }, source);
   auto identity = swoc::transform_view_of(source);
 
   TextView tv{source};
@@ -598,7 +597,7 @@ TEST_CASE("TransformView", "[libswoc][TransformView]")
   REQUIRE(check == rot13);
 
   check.clear();
-  for ( auto c : identity ) {
+  for (auto c : identity) {
     check.push_back(c);
   }
   REQUIRE(check == source);
@@ -608,8 +607,7 @@ TEST_CASE("TransformView", "[libswoc][TransformView]")
   REQUIRE(check == rot13);
 }
 
-TEST_CASE("TextView compat", "[libswoc][TextView]")
-{
+TEST_CASE("TextView compat", "[libswoc][TextView]") {
   struct Thing {
     int n = 0;
   };
@@ -617,20 +615,19 @@ TEST_CASE("TextView compat", "[libswoc][TextView]")
   std::unordered_map<TextView, Thing> umap;
 
   // This isn't rigorous, it's mainly testing compilation.
-  map.insert({ "bob"_tv, Thing{2} });
+  map.insert({"bob"_tv, Thing{2}});
   map["dave"] = Thing{3};
-  umap.insert({ "bob"_tv, Thing{4} });
+  umap.insert({"bob"_tv, Thing{4}});
   umap["dave"] = Thing{6};
 
   REQUIRE(map["bob"].n == 2);
   REQUIRE(umap["dave"].n == 6);
 }
 
-TEST_CASE("TextView tokenizing", "[libswoc][TextView]")
-{
-  TextView src="alpha,bravo,,charlie";
-  auto tokens = { "alpha" , "bravo" , "", "charlie"};
-  for ( auto token : tokens ) {
+TEST_CASE("TextView tokenizing", "[libswoc][TextView]") {
+  TextView src = "alpha,bravo,,charlie";
+  auto tokens  = {"alpha", "bravo", "", "charlie"};
+  for (auto token : tokens) {
     REQUIRE(src.take_prefix_at(',') == token);
   }
 }

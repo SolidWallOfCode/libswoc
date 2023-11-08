@@ -33,21 +33,17 @@ struct A {
   int _value;
 };
 
-struct AA : public A {
-};
+struct AA : public A {};
 
 struct B {
   std::string _value;
 };
 
-struct C {
-};
+struct C {};
 
-struct D {
-};
+struct D {};
 
-TEST_CASE("Meta Example", "[meta][example]")
-{
+TEST_CASE("Meta Example", "[meta][example]") {
   REQUIRE(true == swoc::meta::is_any_of<A, A, B, C>::value);
   REQUIRE(false == swoc::meta::is_any_of<D, A, B, C>::value);
   REQUIRE(true == swoc::meta::is_any_of<A, A>::value);
@@ -60,38 +56,32 @@ TEST_CASE("Meta Example", "[meta][example]")
 
 // Start of ts::meta testing.
 
-namespace
-{
+namespace {
 template <typename T>
 auto
-detect(T &&t, swoc::meta::CaseTag<0>) -> std::string_view
-{
+detect(T &&t, swoc::meta::CaseTag<0>) -> std::string_view {
   return "none";
 }
 template <typename T>
 auto
-detect(T &&t, swoc::meta::CaseTag<1>) -> decltype(t._value, std::string_view())
-{
+detect(T &&t, swoc::meta::CaseTag<1>) -> decltype(t._value, std::string_view()) {
   return "value";
 }
 template <typename T>
 std::string_view
-detect(T &&t)
-{
+detect(T &&t) {
   return detect(t, swoc::meta::CaseArg);
 }
 } // namespace
 
-TEST_CASE("Meta", "[meta]")
-{
+TEST_CASE("Meta", "[meta]") {
   REQUIRE(detect(A()) == "value");
   REQUIRE(detect(B()) == "value");
   REQUIRE(detect(C()) == "none");
   REQUIRE(detect(AA()) == "value");
 }
 
-TEST_CASE("Meta vary", "[meta][vary]")
-{
+TEST_CASE("Meta vary", "[meta][vary]") {
   std::variant<int, bool, TextView> v;
   auto visitor = swoc::meta::vary{[](int &i) -> int { return i; }, [](bool &b) -> int { return b ? -1 : -2; },
                                   [](TextView &tv) -> int { return swoc::svtou(tv); }};

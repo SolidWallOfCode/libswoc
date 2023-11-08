@@ -48,7 +48,10 @@ using swoc::IPSpace;
 // Temp for error messages.
 std::string err_text;
 
-std::error_code errno_code() { return std::error_code(errno, std::system_category()); }
+std::error_code
+errno_code() {
+  return std::error_code(errno, std::system_category());
+}
 
 /** Allocate a span of type @a T.
  *
@@ -56,14 +59,16 @@ std::error_code errno_code() { return std::error_code(errno, std::system_categor
  * @param n Number of elements.
  * @return A @c MemSpan<T> with @a n elements.
  */
-template < typename T > MemSpan<T> span_alloc(size_t n) {
+template <typename T>
+MemSpan<T>
+span_alloc(size_t n) {
   size_t bytes = sizeof(T) * n;
-  return { static_cast<T*>(malloc(bytes)), n };
+  return {static_cast<T *>(malloc(bytes)), n};
 }
 
 // Array type for flat files.
 // Each flat file is an instance of this, which is a wrapper over an array of its nodes.
-template < typename METRIC, typename PAYLOAD > class IPArray {
+template <typename METRIC, typename PAYLOAD> class IPArray {
 public:
   struct Node {
     METRIC _min;
@@ -85,19 +90,25 @@ public:
    *
    * This will allocate memory to hold an array that mirrors the data in @a space.
    */
-  IPArray(IPSpace<PAYLOAD> const& space);
+  IPArray(IPSpace<PAYLOAD> const &space);
 
   /** Find @a addr.
    *
    * @param addr Search value.
    * @return The node that contains @a addr, or @c nullptr if not found.
    */
-  Node* find(METRIC const& addr);
+  Node *find(METRIC const &addr);
 
-  Errata store(swoc::file::path const& path);
+  Errata store(swoc::file::path const &path);
 
-  size_t size() const { return _nodes.size(); }
-  void* data() const { return _nodes.data(); }
+  size_t
+  size() const {
+    return _nodes.size();
+  }
+  void *
+  data() const {
+    return _nodes.data();
+  }
 
 protected:
   /// Array memory.
@@ -105,13 +116,15 @@ protected:
 };
 
 // Standard binary search on a sorted array.
-template < typename METRIC, typename PAYLOAD > auto IPArray<METRIC, PAYLOAD>::find(METRIC const& addr) -> Node* {
+template <typename METRIC, typename PAYLOAD>
+auto
+IPArray<METRIC, PAYLOAD>::find(METRIC const &addr) -> Node * {
   ssize_t lidx = 0;
   ssize_t ridx = _nodes.count() - 1;
 
-  while (lidx <= ridx) { // still some array left to search.
+  while (lidx <= ridx) {          // still some array left to search.
     auto idx = (lidx + ridx) / 2; // Look at the middle element.
-    auto n = _nodes.data() + idx;
+    auto n   = _nodes.data() + idx;
     if (addr < n->_min) { // target is to the left
       ridx = idx - 1;
     } else if (addr > n->_max) { // target is to the right
@@ -123,21 +136,22 @@ template < typename METRIC, typename PAYLOAD > auto IPArray<METRIC, PAYLOAD>::fi
   return nullptr; // dropped out of the loop -> not found.
 }
 
-template < typename METRIC, typename PAYLOAD > IPArray<METRIC, PAYLOAD>::IPArray(IPSpace<PAYLOAD> const& space) {
-  auto n = space.count(METRIC::AF_value);
-  _nodes = { span_alloc<Node>(n) }; // In memory array.
+template <typename METRIC, typename PAYLOAD> IPArray<METRIC, PAYLOAD>::IPArray(IPSpace<PAYLOAD> const &space) {
+  auto n    = space.count(METRIC::AF_value);
+  _nodes    = {span_alloc<Node>(n)}; // In memory array.
   auto node = _nodes.data();
   // Update the array with all IPv4 ranges.
-  for ( auto spot = space.begin(METRIC::AF_value), limit = space.end(METRIC::AF_value) ; spot != limit ; ++spot, ++node ) {
-    auto && [ range, payload ] { *spot };
-    node->_min = static_cast<METRIC>(range.min());
-    node->_max = static_cast<METRIC>(range.max());
+  for (auto spot = space.begin(METRIC::AF_value), limit = space.end(METRIC::AF_value); spot != limit; ++spot, ++node) {
+    auto &&[range, payload]{*spot};
+    node->_min     = static_cast<METRIC>(range.min());
+    node->_max     = static_cast<METRIC>(range.max());
     node->_payload = payload;
   }
-
 }
 
-template <typename METRIC, typename PAYLOAD> Errata IPArray<METRIC, PAYLOAD>::store(swoc::file::path const &path) {
+template <typename METRIC, typename PAYLOAD>
+Errata
+IPArray<METRIC, PAYLOAD>::store(swoc::file::path const &path) {
   auto fd = ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
   if (fd >= 0) {
     auto written = ::write(fd, _nodes.data(), _nodes.size());
@@ -155,10 +169,11 @@ using A4 = IPArray<IP4Addr, unsigned>;
 using A6 = IPArray<IP6Addr, unsigned>;
 
 // Load the CSV file @a src into @a space.
-void build(IPSpace<unsigned> & space, swoc::file::path src) {
+void
+build(IPSpace<unsigned> &space, swoc::file::path src) {
   std::error_code ec;
   auto content = swoc::file::load(src, ec);
-  TextView text { content };
+  TextView text{content};
   while (text) {
     auto line = text.take_prefix_at('\n');
     if ('#' == *line) {
@@ -170,12 +185,13 @@ void build(IPSpace<unsigned> & space, swoc::file::path src) {
   }
 }
 
-int main(int argc, char const *argv[]) {
+int
+main(int argc, char const *argv[]) {
   swoc::file::path path_4{"/opt/ip4.mem"};
   swoc::file::path path_6{"/tmp/ip6.mem"};
   swoc::file::path src;
 
-  MemSpan<char const*> args{argv, size_t(argc)};
+  MemSpan<char const *> args{argv, size_t(argc)};
   args.remove_prefix(1); // drop executable name.
   if (args.empty()) {
     exit(0); // nothing to do.
@@ -185,15 +201,15 @@ int main(int argc, char const *argv[]) {
   if (0 == strcasecmp("--build"_tv, args.front())) {
     IPSpace<unsigned int> space;
     args.remove_prefix(1);
-    while (!args.empty() && ! TextView(std::string_view(args[0])).starts_with("-")) {
+    while (!args.empty() && !TextView(std::string_view(args[0])).starts_with("-")) {
       build(space, swoc::file::path(args[0]));
       args.remove_prefix(1);
     }
-    if ( auto errata = A4(space).store(path_4) ; !errata.is_ok() ) {
+    if (auto errata = A4(space).store(path_4); !errata.is_ok()) {
       std::cerr << errata << std::endl;
       exit(1);
     }
-    if (auto errata = A6(space).store(path_6) ; !errata.is_ok()) {
+    if (auto errata = A6(space).store(path_6); !errata.is_ok()) {
       std::cerr << errata << std::endl;
       exit(1);
     }
@@ -228,18 +244,19 @@ int main(int argc, char const *argv[]) {
 
   // map the flat files in to memory.
   auto fsize = swoc::file::file_size(stat_4);
-  auto fd_4 = ::open(path_4.c_str(), O_RDONLY);
-  MemSpan<void> mem4 { ::mmap(nullptr, fsize, PROT_READ, MAP_PRIVATE, fd_4, 0), size_t(fsize) };
-  A4 a_4 { mem4.rebind<A4::Node>() };
+  auto fd_4  = ::open(path_4.c_str(), O_RDONLY);
+  MemSpan<void> mem4{::mmap(nullptr, fsize, PROT_READ, MAP_PRIVATE, fd_4, 0), size_t(fsize)};
+  A4 a_4{mem4.rebind<A4::Node>()};
 
-  fsize = swoc::file::file_size(stat_6);
+  fsize     = swoc::file::file_size(stat_6);
   auto fd_6 = ::open(path_6.c_str(), O_RDONLY);
-  MemSpan<void> mem6 { ::mmap(nullptr, fsize, PROT_READ, MAP_PRIVATE, fd_6, 0), size_t(fsize) };
-  A6 a_6 { mem6.rebind<A6::Node>() };
+  MemSpan<void> mem6{::mmap(nullptr, fsize, PROT_READ, MAP_PRIVATE, fd_6, 0), size_t(fsize)};
+  A6 a_6{mem6.rebind<A6::Node>()};
 
-  std::cout << swoc::bwprint(err_text, "Mapped files in {} us\n", std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - t0).count());
+  std::cout << swoc::bwprint(err_text, "Mapped files in {} us\n",
+                             std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - t0).count());
 
-  #if 0
+#if 0
   // performance testing.
   t0 = std::chrono::system_clock::now();
   auto step = ~0U / 10000000;
@@ -250,10 +267,10 @@ int main(int argc, char const *argv[]) {
   }
   auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - t0);
   std::cout << swoc::bwprint(err_text, "Searched files in {} ns - {} ns / lookup\n", delta.count(), delta.count() / 10000000);
-  #endif
+#endif
 
   // Now the in memory flat files can be searched.
-  while (! args.empty()) {
+  while (!args.empty()) {
     IPAddr addr;
     if (addr.load(args.front())) {
       if (addr.is_ip4()) {

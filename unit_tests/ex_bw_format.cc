@@ -38,8 +38,7 @@ using swoc::LocalBufferWriter;
 
 static constexpr TextView VERSION{"1.0.2"};
 
-TEST_CASE("BWFormat substrings", "[swoc][bwf][substr]")
-{
+TEST_CASE("BWFormat substrings", "[swoc][bwf][substr]") {
   LocalBufferWriter<256> bw;
   std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
 
@@ -63,15 +62,13 @@ TEST_CASE("BWFormat substrings", "[swoc][bwf][substr]")
   REQUIRE(bw.view() == "Text: |QRSTUVWXYZ|");
 }
 
-namespace
-{
+namespace {
 static constexpr std::string_view NA{"N/A"};
 
 // Define some global generators
 
 BufferWriter &
-BWF_Timestamp(BufferWriter &w, Spec const &spec)
-{
+BWF_Timestamp(BufferWriter &w, Spec const &spec) {
   auto now   = std::chrono::system_clock::now();
   auto epoch = std::chrono::system_clock::to_time_t(now);
   LocalBufferWriter<48> lw;
@@ -84,20 +81,17 @@ BWF_Timestamp(BufferWriter &w, Spec const &spec)
 }
 
 BufferWriter &
-BWF_Now(BufferWriter &w, Spec const &spec)
-{
+BWF_Now(BufferWriter &w, Spec const &spec) {
   return swoc::bwf::Format_Integer(w, spec, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()), false);
 }
 
 BufferWriter &
-BWF_Version(BufferWriter &w, Spec const &spec)
-{
+BWF_Version(BufferWriter &w, Spec const &spec) {
   return bwformat(w, spec, VERSION);
 }
 
 BufferWriter &
-BWF_EvilDave(BufferWriter &w, Spec const &spec)
-{
+BWF_EvilDave(BufferWriter &w, Spec const &spec) {
   return bwformat(w, spec, "Evil Dave");
 }
 
@@ -113,23 +107,26 @@ struct Context {
   std::string tls_version{"tls/1.2"};
   std::string ip_family{"ipv4"};
   std::string ip_remote{"172.99.80.70"};
-  Fields http_fields   = {{{"Host", "docs.solidwallofcode.com"},
-                         {"YRP", "10.28.56.112"},
-                         {"Connection", "keep-alive"},
-                         {"Age", "956"},
-                         {"ETag", "1337beef"}}};
+  Fields http_fields = {
+    {{"Host", "docs.solidwallofcode.com"},
+     {"YRP", "10.28.56.112"},
+     {"Connection", "keep-alive"},
+     {"Age", "956"},
+     {"ETag", "1337beef"}}
+  };
   static inline std::string A{"A"};
   static inline std::string alpha{"alpha"};
   static inline std::string B{"B"};
   static inline std::string bravo{"bravo"};
-  Fields cookie_fields = {{{A, alpha}, {B, bravo}}};
+  Fields cookie_fields = {
+    {{A, alpha}, {B, bravo}}
+  };
 };
 
 } // namespace
 
 void
-EX_BWF_Format_Init()
-{
+EX_BWF_Format_Init() {
   swoc::bwf::Global_Names.assign("timestamp", &BWF_Timestamp);
   swoc::bwf::Global_Names.assign("now", &BWF_Now);
   swoc::bwf::Global_Names.assign("version", &BWF_Version);
@@ -137,8 +134,7 @@ EX_BWF_Format_Init()
 }
 
 // Work with external / global names.
-TEST_CASE("BufferWriter Example", "[bufferwriter][example]")
-{
+TEST_CASE("BufferWriter Example", "[bufferwriter][example]") {
   LocalBufferWriter<256> w;
 
   w.clear();
@@ -149,8 +145,7 @@ TEST_CASE("BufferWriter Example", "[bufferwriter][example]")
   REQUIRE(w.size() > 12);
 }
 
-TEST_CASE("BufferWriter Context Simple", "[bufferwriter][example][context]")
-{
+TEST_CASE("BufferWriter Context Simple", "[bufferwriter][example][context]") {
   // Container for name bindings.
   using CookieBinding = swoc::bwf::ContextNames<Context const>;
 
@@ -201,15 +196,13 @@ TEST_CASE("BufferWriter Context Simple", "[bufferwriter][example][context]")
   REQUIRE(w.view() == "Potzrebie is N/A");
 };
 
-TEST_CASE("BufferWriter Context 2", "[bufferwriter][example][context]")
-{
+TEST_CASE("BufferWriter Context 2", "[bufferwriter][example][context]") {
   LocalBufferWriter<1024> w;
 
   // Add field based access as methods to the base context.
   struct ExContext : public Context {
     void
-    field_gen(BufferWriter &w, Spec const &spec, TextView const &field) const
-    {
+    field_gen(BufferWriter &w, Spec const &spec, TextView const &field) const {
       if (auto spot = http_fields.find(field); spot != http_fields.end()) {
         bwformat(w, spec, spot->second);
       } else {
@@ -218,8 +211,7 @@ TEST_CASE("BufferWriter Context 2", "[bufferwriter][example][context]")
     };
 
     void
-    cookie_gen(BufferWriter &w, Spec const &spec, TextView const &tag) const
-    {
+    cookie_gen(BufferWriter &w, Spec const &spec, TextView const &tag) const {
       if (auto spot = cookie_fields.find(tag); spot != cookie_fields.end()) {
         bwformat(w, spec, spot->second);
       } else {
@@ -231,16 +223,14 @@ TEST_CASE("BufferWriter Context 2", "[bufferwriter][example][context]")
 
   // Container for name bindings.
   // Override the name lookup to handle structured names.
-  class CookieBinding : public swoc::bwf::ContextNames<ExContext const>
-  {
+  class CookieBinding : public swoc::bwf::ContextNames<ExContext const> {
     using super_type = swoc::bwf::ContextNames<ExContext const>;
 
   public:
     // Intercept name dispatch to check for structured names and handle those. If not structured,
     // chain up to super class to dispatch normally.
     BufferWriter &
-    operator()(BufferWriter &w, Spec const &spec, ExContext const &ctx) const override
-    {
+    operator()(BufferWriter &w, Spec const &spec, ExContext const &ctx) const override {
       // Structured name prefixes.
       static constexpr TextView FIELD_TAG{"field"};
       static constexpr TextView COOKIE_TAG{"cookie"};
@@ -292,8 +282,7 @@ TEST_CASE("BufferWriter Context 2", "[bufferwriter][example][context]")
   REQUIRE(w.view() == "Align: |      docs.solidwallofcode.com|");
 };
 
-namespace
-{
+namespace {
 // Alternate format string parsing.
 // This is the extractor, an instance of which is passed to the formatting logic.
 struct AltFormatEx {
@@ -312,14 +301,12 @@ struct AltFormatEx {
 AltFormatEx::AltFormatEx(TextView fmt) : _fmt{fmt} {}
 
 // The extractor is empty if the format string is empty.
-AltFormatEx::operator bool() const
-{
+AltFormatEx::operator bool() const {
   return !_fmt.empty();
 }
 
 bool
-AltFormatEx::operator()(std::string_view &literal, swoc::bwf::Spec &spec)
-{
+AltFormatEx::operator()(std::string_view &literal, swoc::bwf::Spec &spec) {
   if (_fmt.size()) { // data left.
     literal = _fmt.take_prefix_at('%');
     if (_fmt.empty()) { // no '%' found, it's all literal, we're done.
@@ -357,8 +344,7 @@ AltFormatEx::operator()(std::string_view &literal, swoc::bwf::Spec &spec)
 
 } // namespace
 
-TEST_CASE("bwf alternate syntax", "[libswoc][bwf][alternate]")
-{
+TEST_CASE("bwf alternate syntax", "[libswoc][bwf][alternate]") {
   using BW       = BufferWriter;
   using AltNames = swoc::bwf::ContextNames<Context>;
   AltNames names;
@@ -422,8 +408,7 @@ TEST_CASE("bwf alternate syntax", "[libswoc][bwf][alternate]")
  *   w.print_v(C_Format(fmt), std::forward_as_tuple(args));
  * @endcode
  */
-class C_Format
-{
+class C_Format {
 public:
   /// Construct for @a fmt.
   C_Format(TextView const &fmt);
@@ -449,16 +434,14 @@ protected:
 inline C_Format::C_Format(TextView const &fmt) : _fmt(fmt) {}
 
 // C_Format operator bool
-inline C_Format::operator bool() const
-{
+inline C_Format::operator bool() const {
   return _saved_p || !_fmt.empty();
 }
 // C_Format operator bool
 
 // C_Format capture
 void
-C_Format::capture(BufferWriter &, Spec const &spec, std::any const &value)
-{
+C_Format::capture(BufferWriter &, Spec const &spec, std::any const &value) {
   unsigned v;
   if (typeid(int *) == value.type())
     v = static_cast<unsigned>(*std::any_cast<int *>(value));
@@ -479,8 +462,7 @@ C_Format::capture(BufferWriter &, Spec const &spec, std::any const &value)
 
 // C_Format parsing
 bool
-C_Format::operator()(std::string_view &literal, Spec &spec)
-{
+C_Format::operator()(std::string_view &literal, Spec &spec) {
   TextView parsed;
 
   // clean up any old business from a previous specifier.
@@ -617,12 +599,10 @@ C_Format::operator()(std::string_view &literal, Spec &spec)
   return false;
 }
 
-namespace
-{
+namespace {
 template <typename... Args>
 int
-bwprintf(BufferWriter &w, TextView const &fmt, Args &&... args)
-{
+bwprintf(BufferWriter &w, TextView const &fmt, Args &&...args) {
   size_t n = w.size();
   w.print_nfv(swoc::bwf::NilBinding(), C_Format(fmt), swoc::bwf::ArgTuple{std::forward_as_tuple(args...)});
   return static_cast<int>(w.size() - n);
@@ -630,8 +610,7 @@ bwprintf(BufferWriter &w, TextView const &fmt, Args &&... args)
 
 } // namespace
 
-TEST_CASE("bwf printf", "[libswoc][bwf][printf]")
-{
+TEST_CASE("bwf printf", "[libswoc][bwf][printf]") {
   // C_Format tests
   LocalBufferWriter<256> w;
 
@@ -667,8 +646,7 @@ struct As_Rot13 {
 };
 
 BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, As_Rot13 const &wrap)
-{
+bwformat(BufferWriter &w, Spec const &spec, As_Rot13 const &wrap) {
   static constexpr auto rot13 = [](char c) -> char {
     return islower(c) ? (c + 13 - 'a') % 26 + 'a' : isupper(c) ? (c + 13 - 'A') % 26 + 'A' : c;
   };
@@ -676,8 +654,7 @@ bwformat(BufferWriter &w, Spec const &spec, As_Rot13 const &wrap)
 }
 
 As_Rot13
-Rotter(std::string_view const &sv)
-{
+Rotter(std::string_view const &sv) {
   return As_Rot13(sv);
 }
 
@@ -687,13 +664,11 @@ struct Thing {
 };
 
 As_Rot13
-Rotter(Thing const &thing)
-{
+Rotter(Thing const &thing) {
   return As_Rot13(thing._name);
 }
 
-TEST_CASE("bwf wrapper", "[libswoc][bwf][wrapper]")
-{
+TEST_CASE("bwf wrapper", "[libswoc][bwf][wrapper]") {
   LocalBufferWriter<256> w;
   std::string_view s1{"Frcvqru"};
 

@@ -36,8 +36,7 @@ using swoc::IntrusiveHashMap;
 
 using namespace std::literals;
 
-namespace
-{
+namespace {
 struct Thing {
   std::string _payload;
   int _n{0};
@@ -51,29 +50,24 @@ struct Thing {
 
 struct ThingMapDescriptor {
   static Thing *&
-  next_ptr(Thing *thing)
-  {
+  next_ptr(Thing *thing) {
     return thing->_next;
   }
   static Thing *&
-  prev_ptr(Thing *thing)
-  {
+  prev_ptr(Thing *thing) {
     return thing->_prev;
   }
   static std::string_view
-  key_of(Thing *thing)
-  {
+  key_of(Thing *thing) {
     return thing->_payload;
   }
   static constexpr std::hash<std::string_view> hasher{};
   static auto
-  hash_of(std::string_view s) -> decltype(hasher(s))
-  {
+  hash_of(std::string_view s) -> decltype(hasher(s)) {
     return hasher(s);
   }
   static bool
-  equal(std::string_view const &lhs, std::string_view const &rhs)
-  {
+  equal(std::string_view const &lhs, std::string_view const &rhs) {
     return lhs == rhs;
   }
 };
@@ -82,8 +76,7 @@ using Map = IntrusiveHashMap<ThingMapDescriptor>;
 
 } // namespace
 
-TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
-{
+TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]") {
   Map map;
   map.insert(new Thing("bob"));
   REQUIRE(map.count() == 1);
@@ -153,8 +146,7 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
 };
 
 // Some more involved tests.
-TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
-{
+TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]") {
   std::vector<std::string_view> strings;
 
   std::uniform_int_distribution<short> char_gen{'a', 'z'};
@@ -235,5 +227,4 @@ TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
   REQUIRE(miss_p == false);
 };
 
-TEST_CASE("IntrusiveHashMap Utilities", "[IntrusiveHashMap]") {
-}
+TEST_CASE("IntrusiveHashMap Utilities", "[IntrusiveHashMap]") {}

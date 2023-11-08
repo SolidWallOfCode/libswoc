@@ -14,10 +14,10 @@ using namespace swoc::literals;
 using range_t = swoc::DiscreteRange<unsigned>;
 TEST_CASE("Discrete Range", "[libswoc][range]") {
   range_t none; // empty range.
-  range_t single { 56 };
-  range_t r1 { 56, 100 };
-  range_t r2 { 101, 200 };
-  range_t r3 { 100, 200 };
+  range_t single{56};
+  range_t r1{56, 100};
+  range_t r2{101, 200};
+  range_t r3{100, 200};
 
   REQUIRE(single.contains(56));
   REQUIRE_FALSE(single.contains(100));
@@ -37,4 +37,3 @@ TEST_CASE("Discrete Range", "[libswoc][range]") {
   REQUIRE(r3.is_superset_of(r3));
   REQUIRE_FALSE(r3.is_strict_superset_of(r3));
 }
-
