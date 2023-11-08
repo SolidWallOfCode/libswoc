@@ -38,12 +38,13 @@ using swoc::IP6Net;
 using swoc::IPSpace;
 using swoc::IPRangeSet;
 
-
 namespace {
 std::string bws;
 
-template<typename P> void dump(IPSpace < P > const& space) {
-  for ( auto && [ r, p ] : space ) {
+template <typename P>
+void
+dump(IPSpace<P> const &space) {
+  for (auto &&[r, p] : space) {
     std::cout << bwprint(bws, "{} : {}\n", r, p);
   }
 }
@@ -61,21 +62,21 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   };
 
   constexpr ip_parse_spec names[] = {
-      {  {"::"}                                  , {"::"}                                  , {nullptr}, {nullptr}}
-      , {{"[::1]:99"}                            , {"::1"}                                 , {"99"}   , {nullptr}}
-      , {{"127.0.0.1:8080"}                      , {"127.0.0.1"}                           , {"8080"} , {nullptr}}
-      , {{"127.0.0.1:8080-Bob"}                  , {"127.0.0.1"}                           , {"8080"} , {"-Bob"}}
-      , {{"127.0.0.1:"}                          , {"127.0.0.1"}                           , {nullptr}, {":"}}
-      , {{"foo.example.com"}                     , {"foo.example.com"}                     , {nullptr}, {nullptr}}
-      , {{"foo.example.com:99"}                  , {"foo.example.com"}                     , {"99"}   , {nullptr}}
-      , {{"ffee::24c3:3349:3cee:0143"}           , {"ffee::24c3:3349:3cee:0143"}           , {nullptr}, {nullptr}}
-      , {{"fe80:88b5:4a:20c:29ff:feae:1c33:8080"}, {"fe80:88b5:4a:20c:29ff:feae:1c33:8080"}, {nullptr}, {nullptr}}
-      , {{"[ffee::24c3:3349:3cee:0143]"}         , {"ffee::24c3:3349:3cee:0143"}           , {nullptr}, {nullptr}}
-      , {{"[ffee::24c3:3349:3cee:0143]:80"}      , {"ffee::24c3:3349:3cee:0143"}           , {"80"}   , {nullptr}}
-      , {{"[ffee::24c3:3349:3cee:0143]:8080x"}   , {"ffee::24c3:3349:3cee:0143"}           , {"8080"} , {"x"}}
-      };
+    {{"::"},                                   {"::"},                                   {nullptr}, {nullptr}},
+    {{"[::1]:99"},                             {"::1"},                                  {"99"},    {nullptr}},
+    {{"127.0.0.1:8080"},                       {"127.0.0.1"},                            {"8080"},  {nullptr}},
+    {{"127.0.0.1:8080-Bob"},                   {"127.0.0.1"},                            {"8080"},  {"-Bob"} },
+    {{"127.0.0.1:"},                           {"127.0.0.1"},                            {nullptr}, {":"}    },
+    {{"foo.example.com"},                      {"foo.example.com"},                      {nullptr}, {nullptr}},
+    {{"foo.example.com:99"},                   {"foo.example.com"},                      {"99"},    {nullptr}},
+    {{"ffee::24c3:3349:3cee:0143"},            {"ffee::24c3:3349:3cee:0143"},            {nullptr}, {nullptr}},
+    {{"fe80:88b5:4a:20c:29ff:feae:1c33:8080"}, {"fe80:88b5:4a:20c:29ff:feae:1c33:8080"}, {nullptr}, {nullptr}},
+    {{"[ffee::24c3:3349:3cee:0143]"},          {"ffee::24c3:3349:3cee:0143"},            {nullptr}, {nullptr}},
+    {{"[ffee::24c3:3349:3cee:0143]:80"},       {"ffee::24c3:3349:3cee:0143"},            {"80"},    {nullptr}},
+    {{"[ffee::24c3:3349:3cee:0143]:8080x"},    {"ffee::24c3:3349:3cee:0143"},            {"8080"},  {"x"}    }
+  };
 
-  for (auto const&s : names) {
+  for (auto const &s : names) {
     std::string_view host, port, rest;
 
     REQUIRE(IPEndpoint::tokenize(s.hostspec, &host, &port, &rest) == true);
@@ -205,7 +206,6 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(in6.s6_addr[6] == 0xff);
   REQUIRE(in6.s6_addr[13] == 0x88);
 
-
   // Little bit of IP4 address arithmetic / comparison testing.
   IP4Addr a4_null;
   IP4Addr a4_1{"172.28.56.33"};
@@ -254,18 +254,22 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
 
   // For this data, the bytes should be in IPv6 network order.
   static const std::tuple<TextView, bool, IP6Addr::raw_type> ipv6_ex[] = {
-      {  "::"                                , true , {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}}
-      , {"::1"                               , true , {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}}
-      , {":::"                               , false, {}}
-      , {"fe80::20c:29ff:feae:5587:1c33"     , true , {0xFE, 0x80, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0C, 0x29, 0xFF, 0xFE, 0xAE, 0x55, 0x87, 0x1C, 0x33}}
-      , {"fe80:20c:29ff:feae:5587::1c33"     , true , {0xFE, 0x80, 0x02, 0x0C, 0x29, 0xFF, 0xFE, 0xAE, 0x55, 0x87, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x33}}
-      , {"fe80:20c:29ff:feae:5587:1c33::"    , true , {0xFE, 0x80, 0x02, 0x0C, 0x29, 0xFF, 0xFE, 0xAE, 0x55, 0x87, 0x1c, 0x33, 0x00, 0x00, 0x00, 0x00}}
-      , {"::fe80:20c:29ff:feae:5587:1c33"    , true , {0x00, 0x00, 0x00, 0x00, 0xFE, 0x80, 0x02, 0x0C, 0x29, 0xFF, 0xFE, 0xAE, 0x55, 0x87, 0x1c, 0x33}}
-      , {":fe80:20c:29ff:feae:5587:4A43:1c33", false, {}}
-      , {"fe80:20c::29ff:feae:5587::1c33"    , false, {}}
+    {"::",                                 true,  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    {"::1",                                true,  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}},
+    {":::",                                false, {}                                                                                              },
+    {"fe80::20c:29ff:feae:5587:1c33",
+     true,                                        {0xFE, 0x80, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0C, 0x29, 0xFF, 0xFE, 0xAE, 0x55, 0x87, 0x1C, 0x33}},
+    {"fe80:20c:29ff:feae:5587::1c33",
+     true,                                        {0xFE, 0x80, 0x02, 0x0C, 0x29, 0xFF, 0xFE, 0xAE, 0x55, 0x87, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x33}},
+    {"fe80:20c:29ff:feae:5587:1c33::",
+     true,                                        {0xFE, 0x80, 0x02, 0x0C, 0x29, 0xFF, 0xFE, 0xAE, 0x55, 0x87, 0x1c, 0x33, 0x00, 0x00, 0x00, 0x00}},
+    {"::fe80:20c:29ff:feae:5587:1c33",
+     true,                                        {0x00, 0x00, 0x00, 0x00, 0xFE, 0x80, 0x02, 0x0C, 0x29, 0xFF, 0xFE, 0xAE, 0x55, 0x87, 0x1c, 0x33}},
+    {":fe80:20c:29ff:feae:5587:4A43:1c33", false, {}                                                                                              },
+    {"fe80:20c::29ff:feae:5587::1c33",     false, {}                                                                                              }
   };
 
-  for (auto const&item : ipv6_ex) {
+  for (auto const &item : ipv6_ex) {
     auto &&[text, result, data]{item};
     IP6Addr addr;
     REQUIRE(result == addr.load(text));
@@ -298,8 +302,8 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(r4 == IP4Addr("192.168.56.1"));
 
   // A few special cases.
-  static constexpr TextView all_4_txt { "0/0" };
-  static constexpr TextView all_6_txt { "::/0" };
+  static constexpr TextView all_4_txt{"0/0"};
+  static constexpr TextView all_6_txt{"::/0"};
 
   CHECK(r4.load(all_4_txt));
   CHECK(r.load(all_4_txt));
@@ -335,7 +339,7 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(ep.is_loopback() == true);
   REQUIRE(ep.is_any() == false);
   CHECK(ep.ip6() == nullptr);
-  IP4Addr a4 { ep.ip4() };
+  IP4Addr a4{ep.ip4()};
   REQUIRE(a4.is_loopback() == true);
   REQUIRE(a4.is_any() == false);
 
@@ -420,34 +424,34 @@ TEST_CASE("IP Net and Mask", "[libswoc][ip][ipnet]") {
   REQUIRE(IPMask(55) == IPMask::mask_for(IP6Addr("1337:dead:beef:CA00::")));
   REQUIRE(IPMask(91) == IPMask::mask_for(IP6Addr("1337:dead:beef:CA00:24c3:3ce0::")));
 
-  IP4Addr b1 { "192.168.56.24" };
+  IP4Addr b1{"192.168.56.24"};
   REQUIRE((b1 & IPMask(24)) == IP4Addr("192.168.56.0"));
-  IP6Addr b2 { "1337:dead:beef:CA00:24c3:3ce0:9120:143" };
+  IP6Addr b2{"1337:dead:beef:CA00:24c3:3ce0:9120:143"};
   REQUIRE((b2 & IPMask(32)) == IP6Addr("1337:dead::"));
   REQUIRE((b2 & IPMask(64)) == IP6Addr("1337:dead:beef:CA00::"));
   REQUIRE((b2 & IPMask(96)) == IP6Addr("1337:dead:beef:CA00:24c3:3ce0::"));
   // do it again with generic address.
-  IPAddr b3 { "192.168.56.24" };
+  IPAddr b3{"192.168.56.24"};
   REQUIRE((b3 & IPMask(24)) == IP4Addr("192.168.56.0"));
-  IPAddr b4 { "1337:dead:beef:CA00:24c3:3ce0:9120:143" };
+  IPAddr b4{"1337:dead:beef:CA00:24c3:3ce0:9120:143"};
   REQUIRE((b4 & IPMask(32)) == IP6Addr("1337:dead::"));
   REQUIRE((b4 & IPMask(64)) == IP6Addr("1337:dead:beef:CA00::"));
   REQUIRE((b4 & IPMask(96)) == IP6Addr("1337:dead:beef:CA00:24c3:3ce0::"));
 
-  IP4Addr c1 { "192.168.56.24" };
+  IP4Addr c1{"192.168.56.24"};
   REQUIRE((c1 | IPMask(24)) == IP4Addr("192.168.56.255"));
   REQUIRE((c1 | IPMask(15)) == IP4Addr("192.169.255.255"));
   REQUIRE((c1 | IPMask(7)) == IP4Addr("193.255.255.255"));
-  IP6Addr c2 { "1337:dead:beef:CA00:24c3:3ce0:9120:143" };
+  IP6Addr c2{"1337:dead:beef:CA00:24c3:3ce0:9120:143"};
   REQUIRE((c2 | IPMask(96)) == IP6Addr("1337:dead:beef:CA00:24c3:3ce0:FFFF:FFFF"));
   REQUIRE((c2 | IPMask(64)) == IP6Addr("1337:dead:beef:CA00:FFFF:FFFF:FFFF:FFFF"));
   REQUIRE((c2 | IPMask(32)) == IP6Addr("1337:dead:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF"));
   // do it again with generic address.
-  IPAddr c3 { "192.168.56.24" };
+  IPAddr c3{"192.168.56.24"};
   REQUIRE((c3 | IPMask(24)) == IP4Addr("192.168.56.255"));
   REQUIRE((c3 | IPMask(15)) == IP4Addr("192.169.255.255"));
   REQUIRE((c3 | IPMask(7)) == IP4Addr("193.255.255.255"));
-  IPAddr c4 { "1337:dead:beef:CA00:24c3:3ce0:9120:143" };
+  IPAddr c4{"1337:dead:beef:CA00:24c3:3ce0:9120:143"};
   REQUIRE((c4 | IPMask(96)) == IP6Addr("1337:dead:beef:CA00:24c3:3ce0:FFFF:FFFF"));
   REQUIRE((c4 | IPMask(64)) == IP6Addr("1337:dead:beef:CA00:FFFF:FFFF:FFFF:FFFF"));
   REQUIRE((c4 | IPMask(32)) == IP6Addr("1337:dead:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF"));
@@ -588,7 +592,7 @@ TEST_CASE("IP Formatting", "[libswoc][ip][bwformat]") {
   std::string_view r_1{"10.1.0.0-10.1.0.127"};
   std::string_view r_2{"10.2.0.1-10.2.0.127"}; // not a network - bad start
   std::string_view r_3{"10.3.0.0-10.3.0.126"}; // not a network - bad end
-  std::string_view r_4{"10.4.1.1-10.4.1.1"}; // singleton
+  std::string_view r_4{"10.4.1.1-10.4.1.1"};   // singleton
   std::string_view r_5{"10.20.30.40- 50.60.70.80"};
   std::string_view r_6{"10.20.30.40 -50.60.70.80"};
   std::string_view r_7{"10.20.30.40 - 50.60.70.80"};
@@ -630,8 +634,7 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
   swoc::IP4Range r_2{"1.1.2.0-1.1.2.97"};
   swoc::IP4Range r_3{"1.1.0.0-1.2.0.0"};
   swoc::IP4Range r_4{"10.33.45.19-10.33.45.76"};
-  swoc::IP6Range r_5{
-    "2001:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv};
+  swoc::IP6Range r_5{"2001:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv};
 
   CHECK(r_0.empty());
   CHECK_FALSE(r_1.empty());
@@ -646,16 +649,10 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
   CHECK_FALSE(rr6.load(r4_txt));
   CHECK(rr6.load(r6_txt));
 
-  std::array<swoc::IP4Net, 7> r_4_nets =
-      {{
-           "10.33.45.19/32"_tv
-           , "10.33.45.20/30"_tv
-           , "10.33.45.24/29"_tv
-           , "10.33.45.32/27"_tv
-           , "10.33.45.64/29"_tv
-           , "10.33.45.72/30"_tv
-           , "10.33.45.76/32"_tv
-       }};
+  std::array<swoc::IP4Net, 7> r_4_nets = {
+    {"10.33.45.19/32"_tv, "10.33.45.20/30"_tv, "10.33.45.24/29"_tv, "10.33.45.32/27"_tv, "10.33.45.64/29"_tv, "10.33.45.72/30"_tv,
+     "10.33.45.76/32"_tv}
+  };
   auto r4_net = r_4_nets.begin();
   for (auto net : r_4.networks()) {
     REQUIRE(r4_net != r_4_nets.end());
@@ -665,204 +662,147 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
 
   // Let's try that again, with @c IPRange instead.
   r4_net = r_4_nets.begin();
-  for (auto const& net : IPRange{r_4}.networks()) {
+  for (auto const &net : IPRange{r_4}.networks()) {
     REQUIRE(r4_net != r_4_nets.end());
     CHECK(*r4_net == net);
     ++r4_net;
   }
 
-  std::array<swoc::IP6Net, 130> r_5_nets =
-      {{
-           {IP6Addr{
-               "2001:1f2d:c587:24c3:9128:3349:3cee:143"}, IPMask{
-               128}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:144"}, IPMask{126}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:148"}, IPMask{125}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:150"}, IPMask{124}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:160"}, IPMask{123}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:180"}, IPMask{121}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:200"}, IPMask{119}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:400"}, IPMask{118}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:800"}, IPMask{117}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:1000"}, IPMask{116}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:2000"}, IPMask{115}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:4000"}, IPMask{114}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cee:8000"}, IPMask{113}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cef:0"}, IPMask{112}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3cf0:0"}, IPMask{108}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3d00:0"}, IPMask{104}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:3e00:0"}, IPMask{103}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:4000:0"}, IPMask{98}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3349:8000:0"}, IPMask{97}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:334a::"}, IPMask{95}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:334c::"}, IPMask{94}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3350::"}, IPMask{92}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3360::"}, IPMask{91}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3380::"}, IPMask{89}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3400::"}, IPMask{86}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:3800::"}, IPMask{85}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:4000::"}, IPMask{82}}
-           , {IP6Addr{
-              "2001:1f2d:c587:24c3:9128:8000::"}, IPMask{81}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:9129::"}, IPMask{
-              80}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:912a::"}, IPMask{
-              79}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:912c::"}, IPMask{
-              78}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:9130::"}, IPMask{
-              76}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:9140::"}, IPMask{
-              74}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:9180::"}, IPMask{
-              73}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:9200::"}, IPMask{
-              71}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:9400::"}, IPMask{
-              70}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:9800::"}, IPMask{
-              69}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:a000::"}, IPMask{
-              67}}
-           , {IP6Addr{"2001:1f2d:c587:24c3:c000::"}, IPMask{
-              66}}
-           , {IP6Addr{"2001:1f2d:c587:24c4::"}, IPMask{62}}
-           , {IP6Addr{"2001:1f2d:c587:24c8::"}, IPMask{61}}
-           , {IP6Addr{"2001:1f2d:c587:24d0::"}, IPMask{60}}
-           , {IP6Addr{"2001:1f2d:c587:24e0::"}, IPMask{59}}
-           , {IP6Addr{"2001:1f2d:c587:2500::"}, IPMask{56}}
-           , {IP6Addr{"2001:1f2d:c587:2600::"}, IPMask{55}}
-           , {IP6Addr{"2001:1f2d:c587:2800::"}, IPMask{53}}
-           , {IP6Addr{"2001:1f2d:c587:3000::"}, IPMask{52}}
-           , {IP6Addr{"2001:1f2d:c587:4000::"}, IPMask{50}}
-           , {IP6Addr{"2001:1f2d:c587:8000::"}, IPMask{49}}
-           , {IP6Addr{"2001:1f2d:c588::"}, IPMask{45}}
-           , {IP6Addr{"2001:1f2d:c590::"}, IPMask{44}}
-           , {IP6Addr{"2001:1f2d:c5a0::"}, IPMask{43}}
-           , {IP6Addr{"2001:1f2d:c5c0::"}, IPMask{42}}
-           , {IP6Addr{"2001:1f2d:c600::"}, IPMask{39}}
-           , {IP6Addr{"2001:1f2d:c800::"}, IPMask{37}}
-           , {IP6Addr{"2001:1f2d:d000::"}, IPMask{36}}
-           , {IP6Addr{"2001:1f2d:e000::"}, IPMask{35}}
-           , {IP6Addr{"2001:1f2e::"}, IPMask{31}}
-           , {IP6Addr{"2001:1f30::"}, IPMask{28}}
-           , {IP6Addr{"2001:1f40::"}, IPMask{26}}
-           , {IP6Addr{"2001:1f80::"}, IPMask{25}}
-           , {IP6Addr{"2001:2000::"}, IPMask{19}}
-           , {IP6Addr{"2001:4000::"}, IPMask{18}}
-           , {IP6Addr{"2001:8000::"}, IPMask{17}}
-           , {IP6Addr{"2002::"}, IPMask{15}}
-           , {IP6Addr{"2004::"}, IPMask{14}}
-           , {IP6Addr{"2008::"}, IPMask{13}}
-           , {IP6Addr{"2010::"}, IPMask{12}}
-           , {IP6Addr{"2020::"}, IPMask{11}}
-           , {IP6Addr{"2040::"}, IPMask{10}}
-           , {IP6Addr{"2080::"}, IPMask{9}}
-           , {IP6Addr{"2100::"}, IPMask{8}}
-           , {IP6Addr{"2200::"}, IPMask{7}}
-           , {IP6Addr{"2400::"}, IPMask{6}}
-           , {IP6Addr{"2800::"}, IPMask{5}}
-           , {IP6Addr{"3000::"}, IPMask{4}}
-           , {IP6Addr{"4000::"}, IPMask{2}}
-           , {IP6Addr{"8000::"}, IPMask{2}}
-           , {IP6Addr{"c000::"}, IPMask{3}}
-           , {IP6Addr{"e000::"}, IPMask{4}}
-           , {IP6Addr{"f000::"}, IPMask{5}}
-           , {IP6Addr{"f800::"}, IPMask{6}}
-           , {IP6Addr{"fc00::"}, IPMask{7}}
-           , {IP6Addr{"fe00::"}, IPMask{8}}
-           , {IP6Addr{"ff00::"}, IPMask{9}}
-           , {IP6Addr{"ff80::"}, IPMask{10}}
-           , {IP6Addr{"ffc0::"}, IPMask{11}}
-           , {IP6Addr{"ffe0::"}, IPMask{13}}
-           , {IP6Addr{"ffe8::"}, IPMask{14}}
-           , {IP6Addr{"ffec::"}, IPMask{15}}
-           , {IP6Addr{"ffee::"}, IPMask{20}}
-           , {IP6Addr{"ffee:1000::"}, IPMask{21}}
-           , {IP6Addr{"ffee:1800::"}, IPMask{22}}
-           , {IP6Addr{"ffee:1c00::"}, IPMask{23}}
-           , {IP6Addr{"ffee:1e00::"}, IPMask{24}}
-           , {IP6Addr{"ffee:1f00::"}, IPMask{27}}
-           , {IP6Addr{"ffee:1f20::"}, IPMask{29}}
-           , {IP6Addr{"ffee:1f28::"}, IPMask{30}}
-           , {IP6Addr{"ffee:1f2c::"}, IPMask{32}}
-           , {IP6Addr{"ffee:1f2d::"}, IPMask{33}}
-           , {IP6Addr{"ffee:1f2d:8000::"}, IPMask{34}}
-           , {IP6Addr{"ffee:1f2d:c000::"}, IPMask{38}}
-           , {IP6Addr{"ffee:1f2d:c400::"}, IPMask{40}}
-           , {IP6Addr{"ffee:1f2d:c500::"}, IPMask{41}}
-           , {IP6Addr{"ffee:1f2d:c580::"}, IPMask{46}}
-           , {IP6Addr{"ffee:1f2d:c584::"}, IPMask{47}}
-           , {IP6Addr{"ffee:1f2d:c586::"}, IPMask{48}}
-           , {IP6Addr{"ffee:1f2d:c587::"}, IPMask{51}}
-           , {IP6Addr{"ffee:1f2d:c587:2000::"}, IPMask{54}}
-           , {IP6Addr{"ffee:1f2d:c587:2400::"}, IPMask{57}}
-           , {IP6Addr{"ffee:1f2d:c587:2480::"}, IPMask{58}}
-           , {IP6Addr{"ffee:1f2d:c587:24c0::"}, IPMask{63}}
-           , {IP6Addr{"ffee:1f2d:c587:24c2::"}, IPMask{64}}
-           , {IP6Addr{"ffee:1f2d:c587:24c3::"}, IPMask{65}}
-           , {IP6Addr{"ffee:1f2d:c587:24c3:8000::"}, IPMask{
-              68}}
-           , {IP6Addr{"ffee:1f2d:c587:24c3:9000::"}, IPMask{
-              72}}
-           , {IP6Addr{"ffee:1f2d:c587:24c3:9100::"}, IPMask{
-              75}}
-           , {IP6Addr{"ffee:1f2d:c587:24c3:9120::"}, IPMask{
-              77}}
-           , {IP6Addr{"ffee:1f2d:c587:24c3:9128::"}, IPMask{
-              83}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:2000::"}, IPMask{84}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3000::"}, IPMask{87}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3200::"}, IPMask{88}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3300::"}, IPMask{90}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3340::"}, IPMask{93}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3348::"}, IPMask{96}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3349::"}, IPMask{99}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3349:2000:0"}, IPMask{100}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3349:3000:0"}, IPMask{101}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3349:3800:0"}, IPMask{102}}
-           , {IP6Addr{
-              "ffee:1f2d:c587:24c3:9128:3349:3c00:0"}, IPMask{104}}
-       }};
+  std::array<swoc::IP6Net, 130> r_5_nets = {
+    {{IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:143"}, IPMask{128}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:144"}, IPMask{126}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:148"}, IPMask{125}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:150"}, IPMask{124}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:160"}, IPMask{123}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:180"}, IPMask{121}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:200"}, IPMask{119}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:400"}, IPMask{118}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:800"}, IPMask{117}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:1000"}, IPMask{116}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:2000"}, IPMask{115}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:4000"}, IPMask{114}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cee:8000"}, IPMask{113}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cef:0"}, IPMask{112}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3cf0:0"}, IPMask{108}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3d00:0"}, IPMask{104}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:3e00:0"}, IPMask{103}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:4000:0"}, IPMask{98}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3349:8000:0"}, IPMask{97}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:334a::"}, IPMask{95}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:334c::"}, IPMask{94}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3350::"}, IPMask{92}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3360::"}, IPMask{91}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3380::"}, IPMask{89}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3400::"}, IPMask{86}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:3800::"}, IPMask{85}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:4000::"}, IPMask{82}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9128:8000::"}, IPMask{81}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9129::"}, IPMask{80}},
+     {IP6Addr{"2001:1f2d:c587:24c3:912a::"}, IPMask{79}},
+     {IP6Addr{"2001:1f2d:c587:24c3:912c::"}, IPMask{78}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9130::"}, IPMask{76}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9140::"}, IPMask{74}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9180::"}, IPMask{73}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9200::"}, IPMask{71}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9400::"}, IPMask{70}},
+     {IP6Addr{"2001:1f2d:c587:24c3:9800::"}, IPMask{69}},
+     {IP6Addr{"2001:1f2d:c587:24c3:a000::"}, IPMask{67}},
+     {IP6Addr{"2001:1f2d:c587:24c3:c000::"}, IPMask{66}},
+     {IP6Addr{"2001:1f2d:c587:24c4::"}, IPMask{62}},
+     {IP6Addr{"2001:1f2d:c587:24c8::"}, IPMask{61}},
+     {IP6Addr{"2001:1f2d:c587:24d0::"}, IPMask{60}},
+     {IP6Addr{"2001:1f2d:c587:24e0::"}, IPMask{59}},
+     {IP6Addr{"2001:1f2d:c587:2500::"}, IPMask{56}},
+     {IP6Addr{"2001:1f2d:c587:2600::"}, IPMask{55}},
+     {IP6Addr{"2001:1f2d:c587:2800::"}, IPMask{53}},
+     {IP6Addr{"2001:1f2d:c587:3000::"}, IPMask{52}},
+     {IP6Addr{"2001:1f2d:c587:4000::"}, IPMask{50}},
+     {IP6Addr{"2001:1f2d:c587:8000::"}, IPMask{49}},
+     {IP6Addr{"2001:1f2d:c588::"}, IPMask{45}},
+     {IP6Addr{"2001:1f2d:c590::"}, IPMask{44}},
+     {IP6Addr{"2001:1f2d:c5a0::"}, IPMask{43}},
+     {IP6Addr{"2001:1f2d:c5c0::"}, IPMask{42}},
+     {IP6Addr{"2001:1f2d:c600::"}, IPMask{39}},
+     {IP6Addr{"2001:1f2d:c800::"}, IPMask{37}},
+     {IP6Addr{"2001:1f2d:d000::"}, IPMask{36}},
+     {IP6Addr{"2001:1f2d:e000::"}, IPMask{35}},
+     {IP6Addr{"2001:1f2e::"}, IPMask{31}},
+     {IP6Addr{"2001:1f30::"}, IPMask{28}},
+     {IP6Addr{"2001:1f40::"}, IPMask{26}},
+     {IP6Addr{"2001:1f80::"}, IPMask{25}},
+     {IP6Addr{"2001:2000::"}, IPMask{19}},
+     {IP6Addr{"2001:4000::"}, IPMask{18}},
+     {IP6Addr{"2001:8000::"}, IPMask{17}},
+     {IP6Addr{"2002::"}, IPMask{15}},
+     {IP6Addr{"2004::"}, IPMask{14}},
+     {IP6Addr{"2008::"}, IPMask{13}},
+     {IP6Addr{"2010::"}, IPMask{12}},
+     {IP6Addr{"2020::"}, IPMask{11}},
+     {IP6Addr{"2040::"}, IPMask{10}},
+     {IP6Addr{"2080::"}, IPMask{9}},
+     {IP6Addr{"2100::"}, IPMask{8}},
+     {IP6Addr{"2200::"}, IPMask{7}},
+     {IP6Addr{"2400::"}, IPMask{6}},
+     {IP6Addr{"2800::"}, IPMask{5}},
+     {IP6Addr{"3000::"}, IPMask{4}},
+     {IP6Addr{"4000::"}, IPMask{2}},
+     {IP6Addr{"8000::"}, IPMask{2}},
+     {IP6Addr{"c000::"}, IPMask{3}},
+     {IP6Addr{"e000::"}, IPMask{4}},
+     {IP6Addr{"f000::"}, IPMask{5}},
+     {IP6Addr{"f800::"}, IPMask{6}},
+     {IP6Addr{"fc00::"}, IPMask{7}},
+     {IP6Addr{"fe00::"}, IPMask{8}},
+     {IP6Addr{"ff00::"}, IPMask{9}},
+     {IP6Addr{"ff80::"}, IPMask{10}},
+     {IP6Addr{"ffc0::"}, IPMask{11}},
+     {IP6Addr{"ffe0::"}, IPMask{13}},
+     {IP6Addr{"ffe8::"}, IPMask{14}},
+     {IP6Addr{"ffec::"}, IPMask{15}},
+     {IP6Addr{"ffee::"}, IPMask{20}},
+     {IP6Addr{"ffee:1000::"}, IPMask{21}},
+     {IP6Addr{"ffee:1800::"}, IPMask{22}},
+     {IP6Addr{"ffee:1c00::"}, IPMask{23}},
+     {IP6Addr{"ffee:1e00::"}, IPMask{24}},
+     {IP6Addr{"ffee:1f00::"}, IPMask{27}},
+     {IP6Addr{"ffee:1f20::"}, IPMask{29}},
+     {IP6Addr{"ffee:1f28::"}, IPMask{30}},
+     {IP6Addr{"ffee:1f2c::"}, IPMask{32}},
+     {IP6Addr{"ffee:1f2d::"}, IPMask{33}},
+     {IP6Addr{"ffee:1f2d:8000::"}, IPMask{34}},
+     {IP6Addr{"ffee:1f2d:c000::"}, IPMask{38}},
+     {IP6Addr{"ffee:1f2d:c400::"}, IPMask{40}},
+     {IP6Addr{"ffee:1f2d:c500::"}, IPMask{41}},
+     {IP6Addr{"ffee:1f2d:c580::"}, IPMask{46}},
+     {IP6Addr{"ffee:1f2d:c584::"}, IPMask{47}},
+     {IP6Addr{"ffee:1f2d:c586::"}, IPMask{48}},
+     {IP6Addr{"ffee:1f2d:c587::"}, IPMask{51}},
+     {IP6Addr{"ffee:1f2d:c587:2000::"}, IPMask{54}},
+     {IP6Addr{"ffee:1f2d:c587:2400::"}, IPMask{57}},
+     {IP6Addr{"ffee:1f2d:c587:2480::"}, IPMask{58}},
+     {IP6Addr{"ffee:1f2d:c587:24c0::"}, IPMask{63}},
+     {IP6Addr{"ffee:1f2d:c587:24c2::"}, IPMask{64}},
+     {IP6Addr{"ffee:1f2d:c587:24c3::"}, IPMask{65}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:8000::"}, IPMask{68}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9000::"}, IPMask{72}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9100::"}, IPMask{75}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9120::"}, IPMask{77}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128::"}, IPMask{83}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:2000::"}, IPMask{84}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3000::"}, IPMask{87}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3200::"}, IPMask{88}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3300::"}, IPMask{90}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3340::"}, IPMask{93}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3348::"}, IPMask{96}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3349::"}, IPMask{99}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3349:2000:0"}, IPMask{100}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3349:3000:0"}, IPMask{101}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3349:3800:0"}, IPMask{102}},
+     {IP6Addr{"ffee:1f2d:c587:24c3:9128:3349:3c00:0"}, IPMask{104}}}
+  };
 
   auto r5_net = r_5_nets.begin();
-  for (auto const&[a, m] : r_5.networks()) {
+  for (auto const &[a, m] : r_5.networks()) {
     REQUIRE(r5_net != r_5_nets.end());
     CHECK(*r5_net == swoc::IP6Net{a, m});
     ++r5_net;
@@ -870,12 +810,11 @@ TEST_CASE("IP ranges and networks", "[libswoc][ip][net][range]") {
 
   // Try it again, using @c IPNet.
   r5_net = r_5_nets.begin();
-  for ( auto const&[a, m] : IPRange{r_5}.networks()) {
+  for (auto const &[a, m] : IPRange{r_5}.networks()) {
     REQUIRE(r5_net != r_5_nets.end());
     CHECK(*r5_net == swoc::IPNet{a, m});
     ++r5_net;
   }
-
 }
 
 TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
@@ -884,7 +823,11 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
 
   REQUIRE(space.count() == 0);
 
-  space.mark(IPRange{{IP4Addr("172.16.0.0"), IP4Addr("172.16.0.255")}}, 1);
+  space.mark(
+    IPRange{
+      {IP4Addr("172.16.0.0"), IP4Addr("172.16.0.255")}
+  },
+    1);
   auto result = space.find(IPAddr{"172.16.0.97"});
   REQUIRE(result != space.end());
   REQUIRE(std::get<1>(*result) == 1);
@@ -900,7 +843,7 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(space.count() == 3);
 
   space.clear();
-  auto BF = [](unsigned&lhs, unsigned rhs) -> bool {
+  auto BF = [](unsigned &lhs, unsigned rhs) -> bool {
     lhs |= rhs;
     return true;
   };
@@ -949,17 +892,16 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   REQUIRE(space.count() == 4);
 
   std::array<std::tuple<TextView, int>, 9> ranges = {
-      {
-          {"100.0.0.0-100.0.0.255", 0}
-          , {"100.0.1.0-100.0.1.255", 1}
-          , {"100.0.2.0-100.0.2.255", 2}
-          , {"100.0.3.0-100.0.3.255", 3}
-          , {"100.0.4.0-100.0.4.255", 4}
-          , {"100.0.5.0-100.0.5.255", 5}
-          , {"100.0.6.0-100.0.6.255", 6}
-          , {"100.0.0.0-100.0.0.255", 31}
-          , {"100.0.1.0-100.0.1.255", 30}
-      }};
+    {{"100.0.0.0-100.0.0.255", 0},
+     {"100.0.1.0-100.0.1.255", 1},
+     {"100.0.2.0-100.0.2.255", 2},
+     {"100.0.3.0-100.0.3.255", 3},
+     {"100.0.4.0-100.0.4.255", 4},
+     {"100.0.5.0-100.0.5.255", 5},
+     {"100.0.6.0-100.0.6.255", 6},
+     {"100.0.0.0-100.0.0.255", 31},
+     {"100.0.1.0-100.0.1.255", 30}}
+  };
 
   space.clear();
   for (auto &&[text, value] : ranges) {
@@ -978,11 +920,8 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   CHECK(space.end() == space.find(IPAddr{IPEndpoint{"10.0.4.16:80"}}));
 
   std::array<std::tuple<TextView, int>, 3> r_clear = {
-      {
-            {"2.2.2.2-2.2.2.40", 0}
-          , {"2.2.2.50-2.2.2.60", 1}
-          , {"2.2.2.70-2.2.2.100", 2}
-      }};
+    {{"2.2.2.2-2.2.2.40", 0}, {"2.2.2.50-2.2.2.60", 1}, {"2.2.2.70-2.2.2.100", 2}}
+  };
   space.clear();
   for (auto &&[text, value] : r_clear) {
     IPRange range{text};
@@ -992,9 +931,9 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   space.erase(IPRange{"2.2.2.35-2.2.2.75"});
   CHECK(space.count() == 2);
   {
-    spot = space.begin();
-    auto [ r0, p0 ] = *spot;
-    auto [ r2, p2 ] = *++spot;
+    spot          = space.begin();
+    auto [r0, p0] = *spot;
+    auto [r2, p2] = *++spot;
     CHECK(r0 == IPRange{"2.2.2.2-2.2.2.34"});
     CHECK(p0 == 0);
     CHECK(r2 == IPRange{"2.2.2.76-2.2.2.100"});
@@ -1004,41 +943,50 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
   // This is about testing repeated colorings of the same addresses, which happens quite a
   // bit in normal network datasets. In fact, the test dataset is based on such a dataset
   // and its use.
-  auto b2 = [] (unsigned &lhs, unsigned const& rhs) { lhs = rhs; return true; };
+  auto b2 = [](unsigned &lhs, unsigned const &rhs) {
+    lhs = rhs;
+    return true;
+  };
   std::array<std::tuple<TextView, unsigned>, 31> r2 = {
-      {
-          {"2001:4998:58:400::1/128", 1} // 1
-          , {"2001:4998:58:400::2/128", 1}
-          , {"2001:4998:58:400::3/128", 1}
-          , {"2001:4998:58:400::4/128", 1}
-          , {"2001:4998:58:400::5/128", 1}
-          , {"2001:4998:58:400::6/128", 1}
-          , {"2001:4998:58:400::7/128", 1}
-          , {"2001:4998:58:400::8/128", 1}
-          , {"2001:4998:58:400::9/128", 1}
-          , {"2001:4998:58:400::A/127", 1}
-          , {"2001:4998:58:400::10/127", 1} // 2
-          , {"2001:4998:58:400::12/127", 1}
-          , {"2001:4998:58:400::14/127", 1}
-          , {"2001:4998:58:400::16/127", 1}
-          , {"2001:4998:58:400::18/127", 1}
-          , {"2001:4998:58:400::1a/127", 1}
-          , {"2001:4998:58:400::1c/127", 1}
-          , {"2001:4998:58:400::1e/127", 1}
-          , {"2001:4998:58:400::20/127", 1}
-          , {"2001:4998:58:400::22/127", 1}
-          , {"2001:4998:58:400::24/127", 1}
-          , {"2001:4998:58:400::26/127", 1}
-          , {"2001:4998:58:400::2a/127", 1} // 3
-          , {"2001:4998:58:400::2c/127", 1}
-          , {"2001:4998:58:400::2e/127", 1}
-          , {"2001:4998:58:400::30/127", 1}
-          , {"2001:4998:58:400::140/127", 1} // 4
-          , {"2001:4998:58:400::142/127", 1}
-          , {"2001:4998:58:400::146/127", 1} // 5
-          , {"2001:4998:58:400::148/127", 1}
-          , {"2001:4998:58:400::150/127", 1} // 6
-      }};
+    {
+     {"2001:4998:58:400::1/128", 1} // 1
+      ,
+     {"2001:4998:58:400::2/128", 1},
+     {"2001:4998:58:400::3/128", 1},
+     {"2001:4998:58:400::4/128", 1},
+     {"2001:4998:58:400::5/128", 1},
+     {"2001:4998:58:400::6/128", 1},
+     {"2001:4998:58:400::7/128", 1},
+     {"2001:4998:58:400::8/128", 1},
+     {"2001:4998:58:400::9/128", 1},
+     {"2001:4998:58:400::A/127", 1},
+     {"2001:4998:58:400::10/127", 1} // 2
+      ,
+     {"2001:4998:58:400::12/127", 1},
+     {"2001:4998:58:400::14/127", 1},
+     {"2001:4998:58:400::16/127", 1},
+     {"2001:4998:58:400::18/127", 1},
+     {"2001:4998:58:400::1a/127", 1},
+     {"2001:4998:58:400::1c/127", 1},
+     {"2001:4998:58:400::1e/127", 1},
+     {"2001:4998:58:400::20/127", 1},
+     {"2001:4998:58:400::22/127", 1},
+     {"2001:4998:58:400::24/127", 1},
+     {"2001:4998:58:400::26/127", 1},
+     {"2001:4998:58:400::2a/127", 1} // 3
+      ,
+     {"2001:4998:58:400::2c/127", 1},
+     {"2001:4998:58:400::2e/127", 1},
+     {"2001:4998:58:400::30/127", 1},
+     {"2001:4998:58:400::140/127", 1} // 4
+      ,
+     {"2001:4998:58:400::142/127", 1},
+     {"2001:4998:58:400::146/127", 1} // 5
+      ,
+     {"2001:4998:58:400::148/127", 1},
+     {"2001:4998:58:400::150/127", 1} // 6
+    }
+  };
 
   space.clear();
   // Start with basic blending.
@@ -1075,32 +1023,33 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
 
   // Check some syntax.
   {
-    auto a = IPAddr{"2001:4998:58:400::1E"};
-    auto [ r, p ] = *space.find(a);
+    auto a      = IPAddr{"2001:4998:58:400::1E"};
+    auto [r, p] = *space.find(a);
     REQUIRE_FALSE(r.empty());
     REQUIRE(p == 1);
   }
   {
-    auto [ r, p ] = *space.find(IPAddr{"2001:4997:58:400::1E"});
+    auto [r, p] = *space.find(IPAddr{"2001:4997:58:400::1E"});
     REQUIRE(r.empty());
   }
 
   space.clear();
   // Test a mix
   unsigned idx = 0;
-  std::array<TextView, 6> mix_r { "1.1.1.1-1.1.1.111", "2.2.2.2-2.2.2.222", "3.3.3.3-3.255.255.255",
-                   "1:2:3:4:5:6:7:8-1:2:3:4:5:6:7:ffff",
-                   "11:2:3:4:5:6:7:8-11:2:3:4:5:6:7:ffff",
-                   "111:2:3:4:5:6:7:8-111:2:3:4:5:6:7:ffff"
-       };
-  for ( auto && r : mix_r) {
+  std::array<TextView, 6> mix_r{"1.1.1.1-1.1.1.111",
+                                "2.2.2.2-2.2.2.222",
+                                "3.3.3.3-3.255.255.255",
+                                "1:2:3:4:5:6:7:8-1:2:3:4:5:6:7:ffff",
+                                "11:2:3:4:5:6:7:8-11:2:3:4:5:6:7:ffff",
+                                "111:2:3:4:5:6:7:8-111:2:3:4:5:6:7:ffff"};
+  for (auto &&r : mix_r) {
     space.mark(IPRange(r), idx);
     ++idx;
   }
 
   idx = 0;
   std::string s;
-  for (auto [r,p] : space) {
+  for (auto [r, p] : space) {
     REQUIRE(!r.empty());
     REQUIRE(p == idx);
     swoc::LocalBufferWriter<64> dbg;
@@ -1113,17 +1062,16 @@ TEST_CASE("IP Space Int", "[libswoc][ip][ipspace]") {
 
 TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
   using PAYLOAD = std::bitset<32>;
-  using Space = swoc::IPSpace<PAYLOAD>;
+  using Space   = swoc::IPSpace<PAYLOAD>;
 
   std::array<std::tuple<TextView, std::initializer_list<unsigned>>, 6> ranges = {
-      {
-          {"172.28.56.12-172.28.56.99"_tv, {0, 2, 3}}
-          , {"10.10.35.0/24"_tv, {1, 2}}
-          , {"192.168.56.0/25"_tv, {10, 12, 31}}
-          , {"1337::ded:beef-1337::ded:ceef"_tv, {4, 5, 6, 7}}
-          , {"ffee:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv, {9, 10, 18}}
-          , {"10.12.148.0/23"_tv, {1, 2, 17}}
-      }};
+    {{"172.28.56.12-172.28.56.99"_tv, {0, 2, 3}},
+     {"10.10.35.0/24"_tv, {1, 2}},
+     {"192.168.56.0/25"_tv, {10, 12, 31}},
+     {"1337::ded:beef-1337::ded:ceef"_tv, {4, 5, 6, 7}},
+     {"ffee:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv, {9, 10, 18}},
+     {"10.12.148.0/23"_tv, {1, 2, 17}}}
+  };
 
   Space space;
 
@@ -1137,23 +1085,23 @@ TEST_CASE("IPSpace bitset", "[libswoc][ipspace][bitset]") {
   REQUIRE(space.count() == ranges.size());
 
   // Check that if an IPv4 lookup misses, it doesn't pass on to the first IPv6
-  auto [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
+  auto [r1, p1] = *(space.find(IP4Addr{"172.28.56.100"}));
   REQUIRE(true == r1.empty());
-  auto [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.100"}));
+  auto [r2, p2] = *(space.find(IPAddr{"172.28.56.100"}));
   REQUIRE(true == r2.empty());
 }
 
 TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   using PAYLOAD = std::bitset<32>;
-  using Space = swoc::IPSpace<PAYLOAD>;
+  using Space   = swoc::IPSpace<PAYLOAD>;
   // Add the bits in @rhs to the range.
-  auto blender = [](PAYLOAD&lhs, PAYLOAD const&rhs) -> bool {
+  auto blender = [](PAYLOAD &lhs, PAYLOAD const &rhs) -> bool {
     lhs |= rhs;
     return true;
   };
   // Add bit @a idx iff bits are already set.
-  auto additive = [](PAYLOAD & lhs, unsigned idx) -> bool {
-    if (! lhs.any()) {
+  auto additive = [](PAYLOAD &lhs, unsigned idx) -> bool {
+    if (!lhs.any()) {
       return false;
     }
     lhs[idx] = true;
@@ -1169,31 +1117,23 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   };
 
   std::array<std::tuple<TextView, PAYLOAD>, 9> ranges = {
-      {
-          {"100.0.0.0-100.0.0.255", make_bits({0})}
-          , {"100.0.1.0-100.0.1.255", make_bits({1})}
-          , {"100.0.2.0-100.0.2.255", make_bits({2})}
-          , {"100.0.3.0-100.0.3.255", make_bits({3})}
-          , {"100.0.4.0-100.0.4.255", make_bits({4})}
-          , {"100.0.5.0-100.0.5.255", make_bits({5})}
-          , {"100.0.6.0-100.0.6.255", make_bits({6})}
-          , {"100.0.0.0-100.0.0.255", make_bits({31})}
-          , {"100.0.1.0-100.0.1.255", make_bits({30})}
-      }};
+    {{"100.0.0.0-100.0.0.255", make_bits({0})},
+     {"100.0.1.0-100.0.1.255", make_bits({1})},
+     {"100.0.2.0-100.0.2.255", make_bits({2})},
+     {"100.0.3.0-100.0.3.255", make_bits({3})},
+     {"100.0.4.0-100.0.4.255", make_bits({4})},
+     {"100.0.5.0-100.0.5.255", make_bits({5})},
+     {"100.0.6.0-100.0.6.255", make_bits({6})},
+     {"100.0.0.0-100.0.0.255", make_bits({31})},
+     {"100.0.1.0-100.0.1.255", make_bits({30})}}
+  };
 
-  static const std::array<PAYLOAD, 7> results = {
-                                                  make_bits({0, 31})
-                                                , make_bits({1, 30})
-                                                , make_bits({2})
-                                                , make_bits({3})
-                                                , make_bits({4})
-                                                , make_bits({5})
-                                                , make_bits({6})
-                                                };
+  static const std::array<PAYLOAD, 7> results = {make_bits({0, 31}), make_bits({1, 30}), make_bits({2}), make_bits({3}),
+                                                 make_bits({4}),     make_bits({5}),     make_bits({6})};
 
   Space space;
 
-  for (auto && [text, bit_list] : ranges) {
+  for (auto &&[text, bit_list] : ranges) {
     space.blend(IPRange{text}, bit_list, blender);
   }
 
@@ -1204,21 +1144,21 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   unsigned idx;
 
   idx = 0;
-  for (auto const& [range, bits] : space) {
+  for (auto const &[range, bits] : space) {
     CHECK(bits == results[idx]);
     ++idx;
   }
 
   idx = 0;
-  for (auto spot = space.begin() ; spot != space.end() && idx < results.size() ; ++spot ) {
-    auto const& [ range, bits ] { *spot };
+  for (auto spot = space.begin(); spot != space.end() && idx < results.size(); ++spot) {
+    auto const &[range, bits]{*spot};
     CHECK(bits == results[idx]);
     ++idx;
   }
 
   idx = results.size();
   for (auto spot = space.end(); spot != space.begin();) {
-    auto const&[range, bits]{*--spot};
+    auto const &[range, bits]{*--spot};
     REQUIRE(idx > 0);
     --idx;
     CHECK(bits == results[idx]);
@@ -1229,7 +1169,7 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   Space::iterator iter;
   IPRange range;
   PAYLOAD bits;
-  for (auto spot = space.begin(); spot != space.end() ; ++spot, ++idx) {
+  for (auto spot = space.begin(); spot != space.end(); ++spot, ++idx) {
     std::tie(range, bits) = spot->tuple();
     CHECK(bits == results[idx]);
   }
@@ -1238,8 +1178,8 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
   space.blend(IPRange{"99.128.0.0-100.0.1.255"}, 27, additive);
   REQUIRE(space.count() == results.size()); // no more ranges.
   // Verify first two ranges modified, but not the next.
-  REQUIRE(std::get<1>(*(space.find(IP4Addr{"100.0.0.37"}))) == make_bits({0,27,31}));
-  REQUIRE(std::get<1>(*(space.find(IP4Addr{"100.0.1.37"}))) == make_bits({1,27,30}));
+  REQUIRE(std::get<1>(*(space.find(IP4Addr{"100.0.0.37"}))) == make_bits({0, 27, 31}));
+  REQUIRE(std::get<1>(*(space.find(IP4Addr{"100.0.1.37"}))) == make_bits({1, 27, 30}));
   REQUIRE(std::get<1>(*(space.find(IP4Addr{"100.0.2.37"}))) == make_bits({2}));
 
   space.blend(IPRange{"100.10.1.1-100.10.2.2"}, make_bits({15}), blender);
@@ -1252,35 +1192,38 @@ TEST_CASE("IPSpace docJJ", "[libswoc][ipspace][docJJ]") {
 TEST_CASE("IPSpace Edge", "[libswoc][ipspace][edge]") {
   struct Thing {
     unsigned _n;
-    Thing(Thing const&) = delete; // No copy.
-    Thing & operator = (Thing const&) = delete; // No self assignment.
-    bool operator == (Thing const& that) const { return _n == that._n; }
+    Thing(Thing const &)            = delete; // No copy.
+    Thing &operator=(Thing const &) = delete; // No self assignment.
+    bool
+    operator==(Thing const &that) const {
+      return _n == that._n;
+    }
   };
   using Space = IPSpace<Thing>;
   Space space;
 
   IP4Addr a1{"192.168.99.99"};
-  if (auto [ r, p ] = *(space.find(a1)) ; ! r.empty()) {
+  if (auto [r, p] = *(space.find(a1)); !r.empty()) {
     REQUIRE(false); // Checking this syntax doesn't copy the payload.
   }
 
-  auto const & cspace = space;
-  if (auto [ r, p ] = *(cspace.find(a1)) ; ! r.empty()) {
-    Thing const & cp = p;
+  auto const &cspace = space;
+  if (auto [r, p] = *(cspace.find(a1)); !r.empty()) {
+    Thing const &cp = p;
     static_assert(std::is_const_v<typeof(cp)>, "Payload was expected to be const.");
     REQUIRE(false); // Checking this syntax doesn't copy the payload.
   }
-  if (auto [ r, p ] = *(cspace.find(a1)) ; ! r.empty()) {
+  if (auto [r, p] = *(cspace.find(a1)); !r.empty()) {
     static_assert(std::is_const_v<typeof(p)>, "Payload was expected to be const.");
     REQUIRE(false); // Checking this syntax doesn't copy the payload.
   }
 
   auto spot = cspace.find(a1);
   static_assert(std::is_same_v<Space::const_iterator, decltype(spot)>);
-  auto & v1 = *spot;
-  auto & p1 = get<1>(v1);
+  auto &v1 = *spot;
+  auto &p1 = get<1>(v1);
 
-  if (auto && [ r, p ] = *(cspace.find(a1)) ; ! r.empty() ) {
+  if (auto &&[r, p] = *(cspace.find(a1)); !r.empty()) {
     static_assert(std::is_same_v<swoc::IPRangeView const &, decltype(r)>);
     IPRange rr = r;
     swoc::IPRangeView rvv{r};
@@ -1295,13 +1238,23 @@ TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
     int _rack = 0;
     int _code = 0;
 
-    bool operator== (Data const& that) const {
+    bool
+    operator==(Data const &that) const {
       return _pod == that._pod && _rack == that._rack && _code == that._code;
     }
   };
-  auto pod_blender = [] (Data &data, TextView const& p) { data._pod = p; return true; };
-  auto rack_blender = [] (Data &data, int r) { data._rack = r; return true; };
-  auto code_blender = [] (Data &data, int c) { data._code = c; return true; };
+  auto pod_blender = [](Data &data, TextView const &p) {
+    data._pod = p;
+    return true;
+  };
+  auto rack_blender = [](Data &data, int r) {
+    data._rack = r;
+    return true;
+  };
+  auto code_blender = [](Data &data, int c) {
+    data._code = c;
+    return true;
+  };
   swoc::IPSpace<Data> space;
   // This is overkill, but no reason to not slam the code.
   // For the original bug that triggered this testing, only the first line is actually necessary
@@ -1891,17 +1844,17 @@ TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
     }
     IP4Range range{line.take_prefix_at(',')};
     auto pod = line.take_prefix_at(',');
-    int r = swoc::svtoi(line.take_prefix_at(','));
+    int r    = swoc::svtoi(line.take_prefix_at(','));
     space.blend(range, pod, pod_blender);
     space.blend(range, r, rack_blender);
     if (space.count() > 2) {
-      auto spot = space.begin();
-      auto [ r1, p1 ] = *++spot;
-      auto [ r2, p2 ] = *++spot;
+      auto spot     = space.begin();
+      auto [r1, p1] = *++spot;
+      auto [r2, p2] = *++spot;
       REQUIRE(r1.max() < r2.min()); // This is supposed to be an invariant! Make sure.
-      auto back = space.end();
-      auto [ br1, bp1 ] = *--back;
-      auto [ br2, bp2 ] = *--back;
+      auto back       = space.end();
+      auto [br1, bp1] = *--back;
+      auto [br2, bp2] = *--back;
       REQUIRE(br2.max() < br1.min()); // This is supposed to be an invariant! Make sure.
     }
   }
@@ -1911,31 +1864,32 @@ TEST_CASE("IPSpace Uthira", "[libswoc][ipspace][uthira]") {
 
 TEST_CASE("IPSpace skew overlap blend", "[libswoc][ipspace][blend][skew]") {
   std::string buff;
-  enum class Pod {
-    INVALID, zio, zaz, zlz
+  enum class Pod { INVALID, zio, zaz, zlz };
+  swoc::Lexicon<Pod> PodNames{
+    {{Pod::zio, "zio"}, {Pod::zaz, "zaz"}, {Pod::zlz, "zlz"}},
+    "-1"
   };
-  swoc::Lexicon<Pod> PodNames {{ { Pod::zio, "zio"}, { Pod::zaz, "zaz"} , { Pod::zlz, "zlz"} }, "-1"};
 
   struct Data {
-    int _state = 0;
+    int _state   = 0;
     int _country = -1;
-    int _rack = 0;
-    Pod _pod = Pod::INVALID;
-    int _code = 0;
+    int _rack    = 0;
+    Pod _pod     = Pod::INVALID;
+    int _code    = 0;
 
-    bool operator==(Data const& that) const {
-      return _pod == that._pod && _rack == that._rack && _code == that._code &&
-             _state == that._state && _country == that._country;
+    bool
+    operator==(Data const &that) const {
+      return _pod == that._pod && _rack == that._rack && _code == that._code && _state == that._state && _country == that._country;
     }
   };
 
-  using Src_1 = std::tuple<int, Pod, int>; // rack, pod, code
-  using Src_2 = std::tuple<int, int>; // state, country.
-  auto blend_1 = [](Data& data, Src_1 const& src) {
+  using Src_1  = std::tuple<int, Pod, int>; // rack, pod, code
+  using Src_2  = std::tuple<int, int>;      // state, country.
+  auto blend_1 = [](Data &data, Src_1 const &src) {
     std::tie(data._rack, data._pod, data._code) = src;
     return true;
   };
-  [[maybe_unused]] auto blend_2 = [](Data& data, Src_2 const& src) {
+  [[maybe_unused]] auto blend_2 = [](Data &data, Src_2 const &src) {
     std::tie(data._state, data._country) = src;
     return true;
   };
@@ -1946,21 +1900,21 @@ TEST_CASE("IPSpace skew overlap blend", "[libswoc][ipspace][blend][skew]") {
   space.blend(IPRange("14.6.160.0-14.6.160.1"), Src_1{1, Pod::zaz, 1}, blend_1);
   REQUIRE(space.count() == 3);
   space.blend(IPRange("14.6.160.64-14.6.160.95"), Src_1{1, Pod::zio, 1}, blend_1);
-  space.blend(IPRange("14.6.160.96-14.6.160.127"),Src_1{1, Pod::zlz, 1}, blend_1);
-  space.blend(IPRange("14.6.160.128-14.6.160.255"),Src_1{1, Pod::zlz, 1}, blend_1);
+  space.blend(IPRange("14.6.160.96-14.6.160.127"), Src_1{1, Pod::zlz, 1}, blend_1);
+  space.blend(IPRange("14.6.160.128-14.6.160.255"), Src_1{1, Pod::zlz, 1}, blend_1);
   space.blend(IPRange("14.6.0.0-14.6.127.255"), Src_2{32, 231}, blend_2);
 
   std::array<std::tuple<IPRange, Data>, 6> results = {
-      {{IPRange("14.6.0.0-14.6.159.255"), Data{32,231,0,Pod::INVALID,0} }
-      , {IPRange("14.6.160.0-14.6.160.1"), Data{32,231,1,Pod::zaz,1}}
-      , {IPRange("14.6.160.2-14.6.160.63"), Data{32,231,0,Pod::INVALID,0}}
-      , {IPRange("14.6.160.64-14.6.160.95"), Data{32,231,1,Pod::zio,1}}
-      , {IPRange("14.6.160.96-14.6.160.255"), Data{32,231,1,Pod::zlz,1}}
-      , {IPRange("14.6.161.0-14.6.223.255"), Data{32,231,0,Pod::INVALID,0}}
-  }};
+    {{IPRange("14.6.0.0-14.6.159.255"), Data{32, 231, 0, Pod::INVALID, 0}},
+     {IPRange("14.6.160.0-14.6.160.1"), Data{32, 231, 1, Pod::zaz, 1}},
+     {IPRange("14.6.160.2-14.6.160.63"), Data{32, 231, 0, Pod::INVALID, 0}},
+     {IPRange("14.6.160.64-14.6.160.95"), Data{32, 231, 1, Pod::zio, 1}},
+     {IPRange("14.6.160.96-14.6.160.255"), Data{32, 231, 1, Pod::zlz, 1}},
+     {IPRange("14.6.161.0-14.6.223.255"), Data{32, 231, 0, Pod::INVALID, 0}}}
+  };
   REQUIRE(space.count() == results.size());
   unsigned idx = 0;
-  for ( auto const& v : space ) {
+  for (auto const &v : space) {
     REQUIRE(v == results[idx]);
     ++idx;
   }
@@ -1968,17 +1922,16 @@ TEST_CASE("IPSpace skew overlap blend", "[libswoc][ipspace][blend][skew]") {
 
 TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
   using PAYLOAD = unsigned;
-  using Space = swoc::IPSpace<PAYLOAD>;
+  using Space   = swoc::IPSpace<PAYLOAD>;
 
-  std::array<std::tuple<TextView, unsigned>, 6> ranges {
-      {
-          {"172.28.56.12-172.28.56.99"_tv, 1}
-          , {"10.10.35.0/24"_tv, 2}
-          , {"192.168.56.0/25"_tv, 3}
-          , {"1337::ded:beef-1337::ded:ceef"_tv, 4}
-          , {"ffee:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv, 5}
-          , {"10.12.148.0/23"_tv, 6}
-      }};
+  std::array<std::tuple<TextView, unsigned>, 6> ranges{
+    {{"172.28.56.12-172.28.56.99"_tv, 1},
+     {"10.10.35.0/24"_tv, 2},
+     {"192.168.56.0/25"_tv, 3},
+     {"1337::ded:beef-1337::ded:ceef"_tv, 4},
+     {"ffee:1f2d:c587:24c3:9128:3349:3cee:143-ffee:1f2d:c587:24c3:9128:3349:3cFF:FFFF"_tv, 5},
+     {"10.12.148.0/23"_tv, 6}}
+  };
 
   Space space;
 
@@ -1987,12 +1940,12 @@ TEST_CASE("IPSpace fill", "[libswoc][ipspace][fill]") {
   }
   REQUIRE(space.count() == ranges.size());
 
-  auto [ r1, p1 ] = *(space.find(IP4Addr{"172.28.56.100"}));
+  auto [r1, p1] = *(space.find(IP4Addr{"172.28.56.100"}));
   REQUIRE(r1.empty());
-  auto [ r2, p2 ] = *(space.find(IPAddr{"172.28.56.87"}));
+  auto [r2, p2] = *(space.find(IPAddr{"172.28.56.87"}));
   REQUIRE_FALSE(r2.empty());
 
-  space.fill(IPRange{"10.0.0.0/8"} , 7);
+  space.fill(IPRange{"10.0.0.0/8"}, 7);
   REQUIRE(space.count() == ranges.size() + 3);
   space.fill(IPRange{"9.0.0.0-11.255.255.255"}, 7);
   REQUIRE(space.count() == ranges.size() + 3);
@@ -2051,15 +2004,15 @@ TEST_CASE("IPSpace intersect", "[libswoc][ipspace][intersect]") {
   using PAYLOAD = unsigned;
   using Space   = swoc::IPSpace<PAYLOAD>;
 
-  std::array<std::tuple<TextView, unsigned>, 7> ranges{{
-    {"172.28.56.12-172.28.56.99"_tv, 1},
-    {"10.10.35.0/24"_tv, 2},
-    {"192.168.56.0/25"_tv, 3},
-    {"10.12.148.0/23"_tv, 6},
-    {"10.14.56.0/24"_tv, 9},
-    {"192.168.57.0/25"_tv, 7},
-    {"192.168.58.0/25"_tv, 5}
-  }};
+  std::array<std::tuple<TextView, unsigned>, 7> ranges{
+    {{"172.28.56.12-172.28.56.99"_tv, 1},
+     {"10.10.35.0/24"_tv, 2},
+     {"192.168.56.0/25"_tv, 3},
+     {"10.12.148.0/23"_tv, 6},
+     {"10.14.56.0/24"_tv, 9},
+     {"192.168.57.0/25"_tv, 7},
+     {"192.168.58.0/25"_tv, 5}}
+  };
 
   Space space;
 
@@ -2069,58 +2022,58 @@ TEST_CASE("IPSpace intersect", "[libswoc][ipspace][intersect]") {
 
   {
     IPRange r{"172.0.0.0/16"};
-    auto && [ begin, end ] = space.intersection(r);
+    auto &&[begin, end] = space.intersection(r);
     REQUIRE(begin == end);
   }
   {
     IPRange r{"172.0.0.0/8"};
-    auto && [ begin, end ] = space.intersection(r);
+    auto &&[begin, end] = space.intersection(r);
     REQUIRE(std::distance(begin, end) == 1);
   }
   {
     IPRange r{"10.0.0.0/8"};
-    auto && [ begin, end ] = space.intersection(r);
+    auto &&[begin, end] = space.intersection(r);
     REQUIRE(std::distance(begin, end) == 3);
   }
   {
     IPRange r{"10.10.35.17-10.12.148.7"};
-    auto && [ begin, end ] = space.intersection(r);
+    auto &&[begin, end] = space.intersection(r);
     REQUIRE(std::distance(begin, end) == 2);
   }
   {
     IPRange r{"10.10.35.0-10.14.56.0"};
-    auto && [ begin, end ] = space.intersection(r);
+    auto &&[begin, end] = space.intersection(r);
     REQUIRE(std::distance(begin, end) == 3);
   }
   {
     IPRange r{"10.13.0.0-10.15.148.7"}; // past the end
-    auto && [ begin, end ] = space.intersection(r);
+    auto &&[begin, end] = space.intersection(r);
     REQUIRE(std::distance(begin, end) == 1);
   }
   {
     IPRange r{"10.13.0.0-10.14.55.127"}; // inside a gap.
-    auto && [ begin, end ] = space.intersection(r);
+    auto &&[begin, end] = space.intersection(r);
     REQUIRE(begin == end);
   }
   {
     IPRange r{"192.168.56.127-192.168.67.35"}; // include last range.
-    auto && [ begin, end ] = space.intersection(r);
-    REQUIRE(std::distance(begin,end) == 3);
+    auto &&[begin, end] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 3);
   }
   {
     IPRange r{"192.168.57.128-192.168.67.35"}; // only last range.
-    auto && [ begin, end ] = space.intersection(r);
-    REQUIRE(std::distance(begin,end) == 1);
+    auto &&[begin, end] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 1);
   }
   {
     IPRange r{"192.168.57.128-192.168.58.10"}; // only last range.
-    auto && [ begin, end ] = space.intersection(r);
-    REQUIRE(std::distance(begin,end) == 1);
+    auto &&[begin, end] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 1);
   }
   {
     IPRange r{"192.168.50.0-192.168.57.35"}; // include last range.
-    auto && [ begin, end ] = space.intersection(r);
-    REQUIRE(std::distance(begin,end) == 2);
+    auto &&[begin, end] = space.intersection(r);
+    REQUIRE(std::distance(begin, end) == 2);
   }
 }
 
@@ -2133,9 +2086,9 @@ TEST_CASE("IPSrv", "[libswoc][IPSrv]") {
   IP6Srv s6;
   IPSrv s;
 
-  IP4Addr a1 { "192.168.34.56" };
-  IP4Addr a2 { "10.9.8.7" };
-  IP6Addr aa1 { "ffee:1f2d:c587:24c3:9128:3349:3cee:143" };
+  IP4Addr a1{"192.168.34.56"};
+  IP4Addr a2{"10.9.8.7"};
+  IP6Addr aa1{"ffee:1f2d:c587:24c3:9128:3349:3cee:143"};
 
   s6.assign(aa1, 99);
   REQUIRE(s6.addr() == aa1);
@@ -2152,7 +2105,7 @@ TEST_CASE("IPSrv", "[libswoc][IPSrv]") {
   REQUIRE(s4 == tmp3);
   REQUIRE(s4.addr() == tmp3); // double check equality.
 
-  IP4Srv s4_1 { "10.9.8.7:56" };
+  IP4Srv s4_1{"10.9.8.7:56"};
   REQUIRE(s4_1.host_order_port() == 56);
   REQUIRE(s4_1 == a2);
   CHECK(s4_1.load("10.2:56"));
@@ -2187,15 +2140,15 @@ TEST_CASE("IPRangeSet", "[libswoc][iprangeset]") {
 
   IPRangeSet addrs;
 
-  for ( auto rtxt : ranges ) {
+  for (auto rtxt : ranges) {
     IPRange r{rtxt};
     addrs.mark(r);
   }
 
-  unsigned n = 0;
+  unsigned n   = 0;
   bool valid_p = true;
-  for ( auto r : addrs ) {
-    valid_p = valid_p && ! r.empty();
+  for (auto r : addrs) {
+    valid_p = valid_p && !r.empty();
     ++n;
   }
   REQUIRE(n == addrs.count());

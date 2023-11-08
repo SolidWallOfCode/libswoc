@@ -39,12 +39,12 @@ using W = swoc::LocalBufferWriter<256>;
 namespace {
 bool Verbose_p =
 #if VERBOSE_EXAMPLE_OUTPUT
-    true
+  true
 #else
-    false
+  false
 #endif
-    ;
-}
+  ;
+} // namespace
 
 TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   // Color each address with a set of bits.
@@ -55,10 +55,10 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   using Data = std::tuple<TextView, PAYLOAD>;
 
   // Dump the ranges to stdout.
-  auto dump = [](Space&space) -> void {
+  auto dump = [](Space &space) -> void {
     if (Verbose_p) {
       std::cout << W().print("{} ranges\n", space.count());
-      for (auto && [r, payload] : space) {
+      for (auto &&[r, payload] : space) {
         std::cout << W().print("{:25} : {}\n", r, payload);
       }
     }
@@ -74,13 +74,13 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   };
 
   // Bitset blend functor which computes a union of the bitsets.
-  auto blender = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
+  auto blender = [](PAYLOAD &lhs, PAYLOAD const &rhs) -> bool {
     lhs |= rhs;
     return true;
   };
 
   // Example marking functor.
-  auto marker = [&](Space & space, swoc::MemSpan<Data> ranges) -> void {
+  auto marker = [&](Space &space, swoc::MemSpan<Data> ranges) -> void {
     // For each test range, compute the bitset from the list of bit indices.
     for (auto &&[text, bits] : ranges) {
       space.blend(IPRange{text}, bits, blender);
@@ -91,63 +91,60 @@ TEST_CASE("IPSpace bitset blending", "[libswoc][ipspace][bitset][blending]") {
   Space space;
 
   // test ranges 1
-  std::array<Data, 7> ranges_1 = {{
-        { "100.0.0.0-100.0.0.255", make_bits({ 0 }) }
-      , { "100.0.1.0-100.0.1.255", make_bits({ 1 }) }
-      , { "100.0.2.0-100.0.2.255", make_bits({ 2 }) }
-      , { "100.0.3.0-100.0.3.255", make_bits({ 3 }) }
-      , { "100.0.4.0-100.0.4.255", make_bits({ 4 }) }
-      , { "100.0.5.0-100.0.5.255", make_bits({ 5 }) }
-      , { "100.0.6.0-100.0.6.255", make_bits({ 6 }) }
-  }};
+  std::array<Data, 7> ranges_1 = {
+    {{"100.0.0.0-100.0.0.255", make_bits({0})},
+     {"100.0.1.0-100.0.1.255", make_bits({1})},
+     {"100.0.2.0-100.0.2.255", make_bits({2})},
+     {"100.0.3.0-100.0.3.255", make_bits({3})},
+     {"100.0.4.0-100.0.4.255", make_bits({4})},
+     {"100.0.5.0-100.0.5.255", make_bits({5})},
+     {"100.0.6.0-100.0.6.255", make_bits({6})}}
+  };
 
   marker(space, MemSpan<Data>{ranges_1.data(), ranges_1.size()});
   dump(space);
 
   // test ranges 2
-  std::array<Data, 3> ranges_2 = {{
-      { "100.0.0.0-100.0.0.255", make_bits({ 31 }) }
-    , { "100.0.1.0-100.0.1.255", make_bits({ 30 }) }
-    , { "100.0.2.128-100.0.3.127", make_bits({ 29 }) }
-  }};
+  std::array<Data, 3> ranges_2 = {
+    {{"100.0.0.0-100.0.0.255", make_bits({31})},
+     {"100.0.1.0-100.0.1.255", make_bits({30})},
+     {"100.0.2.128-100.0.3.127", make_bits({29})}}
+  };
 
   marker(space, MemSpan<Data>{ranges_2.data(), ranges_2.size()});
   dump(space);
 
   // test ranges 3
-  std::array<Data, 1> ranges_3 = {{
-      { "100.0.2.0-100.0.4.255", make_bits({ 2, 3, 29 })}
-  }};
+  std::array<Data, 1> ranges_3 = {{{"100.0.2.0-100.0.4.255", make_bits({2, 3, 29})}}};
 
   marker(space, MemSpan<Data>{ranges_3.data(), ranges_3.size()});
   dump(space);
 
   // reset blend functor
-  auto resetter = [](PAYLOAD& lhs, PAYLOAD const& rhs) -> bool {
-    auto mask = rhs;
-    lhs &= mask.flip();
+  auto resetter = [](PAYLOAD &lhs, PAYLOAD const &rhs) -> bool {
+    auto mask  = rhs;
+    lhs       &= mask.flip();
     return lhs != 0;
   };
 
   // erase bits
-  space.blend(IPRange{"0.0.0.0-255.255.255.255"}, make_bits({2,3,29}), resetter);
+  space.blend(IPRange{"0.0.0.0-255.255.255.255"}, make_bits({2, 3, 29}), resetter);
   dump(space);
 
   // ragged boundaries
-  space.blend(IPRange{"100.0.2.19-100.0.5.117"}, make_bits({16,18,20}), blender);
+  space.blend(IPRange{"100.0.2.19-100.0.5.117"}, make_bits({16, 18, 20}), blender);
   dump(space);
 
   // bit list blend functor which computes a union of the bitsets.
-  auto bit_blender = [](PAYLOAD& lhs, std::initializer_list<unsigned> const& rhs) -> bool {
-    for ( auto idx : rhs )
+  auto bit_blender = [](PAYLOAD &lhs, std::initializer_list<unsigned> const &rhs) -> bool {
+    for (auto idx : rhs)
       lhs[idx] = true;
     return true;
   };
 
-  std::initializer_list<unsigned> bit_list = { 10,11 };
+  std::initializer_list<unsigned> bit_list = {10, 11};
   space.blend(IPRange{"0.0.0.1-255.255.255.254"}, bit_list, bit_blender);
   dump(space);
-
 }
 
 // ---
@@ -173,7 +170,7 @@ public:
      *
      * @param name Property name.
      */
-    Property(TextView const& name) : _name(name) {};
+    Property(TextView const &name) : _name(name){};
 
     /// Force virtual destructor.
     virtual ~Property() = default;
@@ -188,7 +185,10 @@ public:
      *
      * @return The column index.
      */
-    unsigned idx() const { return _idx; }
+    unsigned
+    idx() const {
+      return _idx;
+    }
 
     /** Token persistence.
      *
@@ -198,10 +198,16 @@ public:
      * itself needs to be persistent for the lifetime of the table, this must be overridden to
      * return @c true.
      */
-    virtual bool needs_localized_token() const { return false; }
+    virtual bool
+    needs_localized_token() const {
+      return false;
+    }
 
     /// @return The row data offset in bytes for this property.
-    size_t offset() const { return _offset; }
+    size_t
+    offset() const {
+      return _offset;
+    }
 
     /** Parse the @a token.
      *
@@ -218,9 +224,9 @@ public:
   protected:
     friend class Table;
 
-    TextView _name; ///< Name of the property.
-    unsigned _idx = std::numeric_limits<unsigned>::max(); ///< Column index.
-    size_t _offset = std::numeric_limits<size_t>::max(); ///< Offset into a row.
+    TextView _name;                                        ///< Name of the property.
+    unsigned _idx  = std::numeric_limits<unsigned>::max(); ///< Column index.
+    size_t _offset = std::numeric_limits<size_t>::max();   ///< Offset into a row.
 
     /** Set the column index.
      *
@@ -229,7 +235,11 @@ public:
      *
      * This is called from @c Table to indicate the column index.
      */
-    self_type & assign_idx(unsigned idx) { _idx = idx; return *this; }
+    self_type &
+    assign_idx(unsigned idx) {
+      _idx = idx;
+      return *this;
+    }
 
     /** Set the row data @a offset.
      *
@@ -238,7 +248,11 @@ public:
      *
      * This is called from @c Table to store the row data offset.
      */
-    self_type & assign_offset(size_t offset) { _offset = offset; return *this; }
+    self_type &
+    assign_offset(size_t offset) {
+      _offset = offset;
+      return *this;
+    }
   };
 
   /// Construct an empty Table.
@@ -253,8 +267,7 @@ public:
    * The @c Property instance must be owned by the @c Table because changes are made to it specific
    * to this instance of @c Table.
    */
-  template < typename P >
-  P * add_column(std::unique_ptr<P> && col);
+  template <typename P> P *add_column(std::unique_ptr<P> &&col);
 
   /// A row in the table.
   class Row {
@@ -267,7 +280,7 @@ public:
      * @param prop Property that defines the data.
      * @return The range of bytes in the row for @a prop.
      */
-    MemSpan<std::byte> span_for(Property const& prop) const;
+    MemSpan<std::byte> span_for(Property const &prop) const;
 
   protected:
     MemSpan<std::byte> _data; ///< Raw row data.
@@ -289,17 +302,23 @@ public:
    * @param addr Address to find.
    * @return A @c Row for the address, or @c nullptr if not found.
    */
-  Row* find(IPAddr const& addr);
+  Row *find(IPAddr const &addr);
 
   /// @return The number of ranges in the container.
-  size_t size() const { return _space.count(); }
+  size_t
+  size() const {
+    return _space.count();
+  }
 
   /** Property for column @a idx.
    *
    * @param idx Index.
    * @return The property.
    */
-  Property * column(unsigned idx) { return _columns[idx].get(); }
+  Property *
+  column(unsigned idx) {
+    return _columns[idx].get();
+  }
 
 protected:
   size_t _size = 0; ///< Size of row data.
@@ -317,7 +336,7 @@ protected:
    * @param line Current line [in,out]
    * @return Extracted token.
    */
-  TextView token(TextView & line);
+  TextView token(TextView &line);
 
   /** Localize view.
    *
@@ -326,32 +345,35 @@ protected:
    *
    * This copies @a src to the internal @c MemArena and returns a view of the copied data.
    */
-  TextView localize(TextView const& src);
+  TextView localize(TextView const &src);
 };
 
-template < typename P >
-P * Table::add_column(std::unique_ptr<P> &&col) {
+template <typename P>
+P *
+Table::add_column(std::unique_ptr<P> &&col) {
   auto prop = col.get();
-  auto idx = _columns.size();
+  auto idx  = _columns.size();
   col->assign_offset(_size);
   col->assign_idx(idx);
-  _size += static_cast<Property*>(prop)->size();
+  _size += static_cast<Property *>(prop)->size();
   _columns.emplace_back(std::move(col));
   return prop;
 }
 
-TextView Table::localize(TextView const&src) {
+TextView
+Table::localize(TextView const &src) {
   auto span = _arena.alloc(src.size()).rebind<char>();
   memcpy(span, src);
   return span;
 }
 
-TextView Table::token(TextView & line) {
+TextView
+Table::token(TextView &line) {
   TextView::size_type idx = 0;
   // Characters of interest.
-  static char constexpr separators[2] = { '"', SEP };
-  static TextView sep_list { separators, 2 };
-  bool in_quote_p  = false;
+  static char constexpr separators[2] = {'"', SEP};
+  static TextView sep_list{separators, 2};
+  bool in_quote_p = false;
   while (idx < line.size()) {
     // Next character of interest.
     idx = line.find_first_of(sep_list, idx);
@@ -361,7 +383,7 @@ TextView Table::token(TextView & line) {
       in_quote_p = !in_quote_p;
       ++idx;
     } else if (SEP == line[idx]) { // separator.
-      if (in_quote_p) { // quoted separator, skip and continue.
+      if (in_quote_p) {            // quoted separator, skip and continue.
         ++idx;
       } else { // found token, finish up.
         break;
@@ -374,7 +396,8 @@ TextView Table::token(TextView & line) {
   return zret;
 }
 
-bool Table::parse(TextView src) {
+bool
+Table::parse(TextView src) {
   unsigned line_no = 0;
   while (src) {
     auto line = src.take_prefix_at('\n').ltrim_if(&isspace);
@@ -392,13 +415,13 @@ bool Table::parse(TextView src) {
     }
 
     auto span = _arena.alloc(_size).rebind<std::byte>(); // need this broken out.
-    Row row{span}; // store the original span to preserve it.
-    for ( auto const& col : _columns) {
+    Row row{span};                                       // store the original span to preserve it.
+    for (auto const &col : _columns) {
       auto token = this->token(line);
       if (col->needs_localized_token()) {
         token = this->localize(token);
       }
-      if (! col->parse(token, span.subspan(0, col->size()))) {
+      if (!col->parse(token, span.subspan(0, col->size()))) {
         std::cout << W().print("Value \"{}\" at index {} on line {} is invalid.", token, col->idx(), line_no);
       }
       // drop reference to storage used by this column.
@@ -409,14 +432,19 @@ bool Table::parse(TextView src) {
   return true;
 }
 
-auto Table::find(IPAddr const &addr) -> Row * {
+auto
+Table::find(IPAddr const &addr) -> Row * {
   auto spot = _space.find(addr);
   return spot == _space.end() ? nullptr : &(spot->payload());
 }
 
-bool operator == (Table::Row const&, Table::Row const&) { return false; }
+bool
+operator==(Table::Row const &, Table::Row const &) {
+  return false;
+}
 
-MemSpan<std::byte> Table::Row::span_for(Table::Property const&prop) const {
+MemSpan<std::byte>
+Table::Row::span_for(Table::Property const &prop) const {
   return _data.subspan(prop.offset(), prop.size());
 }
 
@@ -426,8 +454,8 @@ MemSpan<std::byte> Table::Row::span_for(Table::Property const&prop) const {
  * The set of keys must be specified at construction, keys not in the list are invalid.
  */
 class FlagGroupProperty : public Table::Property {
-  using self_type = FlagGroupProperty; ///< Self reference type.
-  using super_type = Table::Property; ///< Parent type.
+  using self_type  = FlagGroupProperty; ///< Self reference type.
+  using super_type = Table::Property;   ///< Parent type.
 public:
   /** Construct with a @a name and a list of @a tags.
    *
@@ -437,7 +465,7 @@ public:
    * Input tokens must consist of lists of tokens, each of which is one of the @a tags.
    * This is stored so that the exact set of tags present can be retrieved.
    */
-  FlagGroupProperty(TextView const& name, std::initializer_list<TextView> tags);
+  FlagGroupProperty(TextView const &name, std::initializer_list<TextView> tags);
 
   /** Check for a tag being present.
    *
@@ -445,7 +473,7 @@ public:
    * @param row Row data from the @c Table.
    * @return @c true if the tag was present, @c false if not.
    */
-  bool is_set(Table::Row const&row, unsigned idx) const;
+  bool is_set(Table::Row const &row, unsigned idx) const;
 
 protected:
   size_t size() const override; ///< Storeage required in a row.
@@ -467,19 +495,23 @@ protected:
  * accumulated as needed. The property supports a maximum of 255 distinct tags.
  */
 class EnumProperty : public Table::Property {
-  using self_type = EnumProperty; ///< Self reference type.
+  using self_type  = EnumProperty;    ///< Self reference type.
   using super_type = Table::Property; ///< Parent type.
-  using store_type = __uint8_t; ///< Row storage type.
+  using store_type = __uint8_t;       ///< Row storage type.
 public:
   using super_type::super_type; ///< Inherit super type constructors.
 
   /// @return The enumeration tag for this @a row.
-  TextView operator() (Table::Row const& row) const;
+  TextView operator()(Table::Row const &row) const;
+
 protected:
   std::vector<TextView> _tags; ///< Tags in the enumeration.
 
   /// @a return Size of required storage.
-  size_t size() const override { return sizeof(store_type); }
+  size_t
+  size() const override {
+    return sizeof(store_type);
+  }
 
   /** Parse a token.
    *
@@ -491,42 +523,51 @@ protected:
 };
 
 class StringProperty : public Table::Property {
-  using self_type = StringProperty;
+  using self_type  = StringProperty;
   using super_type = Table::Property;
+
 public:
   static constexpr size_t SIZE = sizeof(TextView);
   using super_type::super_type;
 
 protected:
-  size_t size() const override { return SIZE; }
+  size_t
+  size() const override {
+    return SIZE;
+  }
   bool parse(TextView token, MemSpan<std::byte> span) override;
-  bool needs_localized_token() const override { return true; }
+  bool
+  needs_localized_token() const override {
+    return true;
+  }
 };
 
 // ---
-bool StringProperty::parse(TextView token, MemSpan<std::byte> span) {
+bool
+StringProperty::parse(TextView token, MemSpan<std::byte> span) {
   memcpy(span.data(), &token, sizeof(token));
   return true;
 }
 
-FlagGroupProperty::FlagGroupProperty(TextView const& name, std::initializer_list<TextView> tags)
-    : super_type(name)
-{
+FlagGroupProperty::FlagGroupProperty(TextView const &name, std::initializer_list<TextView> tags) : super_type(name) {
   _tags.reserve(tags.size());
-  for ( auto const& tag : tags ) {
+  for (auto const &tag : tags) {
     _tags.emplace_back(tag);
   }
 }
 
-bool FlagGroupProperty::parse(TextView token, MemSpan<std::byte> span) {
-  if ("-"_tv == token) { return true; } // marker for no flags.
+bool
+FlagGroupProperty::parse(TextView token, MemSpan<std::byte> span) {
+  if ("-"_tv == token) {
+    return true;
+  } // marker for no flags.
   memset(span, 0);
   while (token) {
-    auto tag = token.take_prefix_at(';');
+    auto tag   = token.take_prefix_at(';');
     unsigned j = 0;
-    for ( auto const& key : _tags ) {
+    for (auto const &key : _tags) {
       if (0 == strcasecmp(key, tag)) {
-        span[j/8] |= (std::byte{1} << (j % 8));
+        span[j / 8] |= (std::byte{1} << (j % 8));
         break;
       }
       ++j;
@@ -539,18 +580,21 @@ bool FlagGroupProperty::parse(TextView token, MemSpan<std::byte> span) {
   return true;
 }
 
-bool FlagGroupProperty::is_set(Table::Row const&row, unsigned idx) const {
+bool
+FlagGroupProperty::is_set(Table::Row const &row, unsigned idx) const {
   auto sp = row.span_for(*this);
   return std::byte{0} != ((sp[idx / 8] >> (idx % 8)) & std::byte{1});
 }
 
-size_t FlagGroupProperty::size() const {
+size_t
+FlagGroupProperty::size() const {
   return swoc::Scalar<8>(swoc::round_up(_tags.size())).count();
 }
 
-bool EnumProperty::parse(TextView token, MemSpan<std::byte> span) {
+bool
+EnumProperty::parse(TextView token, MemSpan<std::byte> span) {
   // Already got one?
-  auto spot = std::find_if(_tags.begin(), _tags.end(), [&](TextView const& tag) { return 0 == strcasecmp(token, tag); });
+  auto spot = std::find_if(_tags.begin(), _tags.end(), [&](TextView const &tag) { return 0 == strcasecmp(token, tag); });
   if (spot == _tags.end()) { // nope, add it to the list.
     _tags.push_back(token);
     spot = std::prev(_tags.end());
@@ -559,7 +603,8 @@ bool EnumProperty::parse(TextView token, MemSpan<std::byte> span) {
   return true;
 }
 
-TextView EnumProperty::operator()(Table::Row const& row) const {
+TextView
+EnumProperty::operator()(Table::Row const &row) const {
   auto idx = row.span_for(*this).rebind<store_type>()[0];
   return _tags[idx];
 }
@@ -568,10 +613,10 @@ TextView EnumProperty::operator()(Table::Row const& row) const {
 
 TEST_CASE("IPSpace properties", "[libswoc][ip][ex][properties]") {
   Table table;
-  auto flag_names = { "prod"_tv, "dmz"_tv, "internal"_tv};
-  auto owner = table.add_column(std::make_unique<EnumProperty>("owner"));
-  auto colo = table.add_column(std::make_unique<EnumProperty>("colo"));
-  auto flags = table.add_column(std::make_unique<FlagGroupProperty>("flags"_tv, flag_names));
+  auto flag_names                   = {"prod"_tv, "dmz"_tv, "internal"_tv};
+  auto owner                        = table.add_column(std::make_unique<EnumProperty>("owner"));
+  auto colo                         = table.add_column(std::make_unique<EnumProperty>("colo"));
+  auto flags                        = table.add_column(std::make_unique<FlagGroupProperty>("flags"_tv, flag_names));
   [[maybe_unused]] auto description = table.add_column(std::make_unique<StringProperty>("Description"));
 
   TextView src = R"(10.1.1.0/24,asf,cmi,prod;internal,"ASF core net"
@@ -592,4 +637,3 @@ TEST_CASE("IPSpace properties", "[libswoc][ip][ex][properties]") {
   REQUIRE(row != nullptr);
   CHECK("abq"_tv == (*colo)(*row));
 };
-

@@ -95,12 +95,12 @@ Spec::parse(TextView fmt) {
         if (!isxdigit(d0) || !isxdigit(d1)) {
           throw std::invalid_argument("URI encoding with non-hex characters");
         }
-        _fill = isdigit(d0) ? d0 - '0' : tolower(d0) - 'a' + 10;
+        _fill  = isdigit(d0) ? d0 - '0' : tolower(d0) - 'a' + 10;
         _fill += (isdigit(d1) ? d1 - '0' : tolower(d1) - 'a' + 10) << 4;
-        sz += 4;
+        sz    += 4;
       } else if (sz.size() > 1 && Align::NONE != (_align = align_of(sz[1]))) {
-        _fill = *sz;
-        sz += 2;
+        _fill  = *sz;
+        sz    += 2;
       } else if (Align::NONE != (_align = align_of(*sz))) {
         ++sz;
       }
@@ -312,7 +312,8 @@ namespace {
 char UPPER_DIGITS[]                                 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 char LOWER_DIGITS[]                                 = "0123456789abcdefghijklmnopqrstuvwxyz";
 static const std::array<uint64_t, 11> POWERS_OF_TEN = {
-  {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000}};
+  {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000}
+};
 } // namespace
 
 /// Templated radix based conversions. Only a small number of radix are
@@ -326,8 +327,8 @@ To_Radix(uintmax_t n, char *buff, size_t width, char *digits) {
   char *out = buff + width;
   if (n) {
     while (n) {
-      *--out = digits[n % RADIX];
-      n /= RADIX;
+      *--out  = digits[n % RADIX];
+      n      /= RADIX;
     }
   } else {
     *--out = '0';
@@ -531,9 +532,9 @@ Format_Float(BufferWriter &w, Spec const &spec, double f, bool negative_p) {
   }
 
   static constexpr char dec = '.';
-  double frac = NAN;
-  size_t l = 0;
-  size_t r = 0;
+  double frac               = NAN;
+  size_t l                  = 0;
+  size_t r                  = 0;
   char whole[std::numeric_limits<double>::digits10 + 1];
   char fraction[std::numeric_limits<double>::digits10 + 1];
   char neg               = 0;
@@ -630,7 +631,7 @@ Format::Format(TextView fmt) {
 
 bool
 Format::is_literal() const {
-  for (auto const& spec : _items) {
+  for (auto const &spec : _items) {
     if (Spec::LITERAL_TYPE != spec._type) {
       return false;
     }
@@ -712,14 +713,14 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex) {
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void const> const &span) {
   if ('x' == spec._type || 'X' == spec._type) {
-    const char *digits =  ('X' == spec._type) ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
+    const char *digits = ('X' == spec._type) ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
     size_t block       = spec._prec > 0 ? spec._prec : span.size();
     TextView view{span.rebind<char const>()};
     bool space_p = false;
     while (view) {
       if (space_p) {
         w.write(' ');
-}
+      }
       space_p = true;
       if (spec._radix_lead_p) {
         w.write('0').write(digits[33]);
@@ -743,142 +744,77 @@ namespace {
 // Hand rolled, might not be totally compliant everywhere, but probably close
 // enough. The long string will be locally accurate. Clang requires the double
 // braces. Why, Turing only knows.
-static const std::array<std::string_view, 134> ERRNO_SHORT_NAME = {{
-  "SUCCESS",
-  "EPERM",
-  "ENOENT",
-  "ESRCH",
-  "EINTR",
-  "EIO",
-  "ENXIO",
-  "E2BIG ",
-  "ENOEXEC",
-  "EBADF",
-  "ECHILD",
-  "EAGAIN",
-  "ENOMEM",
-  "EACCES",
-  "EFAULT",
-  "ENOTBLK",
-  "EBUSY",
-  "EEXIST",
-  "EXDEV",
-  "ENODEV",
-  "ENOTDIR",
-  "EISDIR",
-  "EINVAL",
-  "ENFILE",
-  "EMFILE",
-  "ENOTTY",
-  "ETXTBSY",
-  "EFBIG",
-  "ENOSPC",
-  "ESPIPE",
-  "EROFS",
-  "EMLINK",
-  "EPIPE",
-  "EDOM",
-  "ERANGE",
-  "EDEADLK",
-  "ENAMETOOLONG",
-  "ENOLCK",
-  "ENOSYS",
-  "ENOTEMPTY",
-  "ELOOP",
-  "EWOULDBLOCK",
-  "ENOMSG",
-  "EIDRM",
-  "ECHRNG",
-  "EL2NSYNC",
-  "EL3HLT",
-  "EL3RST",
-  "ELNRNG",
-  "EUNATCH",
-  "ENOCSI",
-  "EL2HTL",
-  "EBADE",
-  "EBADR",
-  "EXFULL",
-  "ENOANO",
-  "EBADRQC",
-  "EBADSLT",
-  "EDEADLOCK",
-  "EBFONT",
-  "ENOSTR",
-  "ENODATA",
-  "ETIME",
-  "ENOSR",
-  "ENONET",
-  "ENOPKG",
-  "EREMOTE",
-  "ENOLINK",
-  "EADV",
-  "ESRMNT",
-  "ECOMM",
-  "EPROTO",
-  "EMULTIHOP",
-  "EDOTDOT",
-  "EBADMSG",
-  "EOVERFLOW",
-  "ENOTUNIQ",
-  "EBADFD",
-  "EREMCHG",
-  "ELIBACC",
-  "ELIBBAD",
-  "ELIBSCN",
-  "ELIBMAX",
-  "ELIBEXEC",
-  "EILSEQ",
-  "ERESTART",
-  "ESTRPIPE",
-  "EUSERS",
-  "ENOTSOCK",
-  "EDESTADDRREQ",
-  "EMSGSIZE",
-  "EPROTOTYPE",
-  "ENOPROTOOPT",
-  "EPROTONOSUPPORT",
-  "ESOCKTNOSUPPORT",
-  "EOPNOTSUPP",
-  "EPFNOSUPPORT",
-  "EAFNOSUPPORT",
-  "EADDRINUSE",
-  "EADDRNOTAVAIL",
-  "ENETDOWN",
-  "ENETUNREACH",
-  "ENETRESET",
-  "ECONNABORTED",
-  "ECONNRESET",
-  "ENOBUFS",
-  "EISCONN",
-  "ENOTCONN",
-  "ESHUTDOWN",
-  "ETOOMANYREFS",
-  "ETIMEDOUT",
-  "ECONNREFUSED",
-  "EHOSTDOWN",
-  "EHOSTUNREACH",
-  "EALREADY",
-  "EINPROGRESS",
-  "ESTALE",
-  "EUCLEAN",
-  "ENOTNAM",
-  "ENAVAIL",
-  "EISNAM",
-  "EREMOTEIO",
-  "EDQUOT",
-  "ENOMEDIUM",
-  "EMEDIUMTYPE",
-  "ECANCELED",
-  "ENOKEY",
-  "EKEYEXPIRED",
-  "EKEYREVOKED",
-  "EKEYREJECTED",
-  "EOWNERDEAD",
-  "ENOTRECOVERABLE",
-  "ERFKILL",
-  "EHWPOISON",
-}};
+static const std::array<std::string_view, 134> ERRNO_SHORT_NAME = {
+  {
+   "SUCCESS", "EPERM",
+   "ENOENT", "ESRCH",
+   "EINTR", "EIO",
+   "ENXIO", "E2BIG ",
+   "ENOEXEC", "EBADF",
+   "ECHILD", "EAGAIN",
+   "ENOMEM", "EACCES",
+   "EFAULT", "ENOTBLK",
+   "EBUSY", "EEXIST",
+   "EXDEV", "ENODEV",
+   "ENOTDIR", "EISDIR",
+   "EINVAL", "ENFILE",
+   "EMFILE", "ENOTTY",
+   "ETXTBSY", "EFBIG",
+   "ENOSPC", "ESPIPE",
+   "EROFS", "EMLINK",
+   "EPIPE", "EDOM",
+   "ERANGE", "EDEADLK",
+   "ENAMETOOLONG", "ENOLCK",
+   "ENOSYS", "ENOTEMPTY",
+   "ELOOP", "EWOULDBLOCK",
+   "ENOMSG", "EIDRM",
+   "ECHRNG", "EL2NSYNC",
+   "EL3HLT", "EL3RST",
+   "ELNRNG", "EUNATCH",
+   "ENOCSI", "EL2HTL",
+   "EBADE", "EBADR",
+   "EXFULL", "ENOANO",
+   "EBADRQC", "EBADSLT",
+   "EDEADLOCK", "EBFONT",
+   "ENOSTR", "ENODATA",
+   "ETIME", "ENOSR",
+   "ENONET", "ENOPKG",
+   "EREMOTE", "ENOLINK",
+   "EADV", "ESRMNT",
+   "ECOMM", "EPROTO",
+   "EMULTIHOP", "EDOTDOT",
+   "EBADMSG", "EOVERFLOW",
+   "ENOTUNIQ", "EBADFD",
+   "EREMCHG", "ELIBACC",
+   "ELIBBAD", "ELIBSCN",
+   "ELIBMAX", "ELIBEXEC",
+   "EILSEQ", "ERESTART",
+   "ESTRPIPE", "EUSERS",
+   "ENOTSOCK", "EDESTADDRREQ",
+   "EMSGSIZE", "EPROTOTYPE",
+   "ENOPROTOOPT", "EPROTONOSUPPORT",
+   "ESOCKTNOSUPPORT", "EOPNOTSUPP",
+   "EPFNOSUPPORT", "EAFNOSUPPORT",
+   "EADDRINUSE", "EADDRNOTAVAIL",
+   "ENETDOWN", "ENETUNREACH",
+   "ENETRESET", "ECONNABORTED",
+   "ECONNRESET", "ENOBUFS",
+   "EISCONN", "ENOTCONN",
+   "ESHUTDOWN", "ETOOMANYREFS",
+   "ETIMEDOUT", "ECONNREFUSED",
+   "EHOSTDOWN", "EHOSTUNREACH",
+   "EALREADY", "EINPROGRESS",
+   "ESTALE", "EUCLEAN",
+   "ENOTNAM", "ENAVAIL",
+   "EISNAM", "EREMOTEIO",
+   "EDQUOT", "ENOMEDIUM",
+   "EMEDIUMTYPE", "ECANCELED",
+   "ENOKEY", "EKEYEXPIRED",
+   "EKEYREVOKED", "EKEYREJECTED",
+   "EOWNERDEAD", "ENOTRECOVERABLE",
+   "ERFKILL", "EHWPOISON",
+   }
+};
 static constexpr DiscreteRange<unsigned> ERRNO_RANGE{0, ERRNO_SHORT_NAME.size() - 1};
 // This provides convenient safe access to the errno short name array.
 auto errno_short_name = [](unsigned n) { return ERRNO_RANGE.contains(n) ? ERRNO_SHORT_NAME[n] : "Unknown"sv; };
@@ -918,7 +854,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date) {
   if (spec.has_numeric_type()) {
     bwformat(w, spec, date._epoch);
   } else {
-    struct tm t{};
+    struct tm t {};
     auto r = w.remaining();
     size_t n{0};
     // Verify @a fmt is null terminated, even outside the bounds of the view.
@@ -951,7 +887,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date) {
 
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
-  if (! pattern._text.empty()) { // If there's no text, no point in looping.
+  if (!pattern._text.empty()) { // If there's no text, no point in looping.
     auto limit        = std::min<size_t>(spec._max, pattern._text.size() * pattern._n);
     decltype(limit) n = 0;
     while (n < limit) {
@@ -965,7 +901,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, std::error_code const &ec) {
   static const auto G_CAT = &std::generic_category();
-  static const auto S_CAT  = &std::system_category();
+  static const auto S_CAT = &std::system_category();
 
   // This provides convenient safe access to the errno short name array.
   static const swoc::bwf::Format number_fmt{"[{}]"_sv}; // numeric value format.
@@ -986,9 +922,9 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::error_code const &ec) {
   return w;
 }
 
-BufferWriter&
-bwformat(BufferWriter &w, bwf::Spec const& spec, bwf::UnHex const& obj) {
-  auto span { obj._span };
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::UnHex const &obj) {
+  auto span{obj._span};
   size_t limit = spec._max;
   while (span.size() >= 2 && limit--) {
     auto b = svto_radix<16>(span.clip_prefix(2).rebind<char const>());
@@ -997,8 +933,7 @@ bwformat(BufferWriter &w, bwf::Spec const& spec, bwf::UnHex const& obj) {
   return w;
 }
 
-}  // namespace SWOC_VERSION_NS
-}  // namespace swoc
+}} // namespace swoc::SWOC_VERSION_NS
 
 namespace std {
 ostream &

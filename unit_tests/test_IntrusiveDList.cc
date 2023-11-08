@@ -31,8 +31,7 @@
 using swoc::IntrusiveDList;
 using swoc::bwprint;
 
-namespace
-{
+namespace {
 struct Thing {
   std::string _payload;
   Thing *_next{nullptr};
@@ -42,14 +41,12 @@ struct Thing {
 
   struct Linkage {
     static Thing *&
-    next_ptr(Thing *t)
-    {
+    next_ptr(Thing *t) {
       return t->_next;
     }
 
     static Thing *&
-    prev_ptr(Thing *t)
-    {
+    prev_ptr(Thing *t) {
       return t->_prev;
     }
   };
@@ -59,8 +56,7 @@ using ThingList = IntrusiveDList<Thing::Linkage>;
 
 } // namespace
 
-TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]")
-{
+TEST_CASE("IntrusiveDList", "[libswoc][IntrusiveDList]") {
   ThingList list;
   int n;
 
@@ -136,7 +132,7 @@ TEST_CASE("IntrusiveDList list prefix", "[libswoc][IntrusiveDList]") {
   ThingList list;
 
   std::string tmp;
-  for (unsigned idx = 1 ; idx <= 20 ; ++idx) {
+  for (unsigned idx = 1; idx <= 20; ++idx) {
     list.append(new Thing(bwprint(tmp, "{}", idx)));
   }
 
@@ -150,13 +146,13 @@ TEST_CASE("IntrusiveDList list prefix", "[libswoc][IntrusiveDList]") {
   REQUIRE(list_none.head() == nullptr);
   REQUIRE(list.count() == 20);
 
-  auto v = list.head();
+  auto v      = list.head();
   auto list_1 = list.take_prefix(1);
   REQUIRE(list_1.count() == 1);
   REQUIRE(list_1.head() == v);
   REQUIRE(list.count() == 19);
 
-  v = list.head();
+  v           = list.head();
   auto list_5 = list.take_prefix(5);
   REQUIRE(list_5.count() == 5);
   REQUIRE(list_5.head() == v);
@@ -164,14 +160,14 @@ TEST_CASE("IntrusiveDList list prefix", "[libswoc][IntrusiveDList]") {
   REQUIRE(list.head() != nullptr);
   REQUIRE(list.head()->_payload == "7");
 
-  v = list.head();
+  v              = list.head();
   auto list_most = list.take_prefix(9); // more than half.
   REQUIRE(list_most.count() == 9);
   REQUIRE(list_most.head() == v);
   REQUIRE(list.count() == 5);
   REQUIRE(list.head() != nullptr);
 
-  v = list.head();
+  v              = list.head();
   auto list_rest = list.take_prefix(20);
   REQUIRE(list_rest.count() == 5);
   REQUIRE(list_rest.head() == v);
@@ -184,7 +180,7 @@ TEST_CASE("IntrusiveDList list suffix", "[libswoc][IntrusiveDList]") {
   ThingList list;
 
   std::string tmp;
-  for (unsigned idx = 1 ; idx <= 20 ; ++idx) {
+  for (unsigned idx = 1; idx <= 20; ++idx) {
     list.append(new Thing(bwprint(tmp, "{}", idx)));
   }
 
@@ -193,13 +189,13 @@ TEST_CASE("IntrusiveDList list suffix", "[libswoc][IntrusiveDList]") {
   REQUIRE(list_none.head() == nullptr);
   REQUIRE(list.count() == 20);
 
-  auto * v = list.tail();
+  auto *v     = list.tail();
   auto list_1 = list.take_suffix(1);
   REQUIRE(list_1.count() == 1);
   REQUIRE(list_1.tail() == v);
   REQUIRE(list.count() == 19);
 
-  v = list.tail();
+  v           = list.tail();
   auto list_5 = list.take_suffix(5);
   REQUIRE(list_5.count() == 5);
   REQUIRE(list_5.tail() == v);
@@ -207,14 +203,14 @@ TEST_CASE("IntrusiveDList list suffix", "[libswoc][IntrusiveDList]") {
   REQUIRE(list.head() != nullptr);
   REQUIRE(list.tail()->_payload == "14");
 
-  v = list.tail();
+  v              = list.tail();
   auto list_most = list.take_suffix(9); // more than half.
   REQUIRE(list_most.count() == 9);
   REQUIRE(list_most.tail() == v);
   REQUIRE(list.count() == 5);
   REQUIRE(list.tail() != nullptr);
 
-  v = list.head();
+  v              = list.head();
   auto list_rest = list.take_suffix(20);
   REQUIRE(list_rest.count() == 5);
   REQUIRE(list_rest.head() == v);
@@ -224,8 +220,8 @@ TEST_CASE("IntrusiveDList list suffix", "[libswoc][IntrusiveDList]") {
   REQUIRE(list.tail() == nullptr);
 
   // reassemble the list.
-  list.append(list_most); // middle 6..14
-  list_1.prepend(list_5); // -> last 15..20
+  list.append(list_most);  // middle 6..14
+  list_1.prepend(list_5);  // -> last 15..20
   list.prepend(list_rest); // initial, 1..5 -> 1..14
   list.append(list_1);
 
@@ -255,10 +251,10 @@ TEST_CASE("IntrusiveDList Extra", "[libswoc][IntrusiveDList]") {
   list.append(new Thing(bwprint(tmp, "{}", 11)));
   list.append(new Thing(bwprint(tmp, "{}", 12)));
 
-  for (unsigned idx = 3 ; idx <= 5 ; ++idx) {
+  for (unsigned idx = 3; idx <= 5; ++idx) {
     list_b.append(new Thing(bwprint(tmp, "{}", idx)));
   }
-  for (unsigned idx = 7 ; idx <= 10 ; ++idx) {
+  for (unsigned idx = 7; idx <= 10; ++idx) {
     list_a.append(new Thing(bwprint(tmp, "{}", idx)));
   }
 
@@ -269,7 +265,7 @@ TEST_CASE("IntrusiveDList Extra", "[libswoc][IntrusiveDList]") {
   list.insert_after(v, list_a);
 
   auto spot = list.begin();
-  for ( unsigned idx = 0 ; idx <= 12 ; ++idx, ++spot ) {
+  for (unsigned idx = 0; idx <= 12; ++idx, ++spot) {
     bwprint(tmp, "{}", idx);
     REQUIRE(spot->_payload == tmp);
   }

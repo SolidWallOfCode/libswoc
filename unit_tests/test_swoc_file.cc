@@ -31,8 +31,7 @@ using namespace swoc::literals;
 // --------------------
 
 static TextView
-set_env_var(TextView name, TextView value = ""_tv)
-{
+set_env_var(TextView name, TextView value = ""_tv) {
   TextView zret;
   if (nullptr != getenv(name.data())) {
     zret.assign(value);
@@ -48,8 +47,7 @@ set_env_var(TextView name, TextView value = ""_tv)
 }
 
 // --------------------
-TEST_CASE("swoc_file", "[libswoc][swoc_file]")
-{
+TEST_CASE("swoc_file", "[libswoc][swoc_file]") {
   file::path p1("/home");
   REQUIRE(p1.string() == "/home");
   auto p2 = p1 / "bob";
@@ -70,7 +68,7 @@ TEST_CASE("swoc_file", "[libswoc][swoc_file]")
   REQUIRE(p1 != p2);
 
   // This is primarily to check working with std::string and file::path.
-  std::string s1 { "/home/evil/dave" };
+  std::string s1{"/home/evil/dave"};
   file::path fp{s1};
   std::error_code ec;
   [[maybe_unused]] auto mtime = file::last_write_time(s1, ec);
@@ -80,8 +78,7 @@ TEST_CASE("swoc_file", "[libswoc][swoc_file]")
   [[maybe_unused]] std::unordered_map<file::path, std::string> container;
 }
 
-TEST_CASE("swoc_file_io", "[libswoc][swoc_file_io]")
-{
+TEST_CASE("swoc_file_io", "[libswoc][swoc_file_io]") {
   file::path file("unit_tests/test_swoc_file.cc");
   std::error_code ec;
   std::string content = swoc::file::load(file, ec);
@@ -98,7 +95,7 @@ TEST_CASE("swoc_file_io", "[libswoc][swoc_file_io]")
 
   // See if converting to absolute works (at least somewhat).
   REQUIRE(file.is_relative());
-  auto abs { swoc::file::absolute(file, ec) };
+  auto abs{swoc::file::absolute(file, ec)};
   REQUIRE(ec.value() == 0);
   REQUIRE(abs.is_absolute());
   fs = swoc::file::status(abs, ec); // needs to be the same as for @a file
@@ -127,8 +124,7 @@ TEST_CASE("swoc_file_io", "[libswoc][swoc_file_io]")
   REQUIRE_FALSE(file::exists(file::file_status{}));
 }
 
-TEST_CASE("path::filename", "[libswoc][file]")
-{
+TEST_CASE("path::filename", "[libswoc][file]") {
   CHECK(file::path("/foo/bar.txt").filename() == file::path("bar.txt"));
   CHECK(file::path("/foo/.bar").filename() == file::path(".bar"));
   CHECK(file::path("/foo/bar").filename() == file::path("bar"));
@@ -146,8 +142,7 @@ TEST_CASE("path::filename", "[libswoc][file]")
   CHECK(file::path("alpha/bravo").relative_path() == file::path("alpha/bravo"));
 }
 
-TEST_CASE("swoc::file::temp_directory_path", "[libswoc][swoc_file]")
-{
+TEST_CASE("swoc::file::temp_directory_path", "[libswoc][swoc_file]") {
   // Clean all temp dir env variables and save the values.
   std::string s1{set_env_var("TMPDIR")};
   std::string s2{set_env_var("TEMPDIR")};
@@ -181,8 +176,7 @@ TEST_CASE("swoc::file::temp_directory_path", "[libswoc][swoc_file]")
   set_env_var("TMP", s3);
 }
 
-TEST_CASE("file::path::create_directories", "[libswoc][swoc_file]")
-{
+TEST_CASE("file::path::create_directories", "[libswoc][swoc_file]") {
   std::error_code ec;
   file::path tempdir = file::temp_directory_path();
 
@@ -203,8 +197,7 @@ TEST_CASE("file::path::create_directories", "[libswoc][swoc_file]")
   CHECK_FALSE(file::exists(testdir1));
 }
 
-TEST_CASE("ts_file::path::remove", "[libswoc][fs_file]")
-{
+TEST_CASE("ts_file::path::remove", "[libswoc][fs_file]") {
   std::error_code ec;
   file::path tempdir = file::temp_directory_path();
 
@@ -230,7 +223,7 @@ TEST_CASE("ts_file::path::remove", "[libswoc][fs_file]")
 
   // Create a file, remove it, test if exists and then attempting to remove it again should fail.
   CHECK(file::create_directories(testdir2, ec));
-  auto creatfile = [](char const* name) {
+  auto creatfile = [](char const *name) {
     std::ofstream out(name);
     out << "Simple test file " << name << std::endl;
     out.close();
@@ -250,8 +243,7 @@ TEST_CASE("ts_file::path::remove", "[libswoc][fs_file]")
   CHECK_FALSE(file::exists(testdir1));
 }
 
-TEST_CASE("file::path::canonical", "[libswoc][swoc_file]")
-{
+TEST_CASE("file::path::canonical", "[libswoc][swoc_file]") {
   std::error_code ec;
   file::path tempdir    = file::canonical(file::temp_directory_path(), ec);
   file::path testdir1   = tempdir / "libswoc_can_1";
@@ -281,8 +273,7 @@ TEST_CASE("file::path::canonical", "[libswoc][swoc_file]")
   CHECK_FALSE(file::exists(testdir1));
 }
 
-TEST_CASE("file::path::copy", "[libts][swoc_file]")
-{
+TEST_CASE("file::path::copy", "[libts][swoc_file]") {
   std::error_code ec;
   file::path tempdir  = file::temp_directory_path();
   file::path testdir1 = tempdir / "libswoc_cp_alpha";

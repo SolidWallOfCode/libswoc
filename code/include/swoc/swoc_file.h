@@ -24,8 +24,16 @@ namespace file {
 using file_time_type = std::chrono::system_clock::time_point;
 
 enum class file_type : signed char {
-  none = 0, not_found = -1, regular = 1, directory = 2, symlink = 3,
-  block = 4, character = 5, fifo = 6, socket = 7, unknown = 8
+  none      = 0,
+  not_found = -1,
+  regular   = 1,
+  directory = 2,
+  symlink   = 3,
+  block     = 4,
+  character = 5,
+  fifo      = 6,
+  socket    = 7,
+  unknown   = 8
 };
 
 /// Invalid file descriptor.
@@ -52,16 +60,26 @@ struct unique_fd {
    *
    * Ownership is from from @Wa that to @a this.
    */
-  unique_fd(self_type && that) : _fd(that._fd) { that._fd = NO_FD; }
+  unique_fd(self_type &&that) : _fd(that._fd) { that._fd = NO_FD; }
 
   /// Close the file dscriptor.
-  ~unique_fd() { if (_fd != NO_FD) { ::close(_fd); _fd = NO_FD; }; }
+  ~unique_fd() {
+    if (_fd != NO_FD) {
+      ::close(_fd);
+      _fd = NO_FD;
+    };
+  }
 
   /** Release ownership of the file descriptor.
    *
    * @return The file descriptor.
    */
-  int release() { auto zret = _fd; _fd = NO_FD; return zret; }
+  int
+  release() {
+    auto zret = _fd;
+    _fd       = NO_FD;
+    return zret;
+  }
 
   /// Implicitly convert to file descriptor.
   operator int() const { return _fd; }
@@ -95,7 +113,7 @@ public:
   path(std::string_view src);
 
   /// Construct with a copy of @a p.
-  path(std::string const& p);
+  path(std::string const &p);
 
   /// Move from an existing string
   path(std::string &&that);
@@ -162,7 +180,7 @@ public:
    * @param n Number of bytes to reserve.
    * @return @a this.
    */
-  self_type & reserve(size_t n);
+  self_type &reserve(size_t n);
 
   /// A view of the path.
   swoc::TextView view() const;
@@ -288,8 +306,8 @@ bool create_directories(const path &p, std::error_code &ec, mode_t mode = 0775) 
  * @param to Destination file.
  * @param ec Error code return.
  * @return @c true if @a from was copied, @c false on error.
-*
-* @note Not fully implemented.
+ *
+ * @note Not fully implemented.
  */
 bool copy(const path &from, const path &to, std::error_code &ec);
 
@@ -319,7 +337,7 @@ file_time_type last_write_time(file_status const &fs);
  * @param p Path to target.
  * @return Time of last modification, or @c file_time_type::min() on error.
  */
-file_time_type last_write_time(path const& p, std::error_code &ec);
+file_time_type last_write_time(path const &p, std::error_code &ec);
 
 /// @return The access time for @a fs.
 file_time_type access_time(file_status const &fs);
@@ -446,9 +464,15 @@ operator/(path &&lhs, std::string_view rhs) {
 }
 
 // Can remove "enum" after the function @c file_type is removed.
-inline enum file_type file_status::type() const { return _type; }
+inline enum file_type
+file_status::type() const {
+  return _type;
+}
 
-inline mode_t file_status::mode() const { return _stat.st_mode; }
+inline mode_t
+file_status::mode() const {
+  return _stat.st_mode;
+}
 
 inline bool
 is_char_device(const file_status &fs) {

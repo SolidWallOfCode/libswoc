@@ -32,7 +32,7 @@ using V6Lexicon = swoc::Lexicon<IP6Addr>;
 
 // --------------------------------------------------
 
-static constexpr TextView HOST_FILE { R"(
+static constexpr TextView HOST_FILE{R"(
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 
@@ -52,7 +52,8 @@ static constexpr TextView HOST_FILE { R"(
 192.168.2.32	edge-ts
 )"};
 
-int main(int, char *[]) {
+int
+main(int, char *[]) {
   V4Lexicon hosts_ipv4;
   V6Lexicon hosts_ipv6;
 
@@ -63,7 +64,7 @@ int main(int, char *[]) {
       continue;
     }
     auto addr_token = line.take_prefix_if(&isspace);
-    if (IPAddr addr ; addr.load(addr_token)) {
+    if (IPAddr addr; addr.load(addr_token)) {
       while (line.ltrim_if(&isspace)) {
         auto host = line.take_prefix_if(&isspace);
         if (addr.is_ip4()) {
@@ -80,10 +81,10 @@ int main(int, char *[]) {
   std::cout << swoc::detail::what("{} -> {}\n", IP4Addr("192.168.2.3"), hosts_ipv4[IP4Addr("192.168.2.3")]);
 
   std::cout << "Table dump by name" << std::endl;
-  for ( auto const & item : hosts_ipv4.by_names()) {
+  for (auto const &item : hosts_ipv4.by_names()) {
     std::cout << swoc::detail::what("{} -> {}\n", std::get<V4Lexicon::NAME_IDX>(item), std::get<V4Lexicon::VALUE_IDX>(item));
   }
-  for ( auto const & item : hosts_ipv6.by_names()) {
+  for (auto const &item : hosts_ipv6.by_names()) {
     std::cout << swoc::detail::what("{} -> {}\n", std::get<V4Lexicon::NAME_IDX>(item), std::get<V4Lexicon::VALUE_IDX>(item));
   }
 

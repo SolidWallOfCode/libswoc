@@ -68,7 +68,7 @@ public:
 
     explicit constexpr Severity(severity_type n) : _raw(n) {} ///< No implicit conversion from numeric.
 
-    Severity(Severity const &that) = default;
+    Severity(Severity const &that)            = default;
     Severity &operator=(Severity const &that) = default;
 
     operator severity_type() const { return _raw; } ///< Implicit conversion to numeric.
@@ -189,26 +189,26 @@ protected:
     /// Allocate from the arena.
     swoc::MemSpan<char> alloc(size_t n);
 
-    TextView _annotation_glue_text = DEFAULT_ANNOTATION_GLUE_TEXT;
+    TextView _annotation_glue_text          = DEFAULT_ANNOTATION_GLUE_TEXT;
     TextView _annotation_severity_glue_text = DEFAULT_SEVERITY_GLUE_TEXT;
-    TextView _severity_glue_text = DEFAULT_SEVERITY_GLUE_TEXT;
-    TextView _indent_text = DEFAULT_INDENT_TEXT;
-    bool _glue_final_p = true; ///< Add glue after the last annotation?
+    TextView _severity_glue_text            = DEFAULT_SEVERITY_GLUE_TEXT;
+    TextView _indent_text                   = DEFAULT_INDENT_TEXT;
+    bool _glue_final_p                      = true; ///< Add glue after the last annotation?
 
-    std::optional<Severity> _severity; ///< Severity.
-    code_type _code{Errata::DEFAULT_CODE};        ///< Message code / ID
-    Container _notes;                             ///< The message stack.
-    swoc::MemArena _arena;                        ///< Annotation text storage.
+    std::optional<Severity> _severity;     ///< Severity.
+    code_type _code{Errata::DEFAULT_CODE}; ///< Message code / ID
+    Container _notes;                      ///< The message stack.
+    swoc::MemArena _arena;                 ///< Annotation text storage.
   };
 
 public:
   /// Default constructor - empty errata, very fast.
   Errata()                      = default;
-  Errata(self_type const &that) = delete;                          ///< No constant copy construction.
-  Errata(self_type &&that) noexcept;                               ///< Move constructor.
-  self_type &operator=(self_type const &that) = delete;            // no copy assignemnt.
-  self_type &operator                         =(self_type &&that); ///< Move assignment.
-  ~Errata();                                                       ///< Destructor.
+  Errata(self_type const &that) = delete;               ///< No constant copy construction.
+  Errata(self_type &&that) noexcept;                    ///< Move constructor.
+  self_type &operator=(self_type const &that) = delete; // no copy assignemnt.
+  self_type &operator=(self_type &&that);               ///< Move assignment.
+  ~Errata();                                            ///< Destructor.
 
   /** Construct with a severity.
    *
@@ -262,12 +262,11 @@ public:
    *
    * Cosntructs with error @a code and @a severity and an formatted annotation.
    */
-  template <typename... Args> Errata(code_type const &code, Severity severity, std::string_view fmt, Args &&... args);
+  template <typename... Args> Errata(code_type const &code, Severity severity, std::string_view fmt, Args &&...args);
 
-
-  template <typename... Args> Errata(code_type const &type, std::string_view fmt, Args &&... args);
-  template <typename... Args> Errata(Severity severity, std::string_view fmt, Args &&... args);
-  template <typename... Args> explicit Errata(std::string_view fmt, Args &&... args);
+  template <typename... Args> Errata(code_type const &type, std::string_view fmt, Args &&...args);
+  template <typename... Args> Errata(Severity severity, std::string_view fmt, Args &&...args);
+  template <typename... Args> explicit Errata(std::string_view fmt, Args &&...args);
 
   /** Add an @c Annotation to the top with @a text.
    * @param text Text of the message.
@@ -326,7 +325,7 @@ public:
    *
    *  @return A reference to this object.
    */
-  template <typename... Args> self_type &note(std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &note(std::string_view fmt, Args &&...args);
 
   /** Append an @c Annotation.
    * @param fmt Format string (@c BufferWriter style).
@@ -346,7 +345,7 @@ public:
    *
    * The severity is updated to @a severity if the latter is more severe.
    */
-  template <typename... Args> self_type &note(Severity severity, std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &note(Severity severity, std::string_view fmt, Args &&...args);
 
   /** Append an @c Annotation.
    * @param severity Local severity.
@@ -409,7 +408,7 @@ public:
    * @see register_sink
    * @see clear
    */
-  self_type & sink();
+  self_type &sink();
 
   friend std::ostream &operator<<(std::ostream &, self_type const &);
 
@@ -450,7 +449,10 @@ public:
   bool is_ok() const;
 
   /// @return If there is top level severity.
-  bool has_severity() const { return _data && _data->_severity.has_value(); }
+  bool
+  has_severity() const {
+    return _data && _data->_severity.has_value();
+  }
 
   /// @return Top level severity.
   Severity severity() const;
@@ -462,16 +464,16 @@ public:
    *
    * @see update
    */
-  self_type & assign(Severity severity);
+  self_type &assign(Severity severity);
 
   /** Set the severity.
-     *
-     * @param severity Minimum severity
-     * @return @a this
-     *
-     * This sets the internal severity to the maximum of @a severity and the current severity.
-     *
-     * @see assign
+   *
+   * @param severity Minimum severity
+   * @return @a this
+   *
+   * This sets the internal severity to the maximum of @a severity and the current severity.
+   *
+   * @see assign
    */
   self_type &update(Severity severity);
 
@@ -479,7 +481,7 @@ public:
   code_type const &code() const;
 
   /// Set the @a code for @a this.
-  self_type & assign(code_type code);
+  self_type &assign(code_type code);
 
   /// Number of messages in the errata.
   size_t length() const;
@@ -527,7 +529,7 @@ public:
    * @param final_glue_p Add glue after last annotation?
    * @return @a this
    */
-  self_type & assign_annotation_glue_text(TextView text, bool final_glue_p = false);
+  self_type &assign_annotation_glue_text(TextView text, bool final_glue_p = false);
 
   /// @return Glue text for the annotation severity.
   TextView annotation_severity_glue_text() const;
@@ -537,7 +539,7 @@ public:
    * @param text Glue text.
    * @return @a this
    */
-  self_type & assign_annotation_severity_glue_text(TextView text);
+  self_type &assign_annotation_severity_glue_text(TextView text);
 
   /// @return The severity glue text for @a this.
   TextView severity_glue_text() const;
@@ -547,7 +549,7 @@ public:
    * @param text Glue text.
    * @return @a this
    */
-  self_type & assign_severity_glue_text(TextView text);
+  self_type &assign_severity_glue_text(TextView text);
 
   /// @return The text used for each level of indentation.
   TextView indent_text() const;
@@ -557,7 +559,7 @@ public:
    * @param text Text for each level of indentation.
    * @return @a this.
    */
-  self_type & assign_indent_text(TextView text);
+  self_type &assign_indent_text(TextView text);
 
   /** Base class for erratum sink.
 
@@ -587,8 +589,8 @@ public:
   /// Convenience wrapper class to enable using functions directly for sinks.
   struct SinkWrapper : public Sink {
     /// Constructor.
-    SinkWrapper(SinkHandler const& f) : _f(f) {}
-    SinkWrapper(SinkHandler && f) : _f(std::move(f)) {}
+    SinkWrapper(SinkHandler const &f) : _f(f) {}
+    SinkWrapper(SinkHandler &&f) : _f(std::move(f)) {}
     /// Operator to invoke the function.
     void operator()(Errata const &e) const override;
     SinkHandler _f; ///< Client supplied handler.
@@ -602,7 +604,7 @@ public:
 
   /// Register a sink function for abandonded erratum.
   static void
-  register_sink(SinkHandler && f) {
+  register_sink(SinkHandler &&f) {
     register_sink(Sink::Handle(new SinkWrapper(std::move(f))));
   }
 
@@ -756,7 +758,7 @@ public:
    * @param args Arguments for @a fmt.
    * @return @a *this
    */
-  template <typename... Args> self_type &note(std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &note(std::string_view fmt, Args &&...args);
 
   /** Append a message in to the result.
    *
@@ -766,7 +768,7 @@ public:
    * @param args Arguments for @a fmt.
    * @return @a *this
    */
-  template <typename... Args> self_type &note(Severity severity, std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &note(Severity severity, std::string_view fmt, Args &&...args);
 
   /** Copy messages from @a that to @a this.
    *
@@ -996,20 +998,20 @@ inline Errata::Errata(code_type const &code, const std::string_view &text) : Err
 inline Errata::Errata(Severity severity, const std::string_view &text) : Errata(DEFAULT_CODE, severity, text) {}
 
 template <typename... Args>
-Errata::Errata(code_type const &code, Severity severity, std::string_view fmt, Args &&... args) : Errata(code, severity) {
+Errata::Errata(code_type const &code, Severity severity, std::string_view fmt, Args &&...args) : Errata(code, severity) {
   this->note_v(fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
-Errata::Errata(code_type const &code, std::string_view fmt, Args &&... args)
+Errata::Errata(code_type const &code, std::string_view fmt, Args &&...args)
   : Errata(code, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) {}
 template <typename... Args>
-Errata::Errata(Severity severity, std::string_view fmt, Args &&... args)
+Errata::Errata(Severity severity, std::string_view fmt, Args &&...args)
   : Errata(DEFAULT_CODE, severity, fmt, std::forward<Args>(args)...) {}
 template <typename... Args>
-Errata::Errata(std::string_view fmt, Args &&... args) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) {}
+Errata::Errata(std::string_view fmt, Args &&...args) : Errata(DEFAULT_CODE, DEFAULT_SEVERITY, fmt, std::forward<Args>(args)...) {}
 
-inline Errata&
+inline Errata &
 Errata::clear() {
   if (_data) {
     _data->~Data(); // destructs the @c MemArena in @a _data which releases memory.
@@ -1046,7 +1048,8 @@ Errata::code() const -> code_type const & {
   return this->empty() ? DEFAULT_CODE : _data->_code;
 }
 
-inline auto Errata::assign(code_type code) -> self_type & {
+inline auto
+Errata::assign(code_type code) -> self_type & {
   this->data()->_code = code;
   return *this;
 }
@@ -1056,7 +1059,8 @@ Errata::severity() const -> Severity {
   return _data ? _data->_severity.value() : DEFAULT_SEVERITY;
 }
 
-inline auto Errata::assign(Severity severity) -> self_type & {
+inline auto
+Errata::assign(Severity severity) -> self_type & {
   this->data()->_severity = severity;
   return *this;
 }
@@ -1136,13 +1140,13 @@ Errata::note_v(Severity severity, std::string_view fmt, std::tuple<Args...> cons
 
 template <typename... Args>
 Errata &
-Errata::note(std::string_view fmt, Args &&... args) {
+Errata::note(std::string_view fmt, Args &&...args) {
   return this->note_sv({}, fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
 Errata &
-Errata::note(Severity severity, std::string_view fmt, Args &&... args) {
+Errata::note(Severity severity, std::string_view fmt, Args &&...args) {
   return this->note_sv(severity, fmt, std::forward_as_tuple(args...));
 }
 
@@ -1174,7 +1178,7 @@ Errata::annotation_glue_text() const {
 inline auto
 Errata::assign_annotation_glue_text(TextView text, bool final_glue_p) -> self_type & {
   this->data()->_annotation_glue_text = this->data()->localize(text);
-  this->data()->_glue_final_p = final_glue_p;
+  this->data()->_glue_final_p         = final_glue_p;
   return *this;
 }
 
@@ -1249,7 +1253,7 @@ Rv<R>::note(const code_type &code, Severity severity) -> self_type & {
 template <typename R>
 template <typename... Args>
 auto
-Rv<R>::note(std::string_view fmt, Args &&... args) -> self_type & {
+Rv<R>::note(std::string_view fmt, Args &&...args) -> self_type & {
   _errata.note(fmt, std::forward<Args>(args)...);
   return *this;
 }
@@ -1257,7 +1261,7 @@ Rv<R>::note(std::string_view fmt, Args &&... args) -> self_type & {
 template <typename R>
 template <typename... Args>
 auto
-Rv<R>::note(Severity severity, std::string_view fmt, Args &&... args) -> self_type & {
+Rv<R>::note(Severity severity, std::string_view fmt, Args &&...args) -> self_type & {
   _errata.note(severity, fmt, std::forward<Args>(args)...);
   return *this;
 }
@@ -1380,7 +1384,9 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Errata const &);
 // Tuple / structured binding support.
 namespace std {
 /// @cond INTERNAL_DETAIL
-template <size_t IDX, typename R> class tuple_element<IDX, swoc::Rv<R>> { static_assert("swoc:Rv tuple index out of range"); };
+template <size_t IDX, typename R> class tuple_element<IDX, swoc::Rv<R>> {
+  static_assert("swoc:Rv tuple index out of range");
+};
 
 template <typename R> class tuple_element<0, swoc::Rv<R>> {
 public:

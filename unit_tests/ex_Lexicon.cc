@@ -19,9 +19,9 @@
 // doc.1.begin
 enum class NetType {
   EXTERNAL = 0, // 0x1
-  PROD, // 0x2
-  SECURE, // 0x4
-  EDGE, // 0x8
+  PROD,         // 0x2
+  SECURE,       // 0x4
+  EDGE,         // 0x8
   INVALID
 };
 // doc.1.end
@@ -31,12 +31,10 @@ static constexpr size_t N_TYPES = size_t(NetType::INVALID);
 
 // Set up a Lexicon to convert between the enumeration and strings.
 // doc.2.begin
-swoc::Lexicon<NetType> const NetTypeNames { {{NetType::EXTERNAL, "external"},
-                                       {NetType::PROD, "prod"},
-                                       {NetType::SECURE, "secure"},
-                                       {NetType::EDGE, "edge"}},
-                                       NetType::INVALID // default value for undefined name
-                                    };
+swoc::Lexicon<NetType> const NetTypeNames{
+  {{NetType::EXTERNAL, "external"}, {NetType::PROD, "prod"}, {NetType::SECURE, "secure"}, {NetType::EDGE, "edge"}},
+  NetType::INVALID  // default value for undefined name
+};
 // doc.2.end
 
 // A bit set for the flags.
@@ -46,13 +44,13 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]") {
   swoc::IPSpace<Flags> space; // Space in which to store the flags.
   // Load the file contents
   // doc.file.begin
-  swoc::TextView text { R"(
+  swoc::TextView text{R"(
     10.0.0.2-10.0.0.254,edge
     10.12.0.0/25,prod
     10.15.37.10-10.15.37.99,prod,secure
     172.19.0.0/22,external,secure
     192.168.18.0/23,external,prod
-  )" };
+  )"};
   // doc.file.end
   // doc.load.begin
   // Process all the lines in the file.
@@ -65,7 +63,7 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]") {
       while (line) { // parse out the rest of the comma separated elements
         auto token = line.take_prefix_at(',');
         auto idx   = NetTypeNames[token];
-        if (idx != NetType::INVALID) { // one of the valid strings
+        if (idx != NetType::INVALID) {      // one of the valid strings
           flags.set(static_cast<int>(idx)); // set the bit
         }
       }
@@ -76,17 +74,17 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]") {
 
   using AddrCase = std::tuple<swoc::IPAddr, Flags>;
   using swoc::IPAddr;
-  std::array<AddrCase, 5> AddrList = {{
-    {IPAddr{"10.0.0.6"}, 0x8}
-  , {IPAddr{"172.19.3.31"}, 0x5}
-  , {IPAddr{"192.168.18.19"}, 0x3}
-  , {IPAddr{"10.15.37.57"}, 0x6}
-  , {IPAddr{"10.12.0.126"}, 0x2}
-  }};
+  std::array<AddrCase, 5> AddrList = {
+    {{IPAddr{"10.0.0.6"}, 0x8},
+     {IPAddr{"172.19.3.31"}, 0x5},
+     {IPAddr{"192.168.18.19"}, 0x3},
+     {IPAddr{"10.15.37.57"}, 0x6},
+     {IPAddr{"10.12.0.126"}, 0x2}}
+  };
 
-  for ( auto const& [ addr, bits ] : AddrList ) {
+  for (auto const &[addr, bits] : AddrList) {
     // doc.lookup.begin
-    auto [ range, flags ] = *space.find(addr);
+    auto [range, flags] = *space.find(addr);
     // doc.lookup.end
     REQUIRE_FALSE(range.empty());
     CHECK(flags == bits);
@@ -96,44 +94,37 @@ TEST_CASE("Lexicon Example", "[libts][Lexicon]") {
 namespace {
 
 // doc.ctor.1.begin
-swoc::Lexicon<NetType> const Example1 {
-  {{NetType::EXTERNAL, "external"},
-  {NetType::PROD, "prod"},
-  {NetType::SECURE, "secure"},
-  {NetType::EDGE, "edge"}},
+swoc::Lexicon<NetType> const Example1{
+  {{NetType::EXTERNAL, "external"}, {NetType::PROD, "prod"}, {NetType::SECURE, "secure"}, {NetType::EDGE, "edge"}},
   "*invalid*", // default name for undefined values
-  NetType::INVALID // default value for undefined name
+  NetType::INVALID  // default value for undefined name
 };
 // doc.ctor.1.end
 
 // doc.ctor.2.begin
-swoc::Lexicon<NetType> const Example2 {
-    {{NetType::EXTERNAL, "external"},
-        {NetType::PROD, "prod"},
-        {NetType::SECURE, "secure"},
-        {NetType::EDGE, "edge"}},
+swoc::Lexicon<NetType> const Example2{
+  {{NetType::EXTERNAL, "external"}, {NetType::PROD, "prod"}, {NetType::SECURE, "secure"}, {NetType::EDGE, "edge"}},
 };
 // doc.ctor.2.end
 
 // doc.ctor.3.begin
-swoc::Lexicon<NetType> Example3 {
-    "*invalid*", // default name for undefined values
-    NetType::INVALID // default value for undefined name
+swoc::Lexicon<NetType> Example3{
+  "*invalid*",     // default name for undefined values
+  NetType::INVALID // default value for undefined name
 };
 // doc.ctor.3.end
 
 // doc.ctor.4.begin
 enum BoolTag {
   INVALID = -1,
-  False = 0,
-  True = 1,
+  False   = 0,
+  True    = 1,
 };
 
-swoc::Lexicon<BoolTag> const BoolNames {
-  {{ BoolTag::True, { "true", "1", "on", "enable", "Y", "yes" }}
-  , { BoolTag::False, { "false", "0", "off", "disable", "N", "no" }}}
-  , BoolTag::INVALID };
+swoc::Lexicon<BoolTag> const BoolNames{
+  {{BoolTag::True, {"true", "1", "on", "enable", "Y", "yes"}}, {BoolTag::False, {"false", "0", "off", "disable", "N", "no"}}},
+  BoolTag::INVALID
+};
 // doc.ctor.4.end
-
 
 } // namespace

@@ -11,13 +11,12 @@
 
 using swoc::Vectray;
 
-TEST_CASE("Vectray", "[libswoc][Vectray]")
-{
+TEST_CASE("Vectray", "[libswoc][Vectray]") {
   struct Thing {
-    unsigned n = 56;
-    Thing() = default;
-    Thing(Thing const& that) = default;
-    Thing(Thing && that) : n(that.n) { that.n = 0; }
+    unsigned n               = 56;
+    Thing()                  = default;
+    Thing(Thing const &that) = default;
+    Thing(Thing &&that) : n(that.n) { that.n = 0; }
     Thing(unsigned u) : n(u) {}
   };
 
@@ -34,13 +33,13 @@ TEST_CASE("Vectray", "[libswoc][Vectray]")
   REQUIRE(unit_thing.size() == 3);
 
   // Check via indexed access.
-  for ( unsigned idx = 0 ; idx < unit_thing.size() ; ++idx ) {
+  for (unsigned idx = 0; idx < unit_thing.size(); ++idx) {
     REQUIRE(unit_thing[idx].n == idx);
   }
 
   // Check via container access.
   unsigned n = 0;
-  for ( auto const& thing : unit_thing ) {
+  for (auto const &thing : unit_thing) {
     REQUIRE(thing.n == n);
     ++n;
   }
@@ -59,8 +58,8 @@ TEST_CASE("Vectray", "[libswoc][Vectray]")
 TEST_CASE("Vectray Destructor", "[libswoc][Vectray]") {
   int count = 0;
   struct Q {
-    int & count_;
-    Q(int & count) : count_(count) {}
+    int &count_;
+    Q(int &count) : count_(count) {}
     ~Q() { ++count_; }
   };
 
@@ -80,5 +79,4 @@ TEST_CASE("Vectray Destructor", "[libswoc][Vectray]") {
   // Hard to get an exact cound because of std::vector resizes.
   // But first object should be at least double deleted because of transfer.
   REQUIRE(count >= 4);
-
 }

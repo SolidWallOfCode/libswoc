@@ -29,8 +29,7 @@ extern void EX_BWF_Format_Init();
 extern void test_Errata_init();
 
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
   EX_BWF_Format_Init();
   test_Errata_init();
 
