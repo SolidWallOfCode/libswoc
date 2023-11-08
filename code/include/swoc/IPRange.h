@@ -588,7 +588,8 @@ class IPRangeView {
     // Otherwise the compiler thinks the union isn't initialized.
     storage_type() = default;
     storage_type(std::monostate) {}
-    storage_type(storage_type const& that) : _void(that._void) {}
+    storage_type(storage_type const& that);
+    storage_type & operator = (storage_type const& rhs);
   };
 
 public:
@@ -1767,6 +1768,13 @@ IPSpace<PAYLOAD>::iterator::operator--(int) -> self_type {
 /// ------------------------------------------------------------------------------------
 
 // +++ IPRange +++
+
+inline IPRangeView::storage_type::storage_type(IPRangeView::storage_type const & that) : _void(that._void) {}
+
+inline IPRangeView::storage_type & IPRangeView::storage_type::operator=(IPRangeView::storage_type const & rhs) {
+  _void = rhs._void;
+  return *this;
+}
 
 inline IP4Range::IP4Range(string_view const &text) {
   this->load(text);
