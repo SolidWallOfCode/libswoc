@@ -121,7 +121,7 @@ public:
    *
    * Well, estemed reader, because the C++ standard doesn't have a better way to support overloads
    * that handle character pointers and literal strings differently. If the parameters were simply
-   * <tt>(char const *, char const *)</tt> then a cosntruct like <tt>{ "really", "broken" }</tt> can
+   * <tt>(char const *, char const *)</tt> then a construct like <tt>{ "really", "broken" }</tt> can
    * be interpreted as a @c TextView because the elements implicitly convert to <tt>char const
    * *</tt>. This makes no sense and creates some @b very annoying ambiguities for lists of strings
    * if there are exactly two in the list. See @c Lexicon for an example.
