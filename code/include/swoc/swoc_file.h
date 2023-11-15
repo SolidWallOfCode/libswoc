@@ -127,6 +127,15 @@ public:
   /// Assign @a p as the path.
   self_type &operator=(std::string_view p);
 
+  /// Assign @a s as the path.
+  self_type &operator=(std::string const& s);
+
+  /// Move @a s to be the path.
+  self_type &operator=(std::string && s);
+
+  /// Copy @a s as the path.
+  self_type &operator=(char const * s);
+
   /** Append or replace path with @a that.
    *
    * If @a that is absolute, it replaces @a this. Otherwise @a that is appended with exactly one
@@ -365,6 +374,24 @@ inline path::path(std::string &&that) : _path(std::move(that)) {}
 inline path &
 path::operator=(std::string_view p) {
   _path.assign(p);
+  return *this;
+}
+
+inline path &
+path::operator=(std::string const& s) {
+  _path.assign(s);
+  return *this;
+}
+
+inline path &
+path::operator=(std::string && s) {
+  _path.assign(std::move(s));
+  return *this;
+}
+
+inline path &
+path::operator=(char const * s) {
+  _path.assign(s);
   return *this;
 }
 
