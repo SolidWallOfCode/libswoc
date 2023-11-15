@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 
 project("libSWOC")
 include(CMakeDependentOption)
-set(CMAKE_INSTALL_PREFIX ${CMAKE_HOME_DIRECTORY}/image)
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_HOME_DIRECTORY}/image)
+endif ()
 
 cmake_dependent_option(LIBSWOC_TEST
     "Enable generation of libswoc test targets" ON
