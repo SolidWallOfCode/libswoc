@@ -128,13 +128,13 @@ public:
   self_type &operator=(std::string_view p);
 
   /// Assign @a s as the path.
-  self_type &operator=(std::string const& s);
+  self_type &operator=(std::string const &s);
 
   /// Move @a s to be the path.
-  self_type &operator=(std::string && s);
+  self_type &operator=(std::string &&s);
 
   /// Copy @a s as the path.
-  self_type &operator=(char const * s);
+  self_type &operator=(char const *s);
 
   /** Append or replace path with @a that.
    *
@@ -378,19 +378,19 @@ path::operator=(std::string_view p) {
 }
 
 inline path &
-path::operator=(std::string const& s) {
+path::operator=(std::string const &s) {
   _path.assign(s);
   return *this;
 }
 
 inline path &
-path::operator=(std::string && s) {
+path::operator=(std::string &&s) {
   _path.assign(std::move(s));
   return *this;
 }
 
 inline path &
-path::operator=(char const * s) {
+path::operator=(char const *s) {
   _path.assign(s);
   return *this;
 }
