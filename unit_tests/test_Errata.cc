@@ -129,6 +129,7 @@ TEST_CASE("Rv", "[libswoc][Errata]") {
 
     REQUIRE(erratum.length() == 1);
     REQUIRE(erratum.severity() == ERRATA_ERROR);
+    REQUIRE_FALSE(erratum.is_ok());
 
     REQUIRE(result == 17);
     zret = 38;
@@ -213,6 +214,7 @@ TEST_CASE("Rv", "[libswoc][Errata]") {
   auto &&[tr1, te1]{thing_rv};
   REQUIRE(te1.length() == 1);
   REQUIRE(te1.severity() == ERRATA_WARN);
+  REQUIRE_FALSE(te1.is_ok());
 
   ThingHandle other{std::move(tr1)};
   REQUIRE(tr1.get() == nullptr);

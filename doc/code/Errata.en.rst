@@ -1,3 +1,4 @@
+
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements. See the NOTICE file distributed with this work for
    additional information regarding copyright ownership. The ASF licenses this file to you under the
@@ -119,7 +120,7 @@ The initialization is done in :code:`test_Errata_init` which is called from :cod
 
 If there is no external initialization, then there are three levels of severity 0..2 with
 the names "Info", "Warning", and "Error". The default severity is "Error" (2) with a failure threshold
-of 2 ("Error").
+of 1 ("Warning"), that is a severity of "Warning" or "Error" marks a failure.
 
 By default annotations do not have a severity, that is a property of the :code:`Errata`. However a
 severity can be added to an annotation. If this is done the the severity of the :code:`Errata` is
