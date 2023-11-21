@@ -515,7 +515,7 @@ IPAddr::operator=(IPEndpoint const &addr) {
 }
 
 sockaddr *
-IPAddr::copy_to(sockaddr *sa) {
+IPAddr::copy_to(sockaddr *sa) const {
   if (this->is_ip4()) {
     _addr._ip4.copy_to(sa);
   } else if (this->is_ip6()) {
