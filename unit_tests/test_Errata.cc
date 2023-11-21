@@ -10,6 +10,7 @@
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ex.h"
 #include "swoc/swoc_file.h"
+#include "swoc/Lexicon.h"
 #include "catch.hpp"
 
 using swoc::Errata;
@@ -28,6 +29,42 @@ static constexpr swoc::Errata::Severity ERRATA_ERROR{4};
 std::array<swoc::TextView, 5> Severity_Names{
   {"Debug", "Diag", "Info", "Warn", "Error"}
 };
+
+enum class ECode {
+  ALPHA = 1,
+  BRAVO,
+  CHARLIE
+};
+
+struct e_category : std::error_category {
+  const char *name() const noexcept override;
+  std::string message(int ev) const override;
+};
+
+e_category e_cat;
+
+const char *
+e_category::name() const noexcept
+{
+  return "libswoc";
+}
+
+std::string
+e_category::message(int ev) const
+{
+  static swoc::Lexicon<ECode> lexicon {
+      {
+        { ECode::ALPHA , "Alpha" },
+        { ECode::BRAVO, "Bravo"},
+        { ECode::CHARLIE, "Charlie"}
+      }
+      , "Code out of range"
+  };
+
+  return std::string(lexicon[ECode(ev)]);
+}
+
+inline std::error_code ecode(ECode c) { return { int(c) , e_cat }; }
 
 std::string ErrataSinkText;
 
@@ -375,4 +412,13 @@ TEST_CASE("Errata Wrapper", "[libswoc][errata]") {
     auto errata = errata_errno(ERRATA_ERROR, "{} {}", tv2, tv1);
     REQUIRE(errata.front().text().starts_with("ni itchi - EINVAL"));
   }
+}
+
+TEST_CASE("Errata Autotext", "[libswoc][errata]") {
+  Errata a{ERRATA_WARN, Errata::AUTO};
+  REQUIRE(a.front().text() == "Warn");
+  Errata b{ecode(ECode::BRAVO), Errata::AUTO};
+  REQUIRE(b.front().text() == "Bravo [2]");
+  Errata c{ecode(ECode::ALPHA), ERRATA_ERROR, Errata::AUTO};
+  REQUIRE(c.front().text() == "Error: Alpha [1]");
 }

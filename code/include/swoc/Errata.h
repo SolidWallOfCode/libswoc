@@ -47,6 +47,7 @@
 #include "swoc/MemSpan.h"
 #include "swoc/MemArena.h"
 #include "swoc/bwf_base.h"
+#include "swoc/bwf_std.h"
 #include "swoc/IntrusiveDList.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
@@ -84,6 +85,10 @@ public:
   /// If an @c Annotation is added with an explicit @c Severity that is smaller the @c Annotation is discarded instead of added.
   /// This defaults to zero and no filtering is done unless it is overwritten.
   static Severity FILTER_SEVERITY;
+
+  static inline TextView AUTOTEXT_SEVERITY = "{}"; ///< Format for auto generated annotation with severity.
+  static inline TextView AUTOTEXT_CODE = "{}"; ///< Format for auto generated annotation with error code.
+  static inline TextView AUTOTEXT_SEVERITY_CODE = "{}: {}"; ///< Format for auto generate annotation with error code and severity.
 
   /// Mapping of severity to string.
   /// Values larger than the span size will be rendered as numbers.
@@ -196,27 +201,76 @@ protected:
     bool _glue_final_p                      = true; ///< Add glue after the last annotation?
 
     std::optional<Severity> _severity;     ///< Severity.
-    code_type _code{Errata::DEFAULT_CODE}; ///< Message code / ID
+    code_type _code{DEFAULT_CODE}; ///< Message code / ID
     Container _notes;                      ///< The message stack.
     swoc::MemArena _arena;                 ///< Annotation text storage.
   };
 
 public:
+  /// Used to indicate automatically generated annotation text.
+  static constexpr struct AutoText {} AUTO {};
+
   /// Default constructor - empty errata, very fast.
   Errata()                      = default;
-  Errata(self_type const &that) = delete;               ///< No constant copy construction.
+  Errata(self_type const &that) = delete;               ///< No copy construction.
   Errata(self_type &&that) noexcept;                    ///< Move constructor.
-  self_type &operator=(self_type const &that) = delete; // no copy assignemnt.
+  self_type &operator=(self_type const &that) = delete; // no copy assignment.
   self_type &operator=(self_type &&that);               ///< Move assignment.
   ~Errata();                                            ///< Destructor.
+
+  /** Construct with an error code.
+   *
+   * @param ec Error code
+   *
+   * No annotation is created.
+   */
+  explicit Errata(code_type const& ec);
+
+  /** Construct with an error code and generated annotation.
+   *
+   * @param ec Error code
+   *
+   * An annotation is created using the format @c AUTOTEXT_CODE with @a ec as the argument.
+   * @see AUTOTEXT_CODE
+   */
+  explicit Errata(code_type const& ec, AutoText);
 
   /** Construct with a severity.
    *
    * @param severity Severity.
    *
-   * No annotations are created.
+   * No annotation is created.
    */
   explicit Errata(Severity severity);
+
+  /** Construct with a severity.
+   *
+   * @param severity Severity.
+   *
+   * An annotation is created using the format @c AUTO_TEXT_SEVERITY with @a severity as the argument.
+   * @see AUTOTEXT_SEVERITY
+   */
+  explicit Errata(Severity severity, AutoText);
+
+  /** Construct with error code and severity.
+   *
+   * @param ec Error code.
+   * @param severity Severity.
+   *
+   * No annotation is created.
+   */
+  Errata(code_type const &ec, Severity severity);
+
+  /** Construct with a severity and error code.
+   *
+   * @param severity Severity.
+   * @param ec Error code.
+   * @param auto_text If present, generate an annotation.
+   *
+   * The annotation uses the format @c AUTOTEXT_SEVERITY_CODE with arguments @a severity , @a ec
+   * @see AUTOTEXT_SEVERITY_CODE
+   */
+  explicit Errata(code_type const& ec, Severity severity, AutoText auto_text);
 
   /** Constructor.
    *
@@ -613,9 +667,6 @@ public:
   std::ostream &write(std::ostream &out) const;
 
 protected:
-  /// Construct with code and severity, but no annotations.
-  Errata(code_type const &code, Severity severity);
-
   /// Implementation instance.
   /// @internal Because this is used with a self-containing @c MemArena standard smart pointers do not
   /// work correctly. Instead the @c clear method must be used to release the memory.
@@ -979,14 +1030,32 @@ inline Errata::Errata(self_type &&that) noexcept {
   std::swap(_data, that._data);
 }
 
+inline Errata::Errata(code_type const& ec) {
+  this->data()->_code = ec;
+}
+
 inline Errata::Errata(Severity severity) {
   this->data()->_severity = severity;
 }
 
-inline Errata::Errata(const code_type &code, Severity severity) {
+inline Errata::Errata(const code_type &ec, Severity severity) {
   auto d       = this->data();
   d->_severity = severity;
-  d->_code     = code;
+  d->_code     = ec;
+}
+
+inline Errata::Errata(code_type const& ec, AutoText) {
+  this->data()->_code = ec;
+  this->note(AUTOTEXT_CODE, ec);
+}
+
+inline Errata::Errata(Severity severity, AutoText) {
+  this->data()->_severity = severity;
+  this->note(AUTOTEXT_SEVERITY, severity);
+}
+
+inline Errata::Errata(const code_type &ec, Severity severity, AutoText) : Errata(ec, severity) {
+  this->note(AUTOTEXT_SEVERITY_CODE, severity, ec);
 }
 
 inline Errata::Errata(const code_type &code, Severity severity, const std::string_view &text) : Errata(code, severity) {
