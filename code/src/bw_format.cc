@@ -905,7 +905,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::error_code const &ec) {
 
   // This provides convenient safe access to the errno short name array.
   static const swoc::bwf::Format number_fmt{"[{}]"_sv}; // numeric value format.
-  if (spec.has_numeric_type()) {  // if numeric type, print just the numeric part.
+  if (spec.has_numeric_type()) {                        // if numeric type, print just the numeric part.
     bwformat(w, spec, ec.value());
   } else {
     if ((&ec.category() == G_CAT || &ec.category() == S_CAT) && swoc::ERRNO_RANGE.contains(ec.value())) {

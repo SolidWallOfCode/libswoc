@@ -41,9 +41,14 @@ class TextView;
  */
 class CharSet {
   using self_type = CharSet;
+
 public:
-  constexpr CharSet(TextView const& chars);
-  bool operator () (u_char idx) const { return _chars[idx]; }
+  constexpr CharSet(TextView const &chars);
+  bool
+  operator()(u_char idx) const {
+    return _chars[idx];
+  }
+
 protected:
   std::bitset<256> _chars;
 };
@@ -1081,8 +1086,8 @@ double svtod(TextView text, TextView *parsed = nullptr);
 // simpler plain @c TextView ? Because otherwise Doxygen can't match up the declaration and
 // definition and the reference documentation is messed up. Sigh.
 
-inline constexpr CharSet::CharSet(TextView const & chars) {
-  for ( auto c : chars) {
+inline constexpr CharSet::CharSet(TextView const &chars) {
+  for (auto c : chars) {
     _chars[u_char(c)] = true;
   }
 }
@@ -1510,7 +1515,7 @@ TextView::trim(char c) {
 
 inline TextView &
 TextView::ltrim(CharSet const &delimiters) {
-  const char *spot = this->data();
+  const char *spot  = this->data();
   const char *limit = this->data_end();
 
   while (spot < limit && delimiters(*spot)) {

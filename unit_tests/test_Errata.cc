@@ -30,11 +30,7 @@ std::array<swoc::TextView, 5> Severity_Names{
   {"Debug", "Diag", "Info", "Warn", "Error"}
 };
 
-enum class ECode {
-  ALPHA = 1,
-  BRAVO,
-  CHARLIE
-};
+enum class ECode { ALPHA = 1, BRAVO, CHARLIE };
 
 struct e_category : std::error_category {
   const char *name() const noexcept override;
@@ -44,27 +40,24 @@ struct e_category : std::error_category {
 e_category e_cat;
 
 const char *
-e_category::name() const noexcept
-{
+e_category::name() const noexcept {
   return "libswoc";
 }
 
 std::string
-e_category::message(int ev) const
-{
-  static swoc::Lexicon<ECode> lexicon {
-      {
-        { ECode::ALPHA , "Alpha" },
-        { ECode::BRAVO, "Bravo"},
-        { ECode::CHARLIE, "Charlie"}
-      }
-      , "Code out of range"
+e_category::message(int ev) const {
+  static swoc::Lexicon<ECode> lexicon{
+    {{ECode::ALPHA, "Alpha"}, {ECode::BRAVO, "Bravo"}, {ECode::CHARLIE, "Charlie"}},
+    "Code out of range"
   };
 
   return std::string(lexicon[ECode(ev)]);
 }
 
-inline std::error_code ecode(ECode c) { return { int(c) , e_cat }; }
+inline std::error_code
+ecode(ECode c) {
+  return {int(c), e_cat};
+}
 
 std::string ErrataSinkText;
 

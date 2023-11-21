@@ -86,8 +86,8 @@ public:
   /// This defaults to zero and no filtering is done unless it is overwritten.
   static Severity FILTER_SEVERITY;
 
-  static inline TextView AUTOTEXT_SEVERITY = "{}"; ///< Format for auto generated annotation with severity.
-  static inline TextView AUTOTEXT_CODE = "{}"; ///< Format for auto generated annotation with error code.
+  static inline TextView AUTOTEXT_SEVERITY      = "{}";     ///< Format for auto generated annotation with severity.
+  static inline TextView AUTOTEXT_CODE          = "{}";     ///< Format for auto generated annotation with error code.
   static inline TextView AUTOTEXT_SEVERITY_CODE = "{}: {}"; ///< Format for auto generate annotation with error code and severity.
 
   /// Mapping of severity to string.
@@ -200,15 +200,16 @@ protected:
     TextView _indent_text                   = DEFAULT_INDENT_TEXT;
     bool _glue_final_p                      = true; ///< Add glue after the last annotation?
 
-    std::optional<Severity> _severity;     ///< Severity.
-    code_type _code{DEFAULT_CODE}; ///< Message code / ID
-    Container _notes;                      ///< The message stack.
-    swoc::MemArena _arena;                 ///< Annotation text storage.
+    std::optional<Severity> _severity; ///< Severity.
+    code_type _code{DEFAULT_CODE};     ///< Message code / ID
+    Container _notes;                  ///< The message stack.
+    swoc::MemArena _arena;             ///< Annotation text storage.
   };
 
 public:
   /// Used to indicate automatically generated annotation text.
-  static constexpr struct AutoText {} AUTO {};
+  static constexpr struct AutoText {
+  } AUTO{};
 
   /// Default constructor - empty errata, very fast.
   Errata()                      = default;
@@ -224,7 +225,7 @@ public:
    *
    * No annotation is created.
    */
-  explicit Errata(code_type const& ec);
+  explicit Errata(code_type const &ec);
 
   /** Construct with an error code and generated annotation.
    *
@@ -233,7 +234,7 @@ public:
    * An annotation is created using the format @c AUTOTEXT_CODE with @a ec as the argument.
    * @see AUTOTEXT_CODE
    */
-  explicit Errata(code_type const& ec, AutoText);
+  explicit Errata(code_type const &ec, AutoText);
 
   /** Construct with a severity.
    *
@@ -270,7 +271,7 @@ public:
    * The annotation uses the format @c AUTOTEXT_SEVERITY_CODE with arguments @a severity , @a ec
    * @see AUTOTEXT_SEVERITY_CODE
    */
-  explicit Errata(code_type const& ec, Severity severity, AutoText auto_text);
+  explicit Errata(code_type const &ec, Severity severity, AutoText auto_text);
 
   /** Constructor.
    *
@@ -1030,7 +1031,7 @@ inline Errata::Errata(self_type &&that) noexcept {
   std::swap(_data, that._data);
 }
 
-inline Errata::Errata(code_type const& ec) {
+inline Errata::Errata(code_type const &ec) {
   this->data()->_code = ec;
 }
 
@@ -1044,7 +1045,7 @@ inline Errata::Errata(const code_type &ec, Severity severity) {
   d->_code     = ec;
 }
 
-inline Errata::Errata(code_type const& ec, AutoText) {
+inline Errata::Errata(code_type const &ec, AutoText) {
   this->data()->_code = ec;
   this->note(AUTOTEXT_CODE, ec);
 }
