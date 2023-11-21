@@ -36,6 +36,18 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
 
 class TextView;
 
+/** A set of characters.
+ *
+ */
+class CharSet {
+  using self_type = CharSet;
+public:
+  constexpr CharSet(TextView const& chars);
+  bool operator () (u_char idx) const { return _chars[idx]; }
+protected:
+  std::bitset<256> _chars;
+};
+
 /** A read only view of a contiguous piece of memory.
 
     A @c TextView does not own the memory to which it refers, it is simply a view of part of some
@@ -328,6 +340,12 @@ public:
    *
    * @return @a this
    */
+  self_type &ltrim(CharSet const &delimiters);
+
+  /** Remove bytes from the start of the view that are in @a delimiters.
+   *
+   * @return @a this
+   */
   self_type &ltrim(std::string_view const &delimiters);
 
   /** Remove bytes from the start of the view that are in @a delimiters.
@@ -351,6 +369,12 @@ public:
   self_type &rtrim(char c);
 
   /** Remove bytes from the end of the view that are in @a delimiters.
+   *
+   * @return @a this
+   */
+  self_type &rtrim(CharSet const &delimiters);
+
+  /** Remove bytes from the end of the view that are in @a delimiters.
    * @return @a this
    */
   self_type &rtrim(std::string_view const &delimiters);
@@ -368,6 +392,11 @@ public:
    * @return @a this
    */
   self_type &trim(char c);
+
+  /** Remove bytes from the start and end of the view that are in @a delimiters.
+   * @return @a this
+   */
+  self_type &trim(CharSet const &delimiters);
 
   /** Remove bytes from the start and end of the view that are in @a delimiters.
    * @return @a this
@@ -1052,6 +1081,12 @@ double svtod(TextView text, TextView *parsed = nullptr);
 // simpler plain @c TextView ? Because otherwise Doxygen can't match up the declaration and
 // definition and the reference documentation is messed up. Sigh.
 
+inline constexpr CharSet::CharSet(TextView const & chars) {
+  for ( auto c : chars) {
+    _chars[u_char(c)] = true;
+  }
+}
+
 // === TextView Implementation ===
 /// @cond TextView_INTERNAL
 // Doxygen doesn't match these up well due to various type and template issues.
@@ -1474,62 +1509,71 @@ TextView::trim(char c) {
 }
 
 inline TextView &
-TextView::ltrim(std::string_view const &delimiters) {
-  std::bitset<256> valid;
-  this->init_delimiter_set(delimiters, valid);
-  const char *spot;
-  const char *limit;
+TextView::ltrim(CharSet const &delimiters) {
+  const char *spot = this->data();
+  const char *limit = this->data_end();
 
-  for (spot = this->data(), limit = this->data_end(); spot < limit && valid[static_cast<uint8_t>(*spot)]; ++spot)
-    ;
+  while (spot < limit && delimiters(*spot)) {
+    ++spot;
+  }
   this->remove_prefix(spot - this->data());
 
   return *this;
 }
 
 inline TextView &
-TextView::ltrim(const char *delimiters) {
-  return this->ltrim(std::string_view(delimiters));
+TextView::ltrim(std::string_view const &delimiters) {
+  return this->ltrim(CharSet(delimiters));
 }
 
 inline TextView &
-TextView::rtrim(std::string_view const &delimiters) {
-  std::bitset<256> valid;
-  this->init_delimiter_set(delimiters, valid);
+TextView::ltrim(const char *delimiters) {
+  return this->ltrim(CharSet(delimiters));
+}
+
+inline TextView &
+TextView::rtrim(CharSet const &delimiters) {
   const char *spot  = this->data_end();
   const char *limit = this->data();
-
-  while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
-    ;
+  while (limit < spot-- && delimiters(*spot)) {
+  }
 
   this->remove_suffix(this->data_end() - (spot + 1));
   return *this;
 }
 
 inline TextView &
-TextView::trim(std::string_view const &delimiters) {
-  std::bitset<256> valid;
-  this->init_delimiter_set(delimiters, valid);
+TextView::rtrim(std::string_view const &delimiters) {
+  return this->rtrim(CharSet(delimiters));
+}
+
+inline TextView &
+TextView::trim(CharSet const &delimiters) {
   const char *spot;
   const char *limit;
 
   // Do this explicitly, so we don't have to initialize the character set twice.
-  for (spot = this->data(), limit = this->data_end(); spot < limit && valid[static_cast<uint8_t>(*spot)]; ++spot)
+  for (spot = this->data(), limit = this->data_end(); spot < limit && delimiters(*spot); ++spot)
     ;
   this->remove_prefix(spot - this->data());
 
   spot  = this->data_end();
   limit = this->data();
-  while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
-    ;
+  while (limit < spot-- && delimiters(*spot)) {
+  }
   this->remove_suffix(this->data_end() - (spot + 1));
 
   return *this;
 }
 
 inline TextView &
+TextView::trim(std::string_view const &delimiters) {
+  return this->trim(CharSet(delimiters));
+}
+
+inline TextView &
 TextView::trim(const char *delimiters) {
-  return this->trim(std::string_view(delimiters));
+  return this->trim(CharSet(delimiters));
 }
 
 template <typename F>
