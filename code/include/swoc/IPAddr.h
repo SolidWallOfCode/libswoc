@@ -579,7 +579,7 @@ public:
    * @param sa Destination.
    * @return @a sa
    */
-  sockaddr *copy_to(sockaddr *sa);
+  sockaddr *copy_to(sockaddr *sa) const;
 
   /** Parse a string and load the result in @a this.
    *
