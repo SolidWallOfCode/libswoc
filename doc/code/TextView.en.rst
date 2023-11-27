@@ -86,6 +86,18 @@ E.g. the code to write a simple hash function [#]_ could be
       return hash;
    }
 
+Although alternatively, this can be done in a non-modifying way.
+
+.. code-block:: cpp
+
+   void hasher(TextView v) {
+      size_t hash = 0;
+      for ( auto c : v) {
+         hash = hash * 13 + c;
+      }
+      return hash;
+   }
+
 Because |TV| inherits from :code:`std::string_view` it can also be used as a container for range
 :code:`for` loops.
 
@@ -97,9 +109,20 @@ Because |TV| inherits from :code:`std::string_view` it can also be used as a con
       return hash;
    }
 
+The first approach enables dropping out of the loop on some condition with the view updated to
+no longer contain processed characters, making restart or other processing simple.
+
 The standard functions :code:`strcmp`, :code:`memcmp`, code:`memcpy`, and :code:`strcasecmp` are
 overloaded for |TV| so that a |TV| can be used as if it were a C-style string. The size is is taken
 from the |TV| and doesn't need to be passed in explicitly.
+
+.. class:: CharSet
+
+   :libswoc:`Reference documentation <swoc::CharSet>`.
+
+This is a simple class that contains a set of characters. This is intended primarily to make
+parsing faster and simpler. Rather than checking a list of delimiters the character can be checked
+with a single `std::bitset` lookup.
 
 Basic Operations
 ================
@@ -130,7 +153,7 @@ Searching
 ---------
 
 Because |TV| is a subclass of :code:`std::string_view` all of its search method work on a |TV|. The
-only search methods provided beyond those are :libswoc:`TextView::find_if` and
+only search methods provided beyond those in :code:`std::string` are :libswoc:`TextView::find_if` and
 :libswoc:`TextView::rfind_if` which search the view by a predicate. The predicate takes a single
 :code:`char` argument and returns a :code:`bool`. The search terminates on the first character for
 which the predicate returns :code:`true`.
@@ -281,12 +304,12 @@ developing |TV| parsing.
 
 The first was to minimize the need to allocate memory to hold intermediate results. For this reason, the normal
 style of use is a streaming / incremental one, where tokens are extracted from a source one by one
-and placed in |TV| instances, with the orignal source |TV| being reduced by each extraction until
+and placed in |TV| instances, with the original source |TV| being reduced by each extraction until
 it is empty.
 
 The second was to minimize cut and paste coding. Typical C or C++ parsing logic consists mostly of
 very generic code to handle pointer and size updates. The point of |TV| is to automate all of that
-so the resulting code is focused entirely on the parsing logic, not boiler plate string or view manipulation.
+yielding code focused entirely on the parsing logic, not boiler plate string or view manipulation.
 It is a common occurrence to not get such code exactly correct leading to hard to track bugs. Use
 of |TV| eliminates those problems.
 
@@ -313,7 +336,7 @@ are very cheap to copy. This is essentially the same as having a current pointer
 and checking for :code:`current >= end` except :code:`TextView` does all the work, leading to
 simpler and less buggy code.
 
-White space is dropped because of the calls to :code:`ltrim_if` and `rtrim_if`. By calling in the
+White space is dropped because of the calls to :code:`ltrim_if` and :code:`rtrim_if`. By calling in the
 loop condition, the loop exits if the remaining text is only whitespace and no token is processed.
 Alternatively :code:`trim_if` could be used after extraction. The performance will be *slightly*
 better because although :code:`trim_if` calls :code:`ltrim_if` and :code:`rtrim_if`, a final

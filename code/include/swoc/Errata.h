@@ -504,10 +504,7 @@ public:
   bool is_ok() const;
 
   /// @return If there is top level severity.
-  bool
-  has_severity() const {
-    return _data && _data->_severity.has_value();
-  }
+  bool has_severity() const;
 
   /// @return Top level severity.
   Severity severity() const;
@@ -1124,9 +1121,12 @@ Errata::assign(code_type code) -> self_type & {
   return *this;
 }
 
+inline bool Errata::has_severity() const {
+  return _data && _data->_severity.has_value();
+}
 inline auto
 Errata::severity() const -> Severity {
-  return _data ? _data->_severity.value() : DEFAULT_SEVERITY;
+  return this->has_severity() ? _data->_severity.value() : DEFAULT_SEVERITY;
 }
 
 inline auto
@@ -1142,7 +1142,7 @@ Errata::length() const {
 
 inline bool
 Errata::is_ok() const {
-  return this->empty() || _data->_severity < FAILURE_SEVERITY;
+  return nullptr == _data || this->severity() < FAILURE_SEVERITY;
 }
 
 inline const Errata::Annotation &

@@ -414,4 +414,15 @@ TEST_CASE("Errata Autotext", "[libswoc][errata]") {
   REQUIRE(b.front().text() == "Bravo [2]");
   Errata c{ecode(ECode::ALPHA), ERRATA_ERROR, Errata::AUTO};
   REQUIRE(c.front().text() == "Error: Alpha [1]");
+
+  Errata d{ERRATA_ERROR};
+  REQUIRE_FALSE(d.is_ok());
+  Errata e{ERRATA_INFO};
+  REQUIRE(e.is_ok());
+  Errata f{ecode(ECode::BRAVO)};
+  REQUIRE_FALSE(f.is_ok());
+  // Change properties but need to restore them for other tests.
+  swoc::meta::let g1(Errata::DEFAULT_SEVERITY, ERRATA_WARN);
+  swoc::meta::let g2(Errata::FAILURE_SEVERITY, ERRATA_ERROR);
+  REQUIRE(f.is_ok());
 }
