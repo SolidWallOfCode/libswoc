@@ -18,9 +18,16 @@ Solid Wall of C++
 *****************
 
 The Solid Wall of C++ library is a collection of C++ classes and utilities. This code evolved out of
-infrastructure used in `Apache Traffic Server <https://trafficserver.apache.org>`__. The utilities
-had become useful enough there were requests to be able to use them in ATS plugins and other,
-unrelated projects. Hence this library. I hope you find it as useful as I have.
+infrastructure used in `Apache Traffic Server <https://trafficserver.apache.org>`__ as I strove to combine
+functionality, ease of use, and performance.
+The utilities had become useful enough there were requests to be able to use them in ATS plugins and other,
+unrelated projects. Hence this library. After much production use, this library has been imported back
+in to Traffic Server and can be used there in the core or any plugin.
+I hope you find it as useful as I have.
+
+Most of the library is dedicated to convenience, such as :class:`TextView` which provides Python like
+string manipulation on top of :code:`std::string_view`, and performance, such as :class:`IPSpace` which
+enables very fast IP address range storage.
 
 .. toctree::
    :maxdepth: 1

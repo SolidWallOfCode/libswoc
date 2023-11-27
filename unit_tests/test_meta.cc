@@ -93,3 +93,27 @@ TEST_CASE("Meta vary", "[meta][vary]") {
   v = "956"_tv;
   REQUIRE(std::visit(visitor, v) == 956);
 }
+
+TEST_CASE("Meta let", "[meta][let]") {
+  using swoc::meta::let;
+
+  unsigned x = 56;
+  {
+    REQUIRE(x == 56);
+    let guard(x, unsigned(3136));
+    REQUIRE(x == 3136);
+    // auto bogus = guard; // should not compile.
+  }
+  REQUIRE(x == 56);
+
+  // Checking move semantics - avoid reallocating the original string.
+  std::string s{"Evil Dave Rulz With An Iron Keyboard"}; // force allocation.
+  auto sptr = s.data();
+  {
+    char const * text = "Twas brillig and the slithy toves";
+    let guard(s, std::string(text));
+    REQUIRE(s == text);
+    REQUIRE(s.data() != sptr);
+  }
+  REQUIRE(s.data() == sptr);
+}
