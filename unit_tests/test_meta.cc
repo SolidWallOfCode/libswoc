@@ -110,7 +110,7 @@ TEST_CASE("Meta let", "[meta][let]") {
   std::string s{"Evil Dave Rulz With An Iron Keyboard"}; // force allocation.
   auto sptr = s.data();
   {
-    char const * text = "Twas brillig and the slithy toves";
+    char const *text = "Twas brillig and the slithy toves";
     let guard(s, std::string(text));
     REQUIRE(s == text);
     REQUIRE(s.data() != sptr);

@@ -1108,11 +1108,13 @@ inline constexpr CharSet::CharSet(TextView const &chars) {
   }
 }
 
-inline bool CharSet::operator()(unsigned char c) const {
+inline bool
+CharSet::operator()(unsigned char c) const {
   return _chars[c];
 }
 
-inline bool CharSet::operator()(char c) const {
+inline bool
+CharSet::operator()(char c) const {
   return _chars[uint8_t(c)];
 }
 
