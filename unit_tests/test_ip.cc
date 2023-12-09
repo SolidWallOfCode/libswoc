@@ -189,8 +189,12 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(a6_3[14] == 0x1C);
   REQUIRE(a6_2[15] == 0x34);
 
+  REQUIRE(a6_1.host_order() != a6_2.host_order());
+
   a6_1.copy_to(&ep.sa);
   REQUIRE(a6_1 == IP6Addr(ep.ip6()));
+  REQUIRE(IPAddr(a6_1) == &ep.sa);
+  REQUIRE(IPAddr(a6_2) != &ep.sa);
   a6_2.copy_to(&ep.sa6);
   REQUIRE(a6_2 == IP6Addr(&ep.sa6));
   REQUIRE(a6_1 != IP6Addr(ep.ip6()));
@@ -200,8 +204,12 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   a6_1.network_order(ep.sa6.sin6_addr);
   REQUIRE(a6_1 == IP6Addr(ep.ip6()));
   in6 = a6_2.network_order();
+  REQUIRE(a6_2.host_order() != in6);
+  REQUIRE(a6_2.network_order() == in6);
   REQUIRE(a6_2 == IP6Addr(in6));
   a6_2.host_order(in6);
+  REQUIRE(a6_2.network_order() != in6);
+  REQUIRE(a6_2.host_order() == in6);
   REQUIRE(in6.s6_addr[0] == 0x34);
   REQUIRE(in6.s6_addr[6] == 0xff);
   REQUIRE(in6.s6_addr[13] == 0x88);

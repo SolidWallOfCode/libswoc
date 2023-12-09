@@ -836,6 +836,7 @@ IP4Addr::copy_to(sockaddr *sa) const {
 }
 
 /// Equality.
+
 inline bool
 operator==(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr == rhs._addr;
@@ -1490,3 +1491,14 @@ template <> struct hash<swoc::IPAddr> {
 };
 
 } // namespace std
+
+// These have to be global namespace, unfortunately.
+inline bool
+operator==(in6_addr const& lhs, in6_addr const& rhs) {
+  return 0 == memcmp(&lhs, &rhs, sizeof(in6_addr));
+}
+
+inline bool
+operator!=(in6_addr const& lhs, in6_addr const& rhs) {
+  return 0 != memcmp(&lhs, &rhs, sizeof(in6_addr));
+}
