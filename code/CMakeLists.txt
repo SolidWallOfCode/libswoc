@@ -25,6 +25,7 @@ set(HEADER_FILES
     include/swoc/IntrusiveDList.h
     include/swoc/IntrusiveHashMap.h
     include/swoc/swoc_ip.h
+    include/swoc/swoc_ip_util.h
     include/swoc/IPEndpoint.h
     include/swoc/IPAddr.h
     include/swoc/IPSrv.h
@@ -36,7 +37,7 @@ set(HEADER_FILES
     include/swoc/TextView.h
     include/swoc/swoc_file.h
     include/swoc/swoc_meta.h
-    include/swoc/string_view.h
+    include/swoc/string_view_util.h
     include/swoc/Vectray.h
     )
 
@@ -58,7 +59,7 @@ set(CC_FILES
     src/string_view_util.cc
     )
 
-add_library(libswoc SHARED ${CC_FILES})
+add_library(libswoc SHARED ${CC_FILES} ${HEADER_FILES})
 set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc-${LIBSWOC_VERSION})
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(libswoc PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic -Wshadow)

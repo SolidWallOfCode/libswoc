@@ -125,33 +125,54 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
 
   IP4Addr lo{"127.0.0.1"};
   CHECK(lo.is_loopback());
-  REQUIRE(lo.is_any() == false);
-  REQUIRE(lo.is_multicast() == false);
-  REQUIRE(lo.is_link_local() == false);
-  REQUIRE(lo[0] == 0x7F);
+  CHECK_FALSE(lo.is_any());
+  CHECK_FALSE(lo.is_multicast());
+  CHECK_FALSE(lo.is_link_local());
+  CHECK(lo[0] == 0x7F);
 
   IP4Addr any{"0.0.0.0"};
-  REQUIRE(any.is_loopback() == false);
-  REQUIRE(any.is_any() == true);
-  REQUIRE(lo.is_link_local() == false);
+  REQUIRE_FALSE(any.is_loopback());
+  REQUIRE(any.is_any());
+  REQUIRE_FALSE(any.is_link_local());
   REQUIRE(any == IP4Addr("0"));
 
+  IP4Addr mc{"238.11.55.99"};
+  CHECK_FALSE(mc.is_loopback());
+  CHECK_FALSE(mc.is_any());
+  CHECK_FALSE(mc.is_link_local());
+  CHECK(mc.is_multicast());
+
+  IP4Addr ll4{"169.254.55.99"};
+  CHECK_FALSE(ll4.is_loopback());
+  CHECK_FALSE(ll4.is_any());
+  CHECK(ll4.is_link_local());
+  CHECK_FALSE(ll4.is_multicast());
+  CHECK(swoc::ip::is_link_local_host_order(ll4.host_order()));
+  CHECK_FALSE(swoc::ip::is_link_local_network_order(ll4.host_order()));
+
+  CHECK(swoc::ip::is_private_host_order(0xC0A8BADC));
+  CHECK_FALSE(swoc::ip::is_private_network_order(0xC0A8BADC));
+  CHECK_FALSE(swoc::ip::is_private_host_order(0xDCBA8C0));
+  CHECK(swoc::ip::is_private_network_order(0xDCBA8C0));
+
+  CHECK(IP4Addr(INADDR_LOOPBACK).is_loopback());
+
   IP6Addr lo6{"::1"};
-  REQUIRE(lo6.is_loopback() == true);
-  REQUIRE(lo6.is_any() == false);
-  REQUIRE(lo6.is_multicast() == false);
-  REQUIRE(lo.is_link_local() == false);
+  REQUIRE(lo6.is_loopback());
+  REQUIRE_FALSE(lo6.is_any());
+  REQUIRE_FALSE(lo6.is_multicast());
+  REQUIRE_FALSE(lo.is_link_local());
 
   IP6Addr any6{"::"};
-  REQUIRE(any6.is_loopback() == false);
-  REQUIRE(any6.is_any() == true);
-  REQUIRE(lo.is_link_local() == false);
+  REQUIRE_FALSE(any6.is_loopback());
+  REQUIRE(any6.is_any());
+  REQUIRE_FALSE(lo.is_link_local());
 
   IP6Addr multi6{"FF02::19"};
   REQUIRE(multi6.is_loopback() == false);
   REQUIRE(multi6.is_multicast() == true);
   REQUIRE(lo.is_link_local() == false);
-  REQUIRE(IPAddr(multi6).is_multicast() == true);
+  REQUIRE(IPAddr(multi6).is_multicast());
 
   IP6Addr ll{"FE80::56"};
   REQUIRE(ll.is_link_local() == true);
