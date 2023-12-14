@@ -500,32 +500,50 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]") {
   REQUIRE(x.size() == 0);
 
   // Check overflow conditions
-  static constexpr auto MAX = std::numeric_limits<uintmax_t>::max();
+  static constexpr auto UMAX = std::numeric_limits<uintmax_t>::max();
+  static constexpr auto IMAX = std::numeric_limits<intmax_t>::max();
+  static constexpr auto IMIN = std::numeric_limits<intmax_t>::min();
 
   // One less than max.
   x.assign("18446744073709551614");
-  REQUIRE(MAX - 1 == swoc::svto_radix<10>(x));
+  REQUIRE(UMAX - 1 == swoc::svto_radix<10>(x));
   REQUIRE(x.size() == 0);
 
   // Exactly max.
   x.assign("18446744073709551615");
-  REQUIRE(MAX == swoc::svto_radix<10>(x));
+  REQUIRE(UMAX == swoc::svto_radix<10>(x));
   REQUIRE(x.size() == 0);
+  x.assign("18446744073709551615");
+  CHECK(UMAX == svtou(x));
 
   // Should overflow and clamp.
   x.assign("18446744073709551616");
-  REQUIRE(MAX == swoc::svto_radix<10>(x));
+  REQUIRE(UMAX == swoc::svto_radix<10>(x));
   REQUIRE(x.size() == 0);
 
   // Even more digits.
   x.assign("18446744073709551616123456789");
-  REQUIRE(MAX == swoc::svto_radix<10>(x));
+  REQUIRE(UMAX == swoc::svto_radix<10>(x));
   REQUIRE(x.size() == 0);
 
   // This is a special value - where N*10 > N while also overflowing. The final "1" causes this.
   // Be sure overflow is detected.
   x.assign("27381885734412615681");
-  REQUIRE(MAX == swoc::svto_radix<10>(x));
+  REQUIRE(UMAX == swoc::svto_radix<10>(x));
+
+  x.assign("9223372036854775807");
+  CHECK(svtou(x) == IMAX);
+  CHECK(svtoi(x) == IMAX);
+  x.assign("9223372036854775808");
+  CHECK(svtou(x) == uintmax_t(IMAX) + 1);
+  CHECK(svtoi(x) == IMAX);
+
+  x.assign("-9223372036854775807");
+  CHECK(svtoi(x) == IMIN + 1);
+  x.assign("-9223372036854775808");
+  CHECK(svtoi(x) == IMIN);
+  x.assign("-9223372036854775809");
+  CHECK(svtoi(x) == IMIN);
 
   // floating point is never exact, so "good enough" is all that is measureable. This checks the
   // value is within one epsilon (minimum change possible) of the compiler generated value.
