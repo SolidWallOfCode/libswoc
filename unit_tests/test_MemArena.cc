@@ -463,6 +463,63 @@ TEST_CASE("FixedArena", "[libswoc][FixedArena]") {
   REQUIRE(two == three);
 };
 
+TEST_CASE("MemArena disard", "[libswoc][MemArena][discard]") {
+  MemArena a{512};
+  a.require(0); // force allocation.
+  auto x = a.remaining();
+  CHECK(x >= 512);
+  auto span_1 = a.alloc(256);
+  REQUIRE(a.remaining() == (x-256));
+  a.discard(span_1);
+  CHECK(a.remaining() == x);
+  span_1 = a.alloc(100);
+  auto span_2 = a.alloc(50);
+  auto span_3 = a.alloc(50);
+  CHECK(a.remaining() == x - 200);
+  a.discard(span_3);
+  CHECK(a.remaining() == x - 150);
+  a.discard(span_1); // expected to fail.
+  CHECK(a.remaining() == x - 150);
+  a.discard(span_2);
+  CHECK(a.remaining() == x - 100);
+
+  a.discard(512);
+  CHECK(a.remaining() == x);
+
+  auto b1 = a.alloc(400);
+  span_1 = a.alloc(x - 400);
+  CHECK(a.remaining() == 0);
+  CHECK(a.allocated_size() == x);
+
+  span_2 = a.alloc(50);
+  auto b2n = a.remaining();
+  REQUIRE(b2n > 50);
+  a.discard(span_2);
+  REQUIRE(a.remaining() == b2n + span_2.size());
+  REQUIRE(a.allocated_size() == span_1.size() + b1.size());
+  a.discard(b1); // expected to fail.
+  REQUIRE(a.remaining() == b2n + span_2.size());
+  REQUIRE(a.allocated_size() == span_1.size() + b1.size());
+  a.discard(span_1);
+  REQUIRE(a.allocated_size() == b1.size());
+
+  // Try to exercise "last full block" logic.
+  a.clear(512);
+  span_1 = a.alloc(a.remaining()); // fill first block.
+  a.require(1);
+  span_2 = a.alloc(a.remaining()); // fill another block.
+  span_3 = a.alloc(100); // force another block.
+  [[maybe_unused]] auto span_4 = a.alloc(a.remaining() - 100); // use most of it.
+  auto span_5 = a.alloc(100); // fill it.
+  REQUIRE(a.remaining() == 0);
+  auto span_6 = a.alloc(100); // force 4th block.
+  REQUIRE(a.remaining() > 0);
+  a.discard(span_6); // make 4th block empty.
+  REQUIRE(a.remaining() != 100);
+  a.discard(span_5);
+  REQUIRE(a.remaining() == 100); // 3rd block pull to front because it's no longer empty.
+}
+
 // RHEL 7 compatibility - std::pmr::string isn't available even though the header exists unless
 // _GLIBCXX_USE_CXX11_ABI is defined and non-zero. It appears to always be defined for the RHEL
 // toolsets, so if undefined that's OK.
