@@ -545,7 +545,7 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]") {
   x.assign("-9223372036854775809");
   CHECK(svtoi(x) == IMIN);
 
-  // floating point is never exact, so "good enough" is all that is measureable. This checks the
+  // floating point is never exact, so "good enough" is all that iisnts measureable. This checks the
   // value is within one epsilon (minimum change possible) of the compiler generated value.
   auto fcmp = [](double lhs, double rhs) {
     double tolerance = std::max({1.0, std::fabs(lhs), std::fabs(rhs)}) * std::numeric_limits<double>::epsilon();
