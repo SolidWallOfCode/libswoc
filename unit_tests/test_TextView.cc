@@ -459,6 +459,7 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]") {
   TextView n6 = "0X13f8";
   TextView n7 = "-2345679";
   TextView n8 = "+2345679";
+  TextView n9 = "-9223372036854775808";
   TextView x;
   n2.ltrim_if(&isspace);
 
@@ -482,6 +483,7 @@ TEST_CASE("TextView Conversions", "[libswoc][TextView]") {
   REQUIRE(2345679 == svtoi(n8, &x));
   REQUIRE(x == n8);
   REQUIRE(0b10111 == svtoi("0b10111"_tv));
+  REQUIRE(-9223372036854775808 == svtoi(n9));
 
   x = n4;
   REQUIRE(13 == swoc::svto_radix<10>(x));
